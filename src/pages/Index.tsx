@@ -258,7 +258,7 @@ export default function Index() {
 
         {/* Glowing orbs */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-gold/10 blur-3xl animate-pulse pointer-events-none" />
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-amber-300/8 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-gold/5 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
 
         <motion.div
           style={{ opacity: heroOpacity }}
