@@ -53,7 +53,7 @@ export default function Admin() {
   const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights">("moderation");
+  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormValues>({
