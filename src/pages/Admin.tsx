@@ -185,7 +185,7 @@ export default function Admin() {
         </div>
 
         {/* Tab navigation */}
-        <div className="flex gap-1 flex-wrap mb-6 border-b border-border pb-2">
+        <div className="flex gap-1 flex-wrap sm:flex-nowrap overflow-x-auto mb-6 border-b border-border pb-2 scrollbar-none -mx-1 px-1">
           {TABS.map(tab => {
             const Icon = tab.icon;
             return (
