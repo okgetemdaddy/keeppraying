@@ -26,6 +26,19 @@ serve(async (req) => {
     });
   }
 
+  // Resolve user from auth header if present
+  const authHeader = req.headers.get("Authorization");
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    authHeader ? { global: { headers: { Authorization: authHeader } } } : undefined,
+  );
+  let userId: string | null = null;
+  if (authHeader) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    userId = user?.id || null;
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
