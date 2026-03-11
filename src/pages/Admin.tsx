@@ -282,23 +282,114 @@ export default function Admin() {
 
         {/* ── MODERATION TAB ── */}
         {activeTab === "moderation" && (
-          <div>
-            <h2 className="font-display text-xl font-semibold mb-4">Review Queue ({pending.length})</h2>
-            {pending.length === 0 ? <p className="text-muted-foreground text-sm">No prayers pending review 🙏</p> : (
-              <div className="space-y-4">
-                {pending.map(p => (
-                  <div key={p.id} className="prayer-card p-5 space-y-3">
-                    {p.title && <h3 className="font-semibold">{p.title}</h3>}
-                    <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
-                      <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
-                    </div>
-                  </div>
-                ))}
+          <div className="space-y-6">
+            {/* Create Prayer Card */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-xl font-semibold">Create Prayer Card</h2>
+                <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setShowPrayerForm(v => !v)}>
+                  <PlusCircle className="w-4 h-4" />{showPrayerForm ? "Cancel" : "New Prayer Card"}
+                </Button>
               </div>
-            )}
+
+              {showPrayerForm && (
+                <div className="prayer-card p-5 mb-6">
+                  <p className="text-xs text-muted-foreground mb-4">Cards created here are automatically published as <span className="font-semibold text-primary">Curated (Admin)</span> and visible immediately.</p>
+                  <Form {...prayerForm}>
+                    <form onSubmit={prayerForm.handleSubmit(onPrayerCardSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormField control={prayerForm.control} name="title" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Title (optional)</FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g. Morning Surrender" className="rounded-xl text-sm" maxLength={100} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={prayerForm.control} name="text_style" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Text Style</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {TEXT_STYLES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <FormField control={prayerForm.control} name="prayer_text" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Prayer Text <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Write the prayer…" rows={5} className="rounded-xl text-sm resize-none" maxLength={5000} />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground text-right">{field.value?.length ?? 0}/5000</p>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={prayerForm.control} name="extended_prayer" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Scripture / Extended Prayer (optional)</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Related scripture or extended meditation… (e.g. John 3:16)" rows={3} className="rounded-xl text-sm resize-none" maxLength={5000} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormField control={prayerForm.control} name="tags" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Tags (comma-separated)</FormLabel>
+                            <FormControl><Input {...field} placeholder="peace, healing, morning-prayer" className="rounded-xl text-sm" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={prayerForm.control} name="background_url" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Background Image URL (optional)</FormLabel>
+                            <FormControl><Input {...field} placeholder="https://…" className="rounded-xl text-sm" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <Button type="submit" disabled={savingPrayer} className="btn-gold rounded-xl gap-1.5 text-sm">
+                          {savingPrayer ? <><Loader2 className="w-4 h-4 animate-spin" />Publishing…</> : <><ScrollText className="w-4 h-4" />Publish Prayer Card</>}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => { setShowPrayerForm(false); prayerForm.reset(); }} className="rounded-xl text-sm">Cancel</Button>
+                      </div>
+                    </form>
+                  </Form>
+                </div>
+              )}
+            </div>
+
+            {/* Review Queue */}
+            <div>
+              <h2 className="font-display text-xl font-semibold mb-4">Community Review Queue ({pending.length})</h2>
+              {pending.length === 0 ? <p className="text-muted-foreground text-sm">No prayers pending review 🙏</p> : (
+                <div className="space-y-4">
+                  {pending.map(p => (
+                    <div key={p.id} className="prayer-card p-5 space-y-3">
+                      {p.title && <h3 className="font-semibold">{p.title}</h3>}
+                      <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
+                        <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
