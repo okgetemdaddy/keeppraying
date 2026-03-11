@@ -494,12 +494,12 @@ export default function Index() {
                 link: "/board", colorClass: "text-forest", bgClass: "bg-forest/10", hoverGlow: "hsl(150 38% 26% / 0.2)"
               },
               {
-                icon: Sparkles, title: "PrayerAssist AI",
+                icon: Sparkles, title: "PrayerAssist.ing",
                 desc: "Your AI prayer companion — answers Bible questions, crafts prayers, and provides biblical guidance.",
                 link: "/assistant", colorClass: "text-primary", bgClass: "bg-primary/10", hoverGlow: "hsl(42 75% 46% / 0.25)"
               },
               {
-                icon: Shield, title: "The War Room",
+                icon: Shield, title: "KeepFight.ing",
                 desc: "An immersive prayer sanctuary with ambient music, themes, and focused playlist mode.",
                 link: "/war-room", colorClass: "text-gold", bgClass: "bg-gold/10", hoverGlow: "hsl(42 85% 46% / 0.25)"
               },
