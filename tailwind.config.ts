@@ -28,13 +28,6 @@ export default {
         forest: {
           DEFAULT: "hsl(var(--forest))",
           light: "hsl(var(--forest-light))",
-          dark: "hsl(var(--forest-dark))",
-        },
-        terra: {
-          DEFAULT: "hsl(var(--terra))",
-          light: "hsl(var(--terra-light))",
-          dark: "hsl(var(--terra-dark))",
-          glow: "hsl(var(--terra-glow))",
         },
         cream: "hsl(var(--cream))",
         sidebar: {
@@ -83,7 +76,6 @@ export default {
       },
       backgroundImage: {
         "gradient-gold": "var(--gradient-gold)",
-        "gradient-terra": "var(--gradient-terra)",
         "gradient-forest": "var(--gradient-forest)",
         "gradient-divine": "var(--gradient-divine)",
       },
@@ -91,7 +83,6 @@ export default {
         prayer: "var(--shadow-prayer)",
         card: "var(--shadow-card)",
         gold: "var(--shadow-gold)",
-        terra: "var(--shadow-terra)",
         lift: "var(--shadow-lift)",
       },
     },

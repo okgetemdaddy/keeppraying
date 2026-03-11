@@ -157,7 +157,7 @@ export default function Index() {
           <Link to="/" className="flex-shrink-0 group">
             <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>Keep</span>
-              <span className="text-terra group-hover:drop-shadow-[0_0_12px_hsl(16_68%_46%/0.8)] transition-all duration-300">Pray</span>
+              <span className="text-gold group-hover:drop-shadow-[0_0_12px_hsl(42_85%_46%/0.7)] transition-all duration-300">Pray</span>
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>.ing</span>
             </span>
           </Link>
@@ -169,13 +169,13 @@ export default function Index() {
           >
             {NAV_LINKS.map(({ label, href }) => (
               <motion.div key={label} variants={navItem}>
-            <Link
+                <Link
                   to={href}
                   className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
                     ${scrolled ? "text-foreground/70 hover:text-foreground hover:bg-muted" : "text-white/75 hover:text-white hover:bg-white/10"}`}
                 >
                   {label}
-                  <span className="absolute bottom-1 left-3 right-3 h-px bg-terra scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                  <span className="absolute bottom-1 left-3 right-3 h-px bg-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                 </Link>
               </motion.div>
             ))}
@@ -191,7 +191,7 @@ export default function Index() {
               </Link>
             ) : null}
             <Link to="/auth">
-              <Button size="sm" className="rounded-xl gap-1.5 px-5 bg-terra hover:bg-terra-dark text-white border-0 shadow-md font-semibold transition-all duration-200">
+              <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
                 Get Started <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>
@@ -255,9 +255,9 @@ export default function Index() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/55" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
 
-          {/* Glowing orbs */}
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-terra/10 blur-3xl animate-pulse pointer-events-none" />
-          <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-terra/6 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        {/* Glowing orbs */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-gold/10 blur-3xl animate-pulse pointer-events-none" />
+        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-gold/5 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
 
         <motion.div
           style={{ opacity: heroOpacity }}
@@ -272,16 +272,16 @@ export default function Index() {
             <span className="block text-5xl sm:text-7xl md:text-8xl lg:text-9xl">
               Keep
               <span className="relative inline-block">
-              <span
+                <span
                   className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, hsl(18 75% 78%), hsl(16 68% 58%), hsl(14 72% 44%))" }}
+                  style={{ backgroundImage: "linear-gradient(135deg, hsl(42 85% 68%), hsl(42 85% 46%), hsl(35 82% 54%))" }}
                 >
                   Pray
                 </span>
-                {/* Terracotta shimmer underline */}
+                {/* Gold shimmer underline */}
                 <span
                   className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full"
-                  style={{ background: "linear-gradient(90deg, transparent, hsl(16 68% 56%), transparent)" }}
+                  style={{ background: "linear-gradient(90deg, transparent, hsl(42 85% 54%), transparent)" }}
                 />
               </span>
               .ing
@@ -292,23 +292,23 @@ export default function Index() {
             "Do not be anxious about anything, but in every situation,<br className="hidden sm:block" /> by prayer and petition, with thanksgiving, present your requests to God."
           </motion.p>
 
-          <motion.p variants={fadeUp} className="text-white/60 text-xs sm:text-sm flex items-center justify-center gap-1.5">
-            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/60 [&_.verse-text]:text-white/60" />
+          <motion.p variants={fadeUp} className="text-white/45 text-xs sm:text-sm flex items-center justify-center gap-1.5">
+            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/45 [&_.verse-text]:text-white/45" />
           </motion.p>
 
           {/* Search bar */}
           <motion.form variants={fadeUp} onSubmit={handleSearch} className="relative max-w-md mx-auto">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-terra transition-colors z-10" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-gold transition-colors z-10" />
               <input
                 value={searchVal}
                 onChange={e => setSearchVal(e.target.value)}
                 placeholder="Find a prayer…"
-                className="w-full h-12 pl-11 pr-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-terra/60 focus:bg-white/20 transition-all"
+                className="w-full h-12 pl-11 pr-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-gold/60 focus:bg-white/20 transition-all"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-gold/90 text-white text-xs font-medium hover:bg-gold transition-colors"
               >
                 Search
               </button>
@@ -317,14 +317,14 @@ export default function Index() {
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
             <Link to="/prayers">
-              <Button size="lg" className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto font-semibold bg-terra hover:bg-terra-dark text-white border-0 shadow-[0_8px_32px_-8px_hsl(16_68%_46%/0.7)] transition-all duration-200">
+              <Button size="lg" className="btn-gold rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto shadow-[0_8px_32px_-8px_hsl(42_85%_46%/0.6)]">
                 Explore Prayers <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link to="/assistant">
               <Button
                 size="lg" variant="outline"
-                className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto backdrop-blur-sm font-medium bg-white/15 border-white/40 text-white hover:bg-white/25 hover:border-white/60 transition-all duration-200"
+                className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto backdrop-blur-sm"
               >
                 <Sparkles className="w-4 h-4" /> PrayerAssist.ing
               </Button>
