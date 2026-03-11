@@ -18,6 +18,7 @@ import {
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
+import UserMonitorTab from "@/components/admin/UserMonitorTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
