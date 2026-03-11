@@ -132,10 +132,12 @@ export default function Index() {
           <motion.h1 variants={fadeUp} className="font-display text-6xl sm:text-7xl md:text-8xl font-bold text-white leading-none">
             Keep<span className="text-gold">Pray</span>.ing
           </motion.h1>
-          <motion.p variants={fadeUp} className="font-display italic text-white/80 text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed">
-            "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
-          </motion.p>
-          <motion.p variants={fadeUp} className="text-white/50 text-sm">— Matthew 6:6</motion.p>
+            <motion.p variants={fadeUp} className="font-display italic text-white/80 text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed">
+              "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
+            </motion.p>
+            <motion.p variants={fadeUp} className="text-white/50 text-sm flex items-center justify-center gap-1.5">
+              <VerseLink reference="Matthew 6:6" text="But when you pray, go into your room, close the door and pray to your Father, who is unseen." className="text-white/50 [&_.verse-text]:text-white/50" />
+            </motion.p>
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link to="/prayers"><Button size="lg" className="btn-gold rounded-2xl h-12 px-8 text-base gap-2">Explore Prayers <ArrowRight className="w-4 h-4" /></Button></Link>
             <Link to="/assistant"><Button size="lg" variant="outline" className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10"><Sparkles className="w-4 h-4" /> PrayerAssist AI</Button></Link>
