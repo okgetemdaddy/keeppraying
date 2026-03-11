@@ -104,6 +104,7 @@ export default function Prayers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const { user } = useAuth();
 
   const popularTags = ["daily-prayer", "peace", "faith", "morning-prayer", "healing", "forgiveness", "lords-prayer", "intercession"];
