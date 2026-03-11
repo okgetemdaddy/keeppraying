@@ -121,6 +121,7 @@ export default function Index() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [clipIndex, setClipIndex] = useState(0);
   const navigate = useNavigate();
   const { session } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
