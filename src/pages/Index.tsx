@@ -235,7 +235,7 @@ export default function Index() {
               <Link key={l} to={h} className="hover:text-foreground transition-colors">{l}</Link>
             ))}
           </div>
-          <p className="mt-4">"Pray without ceasing." — 1 Thessalonians 5:17</p>
+          <p className="mt-4 flex items-center justify-center gap-1">"Pray without ceasing." — <VerseLink reference="1 Thessalonians 5:17" text="Pray without ceasing." /></p>
         </div>
       </footer>
     </div>
