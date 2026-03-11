@@ -15,7 +15,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
-  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles,
+  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
