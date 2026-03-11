@@ -30,6 +30,12 @@ export default {
           light: "hsl(var(--forest-light))",
           dark: "hsl(var(--forest-dark))",
         },
+        terra: {
+          DEFAULT: "hsl(var(--terra))",
+          light: "hsl(var(--terra-light))",
+          dark: "hsl(var(--terra-dark))",
+          glow: "hsl(var(--terra-glow))",
+        },
         cream: "hsl(var(--cream))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
