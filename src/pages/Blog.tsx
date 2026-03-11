@@ -21,7 +21,21 @@ export default function Blog() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Background video */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          style={{ opacity: 0.25 }}
+        >
+          <source src="/blog-bg.mp4" type="video/mp4" />
+        </video>
+      </div>
+
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="font-display font-bold text-xl text-foreground">KeepPray.ing</Link>
