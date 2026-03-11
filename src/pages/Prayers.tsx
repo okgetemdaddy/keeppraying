@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
+import AddPrayerModal from "@/components/AddPrayerModal";
+import Comments from "@/components/Comments";
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
-import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles } from "lucide-react";
+import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles, Share2, ExternalLink } from "lucide-react";
 
 const TEXT_STYLE_CLASSES: Record<string, string> = {
   classic: "font-body text-base",
