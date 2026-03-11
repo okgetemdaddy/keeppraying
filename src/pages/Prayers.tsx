@@ -264,9 +264,9 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.25 }}
-                      className="verse-text text-sm overflow-hidden"
+                      className="verse-text text-sm overflow-hidden leading-relaxed"
                     >
-                      {card.extended_prayer}
+                      {renderWithVerseLinks(card.extended_prayer)}
                     </motion.p>
                   )}
                 </AnimatePresence>
