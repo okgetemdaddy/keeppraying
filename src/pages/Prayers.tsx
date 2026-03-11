@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import type { PrayerCard } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles } from "lucide-react";
 
 const TEXT_STYLE_CLASSES: Record<string, string> = {
