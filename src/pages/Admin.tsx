@@ -15,7 +15,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
-  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles,
+  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
@@ -36,6 +36,7 @@ interface PrayerStat { id: string; title: string | null; prayer_text: string; li
 interface ContactSubmission { id: string; name: string | null; email: string | null; message: string; created_at: string; ai_reply: string | null; replied_at: string | null; }
 interface AdminReport { id: string; title: string; content: string; generated_at: string; }
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
+interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
 export default function Admin() {
   const { user, session } = useAuth();
@@ -47,9 +48,12 @@ export default function Admin() {
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [verseSummaries, setVerseSummaries] = useState<VerseSummary[]>([]);
+  const [verseSearch, setVerseSearch] = useState("");
+  const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights">("moderation");
+  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormValues>({
@@ -156,12 +160,29 @@ export default function Admin() {
     load();
   };
 
+  const loadVerses = useCallback(async (search = "") => {
+    setVerseSearching(true);
+    try {
+      let q = supabase.from("verse_summaries").select("*").order("created_at", { ascending: false }).limit(50);
+      if (search.trim()) {
+        q = q.or(`reference.ilike.%${search}%,summary.ilike.%${search}%,exegesis.ilike.%${search}%`);
+      }
+      const { data } = await q;
+      setVerseSummaries((data as VerseSummary[]) || []);
+    } finally {
+      setVerseSearching(false);
+    }
+  }, []);
+
+  useEffect(() => { if (activeTab === "verses") loadVerses(); }, [activeTab, loadVerses]);
+
   const TABS = [
     { id: "moderation", label: "Moderation", icon: Check },
     { id: "stats", label: "Stats", icon: BarChart2 },
     { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
     { id: "blog", label: "KeepGrow.ing", icon: BookOpen },
+    { id: "verses", label: "Verses", icon: BookMarked },
     { id: "faq", label: "FAQ Report", icon: FileText },
     { id: "insights", label: "AI Insights", icon: Sparkles },
   ] as const;
@@ -426,8 +447,70 @@ export default function Admin() {
 
         {/* ── AI INSIGHTS TAB ── */}
         {activeTab === "insights" && <AIInsightsTab />}
+
+        {/* ── VERSES TAB ── */}
+        {activeTab === "verses" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="font-display text-xl font-semibold">Verse Summaries & Exegesis</h2>
+              <span className="text-xs text-muted-foreground">{verseSummaries.length} cached</span>
+            </div>
+            <p className="text-sm text-muted-foreground">AI-generated verse summaries and in-depth exegeses are cached here to avoid redundant API calls.</p>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={verseSearch}
+                  onChange={e => setVerseSearch(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") loadVerses(verseSearch); }}
+                  placeholder="Search by reference, summary, or exegesis…"
+                  className="pl-9 rounded-xl text-sm"
+                />
+              </div>
+              <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => loadVerses(verseSearch)} disabled={verseSearching}>
+                {verseSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Search
+              </Button>
+              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setVerseSearch(""); loadVerses(""); }}>
+                Clear
+              </Button>
+            </div>
+            {verseSummaries.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No verse summaries cached yet. They appear automatically when users hover over scripture references.</p>
+            ) : (
+              <div className="space-y-3">
+                {verseSummaries.map(v => (
+                  <div key={v.id} className="prayer-card p-4 space-y-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
+                        <BookMarked className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-xs font-semibold text-primary">{v.reference}</span>
+                      </span>
+                      <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                    </div>
+                    {v.summary && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{v.summary}</p>
+                      </div>
+                    )}
+                    {v.exegesis && (
+                      <details className="group">
+                        <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
+                          <span>▶ View Exegesis</span>
+                        </summary>
+                        <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
+                      </details>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 

@@ -1,17 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are PrayerAssist, a compassionate and knowledgeable Christian prayer companion on KeepPray.ing. 
+const SYSTEM_PROMPT = `You are PrayerAssist, a compassionate and knowledgeable Christian prayer companion on KeepPray.ing.
 
 Your identity:
 - Warm, encouraging, deeply faith-centered
 - Knowledgeable about Scripture, prayer, and Christian living
 - Never judgmental, always uplifting and edifying
 - Meet people where they are — from new believers to seasoned saints
+
+**CRITICAL RULE — DO NOT WRITE PRAYERS**: You must NEVER compose, write, or generate a prayer yourself. Instead:
+- Help users understand HOW to pray about something
+- Suggest themes, Scripture, or structure for their own prayer
+- Reference existing prayer cards from the database using the format: [Prayer Card: Title](prayer-card:ID)
+- If someone asks you to write a prayer, gently redirect: "I'm here to guide your prayer journey, not write prayers for you. Here's how you might approach this yourself..." and optionally suggest a relevant prayer card from our collection.
 
 Your core Scripture knowledge (always cite these exactly):
 - Matthew 6:5-15: Jesus teaches on prayer — "But when you pray, go into your room, close the door and pray to your Father, who is unseen." + The Lord's Prayer: "Our Father in heaven, hallowed be your name..."
@@ -23,27 +30,23 @@ Your core Scripture knowledge (always cite these exactly):
 - Ephesians 6:18: "And pray in the Spirit on all occasions with all kinds of prayers and requests. With this in mind, be alert and always keep on praying for all the Lord's people."
 - Colossians 4:2: "Devote yourselves to prayer, being watchful and thankful."
 - James 5:16: "Therefore confess your sins to each other and pray for each other so that you may be healed. The prayer of a righteous person is powerful and effective."
-- 1 John 5:14-15: "This is the confidence we have in approaching God: that if we ask anything according to his will, he hears us. And if we know that he hears us—whatever we ask—we know that we have what we asked of him."
+- 1 John 5:14-15: "This is the confidence we have in approaching God: that if we ask anything according to his will, he hears us."
 - Romans 8:26-27: "In the same way, the Spirit helps us in our weakness. We do not know what we ought to pray for, but the Spirit himself intercedes for us through wordless groans."
 
 Your capabilities:
-1. Help users write meaningful, heartfelt prayers step-by-step
-2. Answer any Bible question with accurate Scripture citations
-3. Generate complete, beautiful prayer cards (respond with a JSON block when user asks to create one)
-4. Teach about prayer disciplines, Bible study, exegesis, and spiritual growth
-5. Offer encouragement and spiritual guidance
+1. Help users understand HOW to pray about a topic (structure, attitude, Scripture basis)
+2. Answer Bible questions with accurate Scripture citations
+3. Teach about prayer disciplines, Bible study, exegesis, and spiritual growth
+4. Offer encouragement and spiritual guidance
+5. Reference relevant prayer cards from the database when helpful (use format: [Prayer Card: Title](prayer-card:ID))
 
-When generating a prayer card, format it as:
-\`\`\`json
-{
-  "title": "Prayer title",
-  "prayer_text": "The full prayer text",
-  "tags": ["tag1", "tag2"],
-  "extended_prayer": "Optional scripture or extended context"
-}
-\`\`\`
+When referencing prayer cards, use EXACTLY this format so the UI can render a preview:
+[Prayer Card: <title>](prayer-card:<uuid>)
 
-Always be warm, never preachy. Keep responses focused and helpful.`;
+SCRIPTURE VERSE FORMATTING: When you cite a scripture verse inline (e.g. John 3:16, Romans 8:28), always wrap the reference in this exact format so the UI renders an interactive link:
+[[John 3:16]] or [[Romans 8:28]] — use double square brackets around the reference only, not the quote text.
+
+Always be warm, never preachy. Keep responses focused and helpful. Do NOT write full prayers.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -51,7 +54,35 @@ serve(async (req) => {
   try {
     const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // ── Fetch relevant prayer cards for context (top 20 approved) ──
+    let prayerCardContext = "";
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: cards } = await db
+          .from("prayer_cards")
+          .select("id, title, prayer_text, tags")
+          .in("status", ["approved", "ai_generated"])
+          .order("prayed_count", { ascending: false })
+          .limit(30);
+
+        if (cards && cards.length > 0) {
+          prayerCardContext = "\n\nAVAILABLE PRAYER CARDS IN DATABASE (reference these when relevant):\n" +
+            cards.map((c: { id: string; title: string | null; prayer_text: string; tags: string[] | null }) =>
+              `ID: ${c.id} | Title: ${c.title || "Untitled"} | Tags: ${(c.tags || []).join(", ")} | Preview: ${c.prayer_text.slice(0, 80)}…`
+            ).join("\n");
+        }
+      } catch {
+        // Non-fatal — continue without card context
+      }
+    }
+
+    const systemWithContext = SYSTEM_PROMPT + prayerCardContext;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -62,7 +93,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemWithContext },
           ...messages,
         ],
         stream: true,

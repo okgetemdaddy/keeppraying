@@ -50,10 +50,17 @@ const TEXT_STYLES = [
   { value: "royal", label: "Royal Proclamation", preview: "font-display font-bold tracking-wider" },
 ];
 
+// 5000 words ≈ ~30000 chars (average word = 5 chars + space)
+const MAX_WORDS = 5000;
+const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
+
 const schema = z.object({
   title: z.string().max(120).optional(),
-  prayer_text: z.string().min(10, "Prayer must be at least 10 characters").max(1000, "Prayer must be under 1000 characters"),
-  extended_prayer: z.string().max(2000).optional(),
+  prayer_text: z.string()
+    .min(10, "Prayer must be at least 10 characters")
+    .max(35000, "Prayer text too long")
+    .refine(v => countWords(v) <= MAX_WORDS, `Prayer must be under ${MAX_WORDS.toLocaleString()} words`),
+  extended_prayer: z.string().max(10000).optional(),
   text_style: z.string().default("classic"),
 });
 
@@ -156,7 +163,8 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
     }
   };
 
-  const charCount = form.watch("prayer_text")?.length || 0;
+  const prayerText = form.watch("prayer_text") || "";
+  const wordCount = countWords(prayerText);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -193,7 +201,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
                 </FormControl>
                 <div className="flex justify-between items-center">
                   <FormMessage />
-                  <span className={`text-xs ml-auto ${charCount > 900 ? "text-destructive" : "text-muted-foreground"}`}>{charCount}/1000</span>
+                  <span className={`text-xs ml-auto ${wordCount > 4500 ? "text-destructive" : "text-muted-foreground"}`}>{wordCount.toLocaleString()}/{MAX_WORDS.toLocaleString()} words</span>
                 </div>
               </FormItem>
             )} />

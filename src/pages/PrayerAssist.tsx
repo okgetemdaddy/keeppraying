@@ -8,16 +8,80 @@ import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
+import VerseLink from "@/components/VerseLink";
+import PrayerCardLink from "@/components/PrayerCardLink";
 
 interface Message { role: "user" | "assistant"; content: string; }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
+// Regex: [[Book Chapter:Verse]] for verse links
+const VERSE_PATTERN = /\[\[([1-3]?\s?[A-Z][a-zA-Z]+\.?\s\d+:\d+(?:-\d+)?)\]\]/g;
+// Regex: [Prayer Card: Title](prayer-card:UUID)
+const PRAYER_CARD_PATTERN = /\[Prayer Card:\s*([^\]]+)\]\(prayer-card:([a-f0-9-]{36})\)/g;
+
+function renderAIContent(content: string) {
+  // Split by verse and prayer card markers, then render each segment
+  const segments: React.ReactNode[] = [];
+  let cursor = 0;
+  let key = 0;
+
+  // Combine both patterns for a unified pass
+  const combined = new RegExp(
+    `(\\[\\[([1-3]?\\s?[A-Z][a-zA-Z]+\\.?\\s\\d+:\\d+(?:-\\d+)?)\\]\\])|` +
+    `(\\[Prayer Card:\\s*([^\\]]+)\\]\\(prayer-card:([a-f0-9-]{36})\\))`,
+    "g"
+  );
+
+  let match;
+  while ((match = combined.exec(content)) !== null) {
+    // Text before the match
+    if (match.index > cursor) {
+      const before = content.slice(cursor, match.index);
+      segments.push(
+        <span key={key++}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{ p: ({ children }) => <>{children}</> }}
+          >
+            {before}
+          </ReactMarkdown>
+        </span>
+      );
+    }
+
+    if (match[1]) {
+      // Verse link: [[Reference]]
+      segments.push(<VerseLink key={key++} reference={match[2]} />);
+    } else if (match[3]) {
+      // Prayer card link
+      segments.push(<PrayerCardLink key={key++} id={match[5]} title={match[4].trim()} />);
+    }
+    cursor = match.index + match[0].length;
+  }
+
+  // Remaining text
+  if (cursor < content.length) {
+    segments.push(
+      <span key={key++}>
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{ p: ({ children }) => <>{children}</> }}
+        >
+          {content.slice(cursor)}
+        </ReactMarkdown>
+      </span>
+    );
+  }
+
+  return <>{segments}</>;
+}
+
 const suggestions = [
-  "Help me write a prayer for anxiety and peace",
+  "How do I pray about anxiety and find peace?",
   "What does the Bible say about persistent prayer?",
-  "Create a prayer card for morning surrender",
-  "Explain the Lord's Prayer line by line",
+  "Help me understand the Lord's Prayer",
+  "Explain how to pray for someone else (intercession)",
 ];
 
 export default function PrayerAssist() {
@@ -82,7 +146,6 @@ export default function PrayerAssist() {
         }
       }
 
-      // Log to DB
       if (user) {
         await supabase.from("ai_chat_logs").insert({ user_id: user.id, user_message: text, ai_response: assistantText });
       }
@@ -94,7 +157,6 @@ export default function PrayerAssist() {
     }
   }, [messages, user, toast]);
 
-  // Auto-send query from URL ?q= param (e.g. from VerseLink exegesis)
   useEffect(() => {
     const q = searchParams.get("q");
     if (q && !autoSentRef.current) {
@@ -112,7 +174,7 @@ export default function PrayerAssist() {
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-gradient-gold flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" /></div>
             <div>
-            <span className="font-display font-semibold text-foreground">PrayerAssist.ing</span>
+              <span className="font-display font-semibold text-foreground">PrayerAssist.ing</span>
               <span className="text-xs text-muted-foreground ml-2">Your AI Prayer Companion</span>
             </div>
           </div>
@@ -154,8 +216,8 @@ export default function PrayerAssist() {
               )}
               <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-md" : "prayer-card rounded-bl-md"}`}>
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-2 [&_strong]:text-foreground [&_em]:text-muted-foreground">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  <div className="prose prose-sm max-w-none text-foreground [&_p]:mb-2 [&_strong]:text-foreground [&_em]:text-muted-foreground [&_p]:leading-relaxed">
+                    {renderAIContent(msg.content)}
                   </div>
                 ) : (
                   <p className="text-sm">{msg.content}</p>
@@ -186,7 +248,7 @@ export default function PrayerAssist() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-              placeholder="Ask for prayer guidance, Bible answers, or help writing a prayer…"
+              placeholder="Ask for prayer guidance, Bible answers, or help with your prayer life…"
               className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
               rows={1}
             />
@@ -194,7 +256,7 @@ export default function PrayerAssist() {
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-2">AI may make mistakes. Always verify with Scripture.</p>
+          <p className="text-center text-xs text-muted-foreground mt-2">AI guides your prayer journey. Always verify with Scripture.</p>
         </div>
       </div>
     </div>
