@@ -445,6 +445,67 @@ export default function Admin() {
 
         {/* ── AI INSIGHTS TAB ── */}
         {activeTab === "insights" && <AIInsightsTab />}
+
+        {/* ── VERSES TAB ── */}
+        {activeTab === "verses" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="font-display text-xl font-semibold">Verse Summaries & Exegesis</h2>
+              <span className="text-xs text-muted-foreground">{verseSummaries.length} cached</span>
+            </div>
+            <p className="text-sm text-muted-foreground">AI-generated verse summaries and in-depth exegeses are cached here to avoid redundant API calls.</p>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={verseSearch}
+                  onChange={e => setVerseSearch(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") loadVerses(verseSearch); }}
+                  placeholder="Search by reference, summary, or exegesis…"
+                  className="pl-9 rounded-xl text-sm"
+                />
+              </div>
+              <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => loadVerses(verseSearch)} disabled={verseSearching}>
+                {verseSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Search
+              </Button>
+              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setVerseSearch(""); loadVerses(""); }}>
+                Clear
+              </Button>
+            </div>
+            {verseSummaries.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No verse summaries cached yet. They appear automatically when users hover over scripture references.</p>
+            ) : (
+              <div className="space-y-3">
+                {verseSummaries.map(v => (
+                  <div key={v.id} className="prayer-card p-4 space-y-2">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
+                        <BookMarked className="w-3.5 h-3.5 text-primary" />
+                        <span className="text-xs font-semibold text-primary">{v.reference}</span>
+                      </span>
+                      <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                    </div>
+                    {v.summary && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{v.summary}</p>
+                      </div>
+                    )}
+                    {v.exegesis && (
+                      <details className="group">
+                        <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
+                          <span>▶ View Exegesis</span>
+                        </summary>
+                        <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
+                      </details>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
