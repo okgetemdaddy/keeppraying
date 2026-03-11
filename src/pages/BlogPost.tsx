@@ -47,7 +47,7 @@ export default function BlogPost() {
   if (!post) return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
       <p className="text-muted-foreground font-display italic">Post not found.</p>
-      <Link to="/blog"><Button className="btn-gold rounded-xl">Back to Blog</Button></Link>
+      <Link to="/blog"><Button className="btn-gold rounded-xl">Back to KeepGrow.ing</Button></Link>
     </div>
   );
 
