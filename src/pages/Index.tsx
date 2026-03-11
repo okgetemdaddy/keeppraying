@@ -125,7 +125,7 @@ export default function Index() {
   const vidA = useRef<HTMLVideoElement>(null);
   const vidB = useRef<HTMLVideoElement>(null);
   const [activeVid, setActiveVid] = useState<"a" | "b">("a");
-  const CROSSFADE_BEFORE = 1.2; // seconds before end to start crossfade
+  const CROSSFADE_BEFORE = 2.5; // seconds before end to start crossfade
 
   const handleTimeUpdate = useCallback((current: "a" | "b") => {
     const vid = current === "a" ? vidA.current : vidB.current;
@@ -264,7 +264,7 @@ export default function Index() {
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Parallax background — dual-video crossfade for seamless looping */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
-          {/* Video A */}
+        {/* Video A */}
           <video
             ref={vidA}
             autoPlay
@@ -272,8 +272,8 @@ export default function Index() {
             playsInline
             poster={heroBg}
             onTimeUpdate={() => handleTimeUpdate("a")}
-            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[1200ms]"
-            style={{ opacity: activeVid === "a" ? 1 : 0 }}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[2000ms]"
+            style={{ opacity: activeVid === "a" ? 1 : 0, willChange: "opacity", backfaceVisibility: "hidden" }}
           >
             <source src={heroVideo} type="video/mp4" />
           </video>
@@ -283,8 +283,8 @@ export default function Index() {
             muted
             playsInline
             onTimeUpdate={() => handleTimeUpdate("b")}
-            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[1200ms]"
-            style={{ opacity: activeVid === "b" ? 1 : 0 }}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[2000ms]"
+            style={{ opacity: activeVid === "b" ? 1 : 0, willChange: "opacity", backfaceVisibility: "hidden" }}
           >
             <source src={heroVideo} type="video/mp4" />
           </video>
