@@ -220,6 +220,14 @@ export default function Admin() {
           </div>
         )}
 
+        {/* ── USERS TAB ── */}
+        {activeTab === "users" && (
+          <div>
+            <h2 className="font-display text-xl font-semibold mb-4">User Monitor</h2>
+            <UserMonitorTab />
+          </div>
+        )}
+
         {/* ── STATS TAB ── */}
         {activeTab === "stats" && (
           <div className="space-y-8">
