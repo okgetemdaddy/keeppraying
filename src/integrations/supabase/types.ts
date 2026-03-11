@@ -430,6 +430,36 @@ export type Database = {
           },
         ]
       }
+      verse_summaries: {
+        Row: {
+          created_at: string
+          exegesis: string | null
+          id: string
+          reference: string
+          summary: string | null
+          updated_at: string
+          verse_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          exegesis?: string | null
+          id?: string
+          reference: string
+          summary?: string | null
+          updated_at?: string
+          verse_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          exegesis?: string | null
+          id?: string
+          reference?: string
+          summary?: string | null
+          updated_at?: string
+          verse_text?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
