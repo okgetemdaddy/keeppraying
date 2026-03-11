@@ -429,7 +429,7 @@ export default function Index() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Heart className="w-3.5 h-3.5 text-rose-400" />
+                    <Heart className="w-3.5 h-3.5 text-destructive" />
                     <span className="font-medium">{p.likes.toLocaleString()}</span>
                   </motion.span>
                   <motion.span
