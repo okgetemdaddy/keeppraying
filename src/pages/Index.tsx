@@ -191,7 +191,7 @@ export default function Index() {
               </Link>
             ) : null}
             <Link to="/auth">
-              <Button size="sm" className="rounded-xl gap-1.5 px-5 bg-forest hover:bg-forest-dark text-white border-0 shadow-md font-semibold transition-all duration-200">
+              <Button size="sm" className="rounded-xl gap-1.5 px-5 bg-terra hover:bg-terra-dark text-white border-0 shadow-md font-semibold transition-all duration-200">
                 Get Started <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>
