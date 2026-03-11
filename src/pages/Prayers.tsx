@@ -95,7 +95,15 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
   const [prayAnim, setPrayAnim] = useState(false);
+  const [textExpanded, setTextExpanded] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) setIsTruncated(el.scrollHeight > 112);
+  }, [card.prayer_text]);
 
   useEffect(() => {
     if (!userId) return;
