@@ -262,18 +262,34 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax background video */}
+        {/* Parallax background — dual-video crossfade for seamless looping */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
+          {/* Video A */}
           <video
+            ref={vidA}
             autoPlay
-            loop
             muted
             playsInline
             poster={heroBg}
-            className="w-full h-full object-cover object-center"
+            onTimeUpdate={() => handleTimeUpdate("a")}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[1200ms]"
+            style={{ opacity: activeVid === "a" ? 1 : 0 }}
           >
             <source src={heroVideo} type="video/mp4" />
           </video>
+          {/* Video B (crossfade target) */}
+          <video
+            ref={vidB}
+            muted
+            playsInline
+            onTimeUpdate={() => handleTimeUpdate("b")}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[1200ms]"
+            style={{ opacity: activeVid === "b" ? 1 : 0 }}
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
+          {/* Fallback still if video unavailable */}
+          <img src={heroBg} aria-hidden className="absolute inset-0 w-full h-full object-cover object-center -z-10" />
         </motion.div>
 
         {/* Layered overlay */}
