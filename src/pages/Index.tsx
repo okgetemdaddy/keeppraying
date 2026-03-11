@@ -292,8 +292,8 @@ export default function Index() {
             "Do not be anxious about anything, but in every situation,<br className="hidden sm:block" /> by prayer and petition, with thanksgiving, present your requests to God."
           </motion.p>
 
-          <motion.p variants={fadeUp} className="text-white/45 text-xs sm:text-sm flex items-center justify-center gap-1.5">
-            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/45 [&_.verse-text]:text-white/45" />
+          <motion.p variants={fadeUp} className="text-white/60 text-xs sm:text-sm flex items-center justify-center gap-1.5">
+            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/60 [&_.verse-text]:text-white/60" />
           </motion.p>
 
           {/* Search bar */}
