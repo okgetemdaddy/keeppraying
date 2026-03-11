@@ -32,7 +32,7 @@ export default function BlogPost() {
       .single()
       .then(({ data }) => {
         setPost(data);
-        if (data) document.title = `${data.title} | KeepPray.ing Blog`;
+        if (data) document.title = `${data.title} | KeepGrow.ing`;
         setLoading(false);
       });
     return () => { document.title = "KeepPray.ing"; };
