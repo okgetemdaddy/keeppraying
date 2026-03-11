@@ -103,7 +103,7 @@ export default function Index() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
               { icon: BookOpen, title: "Prayer Board", desc: "Save, organize, and revisit your favourite prayers. Build playlists and track your prayer journey.", link: "/board", color: "text-forest" },
-              { icon: Sparkles, title: "PrayerAssist AI", desc: "Your AI prayer companion — answers Bible questions, helps craft prayers, and provides spiritual guidance.", link: "/assistant", color: "text-primary" },
+              { icon: Sparkles, title: "PrayerAssist AI", desc: "Your AI prayer companion — answers Bible questions, helps craft prayers, and provides biblical guidance.", link: "/assistant", color: "text-primary" },
               { icon: Shield, title: "The War Room", desc: "An immersive prayer sanctuary with ambient music, themes, and a focused playlist mode.", link: "/war-room", color: "text-gold" },
             ].map(f => (
               <motion.div key={f.title} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} viewport={{ once: true }} className="prayer-card p-6 space-y-3 text-center group hover:border-primary/20 border border-transparent">
