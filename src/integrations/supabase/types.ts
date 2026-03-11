@@ -171,25 +171,31 @@ export type Database = {
       }
       contact_submissions: {
         Row: {
+          ai_reply: string | null
           created_at: string
           email: string | null
           id: string
           message: string
           name: string | null
+          replied_at: string | null
         }
         Insert: {
+          ai_reply?: string | null
           created_at?: string
           email?: string | null
           id?: string
           message: string
           name?: string | null
+          replied_at?: string | null
         }
         Update: {
+          ai_reply?: string | null
           created_at?: string
           email?: string | null
           id?: string
           message?: string
           name?: string | null
+          replied_at?: string | null
         }
         Relationships: []
       }
