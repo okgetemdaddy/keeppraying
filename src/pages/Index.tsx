@@ -1,11 +1,17 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
 
-const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" } } };
-const stagger = { show: { transition: { staggerChildren: 0.12 } } };
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, type: "tween" } },
+};
+const stagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12 } },
+};
 
 const SEED_PRAYERS = [
   { title: "The Lord's Prayer", preview: "Our Father in heaven, hallowed be your name. Your kingdom come, your will be done…", likes: 847, prayed: 2103, tags: ["lords-prayer","foundational"] },
