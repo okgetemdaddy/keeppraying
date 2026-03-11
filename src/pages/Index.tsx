@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
+import heroVideo from "@/assets/hero-video.mp4";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -242,13 +243,18 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax background */}
+        {/* Parallax background video */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
-          <img
-            src={heroBg}
-            alt="Peaceful sunrise prayer garden — a wooden chair on a porch overlooking golden meadow at dawn"
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            poster={heroBg}
             className="w-full h-full object-cover object-center"
-          />
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
         </motion.div>
 
         {/* Layered overlay */}
