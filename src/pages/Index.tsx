@@ -4,37 +4,83 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, type Variants } from "framer-motion";
-import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2 } from "lucide-react";
+import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import ReactMarkdown from "react-markdown";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [aiReply, setAiReply] = useState("");
+  const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    const trimmed = message.trim();
+    if (!trimmed || sending) return;
+    if (trimmed.length < 2) { toast({ title: "Message too short", variant: "destructive" }); return; }
+
     setSending(true);
-    const { error } = await supabase.from("contact_submissions").insert({ name: name || null, email: email || null, message: message.trim() });
-    if (error) { toast({ title: "Failed to send", variant: "destructive" }); }
-    else { toast({ title: "Message sent! 🙏", description: "We'll get back to you soon." }); setName(""); setEmail(""); setMessage(""); }
-    setSending(false);
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/contact-form`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim() || null, email: email.trim() || null, message: trimmed }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Failed to send");
+      setAiReply(data.ai_reply || "");
+      setSubmitted(true);
+      setName(""); setEmail(""); setMessage("");
+    } catch (e) {
+      toast({ title: "Failed to send", description: e instanceof Error ? e.message : "Please try again.", variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
   };
+
+  if (submitted) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="prayer-card p-6 space-y-4"
+      >
+        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+          <Bot className="w-4 h-4" />
+          Response from KeepPray.ing
+        </div>
+        <div className="prose prose-sm max-w-none text-foreground/80 [&_p]:mb-2">
+          <ReactMarkdown>{aiReply}</ReactMarkdown>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-xl text-xs"
+          onClick={() => { setSubmitted(false); setAiReply(""); }}
+        >
+          Send another message
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
     <form onSubmit={submit} className="prayer-card p-6 space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="Your name (optional)" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" />
-        <Input placeholder="Email (optional)" type="email" value={email} onChange={e => setEmail(e.target.value)} className="rounded-xl" />
+        <Input placeholder="Your name (optional)" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" maxLength={100} />
+        <Input placeholder="Email (optional)" type="email" value={email} onChange={e => setEmail(e.target.value)} className="rounded-xl" maxLength={255} />
       </div>
       <Textarea placeholder="Your message or prayer request…" value={message} onChange={e => setMessage(e.target.value)} rows={4} className="rounded-xl resize-none" required maxLength={1000} />
+      <p className="text-xs text-muted-foreground text-right -mt-2">{message.length}/1000</p>
       <Button type="submit" disabled={sending || !message.trim()} className="btn-gold rounded-xl w-full gap-2">
-        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        Send Message
+        {sending ? <><Loader2 className="w-4 h-4 animate-spin" />Getting AI response…</> : <><Send className="w-4 h-4" />Send Message</>}
       </Button>
     </form>
   );
