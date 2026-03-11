@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
@@ -27,6 +27,8 @@ export default function PrayerAssist() {
   const { user } = useAuth();
   const { toast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
+  const autoSentRef = useRef(false);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
