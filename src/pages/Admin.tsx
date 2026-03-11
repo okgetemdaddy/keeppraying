@@ -376,7 +376,7 @@ export default function Admin() {
               </div>
             )}
 
-            {blogPosts.length === 0 ? <p className="text-muted-foreground text-sm">No blog posts yet. Create your first one!</p> : (
+            {blogPosts.length === 0 ? <p className="text-muted-foreground text-sm">No posts yet. Create your first one!</p> : (
               <div className="space-y-3">
                 {blogPosts.map(post => (
                   <div key={post.id} className="prayer-card p-4 flex items-center gap-3">
