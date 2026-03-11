@@ -174,6 +174,8 @@ export default function Admin() {
     }
   }, []);
 
+  useEffect(() => { if (activeTab === "verses") loadVerses(); }, [activeTab, loadVerses]);
+
   const TABS = [
     { id: "moderation", label: "Moderation", icon: Check },
     { id: "stats", label: "Stats", icon: BarChart2 },
