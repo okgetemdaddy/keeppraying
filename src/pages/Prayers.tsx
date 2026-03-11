@@ -87,10 +87,14 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
         <button onClick={togglePrayed} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-accent ${prayed ? "text-primary" : "text-muted-foreground"}`}>
           <HandMetal className="w-3.5 h-3.5" />{card.prayed_count}
         </button>
-        <button onClick={toggleSave} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-accent ml-auto ${saved ? "text-primary" : "text-muted-foreground"}`}>
+        <Link to={`/prayer/${card.id}`} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-all ml-auto">
+          <ExternalLink className="w-3.5 h-3.5" />
+        </Link>
+        <button onClick={toggleSave} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-accent ${saved ? "text-primary" : "text-muted-foreground"}`}>
           <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
         </button>
       </div>
+      <Comments prayerId={card.id} />
     </div>
   );
 }
