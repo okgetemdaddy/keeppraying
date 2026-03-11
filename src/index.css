@@ -44,6 +44,12 @@
     --forest: 150 38% 26%;
     --forest-light: 150 22% 90%;
     --forest-dark: 150 45% 18%;
+
+    /* Terracotta — hero accent */
+    --terra: 16 68% 46%;
+    --terra-light: 16 70% 90%;
+    --terra-dark: 14 72% 34%;
+    --terra-glow: 18 75% 54%;
     --cream: 38 60% 97%;
     --warm-brown: 25 35% 14%;
     --amber-soft: 35 68% 85%;
