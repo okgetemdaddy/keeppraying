@@ -12,7 +12,8 @@ import VerseLink from "@/components/VerseLink";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
-  Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp
+  Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
+  Volume2, VolumeX, Loader2,
 } from "lucide-react";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
@@ -117,6 +118,9 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
   const [prayAnim, setPrayAnim] = useState(false);
+  const [ttsLoading, setTtsLoading] = useState(false);
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -171,6 +175,52 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
       await supabase.from("user_saved_prayers").insert({ prayer_id: card.id, user_id: userId });
       setSaved(true);
       toast({ title: "Saved to your board 📌" });
+    }
+  };
+
+  const toggleTts = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // If already playing, stop
+    if (ttsPlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setTtsPlaying(false);
+      return;
+    }
+    if (ttsLoading) return;
+    setTtsLoading(true);
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prayer-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: card.prayer_text }),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Could not generate speech");
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
+      audio.onerror = () => { setTtsPlaying(false); };
+      await audio.play();
+      setTtsPlaying(true);
+    } catch (err) {
+      toast({
+        title: "Could not read prayer",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setTtsLoading(false);
     }
   };
 
@@ -321,6 +371,28 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                   </motion.button>
 
                   <div className="flex-1" />
+
+                  {/* Listen button */}
+                  <motion.button
+                    onClick={toggleTts}
+                    whileTap={{ scale: 0.85 }}
+                    title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60 relative"
+                    style={{ color: ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : ttsPlaying ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <VolumeX className="w-3.5 h-3.5" />
+                      </motion.div>
+                    ) : (
+                      <Volume2 className="w-3.5 h-3.5" />
+                    )}
+                  </motion.button>
 
                   <Link
                     to={`/prayer/${card.id}`}
