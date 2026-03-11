@@ -90,6 +90,7 @@ function ContactForm() {
   );
 }
 import heroBg from "@/assets/hero-bg.jpg";
+import haloPng from "@/assets/halo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
