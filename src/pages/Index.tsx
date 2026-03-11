@@ -317,7 +317,7 @@ export default function Index() {
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
             <Link to="/prayers">
-              <Button size="lg" className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto font-semibold bg-forest hover:bg-forest-dark text-white border-0 shadow-[0_8px_32px_-8px_hsl(150_38%_26%/0.7)] transition-all duration-200">
+              <Button size="lg" className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto font-semibold bg-terra hover:bg-terra-dark text-white border-0 shadow-[0_8px_32px_-8px_hsl(16_68%_46%/0.7)] transition-all duration-200">
                 Explore Prayers <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
