@@ -30,8 +30,8 @@ export default function Blog() {
       </header>
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <div className="text-center mb-12">
-          <h1 className="font-display text-4xl font-bold mb-3">Faith & Prayer Blog</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto">Reflections, teachings, and encouragement for your prayer journey</p>
+          <h1 className="font-display text-4xl font-bold mb-3">KeepGrow.ing</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto">Reflections, teachings, and encouragement for your faith journey</p>
           <p className="verse-text text-sm mt-3">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
         </div>
         {loading ? (

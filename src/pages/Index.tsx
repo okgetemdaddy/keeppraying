@@ -629,8 +629,8 @@ export default function Index() {
               <ul className="space-y-2.5">
                 {[
                   { label: "Board", href: "/board" },
-                  { label: "Prayer Assist", href: "/assistant" },
-                  { label: "War Room", href: "/war-room" },
+                { label: "PrayerAssist.ing", href: "/assistant" },
+                  { label: "KeepFight.ing", href: "/war-room" },
                   { label: "Bible Games", href: "/games" },
                 ].map(({ label, href }) => (
                   <li key={label}>

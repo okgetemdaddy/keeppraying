@@ -170,7 +170,7 @@ export default function Prayers() {
         {!loading && cards.length === 0 && (
           <div className="text-center py-16 space-y-4">
             <p className="text-muted-foreground font-display italic">No prayers found.</p>
-            <Link to="/assistant"><Button className="btn-gold rounded-xl gap-2"><Sparkles className="w-4 h-4" />Generate a prayer with AI</Button></Link>
+            <Link to="/assistant"><Button className="btn-gold rounded-xl gap-2"><Sparkles className="w-4 h-4" />Try PrayerAssist.ing</Button></Link>
           </div>
         )}
       </div>

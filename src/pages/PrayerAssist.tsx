@@ -85,7 +85,7 @@ export default function PrayerAssist() {
         await supabase.from("ai_chat_logs").insert({ user_id: user.id, user_message: text, ai_response: assistantText });
       }
     } catch (e: unknown) {
-      toast({ title: "PrayerAssist unavailable", description: e instanceof Error ? e.message : "Please try again.", variant: "destructive" });
+      toast({ title: "PrayerAssist.ing unavailable", description: e instanceof Error ? e.message : "Please try again.", variant: "destructive" });
       setMessages(prev => prev.filter(m => m !== userMsg));
     } finally {
       setLoading(false);

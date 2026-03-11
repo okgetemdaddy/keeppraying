@@ -94,7 +94,7 @@ export default function BlogPost() {
           <div className="pt-8 border-t border-border text-center space-y-3">
             <p className="verse-text text-sm">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
             <div className="flex gap-3 justify-center">
-              <Link to="/blog"><Button variant="outline" className="rounded-xl">More Articles</Button></Link>
+              <Link to="/blog"><Button variant="outline" className="rounded-xl">More from KeepGrow.ing</Button></Link>
               <Link to="/prayers"><Button className="btn-gold rounded-xl">Browse Prayers</Button></Link>
             </div>
           </div>

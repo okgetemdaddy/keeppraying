@@ -407,7 +407,7 @@ export default function Admin() {
                 Generate Weekly FAQ
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">AI analyzes the last 100 PrayerAssist conversations and summarizes common questions and themes.</p>
+            <p className="text-sm text-muted-foreground">AI analyzes the last 100 PrayerAssist.ing conversations and summarizes common questions and themes.</p>
             {reports.length === 0 ? <p className="text-sm text-muted-foreground italic">No reports yet. Click "Generate Weekly FAQ" to create the first one.</p> : (
               reports.map(r => (
                 <div key={r.id} className="prayer-card p-5 space-y-3">
