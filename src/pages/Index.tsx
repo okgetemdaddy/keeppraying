@@ -289,11 +289,11 @@ export default function Index() {
           </motion.h1>
 
           <motion.p variants={fadeUp} className="font-display italic text-white/80 text-base sm:text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed px-2">
-            "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
+            "Do not be anxious about anything, but in every situation,<br className="hidden sm:block" /> by prayer and petition, with thanksgiving, present your requests to God."
           </motion.p>
 
           <motion.p variants={fadeUp} className="text-white/45 text-xs sm:text-sm flex items-center justify-center gap-1.5">
-            <VerseLink reference="Matthew 6:6" text="But when you pray, go into your room, close the door and pray to your Father, who is unseen." className="text-white/45 [&_.verse-text]:text-white/45" />
+            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/45 [&_.verse-text]:text-white/45" />
           </motion.p>
 
           {/* Search bar */}

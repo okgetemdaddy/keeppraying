@@ -92,7 +92,16 @@ export default function PrayerAssist() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [messages, user, toast]);
+
+  // Auto-send query from URL ?q= param (e.g. from VerseLink exegesis)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && !autoSentRef.current) {
+      autoSentRef.current = true;
+      send(q);
+    }
+  }, [searchParams, send]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
