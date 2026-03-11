@@ -17,15 +17,27 @@ interface Comment {
   profiles?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
+interface UploaderProfile {
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 const schema = z.object({
   text: z.string().min(1, "Comment cannot be empty").max(500, "Comment must be under 500 characters"),
 });
 
-export default function Comments({ prayerId }: { prayerId: string }) {
+interface CommentsProps {
+  prayerId: string;
+  /** Pass the creator's user_id to reveal uploader attribution inside comments. Only set for community prayers. */
+  uploaderId?: string | null;
+}
+
+export default function Comments({ prayerId, uploaderId }: CommentsProps) {
   const [open, setOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploader, setUploader] = useState<UploaderProfile | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -42,7 +54,6 @@ export default function Comments({ prayerId }: { prayerId: string }) {
       .eq("prayer_id", prayerId)
       .order("created_at", { ascending: true });
     if (data) {
-      // Fetch profiles separately to avoid relation error
       const userIds = [...new Set(data.map(c => c.user_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -54,11 +65,21 @@ export default function Comments({ prayerId }: { prayerId: string }) {
     setLoading(false);
   };
 
+  // Fetch uploader profile when comments are opened (only for community cards)
+  useEffect(() => {
+    if (!open || !uploaderId) return;
+    supabase
+      .from("profiles")
+      .select("full_name, avatar_url")
+      .eq("id", uploaderId)
+      .maybeSingle()
+      .then(({ data }) => setUploader(data));
+  }, [open, uploaderId]);
+
   useEffect(() => {
     if (!open) return;
     fetchComments();
 
-    // Realtime subscription
     const channel = supabase
       .channel(`comments:${prayerId}`)
       .on("postgres_changes", {
@@ -67,7 +88,6 @@ export default function Comments({ prayerId }: { prayerId: string }) {
         table: "comments",
         filter: `prayer_id=eq.${prayerId}`,
       }, async (payload) => {
-        // Fetch profile for new comment
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, avatar_url")
@@ -117,12 +137,28 @@ export default function Comments({ prayerId }: { prayerId: string }) {
         className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
       >
         <MessageCircle className="w-3.5 h-3.5" />
-        <span>{comments.length > 0 ? `${comments.length} comment${comments.length > 1 ? "s" : ""}` : "Comments"}</span>
+        <span>{comments.length > 0 && !open ? `${comments.length} comment${comments.length > 1 ? "s" : ""}` : "Comments"}</span>
         {open ? <ChevronUp className="w-3 h-3 ml-auto" /> : <ChevronDown className="w-3 h-3 ml-auto" />}
       </button>
 
       {open && (
         <div className="mt-3 space-y-3">
+          {/* Uploader attribution — only shown for community prayers inside comments */}
+          {uploaderId && (
+            <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+              <div className="w-5 h-5 rounded-full bg-accent flex-shrink-0 flex items-center justify-center overflow-hidden">
+                {uploader?.avatar_url ? (
+                  <img src={uploader.avatar_url} alt="" className="w-5 h-5 object-cover" />
+                ) : (
+                  <User className="w-2.5 h-2.5 text-muted-foreground" />
+                )}
+              </div>
+              <span className="text-[11px] text-muted-foreground">
+                Shared by <span className="font-medium text-foreground/70">{uploader?.full_name || "a member"}</span>
+              </span>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
               <Loader2 className="w-3 h-3 animate-spin" /> Loading comments…
@@ -133,9 +169,9 @@ export default function Comments({ prayerId }: { prayerId: string }) {
             <div className="space-y-2.5">
               {comments.map(c => (
                 <div key={c.id} className="flex gap-2 group">
-                  <div className="w-6 h-6 rounded-full bg-accent flex-shrink-0 flex items-center justify-center mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-accent flex-shrink-0 flex items-center justify-center mt-0.5 overflow-hidden">
                     {c.profiles?.avatar_url ? (
-                      <img src={c.profiles.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      <img src={c.profiles.avatar_url} alt="" className="w-6 h-6 object-cover" />
                     ) : (
                       <User className="w-3 h-3 text-muted-foreground" />
                     )}
