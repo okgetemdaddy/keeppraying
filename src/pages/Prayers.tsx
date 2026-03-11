@@ -8,8 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 import AddPrayerModal from "@/components/AddPrayerModal";
 import Comments from "@/components/Comments";
-type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
-import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles, Share2, ExternalLink } from "lucide-react";
+type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
+import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles, ExternalLink, Users, ShieldCheck, ToggleLeft, ToggleRight } from "lucide-react";
 
 const TEXT_STYLE_CLASSES: Record<string, string> = {
   classic: "font-body text-base",
@@ -21,7 +21,30 @@ const TEXT_STYLE_CLASSES: Record<string, string> = {
   modern: "font-body text-sm tracking-wide",
   compassionate: "font-display text-base",
   whisper: "font-body text-sm text-muted-foreground italic",
+  royal: "font-display font-bold tracking-wider",
 };
+
+function SourceBadge({ source, status }: { source?: string; status: string }) {
+  if (status === "ai_generated") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-medium">
+        <Sparkles className="w-2.5 h-2.5" />AI
+      </span>
+    );
+  }
+  if (source === "community") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-accent border border-border text-muted-foreground font-medium">
+        <Users className="w-2.5 h-2.5" />Community
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/5 border border-primary/15 text-primary/70 font-medium">
+      <ShieldCheck className="w-2.5 h-2.5" />Curated
+    </span>
+  );
+}
 
 function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | null }) {
   const [liked, setLiked] = useState(false);
@@ -61,11 +84,18 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     else { await supabase.from("user_saved_prayers").insert({ prayer_id: card.id, user_id: userId }); setSaved(true); toast({ title: "Saved to your board 📌" }); }
   };
 
-  const textClass = TEXT_STYLE_CLASSES[card.text_style] || TEXT_STYLE_CLASSES.classic;
+  const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
 
   return (
     <div className="prayer-card p-5 space-y-4 flex flex-col">
-      {card.title && <h3 className="font-display font-semibold text-foreground text-lg">{card.title}</h3>}
+      {/* Header row: title + source badge */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {card.title && <h3 className="font-display font-semibold text-foreground text-lg leading-tight">{card.title}</h3>}
+        </div>
+        <SourceBadge source={(card as PrayerCard).source} status={card.status} />
+      </div>
+
       <p className={`${textClass} text-foreground leading-relaxed flex-1`}>{card.prayer_text}</p>
 
       {card.extended_prayer && (
@@ -77,7 +107,6 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
 
       <div className="flex flex-wrap gap-1.5">
         {card.tags?.map(tag => <span key={tag} className="tag-pill">#{tag}</span>)}
-        {card.status === "ai_generated" && <span className="tag-pill"><Sparkles className="w-2.5 h-2.5" />AI</span>}
       </div>
 
       <div className="flex items-center gap-1 pt-1 border-t border-border">
@@ -94,7 +123,9 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
         </button>
       </div>
-      <Comments prayerId={card.id} />
+
+      {/* Comments — uploader revealed inside here for community cards */}
+      <Comments prayerId={card.id} uploaderId={card.source === "community" ? (card.created_by ?? null) : null} />
     </div>
   );
 }
@@ -104,6 +135,7 @@ export default function Prayers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("");
+  const [showCommunity, setShowCommunity] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const { user } = useAuth();
 
@@ -111,13 +143,23 @@ export default function Prayers() {
 
   const fetchPrayers = useCallback(async () => {
     setLoading(true);
-    let q = supabase.from("prayer_cards").select("*").in("status", ["approved", "ai_generated"]).order("likes_count", { ascending: false });
+    let q = supabase
+      .from("prayer_cards")
+      .select("*")
+      .in("status", ["approved", "ai_generated"])
+      .order("likes_count", { ascending: false });
+
+    // Filter by source
+    if (!showCommunity) {
+      q = q.eq("source", "admin");
+    }
+
     if (activeTag) q = q.contains("tags", [activeTag]);
     if (search) q = q.textSearch("prayer_text", search, { type: "websearch" });
     const { data } = await q.limit(50);
-    setCards(data || []);
+    setCards((data as PrayerCard[]) || []);
     setLoading(false);
-  }, [search, activeTag]);
+  }, [search, activeTag, showCommunity]);
 
   useEffect(() => { fetchPrayers(); }, [fetchPrayers]);
 
@@ -142,10 +184,51 @@ export default function Prayers() {
           <p className="text-muted-foreground">Discover prayers to strengthen your faith journey</p>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-xl mx-auto">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search prayers…" className="pl-10 rounded-2xl h-11" />
+        {/* Search + Community Toggle */}
+        <div className="flex items-center gap-3 max-w-xl mx-auto">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search prayers…"
+              className="pl-10 rounded-2xl h-11"
+            />
+          </div>
+          {/* Community toggle */}
+          <button
+            onClick={() => setShowCommunity(v => !v)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all text-sm font-medium flex-shrink-0 ${
+              showCommunity
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-border/80"
+            }`}
+            title={showCommunity ? "Showing all prayers (curated + community)" : "Showing curated prayers only"}
+          >
+            {showCommunity
+              ? <ToggleRight className="w-4 h-4" />
+              : <ToggleLeft className="w-4 h-4" />}
+            <span className="hidden sm:inline">Community</span>
+            <Users className="w-3.5 h-3.5 sm:hidden" />
+          </button>
+        </div>
+
+        {/* Source legend */}
+        <div className="flex items-center justify-center gap-4 flex-wrap text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary/70" />
+            <span>Curated — admin-selected prayers</span>
+          </span>
+          {showCommunity && (
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              <span>Community — prayers shared by members</span>
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <span>AI — AI-inspired cards</span>
+          </span>
         </div>
 
         {/* Tags */}
@@ -169,7 +252,9 @@ export default function Prayers() {
 
         {!loading && cards.length === 0 && (
           <div className="text-center py-16 space-y-4">
-            <p className="text-muted-foreground font-display italic">No prayers found.</p>
+            <p className="text-muted-foreground font-display italic">
+              {showCommunity ? "No prayers found." : "No curated prayers found. Try enabling Community prayers."}
+            </p>
             <Link to="/assistant"><Button className="btn-gold rounded-xl gap-2"><Sparkles className="w-4 h-4" />Try PrayerAssist.ing</Button></Link>
           </div>
         )}
