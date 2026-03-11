@@ -13,7 +13,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
-import heroVideo from "@/assets/hero-video.mp4";
+import heroVideoA from "@/assets/hero-video-a.mp4";
+import heroVideoB from "@/assets/hero-video-b.mp4";
+import heroVideoC from "@/assets/hero-video-c.mp4";
+
+const HERO_CLIPS = [heroVideoA, heroVideoB, heroVideoC];
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
