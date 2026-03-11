@@ -111,6 +111,7 @@ export default function Admin() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (activeTab === "verses") loadVerses(); }, [activeTab, loadVerses]);
 
   const review = async (id: string, action: "approved" | "rejected") => {
     await supabase.from("prayer_cards").update({ status: action }).eq("id", id);
