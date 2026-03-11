@@ -38,10 +38,19 @@ export default function Comments({ prayerId }: { prayerId: string }) {
     setLoading(true);
     const { data } = await supabase
       .from("comments")
-      .select("*, profiles(full_name, avatar_url)")
+      .select("id, text, created_at, user_id, prayer_id")
       .eq("prayer_id", prayerId)
       .order("created_at", { ascending: true });
-    setComments((data as Comment[]) || []);
+    if (data) {
+      // Fetch profiles separately to avoid relation error
+      const userIds = [...new Set(data.map(c => c.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .in("id", userIds);
+      const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+      setComments(data.map(c => ({ ...c, profiles: profileMap[c.user_id] || null })) as Comment[]);
+    }
     setLoading(false);
   };
 
