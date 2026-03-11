@@ -1,7 +1,44 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { motion, type Variants } from "framer-motion";
-import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal } from "lucide-react";
+import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+function ContactForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+    setSending(true);
+    const { error } = await supabase.from("contact_submissions").insert({ name: name || null, email: email || null, message: message.trim() });
+    if (error) { toast({ title: "Failed to send", variant: "destructive" }); }
+    else { toast({ title: "Message sent! 🙏", description: "We'll get back to you soon." }); setName(""); setEmail(""); setMessage(""); }
+    setSending(false);
+  };
+
+  return (
+    <form onSubmit={submit} className="prayer-card p-6 space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <Input placeholder="Your name (optional)" value={name} onChange={e => setName(e.target.value)} className="rounded-xl" />
+        <Input placeholder="Email (optional)" type="email" value={email} onChange={e => setEmail(e.target.value)} className="rounded-xl" />
+      </div>
+      <Textarea placeholder="Your message or prayer request…" value={message} onChange={e => setMessage(e.target.value)} rows={4} className="rounded-xl resize-none" required maxLength={1000} />
+      <Button type="submit" disabled={sending || !message.trim()} className="btn-gold rounded-xl w-full gap-2">
+        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+        Send Message
+      </Button>
+    </form>
+  );
+}
 import heroBg from "@/assets/hero-bg.jpg";
 
 const fadeUp: Variants = {
@@ -124,6 +161,17 @@ export default function Index() {
           <p className="verse-text">"The prayer of a righteous person is powerful and effective." — James 5:16</p>
           <Link to="/auth"><Button size="lg" className="btn-gold rounded-2xl h-12 px-10 text-base gap-2">Start Praying Free <ArrowRight className="w-4 h-4" /></Button></Link>
         </motion.div>
+      </section>
+
+      {/* Contact Form */}
+      <section className="py-16 bg-background border-t border-border">
+        <div className="container mx-auto px-4 max-w-xl">
+          <div className="text-center mb-8">
+            <h2 className="font-display text-2xl font-bold mb-2">Get in Touch</h2>
+            <p className="text-muted-foreground text-sm">Questions, feedback, or prayer requests — we'd love to hear from you.</p>
+          </div>
+          <ContactForm />
+        </div>
       </section>
 
       {/* Footer */}

@@ -13,7 +13,9 @@ import Board from "./pages/Board";
 import WarRoom from "./pages/WarRoom";
 import Games from "./pages/Games";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Admin from "./pages/Admin";
+import Prayer from "./pages/Prayer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,7 +45,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        {/* BrowserRouter wraps everything — Toaster/Sonner must be INSIDE the router tree */}
         <BrowserRouter>
           <Toaster />
           <Sonner />
@@ -51,11 +52,13 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/prayers" element={<Prayers />} />
+            <Route path="/prayer/:id" element={<Prayer />} />
             <Route path="/assistant" element={<PrayerAssist />} />
             <Route path="/board" element={<ProtectedRoute><Board /></ProtectedRoute>} />
-            <Route path="/war-room" element={<ProtectedRoute><WarRoom /></ProtectedRoute>} />
+            <Route path="/war-room" element={<WarRoom />} />
             <Route path="/games" element={<Games />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

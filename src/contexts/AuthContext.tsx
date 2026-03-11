@@ -20,20 +20,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const checkAdmin = async (userId: string) => {
+    // Use has_role() security definer function to prevent privilege escalation
+    const { data } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
+    setIsAdmin(!!data);
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(async () => {
-            const { data } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-            setIsAdmin(data?.role === 'admin');
-          }, 0);
+          setTimeout(() => checkAdmin(session.user.id), 0);
         } else {
           setIsAdmin(false);
         }
@@ -43,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) checkAdmin(session.user.id);
       setLoading(false);
     });
     return () => subscription.unsubscribe();

@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
+import AddPrayerModal from "@/components/AddPrayerModal";
+import Comments from "@/components/Comments";
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
-import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles } from "lucide-react";
+import { Heart, HandMetal, Bookmark, Search, Plus, Loader2, Sparkles, Share2, ExternalLink } from "lucide-react";
 
 const TEXT_STYLE_CLASSES: Record<string, string> = {
   classic: "font-body text-base",
@@ -86,10 +87,14 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
         <button onClick={togglePrayed} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-accent ${prayed ? "text-primary" : "text-muted-foreground"}`}>
           <HandMetal className="w-3.5 h-3.5" />{card.prayed_count}
         </button>
-        <button onClick={toggleSave} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-accent ml-auto ${saved ? "text-primary" : "text-muted-foreground"}`}>
+        <Link to={`/prayer/${card.id}`} className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-all ml-auto">
+          <ExternalLink className="w-3.5 h-3.5" />
+        </Link>
+        <button onClick={toggleSave} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all hover:bg-accent ${saved ? "text-primary" : "text-muted-foreground"}`}>
           <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
         </button>
       </div>
+      <Comments prayerId={card.id} />
     </div>
   );
 }
@@ -99,6 +104,7 @@ export default function Prayers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
   const { user } = useAuth();
 
   const popularTags = ["daily-prayer", "peace", "faith", "morning-prayer", "healing", "forgiveness", "lords-prayer", "intercession"];
@@ -123,6 +129,7 @@ export default function Prayers() {
           <Link to="/" className="font-display font-bold text-xl text-foreground">KeepPray.ing</Link>
           <div className="flex items-center gap-2">
             <Link to="/assistant"><Button variant="outline" size="sm" className="rounded-xl gap-1.5"><Sparkles className="w-3.5 h-3.5" />PrayerAssist</Button></Link>
+            {user && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-3.5 h-3.5" />Add Prayer</Button>}
             {user ? <Link to="/board"><Button size="sm" className="btn-gold rounded-xl">My Board</Button></Link>
               : <Link to="/auth"><Button size="sm" className="btn-gold rounded-xl">Sign In</Button></Link>}
           </div>
@@ -167,6 +174,7 @@ export default function Prayers() {
           </div>
         )}
       </div>
+      <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchPrayers} />
     </div>
   );
 }
