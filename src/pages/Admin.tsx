@@ -161,7 +161,7 @@ export default function Admin() {
     { id: "stats", label: "Stats", icon: BarChart2 },
     { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
-    { id: "blog", label: "Blog", icon: BookOpen },
+    { id: "blog", label: "KeepGrow.ing", icon: BookOpen },
     { id: "faq", label: "FAQ Report", icon: FileText },
     { id: "insights", label: "AI Insights", icon: Sparkles },
   ] as const;
