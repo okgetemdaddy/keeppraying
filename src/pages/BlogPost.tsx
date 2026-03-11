@@ -56,7 +56,7 @@ export default function BlogPost() {
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 h-14 flex items-center gap-3">
           <Link to="/blog" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm">
-            <ArrowLeft className="w-4 h-4" />Blog
+            <ArrowLeft className="w-4 h-4" />KeepGrow.ing
           </Link>
         </div>
       </header>
