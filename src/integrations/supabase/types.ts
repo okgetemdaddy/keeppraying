@@ -14,13 +14,336 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_chat_logs: {
+        Row: {
+          ai_response: string | null
+          created_at: string
+          id: string
+          user_id: string | null
+          user_message: string
+        }
+        Insert: {
+          ai_response?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string | null
+          user_message: string
+        }
+        Update: {
+          ai_response?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string | null
+          user_message?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          author_id: string | null
+          content: string | null
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published: boolean | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          content?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          content?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published?: boolean | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_id: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prayed_actions: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayed_actions_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prayer_cards: {
+        Row: {
+          background_url: string | null
+          created_at: string
+          created_by: string | null
+          extended_prayer: string | null
+          id: string
+          likes_count: number
+          prayed_count: number
+          prayer_text: string
+          status: string
+          tags: string[] | null
+          text_style: string | null
+          title: string | null
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          background_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          extended_prayer?: string | null
+          id?: string
+          likes_count?: number
+          prayed_count?: number
+          prayer_text: string
+          status?: string
+          tags?: string[] | null
+          text_style?: string | null
+          title?: string | null
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          background_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          extended_prayer?: string | null
+          id?: string
+          likes_count?: number
+          prayed_count?: number
+          prayer_text?: string
+          status?: string
+          tags?: string[] | null
+          text_style?: string | null
+          title?: string | null
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
+      prayer_playlists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          prayer_ids: string[] | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          prayer_ids?: string[] | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          prayer_ids?: string[] | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_saved_prayers: {
+        Row: {
+          created_at: string
+          favorite: boolean | null
+          id: string
+          notes: string | null
+          pinned: boolean | null
+          position: number | null
+          prayer_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          favorite?: boolean | null
+          id?: string
+          notes?: string | null
+          pinned?: boolean | null
+          position?: number | null
+          prayer_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          favorite?: boolean | null
+          id?: string
+          notes?: string | null
+          pinned?: boolean | null
+          position?: number | null
+          prayer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_prayers_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

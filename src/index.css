@@ -1,105 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* KeepPray.ing — Warm Faith Palette */
+    --background: 38 60% 97%;
+    --foreground: 25 35% 14%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 38 45% 99%;
+    --card-foreground: 25 35% 14%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 38 45% 99%;
+    --popover-foreground: 25 35% 14%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 42 75% 46%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 150 20% 88%;
+    --secondary-foreground: 150 40% 22%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 38 28% 93%;
+    --muted-foreground: 25 18% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 35 65% 88%;
+    --accent-foreground: 25 35% 14%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 38 22% 88%;
+    --input: 38 22% 88%;
+    --ring: 42 75% 46%;
 
-    --radius: 0.5rem;
+    --radius: 0.875rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Faith design tokens */
+    --gold: 42 85% 46%;
+    --gold-light: 42 80% 90%;
+    --gold-dark: 38 75% 35%;
+    --forest: 150 38% 26%;
+    --forest-light: 150 22% 90%;
+    --cream: 38 60% 97%;
+    --warm-brown: 25 35% 14%;
+    --amber-soft: 35 68% 85%;
+    --sky-faith: 210 55% 88%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Gradients */
+    --gradient-divine: linear-gradient(145deg, hsl(38 60% 97%), hsl(42 75% 94%));
+    --gradient-hero: linear-gradient(180deg, hsl(220 55% 8% / 0.82) 0%, hsl(220 40% 12% / 0.45) 55%, hsl(38 40% 15% / 0.15) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(38 50% 99%), hsl(42 45% 97%));
+    --gradient-gold: linear-gradient(135deg, hsl(42 85% 44%), hsl(35 82% 54%));
+    --gradient-forest: linear-gradient(135deg, hsl(150 38% 26%), hsl(150 32% 36%));
+    --gradient-warroom: linear-gradient(160deg, hsl(220 60% 6%), hsl(35 40% 12%), hsl(220 50% 8%));
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Shadows */
+    --shadow-prayer: 0 4px 28px -8px hsl(42 75% 46% / 0.18), 0 2px 10px -4px hsl(25 35% 14% / 0.08);
+    --shadow-card: 0 2px 14px -4px hsl(25 35% 14% / 0.10);
+    --shadow-gold: 0 4px 22px -4px hsl(42 85% 46% / 0.38);
+    --shadow-lift: 0 8px 36px -12px hsl(25 35% 14% / 0.18);
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Typography */
+    --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 38 28% 95%;
+    --sidebar-foreground: 25 35% 14%;
+    --sidebar-primary: 42 75% 46%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 38 22% 90%;
+    --sidebar-accent-foreground: 25 35% 14%;
+    --sidebar-border: 38 22% 88%;
+    --sidebar-ring: 42 75% 46%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 38% 7%;
+    --foreground: 38 28% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 32% 10%;
+    --card-foreground: 38 28% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 32% 10%;
+    --popover-foreground: 38 28% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 42 78% 54%;
+    --primary-foreground: 220 38% 7%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 150 22% 17%;
+    --secondary-foreground: 150 25% 72%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 28% 15%;
+    --muted-foreground: 38 14% 62%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 35 42% 20%;
+    --accent-foreground: 38 28% 92%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 26% 17%;
+    --input: 220 26% 17%;
+    --ring: 42 78% 54%;
+
+    --gradient-divine: linear-gradient(145deg, hsl(220 38% 7%), hsl(220 32% 10%));
+    --gradient-card: linear-gradient(145deg, hsl(220 32% 11%), hsl(220 28% 9%));
+    --shadow-prayer: 0 4px 28px -8px hsl(42 75% 46% / 0.12), 0 2px 10px -4px hsl(0 0% 0% / 0.28);
+    --shadow-card: 0 2px 14px -4px hsl(0 0% 0% / 0.22);
+
+    --sidebar-background: 220 32% 9%;
+    --sidebar-foreground: 38 28% 92%;
+    --sidebar-primary: 42 78% 54%;
+    --sidebar-primary-foreground: 220 38% 7%;
+    --sidebar-accent: 220 28% 15%;
+    --sidebar-accent-foreground: 38 28% 92%;
+    --sidebar-border: 220 26% 17%;
+    --sidebar-ring: 42 78% 54%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+
+  html { scroll-behavior: smooth; }
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .font-display { font-family: var(--font-display); }
+
+  /* Prayer card base */
+  .prayer-card {
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-prayer);
+    @apply rounded-2xl transition-all duration-300;
+  }
+  .prayer-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-prayer), 0 12px 40px -16px hsl(42 75% 46% / 0.22);
+  }
+
+  /* Gold button */
+  .btn-gold {
+    background: var(--gradient-gold);
+    box-shadow: var(--shadow-gold);
+    @apply text-white font-medium rounded-xl transition-all duration-200;
+  }
+  .btn-gold:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px -4px hsl(42 85% 46% / 0.5);
+  }
+
+  /* Scripture verse styling */
+  .verse-text {
+    font-family: var(--font-display);
+    font-style: italic;
+    @apply text-muted-foreground leading-relaxed;
+  }
+
+  /* Hero overlay */
+  .hero-overlay { background: var(--gradient-hero); }
+
+  /* War room dark gradient */
+  .warroom-bg { background: var(--gradient-warroom); }
+
+  /* Breathe animation */
+  @keyframes breathe {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.94; transform: scale(1.006); }
+  }
+  .breathe { animation: breathe 5s ease-in-out infinite; }
+
+  /* Divine glow */
+  @keyframes divine-glow {
+    0%, 100% { box-shadow: 0 0 18px hsl(42 85% 46% / 0.28); }
+    50% { box-shadow: 0 0 36px hsl(42 85% 46% / 0.52), 0 0 72px hsl(42 85% 46% / 0.18); }
+  }
+  .divine-glow { animation: divine-glow 3.5s ease-in-out infinite; }
+
+  /* Shimmer skeleton */
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--accent)) 50%, hsl(var(--muted)) 75%);
+    background-size: 200% auto;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  /* Tag pill */
+  .tag-pill {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    background: hsl(var(--gold-light));
+    color: hsl(var(--gold-dark));
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { @apply bg-muted; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.65); }
 }
