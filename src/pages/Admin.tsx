@@ -159,6 +159,7 @@ export default function Admin() {
   const TABS = [
     { id: "moderation", label: "Moderation", icon: Check },
     { id: "stats", label: "Stats", icon: BarChart2 },
+    { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
     { id: "blog", label: "Blog", icon: BookOpen },
     { id: "faq", label: "FAQ Report", icon: FileText },
