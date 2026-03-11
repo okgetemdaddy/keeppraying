@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
@@ -27,10 +27,12 @@ export default function PrayerAssist() {
   const { user } = useAuth();
   const { toast } = useToast();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
+  const autoSentRef = useRef(false);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const send = async (text: string) => {
+  const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
     const userMsg: Message = { role: "user", content: text };
     setMessages(prev => [...prev, userMsg]);
@@ -90,7 +92,16 @@ export default function PrayerAssist() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [messages, user, toast]);
+
+  // Auto-send query from URL ?q= param (e.g. from VerseLink exegesis)
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && !autoSentRef.current) {
+      autoSentRef.current = true;
+      send(q);
+    }
+  }, [searchParams, send]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
