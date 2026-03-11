@@ -185,12 +185,12 @@ export default function Admin() {
         </div>
 
         {/* Tab navigation */}
-        <div className="flex gap-1 flex-wrap mb-6 border-b border-border pb-2">
+        <div className="flex gap-1 flex-wrap sm:flex-nowrap overflow-x-auto mb-6 border-b border-border pb-2 scrollbar-none -mx-1 px-1">
           {TABS.map(tab => {
             const Icon = tab.icon;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${activeTab === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}>
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-t-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}>
                 <Icon className="w-4 h-4" />{tab.label}
                 {tab.id === "moderation" && pending.length > 0 && <span className="ml-1 bg-destructive text-destructive-foreground rounded-full text-xs w-4 h-4 flex items-center justify-center">{pending.length}</span>}
               </button>

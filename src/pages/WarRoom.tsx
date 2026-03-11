@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Play, Pause, Volume2, SkipForward, SkipBack, Flame, Sun, Moon, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Flame, Sun, Moon, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
+import VerseLink from "@/components/VerseLink";
 
 const TRACKS = [
   { name: "Peaceful Piano", url: "https://cdn.pixabay.com/audio/2024/11/12/audio_df5987b5e6.mp3" },
@@ -28,6 +29,7 @@ export default function WarRoom() {
   const [themeId, setThemeId] = useState<string>("night");
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.4);
+  const [muted, setMuted] = useState(false);
   const [trackIndex, setTrackIndex] = useState(0);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [activePrayers, setActivePrayers] = useState<PrayerForWarRoom[]>([]);
@@ -39,7 +41,7 @@ export default function WarRoom() {
   useEffect(() => {
     const audio = new Audio();
     audio.loop = true;
-    audio.volume = volume;
+    audio.volume = muted ? 0 : volume;
     audio.src = TRACKS[trackIndex].url;
     audioRef.current = audio;
     if (playing) audio.play().catch(() => {});
@@ -47,7 +49,7 @@ export default function WarRoom() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackIndex]);
 
-  useEffect(() => { if (audioRef.current) audioRef.current.volume = volume; }, [volume]);
+  useEffect(() => { if (audioRef.current) audioRef.current.volume = muted ? 0 : volume; }, [volume, muted]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -75,14 +77,24 @@ export default function WarRoom() {
 
   return (
     <div className="min-h-screen flex flex-col transition-all duration-700" style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, ${theme.bg2} 100%)`, color: theme.text }}>
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-        <Link to="/" style={{ color: theme.text, opacity: 0.6 }} className="hover:opacity-100 transition-opacity"><ArrowLeft className="w-5 h-5" /></Link>
-        <p className="text-sm font-display italic" style={{ color: theme.muted }}>"Be still, and know that I am God." — Psalm 46:10</p>
-        <div className="flex gap-1">
+
+      {/* Header */}
+      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10">
+        <Link to="/" style={{ color: theme.text, opacity: 0.6 }} className="hover:opacity-100 transition-opacity p-1">
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
+        {/* Verse — hidden on very small screens */}
+        <p className="text-xs sm:text-sm font-display italic hidden sm:block text-center px-2" style={{ color: theme.muted }}>
+          "Be still, and know that I am God." — <VerseLink reference="Psalm 46:10" text="Be still, and know that I am God." className="[&_.verse-text]:text-inherit" />
+        </p>
+        {/* Theme icons */}
+        <div className="flex gap-0.5 sm:gap-1">
           {THEMES.map(t => {
             const Icon = t.Icon;
             return (
-              <button key={t.id} onClick={() => setThemeId(t.id)} title={t.label} className="p-2 rounded-lg transition-all" style={{ color: theme.accent, opacity: themeId === t.id ? 1 : 0.4 }}>
+              <button key={t.id} onClick={() => setThemeId(t.id)} title={t.label}
+                className="p-1.5 sm:p-2 rounded-lg transition-all touch-manipulation"
+                style={{ color: theme.accent, opacity: themeId === t.id ? 1 : 0.4 }}>
                 <Icon className="w-4 h-4" />
               </button>
             );
@@ -90,63 +102,142 @@ export default function WarRoom() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-2xl mx-auto w-full">
-        <motion.div animate={{ scale: [1, 1.04, 1], opacity: [0.9, 1, 0.9] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="w-16 h-16 rounded-full flex items-center justify-center mb-8"
-          style={{ background: theme.accent, boxShadow: `0 0 40px ${theme.accent}88` }}>
-          <Flame className="w-8 h-8" style={{ color: "#fff" }} />
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 max-w-2xl mx-auto w-full">
+        <motion.div
+          animate={{ scale: [1, 1.04, 1], opacity: [0.9, 1, 0.9] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-6 sm:mb-8"
+          style={{ background: theme.accent, boxShadow: `0 0 40px ${theme.accent}88` }}
+        >
+          <Flame className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: "#fff" }} />
         </motion.div>
 
         {playlistMode && currentPrayer ? (
           <AnimatePresence mode="wait">
-            <motion.div key={prayerIndex} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.6 }} className="text-center space-y-4 max-w-lg">
-              {currentPrayer.title && <h2 className="font-display text-2xl font-bold" style={{ color: theme.text }}>{currentPrayer.title}</h2>}
-              <p className="font-display italic leading-relaxed text-lg" style={{ color: theme.text }}>{currentPrayer.prayer_text}</p>
-              {currentPrayer.extended_prayer && <p className="text-sm" style={{ color: theme.muted }}>{currentPrayer.extended_prayer}</p>}
-              <div className="flex items-center justify-center gap-4 pt-4">
-                <button onClick={() => setPrayerIndex(i => Math.max(0, i - 1))} disabled={prayerIndex === 0} className="transition-opacity disabled:opacity-20" style={{ color: theme.accent, opacity: 0.8 }}><ChevronLeft className="w-6 h-6" /></button>
-                <span className="text-sm" style={{ color: theme.muted }}>{prayerIndex + 1} / {activePrayers.length}</span>
-                <button onClick={() => setPrayerIndex(i => Math.min(activePrayers.length - 1, i + 1))} disabled={prayerIndex === activePrayers.length - 1} className="transition-opacity disabled:opacity-20" style={{ color: theme.accent, opacity: 0.8 }}><ChevronRight className="w-6 h-6" /></button>
+            <motion.div
+              key={prayerIndex}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.04 }}
+              transition={{ duration: 0.6 }}
+              className="text-center space-y-4 w-full max-w-lg px-2"
+            >
+              {currentPrayer.title && (
+                <h2 className="font-display text-xl sm:text-2xl font-bold" style={{ color: theme.text }}>
+                  {currentPrayer.title}
+                </h2>
+              )}
+              <p className="font-display italic leading-relaxed text-base sm:text-lg" style={{ color: theme.text }}>
+                {currentPrayer.prayer_text}
+              </p>
+              {currentPrayer.extended_prayer && (
+                <p className="text-sm" style={{ color: theme.muted }}>{currentPrayer.extended_prayer}</p>
+              )}
+              <div className="flex items-center justify-center gap-6 pt-4">
+                <button
+                  onClick={() => setPrayerIndex(i => Math.max(0, i - 1))}
+                  disabled={prayerIndex === 0}
+                  className="p-2 transition-opacity disabled:opacity-20 touch-manipulation"
+                  style={{ color: theme.accent, opacity: 0.8 }}
+                >
+                  <ChevronLeft className="w-7 h-7" />
+                </button>
+                <span className="text-sm tabular-nums" style={{ color: theme.muted }}>{prayerIndex + 1} / {activePrayers.length}</span>
+                <button
+                  onClick={() => setPrayerIndex(i => Math.min(activePrayers.length - 1, i + 1))}
+                  disabled={prayerIndex === activePrayers.length - 1}
+                  className="p-2 transition-opacity disabled:opacity-20 touch-manipulation"
+                  style={{ color: theme.accent, opacity: 0.8 }}
+                >
+                  <ChevronRight className="w-7 h-7" />
+                </button>
               </div>
-              <button onClick={() => setPlaylistMode(false)} className="text-xs transition-opacity" style={{ color: theme.muted, opacity: 0.5 }}>Exit playlist mode</button>
+              <button
+                onClick={() => setPlaylistMode(false)}
+                className="text-xs transition-opacity mt-2 px-3 py-1.5 rounded-full border border-white/10"
+                style={{ color: theme.muted }}
+              >
+                Exit playlist
+              </button>
             </motion.div>
           </AnimatePresence>
         ) : (
-          <div className="text-center space-y-6 max-w-lg">
-            <h1 className="font-display text-4xl font-bold" style={{ color: theme.text }}>The War Room</h1>
-            <p className="font-display italic text-lg" style={{ color: theme.muted }}>"The weapons we fight with are not the weapons of the world. On the contrary, they have divine power to demolish strongholds."</p>
-            <p className="text-sm" style={{ color: theme.muted, opacity: 0.6 }}>— 2 Corinthians 10:4</p>
+          <div className="text-center space-y-5 sm:space-y-6 max-w-lg w-full px-2">
+            <h1 className="font-display text-3xl sm:text-4xl font-bold" style={{ color: theme.text }}>The War Room</h1>
+            <p className="font-display italic text-base sm:text-lg leading-relaxed" style={{ color: theme.muted }}>
+              "The weapons we fight with are not the weapons of the world. On the contrary, they have divine power to demolish strongholds."
+            </p>
+            <p className="text-xs sm:text-sm" style={{ color: theme.muted, opacity: 0.6 }}>
+              — <VerseLink reference="2 Corinthians 10:4" text="The weapons we fight with are not the weapons of the world." className="[&_.verse-text]:text-inherit opacity-70" />
+            </p>
+
             {playlists.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <p className="text-sm" style={{ color: theme.muted, opacity: 0.7 }}>Your prayer playlists:</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {playlists.map(pl => (
-                    <button key={pl.id} onClick={() => loadPlaylist(pl)} className="px-4 py-2 rounded-xl text-sm border transition-all hover:scale-105" style={{ borderColor: theme.accent, color: theme.accent }}>
+                    <button
+                      key={pl.id}
+                      onClick={() => loadPlaylist(pl)}
+                      className="px-4 py-2.5 rounded-xl text-sm border transition-all active:scale-95 touch-manipulation"
+                      style={{ borderColor: theme.accent, color: theme.accent }}
+                    >
                       ▶ {pl.name} ({pl.prayer_ids?.length || 0})
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            {user && playlists.length === 0 && <p className="text-xs" style={{ color: theme.muted, opacity: 0.5 }}>Create playlists on your <Link to="/board" style={{ color: theme.accent }}>Prayer Board</Link> to use them here.</p>}
-            {!user && <p className="text-xs" style={{ color: theme.muted, opacity: 0.5 }}><Link to="/auth" style={{ color: theme.accent }}>Sign in</Link> to load your prayer playlists.</p>}
+            {user && playlists.length === 0 && (
+              <p className="text-xs sm:text-sm" style={{ color: theme.muted, opacity: 0.5 }}>
+                Create playlists on your <Link to="/board" style={{ color: theme.accent }} className="underline">Prayer Board</Link> to use them here.
+              </p>
+            )}
+            {!user && (
+              <p className="text-xs sm:text-sm" style={{ color: theme.muted, opacity: 0.5 }}>
+                <Link to="/auth" style={{ color: theme.accent }} className="underline">Sign in</Link> to load your prayer playlists.
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      <div className="border-t px-6 py-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-        <div className="max-w-lg mx-auto flex items-center gap-4">
-          <button onClick={prevTrack} className="opacity-60 hover:opacity-100 transition-opacity" style={{ color: theme.text }}><SkipBack className="w-4 h-4" /></button>
-          <button onClick={togglePlay} className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110" style={{ background: theme.accent, color: "#fff" }}>
-            {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </button>
-          <button onClick={nextTrack} className="opacity-60 hover:opacity-100 transition-opacity" style={{ color: theme.text }}><SkipForward className="w-4 h-4" /></button>
-          <div className="flex-1 min-w-0"><p className="text-xs truncate" style={{ color: theme.muted }}>{TRACKS[trackIndex].name}</p></div>
-          <Volume2 className="w-4 h-4 opacity-50 flex-shrink-0" style={{ color: theme.text }} />
-          <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(Number(e.target.value))} className="w-20 cursor-pointer" />
+      {/* Audio controls */}
+      <div className="border-t px-4 sm:px-6 py-3 sm:py-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+        <div className="max-w-lg mx-auto">
+          {/* Track name */}
+          <p className="text-xs text-center mb-2 truncate" style={{ color: theme.muted }}>{TRACKS[trackIndex].name}</p>
+          {/* Controls row */}
+          <div className="flex items-center justify-center gap-3 sm:gap-4">
+            <button onClick={prevTrack} className="p-2 opacity-60 hover:opacity-100 transition-opacity touch-manipulation" style={{ color: theme.text }}>
+              <SkipBack className="w-5 h-5" />
+            </button>
+            <button
+              onClick={togglePlay}
+              className="w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 touch-manipulation"
+              style={{ background: theme.accent, color: "#fff" }}
+            >
+              {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+            </button>
+            <button onClick={nextTrack} className="p-2 opacity-60 hover:opacity-100 transition-opacity touch-manipulation" style={{ color: theme.text }}>
+              <SkipForward className="w-5 h-5" />
+            </button>
+            {/* Volume — full slider on desktop, mute toggle on mobile */}
+            <div className="flex items-center gap-2 ml-2">
+              <button onClick={() => setMuted(m => !m)} className="p-1.5 touch-manipulation opacity-60 hover:opacity-100 transition-opacity" style={{ color: theme.text }}>
+                {muted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </button>
+              <input
+                type="range" min={0} max={1} step={0.01} value={muted ? 0 : volume}
+                onChange={e => { setVolume(Number(e.target.value)); setMuted(false); }}
+                className="w-20 sm:w-28 cursor-pointer accent-current h-1"
+                style={{ accentColor: theme.accent }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-

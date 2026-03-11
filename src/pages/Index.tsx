@@ -90,6 +90,7 @@ function ContactForm() {
   );
 }
 import heroBg from "@/assets/hero-bg.jpg";
+import haloPng from "@/assets/halo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -129,18 +130,38 @@ export default function Index() {
         <div className="hero-overlay absolute inset-0" />
         <motion.div initial="hidden" animate="show" variants={stagger} className="relative z-10 text-center px-4 max-w-4xl mx-auto space-y-6">
           <motion.p variants={fadeUp} className="text-white/60 text-sm tracking-[0.3em] uppercase font-body">Welcome to</motion.p>
-          <motion.h1 variants={fadeUp} className="font-display text-6xl sm:text-7xl md:text-8xl font-bold text-white leading-none">
-            Keep<span className="text-gold">Pray</span>.ing
+          <motion.h1 variants={fadeUp} className="font-display text-6xl sm:text-7xl md:text-8xl font-bold text-white leading-none relative">
+            Keep
+            <span className="relative inline-block text-gold mx-[0.04em]">
+              <motion.img
+                src={haloPng}
+                alt=""
+                aria-hidden="true"
+                initial={{ opacity: 0, scale: 0.6, rotate: -6 }}
+                animate={{ opacity: 1, scale: 1, rotate: -14 }}
+                transition={{ delay: 0.9, duration: 1, type: "spring", stiffness: 100, damping: 14 }}
+                className="absolute pointer-events-none select-none"
+                style={{
+                  width: "115%",
+                  top: "-72%",
+                  left: "-7.5%",
+                  filter: "drop-shadow(0 0 22px rgba(212,168,67,0.9)) drop-shadow(0 0 8px rgba(255,235,130,0.7)) drop-shadow(0 0 40px rgba(212,168,67,0.4))",
+                  zIndex: 1,
+                }}
+              />
+              <span className="relative" style={{ zIndex: 2 }}>Pray</span>
+            </span>
+            .ing
           </motion.h1>
-            <motion.p variants={fadeUp} className="font-display italic text-white/80 text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed">
-              "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
-            </motion.p>
-            <motion.p variants={fadeUp} className="text-white/50 text-sm flex items-center justify-center gap-1.5">
-              <VerseLink reference="Matthew 6:6" text="But when you pray, go into your room, close the door and pray to your Father, who is unseen." className="text-white/50 [&_.verse-text]:text-white/50" />
-            </motion.p>
+          <motion.p variants={fadeUp} className="font-display italic text-white/80 text-lg sm:text-2xl max-w-2xl mx-auto leading-relaxed px-2">
+            "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
+          </motion.p>
+          <motion.p variants={fadeUp} className="text-white/50 text-sm flex items-center justify-center gap-1.5">
+            <VerseLink reference="Matthew 6:6" text="But when you pray, go into your room, close the door and pray to your Father, who is unseen." className="text-white/50 [&_.verse-text]:text-white/50" />
+          </motion.p>
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link to="/prayers"><Button size="lg" className="btn-gold rounded-2xl h-12 px-8 text-base gap-2">Explore Prayers <ArrowRight className="w-4 h-4" /></Button></Link>
-            <Link to="/assistant"><Button size="lg" variant="outline" className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10"><Sparkles className="w-4 h-4" /> PrayerAssist AI</Button></Link>
+            <Link to="/prayers"><Button size="lg" className="btn-gold rounded-2xl h-12 px-6 sm:px-8 text-base gap-2 w-full sm:w-auto">Explore Prayers <ArrowRight className="w-4 h-4" /></Button></Link>
+            <Link to="/assistant"><Button size="lg" variant="outline" className="rounded-2xl h-12 px-6 sm:px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 w-full sm:w-auto"><Sparkles className="w-4 h-4" /> PrayerAssist AI</Button></Link>
           </motion.div>
         </motion.div>
       </section>
