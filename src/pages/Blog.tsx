@@ -63,7 +63,6 @@ export default function Blog() {
   );
 }
 
-export default function Blog() {
   const posts = [
     { title: "The Power of a Consistent Prayer Life", excerpt: "How daily prayer transforms your relationship with God and shapes your character.", date: "March 2026" },
     { title: "Understanding the Lord's Prayer", excerpt: "A verse-by-verse breakdown of the prayer Jesus taught his disciples.", date: "February 2026" },
