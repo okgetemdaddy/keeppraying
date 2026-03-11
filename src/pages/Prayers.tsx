@@ -174,6 +174,7 @@ export default function Prayers() {
           </div>
         )}
       </div>
+      <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchPrayers} />
     </div>
   );
 }
