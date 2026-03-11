@@ -512,5 +512,3 @@ export default function Admin() {
 }
 
 
-  useEffect(() => { if (activeTab === "verses") loadVerses(); }, [activeTab, loadVerses]);
-
