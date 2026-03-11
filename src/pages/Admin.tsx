@@ -321,7 +321,7 @@ export default function Admin() {
 
             {showBlogForm && (
               <div className="prayer-card p-5">
-                <h3 className="font-semibold mb-4">Create Blog Post</h3>
+                <h3 className="font-semibold mb-4">Create KeepGrow.ing Post</h3>
                 <Form {...blogForm}>
                   <form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
