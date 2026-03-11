@@ -179,7 +179,7 @@ export default function PrayerAssist() {
               className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
               rows={1}
             />
-            <Button onClick={() => send(input)} disabled={loading || !input.trim()} className="btn-gold h-12 w-12 p-0 rounded-xl flex-shrink-0 text-background">
+            <Button onClick={() => send(input)} disabled={loading || !input.trim()} className="h-12 w-12 p-0 rounded-xl flex-shrink-0 bg-foreground text-background hover:bg-foreground/90">
               <Send className="w-4 h-4" />
             </Button>
           </div>
