@@ -48,6 +48,9 @@ export default function Admin() {
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [verseSummaries, setVerseSummaries] = useState<VerseSummary[]>([]);
+  const [verseSearch, setVerseSearch] = useState("");
+  const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights">("moderation");
