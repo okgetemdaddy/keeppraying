@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +121,24 @@ export default function Index() {
   const { session } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
 
+  // Seamless video crossfade
+  const vidA = useRef<HTMLVideoElement>(null);
+  const vidB = useRef<HTMLVideoElement>(null);
+  const [activeVid, setActiveVid] = useState<"a" | "b">("a");
+  const CROSSFADE_BEFORE = 1.2; // seconds before end to start crossfade
+
+  const handleTimeUpdate = useCallback((current: "a" | "b") => {
+    const vid = current === "a" ? vidA.current : vidB.current;
+    const next = current === "a" ? vidB.current : vidA.current;
+    if (!vid || !next || !vid.duration) return;
+    const remaining = vid.duration - vid.currentTime;
+    if (remaining <= CROSSFADE_BEFORE && next.paused) {
+      next.currentTime = 0;
+      next.play().catch(() => {});
+      setActiveVid(current === "a" ? "b" : "a");
+    }
+  }, []);
+
   // Parallax
   const { scrollY } = useScroll();
   const bgY = useTransform(scrollY, [0, 600], ["0%", "20%"]);
@@ -138,6 +156,7 @@ export default function Index() {
     if (searchVal.trim()) navigate(`/prayers?q=${encodeURIComponent(searchVal.trim())}`);
     else navigate("/prayers");
   };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -243,18 +262,34 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax background video */}
+        {/* Parallax background — dual-video crossfade for seamless looping */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
+          {/* Video A */}
           <video
+            ref={vidA}
             autoPlay
-            loop
             muted
             playsInline
             poster={heroBg}
-            className="w-full h-full object-cover object-center"
+            onTimeUpdate={() => handleTimeUpdate("a")}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[1200ms]"
+            style={{ opacity: activeVid === "a" ? 1 : 0 }}
           >
             <source src={heroVideo} type="video/mp4" />
           </video>
+          {/* Video B (crossfade target) */}
+          <video
+            ref={vidB}
+            muted
+            playsInline
+            onTimeUpdate={() => handleTimeUpdate("b")}
+            className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-[1200ms]"
+            style={{ opacity: activeVid === "b" ? 1 : 0 }}
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
+          {/* Fallback still if video unavailable */}
+          <img src={heroBg} aria-hidden className="absolute inset-0 w-full h-full object-cover object-center -z-10" />
         </motion.div>
 
         {/* Layered overlay */}
