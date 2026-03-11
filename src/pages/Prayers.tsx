@@ -12,7 +12,8 @@ import VerseLink from "@/components/VerseLink";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
-  Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp
+  Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
+  Volume2, VolumeX, Loader2,
 } from "lucide-react";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
