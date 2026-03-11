@@ -126,6 +126,17 @@ export default function Index() {
         </motion.div>
       </section>
 
+      {/* Contact Form */}
+      <section className="py-16 bg-background border-t border-border">
+        <div className="container mx-auto px-4 max-w-xl">
+          <div className="text-center mb-8">
+            <h2 className="font-display text-2xl font-bold mb-2">Get in Touch</h2>
+            <p className="text-muted-foreground text-sm">Questions, feedback, or prayer requests — we'd love to hear from you.</p>
+          </div>
+          <ContactForm />
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border bg-card py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground space-y-2">
