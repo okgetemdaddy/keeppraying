@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, type Variants } from "framer-motion";
 import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 
