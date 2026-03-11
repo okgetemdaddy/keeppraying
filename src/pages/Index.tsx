@@ -157,7 +157,7 @@ export default function Index() {
           <Link to="/" className="flex-shrink-0 group">
             <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>Keep</span>
-              <span className="text-gold group-hover:drop-shadow-[0_0_12px_hsl(42_85%_46%/0.7)] transition-all duration-300">Pray</span>
+              <span className="nav-pray-glow">Pray</span>
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>.ing</span>
             </span>
           </Link>
