@@ -183,11 +183,33 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           <SourceBadge source={(card as PrayerCard).source} status={card.status} />
         </div>
 
-        {/* Prayer text */}
-        <p className={`${textClass} leading-relaxed flex-1 line-clamp-4`}
-          style={{ color: "hsl(25 28% 28%)" }}>
-          {card.prayer_text}
-        </p>
+        {/* Prayer text — soft fade truncation */}
+        <div className="relative">
+          <motion.div
+            animate={{ height: textExpanded ? "auto" : 112 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+            style={{ minHeight: 0 }}
+          >
+            <p ref={textRef} className={`${textClass} leading-relaxed`}
+              style={{ color: "hsl(25 28% 28%)" }}>
+              {card.prayer_text}
+            </p>
+          </motion.div>
+          {!textExpanded && isTruncated && (
+            <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
+              style={{ background: "linear-gradient(to bottom, transparent, hsl(38 60% 99%))" }} />
+          )}
+        </div>
+        {isTruncated && (
+          <button
+            onClick={() => setTextExpanded(v => !v)}
+            className="text-xs font-medium transition-opacity hover:opacity-80 -mt-1"
+            style={{ color: "hsl(42 75% 40%)" }}
+          >
+            {textExpanded ? "Read less ↑" : "Read more →"}
+          </button>
+        )}
 
         {/* Extended prayer toggle */}
         {card.extended_prayer && (
