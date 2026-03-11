@@ -670,7 +670,7 @@ export default function Index() {
           <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
             <p>© {new Date().getFullYear()} KeepPray.ing — All rights reserved.</p>
             <p className="flex items-center gap-1.5">
-              Built with <Heart className="w-3 h-3 text-rose-400 fill-rose-400" /> for every believer
+              Built with <Heart className="w-3 h-3 text-destructive fill-destructive" /> for every believer
             </p>
           </div>
         </div>
