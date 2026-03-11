@@ -101,7 +101,7 @@ export default function PrayerAssist() {
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-full bg-gradient-gold flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" /></div>
             <div>
-              <span className="font-display font-semibold text-foreground">PrayerAssist</span>
+            <span className="font-display font-semibold text-foreground">PrayerAssist.ing</span>
               <span className="text-xs text-muted-foreground ml-2">Your AI Prayer Companion</span>
             </div>
           </div>
