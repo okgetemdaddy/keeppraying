@@ -118,6 +118,9 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
   const [prayAnim, setPrayAnim] = useState(false);
+  const [ttsLoading, setTtsLoading] = useState(false);
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
