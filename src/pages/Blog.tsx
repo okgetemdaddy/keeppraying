@@ -14,7 +14,7 @@ export default function Blog() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Faith & Prayer Blog | KeepPray.ing";
+    document.title = "KeepGrow.ing | Faith & Growth Blog";
     supabase.from("blog_posts").select("id,title,slug,excerpt,cover_image_url,created_at").eq("published", true).order("created_at", { ascending: false })
       .then(({ data }) => { setPosts(data || []); setLoading(false); });
     return () => { document.title = "KeepPray.ing"; };
