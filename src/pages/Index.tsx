@@ -299,16 +299,16 @@ export default function Index() {
           {/* Search bar */}
           <motion.form variants={fadeUp} onSubmit={handleSearch} className="relative max-w-md mx-auto">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-gold transition-colors z-10" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 group-focus-within:text-terra transition-colors z-10" />
               <input
                 value={searchVal}
                 onChange={e => setSearchVal(e.target.value)}
                 placeholder="Find a prayer…"
-                className="w-full h-12 pl-11 pr-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-gold/60 focus:bg-white/20 transition-all"
+                className="w-full h-12 pl-11 pr-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white placeholder:text-white/50 text-sm focus:outline-none focus:ring-2 focus:ring-terra/60 focus:bg-white/20 transition-all"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-forest text-white text-xs font-semibold hover:bg-forest-dark transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-terra text-white text-xs font-semibold hover:bg-terra-dark transition-colors"
               >
                 Search
               </button>
