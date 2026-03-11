@@ -169,13 +169,13 @@ export default function Index() {
           >
             {NAV_LINKS.map(({ label, href }) => (
               <motion.div key={label} variants={navItem}>
-                <Link
+            <Link
                   to={href}
                   className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
                     ${scrolled ? "text-foreground/70 hover:text-foreground hover:bg-muted" : "text-white/75 hover:text-white hover:bg-white/10"}`}
                 >
                   {label}
-                  <span className="absolute bottom-1 left-3 right-3 h-px bg-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+                  <span className="absolute bottom-1 left-3 right-3 h-px bg-terra scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                 </Link>
               </motion.div>
             ))}
