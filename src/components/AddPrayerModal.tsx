@@ -163,7 +163,8 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
     }
   };
 
-  const charCount = form.watch("prayer_text")?.length || 0;
+  const prayerText = form.watch("prayer_text") || "";
+  const wordCount = countWords(prayerText);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
