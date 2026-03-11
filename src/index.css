@@ -209,6 +209,31 @@
     color: hsl(var(--gold-dark));
   }
 
+  /* KeepPray.ing — "Pray" flowing glow */
+  @keyframes pray-glow-flow {
+    0%   { text-shadow: 0 0 12px hsl(42 85% 60% / 0.55), 0 0 28px hsl(42 85% 46% / 0.30); color: hsl(42 85% 62%); }
+    40%  { text-shadow: 0 0 22px hsl(35 82% 58% / 0.75), 0 0 52px hsl(42 85% 46% / 0.45), 0 0 90px hsl(42 85% 46% / 0.18); color: hsl(42 85% 70%); }
+    70%  { text-shadow: 0 0 16px hsl(42 85% 54% / 0.65), 0 0 38px hsl(35 82% 50% / 0.38); color: hsl(35 82% 65%); }
+    100% { text-shadow: 0 0 12px hsl(42 85% 60% / 0.55), 0 0 28px hsl(42 85% 46% / 0.30); color: hsl(42 85% 62%); }
+  }
+
+  /* Hero large "Pray" */
+  .hero-pray-glow {
+    animation: pray-glow-flow 3.8s ease-in-out infinite;
+    color: hsl(42 85% 62%);
+  }
+
+  /* Nav logo small "Pray" — same vibe, toned down */
+  @keyframes nav-pray-glow-flow {
+    0%   { text-shadow: 0 0 6px hsl(42 85% 46% / 0.45); color: hsl(42 85% 50%); }
+    45%  { text-shadow: 0 0 14px hsl(42 85% 54% / 0.70), 0 0 28px hsl(42 85% 46% / 0.35); color: hsl(42 85% 62%); }
+    100% { text-shadow: 0 0 6px hsl(42 85% 46% / 0.45); color: hsl(42 85% 50%); }
+  }
+  .nav-pray-glow {
+    animation: nav-pray-glow-flow 3.8s ease-in-out infinite;
+    color: hsl(42 85% 50%);
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { @apply bg-muted; }

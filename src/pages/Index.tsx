@@ -157,7 +157,7 @@ export default function Index() {
           <Link to="/" className="flex-shrink-0 group">
             <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>Keep</span>
-              <span className="text-gold group-hover:drop-shadow-[0_0_12px_hsl(42_85%_46%/0.7)] transition-all duration-300">Pray</span>
+              <span className="nav-pray-glow">Pray</span>
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>.ing</span>
             </span>
           </Link>
@@ -272,12 +272,7 @@ export default function Index() {
             <span className="block text-5xl sm:text-7xl md:text-8xl lg:text-9xl">
               Keep
               <span className="relative inline-block">
-                <span
-                  className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, hsl(42 85% 68%), hsl(42 85% 46%), hsl(35 82% 54%))" }}
-                >
-                  Pray
-                </span>
+                <span className="hero-pray-glow">Pray</span>
                 {/* Gold shimmer underline */}
                 <span
                   className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full"
@@ -323,10 +318,10 @@ export default function Index() {
             </Link>
             <Link to="/assistant">
               <Button
-                size="lg" variant="outline"
-                className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto backdrop-blur-sm"
+                size="lg"
+                className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto bg-white/15 backdrop-blur-sm border border-white/35 text-white hover:bg-white/25 hover:border-white/55 transition-all duration-200 shadow-[0_4px_20px_-4px_hsl(0_0%_100%/0.15)]"
               >
-                <Sparkles className="w-4 h-4" /> PrayerAssist.ing
+                <Sparkles className="w-4 h-4 text-gold" /> PrayerAssist.ing
               </Button>
             </Link>
           </motion.div>
