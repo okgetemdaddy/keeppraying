@@ -63,10 +63,17 @@ serve(async (req) => {
     const cleanEmail = email ? String(email).trim().slice(0, 255) : null;
     const cleanMessage = message.trim().slice(0, 1000);
 
+    // Resolve profile info if logged in
+    let resolvedName = cleanName;
+    if (userId && !resolvedName) {
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+      resolvedName = profile?.full_name || null;
+    }
+
     // Save to DB first
     const { data: submission, error: insertErr } = await supabase
       .from("contact_submissions")
-      .insert({ name: cleanName, email: cleanEmail, message: cleanMessage })
+      .insert({ name: resolvedName, email: cleanEmail, message: cleanMessage })
       .select("id")
       .single();
 
