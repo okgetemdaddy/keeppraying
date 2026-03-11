@@ -61,6 +61,7 @@
     --shadow-card: 0 2px 14px -4px hsl(25 35% 14% / 0.10);
     --shadow-gold: 0 4px 22px -4px hsl(42 85% 46% / 0.38);
     --shadow-lift: 0 8px 36px -12px hsl(25 35% 14% / 0.18);
+    --shadow-nav: 0 4px 24px -8px hsl(25 35% 14% / 0.12);
 
     /* Typography */
     --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
