@@ -272,12 +272,7 @@ export default function Index() {
             <span className="block text-5xl sm:text-7xl md:text-8xl lg:text-9xl">
               Keep
               <span className="relative inline-block">
-                <span
-                  className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, hsl(42 85% 68%), hsl(42 85% 46%), hsl(35 82% 54%))" }}
-                >
-                  Pray
-                </span>
+                <span className="hero-pray-glow">Pray</span>
                 {/* Gold shimmer underline */}
                 <span
                   className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full"
