@@ -433,7 +433,7 @@ export default function Index() {
         <motion.div
           style={{ opacity: heroOpacity }}
           initial="hidden" animate="show" variants={stagger}
-          className="relative z-10 text-center px-4 max-w-5xl mx-auto space-y-6 sm:space-y-8"
+          className="relative z-[5] text-center px-4 max-w-5xl mx-auto space-y-6 sm:space-y-8"
         >
           <motion.p variants={fadeUp} className="text-white/55 text-xs sm:text-sm tracking-[0.35em] uppercase font-body">
             Welcome to
