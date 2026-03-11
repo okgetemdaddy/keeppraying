@@ -49,7 +49,7 @@ export default function Admin() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "contacts" | "blog" | "faq" | "insights">("moderation");
+  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights">("moderation");
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormValues>({
