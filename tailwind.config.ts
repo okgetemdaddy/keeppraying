@@ -28,6 +28,7 @@ export default {
         forest: {
           DEFAULT: "hsl(var(--forest))",
           light: "hsl(var(--forest-light))",
+          dark: "hsl(var(--forest-dark))",
         },
         cream: "hsl(var(--cream))",
         sidebar: {
