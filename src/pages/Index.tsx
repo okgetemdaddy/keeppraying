@@ -159,7 +159,7 @@ export default function Index() {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} viewport={{ once: true }} className="container mx-auto px-4 max-w-xl space-y-5">
           <h2 className="font-display text-4xl font-bold">Begin your prayer journey</h2>
           <p className="verse-text">"The prayer of a righteous person is powerful and effective." — James 5:16</p>
-          <Link to="/auth"><Button size="lg" className="btn-gold rounded-2xl h-12 px-10 text-base gap-2">Start Praying Free <ArrowRight className="w-4 h-4" /></Button></Link>
+          <Link to="/auth"><Button size="lg" className="btn-gold rounded-2xl h-12 px-10 text-base gap-2">Start Praying <ArrowRight className="w-4 h-4" /></Button></Link>
         </motion.div>
       </section>
 
