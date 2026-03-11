@@ -87,6 +87,11 @@ export default function Admin() {
     defaultValues: { title: "", slug: "", excerpt: "", content: "", cover_image_url: "", published: false },
   });
 
+  const prayerForm = useForm<PrayerCardFormValues>({
+    resolver: zodResolver(prayerCardSchema),
+    defaultValues: { title: "", prayer_text: "", extended_prayer: "", tags: "", text_style: "classic", background_url: "" },
+  });
+
   const load = useCallback(async () => {
     const [
       { data: p },
