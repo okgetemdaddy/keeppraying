@@ -121,6 +121,24 @@ export default function Index() {
   const { session } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
 
+  // Seamless video crossfade
+  const vidA = useRef<HTMLVideoElement>(null);
+  const vidB = useRef<HTMLVideoElement>(null);
+  const [activeVid, setActiveVid] = useState<"a" | "b">("a");
+  const CROSSFADE_BEFORE = 1.2; // seconds before end to start crossfade
+
+  const handleTimeUpdate = useCallback((current: "a" | "b") => {
+    const vid = current === "a" ? vidA.current : vidB.current;
+    const next = current === "a" ? vidB.current : vidA.current;
+    if (!vid || !next || !vid.duration) return;
+    const remaining = vid.duration - vid.currentTime;
+    if (remaining <= CROSSFADE_BEFORE && next.paused) {
+      next.currentTime = 0;
+      next.play().catch(() => {});
+      setActiveVid(current === "a" ? "b" : "a");
+    }
+  }, []);
+
   // Parallax
   const { scrollY } = useScroll();
   const bgY = useTransform(scrollY, [0, 600], ["0%", "20%"]);
@@ -138,6 +156,7 @@ export default function Index() {
     if (searchVal.trim()) navigate(`/prayers?q=${encodeURIComponent(searchVal.trim())}`);
     else navigate("/prayers");
   };
+
 
   return (
     <div className="min-h-screen bg-background">
