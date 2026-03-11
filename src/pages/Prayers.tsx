@@ -178,6 +178,52 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     }
   };
 
+  const toggleTts = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // If already playing, stop
+    if (ttsPlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setTtsPlaying(false);
+      return;
+    }
+    if (ttsLoading) return;
+    setTtsLoading(true);
+    try {
+      const resp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prayer-tts`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text: card.prayer_text }),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error || "Could not generate speech");
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
+      audio.onerror = () => { setTtsPlaying(false); };
+      await audio.play();
+      setTtsPlaying(true);
+    } catch (err) {
+      toast({
+        title: "Could not read prayer",
+        description: err instanceof Error ? err.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setTtsLoading(false);
+    }
+  };
+
   const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
 
   return (
