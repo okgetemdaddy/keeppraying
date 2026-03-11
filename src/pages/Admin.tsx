@@ -15,8 +15,9 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, L
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
-  BarChart2, FileText, PlusCircle, Eye, EyeOff,
+  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles,
 } from "lucide-react";
+import AIInsightsTab from "@/components/admin/AIInsightsTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
