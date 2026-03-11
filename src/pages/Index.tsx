@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, type Variants } from "framer-motion";
 import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot } from "lucide-react";
-
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
+import VerseLink from "@/components/VerseLink";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -19,6 +20,7 @@ function ContactForm() {
   const [aiReply, setAiReply] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
+  const { session } = useAuth();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +30,11 @@ function ContactForm() {
 
     setSending(true);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/contact-form`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: name.trim() || null, email: email.trim() || null, message: trimmed }),
       });
       const data = await resp.json();
@@ -128,10 +132,12 @@ export default function Index() {
           <motion.h1 variants={fadeUp} className="font-display text-6xl sm:text-7xl md:text-8xl font-bold text-white leading-none">
             Keep<span className="text-gold">Pray</span>.ing
           </motion.h1>
-          <motion.p variants={fadeUp} className="font-display italic text-white/80 text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed">
-            "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
-          </motion.p>
-          <motion.p variants={fadeUp} className="text-white/50 text-sm">— Matthew 6:6</motion.p>
+            <motion.p variants={fadeUp} className="font-display italic text-white/80 text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed">
+              "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
+            </motion.p>
+            <motion.p variants={fadeUp} className="text-white/50 text-sm flex items-center justify-center gap-1.5">
+              <VerseLink reference="Matthew 6:6" text="But when you pray, go into your room, close the door and pray to your Father, who is unseen." className="text-white/50 [&_.verse-text]:text-white/50" />
+            </motion.p>
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link to="/prayers"><Button size="lg" className="btn-gold rounded-2xl h-12 px-8 text-base gap-2">Explore Prayers <ArrowRight className="w-4 h-4" /></Button></Link>
             <Link to="/assistant"><Button size="lg" variant="outline" className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10"><Sparkles className="w-4 h-4" /> PrayerAssist AI</Button></Link>
@@ -204,7 +210,7 @@ export default function Index() {
       <section className="py-20 bg-gradient-divine text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} viewport={{ once: true }} className="container mx-auto px-4 max-w-xl space-y-5">
           <h2 className="font-display text-4xl font-bold">Begin your prayer journey</h2>
-          <p className="verse-text">"The prayer of a righteous person is powerful and effective." — James 5:16</p>
+          <p className="verse-text">"The prayer of a righteous person is powerful and effective." — <VerseLink reference="James 5:16" text="The prayer of a righteous person is powerful and effective." /></p>
           <Link to="/auth"><Button size="lg" className="btn-gold rounded-2xl h-12 px-10 text-base gap-2">Start Praying <ArrowRight className="w-4 h-4" /></Button></Link>
         </motion.div>
       </section>
@@ -229,7 +235,7 @@ export default function Index() {
               <Link key={l} to={h} className="hover:text-foreground transition-colors">{l}</Link>
             ))}
           </div>
-          <p className="mt-4">"Pray without ceasing." — 1 Thessalonians 5:17</p>
+          <p className="mt-4 flex items-center justify-center gap-1">"Pray without ceasing." — <VerseLink reference="1 Thessalonians 5:17" text="Pray without ceasing." /></p>
         </div>
       </footer>
     </div>

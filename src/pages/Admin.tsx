@@ -18,6 +18,7 @@ import {
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
+import UserMonitorTab from "@/components/admin/UserMonitorTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -48,7 +49,7 @@ export default function Admin() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "contacts" | "blog" | "faq" | "insights">("moderation");
+  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights">("moderation");
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormValues>({
@@ -158,6 +159,7 @@ export default function Admin() {
   const TABS = [
     { id: "moderation", label: "Moderation", icon: Check },
     { id: "stats", label: "Stats", icon: BarChart2 },
+    { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
     { id: "blog", label: "Blog", icon: BookOpen },
     { id: "faq", label: "FAQ Report", icon: FileText },
@@ -215,6 +217,14 @@ export default function Admin() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── USERS TAB ── */}
+        {activeTab === "users" && (
+          <div>
+            <h2 className="font-display text-xl font-semibold mb-4">User Monitor</h2>
+            <UserMonitorTab />
           </div>
         )}
 

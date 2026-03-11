@@ -9,6 +9,7 @@ import Comments from "@/components/Comments";
 import type { Database } from "@/integrations/supabase/types";
 import { ArrowLeft, Heart, HandMetal, Bookmark, Share2, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import VerseLink from "@/components/VerseLink";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 
@@ -179,7 +180,7 @@ export default function Prayer() {
           </motion.div>
 
           <div className="text-center mt-8">
-            <p className="verse-text text-sm mb-4">"Pray without ceasing." — 1 Thessalonians 5:17</p>
+            <p className="verse-text text-sm mb-4 flex items-center justify-center gap-1">"Pray without ceasing." — <VerseLink reference="1 Thessalonians 5:17" text="Pray without ceasing." /></p>
             <Link to="/prayers"><Button variant="outline" className="rounded-xl">Browse More Prayers</Button></Link>
           </div>
         </div>

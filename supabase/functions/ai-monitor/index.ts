@@ -44,7 +44,26 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { action = "generate", query = "" } = body;
+    const { action = "generate", query = "", context = "", data: summaryData = {} } = body;
+
+    // ── Summarize a specific data object (for admin AI insight buttons) ──
+    if (action === "summarize") {
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-lite",
+          messages: [
+            { role: "system", content: "You are PrayerWatch, an AI assistant for KeepPray.ing admins. Summarize the provided data object in 2-4 concise bullet points. Be insightful, warm, and action-oriented. Use markdown bullets." },
+            { role: "user", content: `Context: ${context}\n\nData:\n${JSON.stringify(summaryData, null, 2)}\n\nProvide a brief, insightful summary for the admin.` },
+          ],
+          stream: false,
+        }),
+      });
+      const aiData = await resp.json();
+      const summary = aiData.choices?.[0]?.message?.content || "No summary available.";
+      return new Response(JSON.stringify({ summary }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // ── Aggregate stats from DB ──────────────────────────────────────
     const now = new Date();

@@ -26,6 +26,19 @@ serve(async (req) => {
     });
   }
 
+  // Resolve user from auth header if present
+  const authHeader = req.headers.get("Authorization");
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    authHeader ? { global: { headers: { Authorization: authHeader } } } : undefined,
+  );
+  let userId: string | null = null;
+  if (authHeader) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    userId = user?.id || null;
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -50,10 +63,17 @@ serve(async (req) => {
     const cleanEmail = email ? String(email).trim().slice(0, 255) : null;
     const cleanMessage = message.trim().slice(0, 1000);
 
+    // Resolve profile info if logged in
+    let resolvedName = cleanName;
+    if (userId && !resolvedName) {
+      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+      resolvedName = profile?.full_name || null;
+    }
+
     // Save to DB first
     const { data: submission, error: insertErr } = await supabase
       .from("contact_submissions")
-      .insert({ name: cleanName, email: cleanEmail, message: cleanMessage })
+      .insert({ name: resolvedName, email: cleanEmail, message: cleanMessage })
       .select("id")
       .single();
 
