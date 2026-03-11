@@ -11,16 +11,30 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
-  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search,
+  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+const TEXT_STYLES = [
+  { value: "classic", label: "Classic" },
+  { value: "serif", label: "Serif" },
+  { value: "script", label: "Script" },
+  { value: "bold", label: "Bold" },
+  { value: "light", label: "Light" },
+  { value: "italic", label: "Italic" },
+  { value: "gold", label: "Gold" },
+  { value: "shadow", label: "Shadow" },
+  { value: "outline", label: "Outline" },
+  { value: "minimal", label: "Minimal" },
+];
 
 const blogSchema = z.object({
   title: z.string().min(3, "Title required"),
@@ -31,6 +45,16 @@ const blogSchema = z.object({
   published: z.boolean().default(false),
 });
 type BlogFormValues = z.infer<typeof blogSchema>;
+
+const prayerCardSchema = z.object({
+  title: z.string().max(100).optional(),
+  prayer_text: z.string().min(10, "Prayer text required").max(5000),
+  extended_prayer: z.string().max(5000).optional(),
+  tags: z.string().optional(),
+  text_style: z.string().default("classic"),
+  background_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+});
+type PrayerCardFormValues = z.infer<typeof prayerCardSchema>;
 
 interface PrayerStat { id: string; title: string | null; prayer_text: string; likes_count: number; prayed_count: number; views: number; }
 interface ContactSubmission { id: string; name: string | null; email: string | null; message: string; created_at: string; ai_reply: string | null; replied_at: string | null; }
@@ -53,6 +77,8 @@ export default function Admin() {
   const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
+  const [showPrayerForm, setShowPrayerForm] = useState(false);
+  const [savingPrayer, setSavingPrayer] = useState(false);
   const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
   const { toast } = useToast();
 
