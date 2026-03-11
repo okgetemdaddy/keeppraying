@@ -248,17 +248,18 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax background video */}
+        {/* Parallax background video — three clips cycling A→B→C→A */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
           <video
+            key={clipIndex}
             autoPlay
-            loop
             muted
             playsInline
             poster={heroBg}
+            onEnded={() => setClipIndex(i => (i + 1) % HERO_CLIPS.length)}
             className="w-full h-full object-cover object-center"
           >
-            <source src={heroVideo} type="video/mp4" />
+            <source src={HERO_CLIPS[clipIndex]} type="video/mp4" />
           </video>
         </motion.div>
 
