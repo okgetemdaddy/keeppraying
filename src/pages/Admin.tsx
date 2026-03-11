@@ -36,6 +36,7 @@ interface PrayerStat { id: string; title: string | null; prayer_text: string; li
 interface ContactSubmission { id: string; name: string | null; email: string | null; message: string; created_at: string; ai_reply: string | null; replied_at: string | null; }
 interface AdminReport { id: string; title: string; content: string; generated_at: string; }
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
+interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
 export default function Admin() {
   const { user, session } = useAuth();
