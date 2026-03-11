@@ -125,7 +125,7 @@ export default function Index() {
   const vidA = useRef<HTMLVideoElement>(null);
   const vidB = useRef<HTMLVideoElement>(null);
   const [activeVid, setActiveVid] = useState<"a" | "b">("a");
-  const CROSSFADE_BEFORE = 1.2; // seconds before end to start crossfade
+  const CROSSFADE_BEFORE = 2.5; // seconds before end to start crossfade
 
   const handleTimeUpdate = useCallback((current: "a" | "b") => {
     const vid = current === "a" ? vidA.current : vidB.current;
