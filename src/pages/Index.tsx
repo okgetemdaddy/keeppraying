@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +13,180 @@ import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
-import heroVideoA from "@/assets/hero-video-a.mp4";
-import heroVideoB from "@/assets/hero-video-b.mp4";
-import heroVideoC from "@/assets/hero-video-c.mp4";
-
-const HERO_CLIPS = [heroVideoA, heroVideoB, heroVideoC];
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+// ─── Hero Canvas Animation ────────────────────────────────────────────────────
+function HeroCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number>(0);
+
+  const init = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    // ── Particles ──
+    const NUM_PARTICLES = 55;
+    type Particle = { x: number; y: number; r: number; vx: number; vy: number; alpha: number; alphaDir: number };
+    const particles: Particle[] = Array.from({ length: NUM_PARTICLES }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.8 + 0.4,
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: -(Math.random() * 0.15 + 0.05),
+      alpha: Math.random(),
+      alphaDir: Math.random() > 0.5 ? 1 : -1,
+    }));
+
+    // ── God Rays ──
+    const NUM_RAYS = 7;
+    type Ray = { angle: number; width: number; alpha: number; alphaTarget: number; speed: number };
+    const rays: Ray[] = Array.from({ length: NUM_RAYS }, (_, i) => ({
+      angle: -0.38 + (i / (NUM_RAYS - 1)) * 0.76,
+      width: 0.04 + Math.random() * 0.06,
+      alpha: Math.random() * 0.045,
+      alphaTarget: Math.random() * 0.065,
+      speed: 0.0003 + Math.random() * 0.0004,
+    }));
+
+    // ── Birds ──
+    type BirdWing = "up" | "down";
+    type Bird = {
+      x: number; y: number; vx: number; vy: number;
+      size: number; wingPhase: number; wingSpeed: number; wingState: BirdWing; alpha: number;
+    };
+    const spawnBird = (): Bird => ({
+      x: -60,
+      y: canvas.height * (0.08 + Math.random() * 0.38),
+      vx: 0.28 + Math.random() * 0.28,
+      vy: (Math.random() - 0.5) * 0.06,
+      size: 5 + Math.random() * 6,
+      wingPhase: Math.random() * Math.PI * 2,
+      wingSpeed: 0.04 + Math.random() * 0.03,
+      wingState: "up",
+      alpha: 0.55 + Math.random() * 0.35,
+    });
+    const birds: Bird[] = Array.from({ length: 4 }, () => ({
+      ...spawnBird(),
+      x: Math.random() * canvas.width * 0.5,
+    }));
+
+    const drawBird = (ctx: CanvasRenderingContext2D, b: Bird) => {
+      const wing = Math.sin(b.wingPhase) * b.size * 0.7;
+      ctx.save();
+      ctx.globalAlpha = b.alpha;
+      ctx.strokeStyle = "rgba(255,248,220,0.9)";
+      ctx.lineWidth = 1.1;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      // left wing
+      ctx.moveTo(b.x, b.y);
+      ctx.quadraticCurveTo(b.x - b.size * 0.5, b.y - wing, b.x - b.size, b.y);
+      // right wing
+      ctx.moveTo(b.x, b.y);
+      ctx.quadraticCurveTo(b.x + b.size * 0.5, b.y - wing, b.x + b.size, b.y);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    let frame = 0;
+    const tick = () => {
+      frame++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const W = canvas.width, H = canvas.height;
+
+      // ── Draw God Rays ──
+      const originX = W * 0.55;
+      const originY = -H * 0.05;
+      rays.forEach(ray => {
+        // breathe alpha
+        if (ray.alpha < ray.alphaTarget) ray.alpha = Math.min(ray.alphaTarget, ray.alpha + ray.speed);
+        else ray.alpha = Math.max(ray.alphaTarget * 0.2, ray.alpha - ray.speed);
+        if (Math.abs(ray.alpha - ray.alphaTarget) < 0.003) ray.alphaTarget = 0.01 + Math.random() * 0.055;
+
+        const halfW = ray.width / 2;
+        const len = H * 1.6;
+        const a1 = ray.angle - halfW;
+        const a2 = ray.angle + halfW;
+        const x1 = originX + Math.sin(a1) * len;
+        const y1 = originY + Math.cos(a1) * len;
+        const x2 = originX + Math.sin(a2) * len;
+        const y2 = originY + Math.cos(a2) * len;
+
+        const grad = ctx.createLinearGradient(originX, originY, originX + Math.sin(ray.angle) * len, originY + Math.cos(ray.angle) * len);
+        grad.addColorStop(0, `rgba(255,235,160,${ray.alpha * 1.4})`);
+        grad.addColorStop(0.4, `rgba(255,220,120,${ray.alpha})`);
+        grad.addColorStop(1, `rgba(255,200,80,0)`);
+
+        ctx.beginPath();
+        ctx.moveTo(originX, originY);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+      });
+
+      // ── Draw Particles ──
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha += p.alphaDir * 0.003;
+        if (p.alpha >= 0.7 || p.alpha <= 0.05) p.alphaDir *= -1;
+        if (p.y < -10) { p.y = H + 5; p.x = Math.random() * W; }
+        if (p.x < -10) p.x = W + 5;
+        if (p.x > W + 10) p.x = -5;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,245,200,${p.alpha})`;
+        ctx.fill();
+      });
+
+      // ── Draw Birds ──
+      birds.forEach((b, i) => {
+        b.x += b.vx;
+        b.y += b.vy + Math.sin(frame * 0.008 + i) * 0.04;
+        b.wingPhase += b.wingSpeed;
+        if (b.x > W + 80) {
+          const fresh = spawnBird();
+          Object.assign(b, fresh);
+        }
+        drawBird(ctx, b);
+      });
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const cleanup = init();
+    return cleanup;
+  }, [init]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 2 }}
+    />
+  );
+}
 
 // ─── Animations ──────────────────────────────────────────────────────────────
 const fadeUp: Variants = {
