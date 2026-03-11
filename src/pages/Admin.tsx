@@ -191,6 +191,36 @@ export default function Admin() {
     load();
   };
 
+  const onPrayerCardSubmit = async (values: PrayerCardFormValues) => {
+    if (!user) return;
+    setSavingPrayer(true);
+    try {
+      const tagsArr = values.tags
+        ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
+        : [];
+      const { error } = await supabase.from("prayer_cards").insert({
+        title: values.title || null,
+        prayer_text: values.prayer_text.trim(),
+        extended_prayer: values.extended_prayer?.trim() || null,
+        tags: tagsArr.length ? tagsArr : null,
+        text_style: values.text_style,
+        background_url: values.background_url || null,
+        created_by: user.id,
+        source: "admin",
+        status: "approved",
+      });
+      if (error) throw error;
+      toast({ title: "Prayer card published! 🙏" });
+      prayerForm.reset();
+      setShowPrayerForm(false);
+      load();
+    } catch (e) {
+      toast({ title: "Failed to save prayer", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
+    } finally {
+      setSavingPrayer(false);
+    }
+  };
+
   const loadVerses = useCallback(async (search = "") => {
     setVerseSearching(true);
     try {
