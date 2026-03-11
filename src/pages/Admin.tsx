@@ -410,30 +410,3 @@ export default function Admin() {
   );
 }
 
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">AI FAQ Reports</h2>
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={generateFaq} disabled={genFaq}>
-                {genFaq ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                Generate Weekly FAQ
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">AI analyzes the last 100 PrayerAssist conversations and summarizes common questions and themes.</p>
-            {reports.length === 0 ? <p className="text-sm text-muted-foreground italic">No reports yet. Click "Generate Weekly FAQ" to create the first one.</p> : (
-              reports.map(r => (
-                <div key={r.id} className="prayer-card p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{r.title}</h3>
-                    <span className="text-xs text-muted-foreground">{new Date(r.generated_at).toLocaleDateString()}</span>
-                  </div>
-                  <div className="prose prose-sm max-w-none text-foreground [&_h2]:font-display [&_h2]:text-base [&_strong]:text-foreground">
-                    <ReactMarkdown>{r.content}</ReactMarkdown>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
