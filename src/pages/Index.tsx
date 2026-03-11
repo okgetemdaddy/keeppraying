@@ -130,32 +130,28 @@ export default function Index() {
         <div className="hero-overlay absolute inset-0" />
         <motion.div initial="hidden" animate="show" variants={stagger} className="relative z-10 text-center px-4 max-w-4xl mx-auto space-y-6">
           <motion.p variants={fadeUp} className="text-white/60 text-sm tracking-[0.3em] uppercase font-body">Welcome to</motion.p>
-          <motion.h1 variants={fadeUp} className="font-display font-bold text-white leading-none relative inline-block">
-            {/* Halo above "Pray" */}
-            <span className="relative inline-block">
-              Keep
-              <span className="relative inline-block text-gold">
-                {/* Halo positioned above the word */}
-                <motion.img
-                  src={haloPng}
-                  alt=""
-                  aria-hidden="true"
-                  initial={{ opacity: 0, scale: 0.7, rotate: -8 }}
-                  animate={{ opacity: 1, scale: 1, rotate: -12 }}
-                  transition={{ delay: 0.8, duration: 0.9, type: "spring", stiffness: 120 }}
-                  className="absolute pointer-events-none select-none"
-                  style={{
-                    width: "110%",
-                    top: "-68%",
-                    left: "-5%",
-                    filter: "drop-shadow(0 0 18px rgba(212,168,67,0.85)) drop-shadow(0 0 6px rgba(255,220,100,0.6))",
-                    zIndex: 1,
-                  }}
-                />
-                <span className="relative" style={{ zIndex: 2 }}>Pray</span>
-              </span>
-              <span className="text-6xl sm:text-7xl md:text-8xl">.ing</span>
+          <motion.h1 variants={fadeUp} className="font-display text-6xl sm:text-7xl md:text-8xl font-bold text-white leading-none relative">
+            Keep
+            <span className="relative inline-block text-gold mx-[0.04em]">
+              <motion.img
+                src={haloPng}
+                alt=""
+                aria-hidden="true"
+                initial={{ opacity: 0, scale: 0.6, rotate: -6 }}
+                animate={{ opacity: 1, scale: 1, rotate: -14 }}
+                transition={{ delay: 0.9, duration: 1, type: "spring", stiffness: 100, damping: 14 }}
+                className="absolute pointer-events-none select-none"
+                style={{
+                  width: "115%",
+                  top: "-72%",
+                  left: "-7.5%",
+                  filter: "drop-shadow(0 0 22px rgba(212,168,67,0.9)) drop-shadow(0 0 8px rgba(255,235,130,0.7)) drop-shadow(0 0 40px rgba(212,168,67,0.4))",
+                  zIndex: 1,
+                }}
+              />
+              <span className="relative" style={{ zIndex: 2 }}>Pray</span>
             </span>
+            .ing
           </motion.h1>
           <motion.p variants={fadeUp} className="font-display italic text-white/80 text-lg sm:text-2xl max-w-2xl mx-auto leading-relaxed px-2">
             "But when you pray, go into your room, close the door<br className="hidden sm:block" /> and pray to your Father, who is unseen."
