@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_reports: {
+        Row: {
+          content: string
+          generated_at: string
+          id: string
+          report_type: string
+          title: string
+        }
+        Insert: {
+          content: string
+          generated_at?: string
+          id?: string
+          report_type?: string
+          title: string
+        }
+        Update: {
+          content?: string
+          generated_at?: string
+          id?: string
+          report_type?: string
+          title?: string
+        }
+        Relationships: []
+      }
       ai_chat_logs: {
         Row: {
           ai_response: string | null
@@ -342,6 +366,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
