@@ -274,13 +274,24 @@ export default function Admin() {
             {contacts.length === 0 ? <p className="text-muted-foreground text-sm">No contact submissions yet.</p> : (
               <div className="space-y-3">
                 {contacts.map(c => (
-                  <div key={c.id} className="prayer-card p-4 space-y-2">
-                    <div className="flex items-center gap-3">
+                  <div key={c.id} className="prayer-card p-4 space-y-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       {c.name && <span className="font-medium text-sm">{c.name}</span>}
                       {c.email && <span className="text-xs text-muted-foreground">{c.email}</span>}
                       <span className="text-xs text-muted-foreground ml-auto">{new Date(c.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p className="text-sm text-foreground/80">{c.message}</p>
+                    <div className="bg-muted/40 rounded-xl px-3 py-2">
+                      <p className="text-xs text-muted-foreground mb-1 font-medium">Message</p>
+                      <p className="text-sm text-foreground/80">{c.message}</p>
+                    </div>
+                    {c.ai_reply && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+                        <p className="text-xs text-primary font-medium mb-1 flex items-center gap-1">
+                          ✦ AI Reply {c.replied_at && <span className="text-muted-foreground font-normal">· {new Date(c.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
+                        </p>
+                        <p className="text-sm text-foreground/80 whitespace-pre-line">{c.ai_reply}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
