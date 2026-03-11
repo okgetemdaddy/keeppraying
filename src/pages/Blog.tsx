@@ -42,7 +42,7 @@ export default function Blog() {
           <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" />Home</Link>
         </div>
       </header>
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="container mx-auto px-4 py-12 max-w-4xl relative z-10">
         <div className="text-center mb-12">
           <h1 className="font-display text-4xl font-bold mb-3">Faith & Prayer Blog</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">Reflections, teachings, and encouragement for your prayer journey</p>
