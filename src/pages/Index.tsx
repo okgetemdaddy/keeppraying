@@ -274,14 +274,14 @@ export default function Index() {
               <span className="relative inline-block">
                 <span
                   className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, hsl(42 85% 68%), hsl(42 85% 46%), hsl(35 82% 54%))" }}
+                  style={{ backgroundImage: "linear-gradient(135deg, hsl(150 55% 72%), hsl(150 45% 52%), hsl(150 38% 38%))" }}
                 >
                   Pray
                 </span>
-                {/* Gold shimmer underline */}
+                {/* Forest green shimmer underline */}
                 <span
                   className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full"
-                  style={{ background: "linear-gradient(90deg, transparent, hsl(42 85% 54%), transparent)" }}
+                  style={{ background: "linear-gradient(90deg, transparent, hsl(150 45% 52%), transparent)" }}
                 />
               </span>
               .ing
