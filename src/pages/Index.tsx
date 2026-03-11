@@ -308,7 +308,7 @@ export default function Index() {
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-gold/90 text-white text-xs font-medium hover:bg-gold transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-forest text-white text-xs font-semibold hover:bg-forest-dark transition-colors"
               >
                 Search
               </button>
