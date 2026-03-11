@@ -157,7 +157,7 @@ export default function Index() {
           <Link to="/" className="flex-shrink-0 group">
             <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>Keep</span>
-              <span className="text-gold group-hover:drop-shadow-[0_0_12px_hsl(42_85%_46%/0.7)] transition-all duration-300">Pray</span>
+              <span className="text-[hsl(150_55%_65%)] group-hover:drop-shadow-[0_0_12px_hsl(150_45%_52%/0.8)] transition-all duration-300">Pray</span>
               <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>.ing</span>
             </span>
           </Link>
@@ -191,7 +191,7 @@ export default function Index() {
               </Link>
             ) : null}
             <Link to="/auth">
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
+              <Button size="sm" className="rounded-xl gap-1.5 px-5 bg-forest hover:bg-forest-dark text-white border-0 shadow-md font-semibold transition-all duration-200">
                 Get Started <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>
@@ -255,9 +255,9 @@ export default function Index() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/55" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
 
-        {/* Glowing orbs */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-gold/10 blur-3xl animate-pulse pointer-events-none" />
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-gold/5 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
+          {/* Glowing orbs */}
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-forest/15 blur-3xl animate-pulse pointer-events-none" />
+          <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-forest/8 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
 
         <motion.div
           style={{ opacity: heroOpacity }}
@@ -274,14 +274,14 @@ export default function Index() {
               <span className="relative inline-block">
                 <span
                   className="text-transparent bg-clip-text"
-                  style={{ backgroundImage: "linear-gradient(135deg, hsl(42 85% 68%), hsl(42 85% 46%), hsl(35 82% 54%))" }}
+                  style={{ backgroundImage: "linear-gradient(135deg, hsl(150 55% 72%), hsl(150 45% 52%), hsl(150 38% 38%))" }}
                 >
                   Pray
                 </span>
-                {/* Gold shimmer underline */}
+                {/* Forest green shimmer underline */}
                 <span
                   className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full"
-                  style={{ background: "linear-gradient(90deg, transparent, hsl(42 85% 54%), transparent)" }}
+                  style={{ background: "linear-gradient(90deg, transparent, hsl(150 45% 52%), transparent)" }}
                 />
               </span>
               .ing
@@ -292,8 +292,8 @@ export default function Index() {
             "Do not be anxious about anything, but in every situation,<br className="hidden sm:block" /> by prayer and petition, with thanksgiving, present your requests to God."
           </motion.p>
 
-          <motion.p variants={fadeUp} className="text-white/45 text-xs sm:text-sm flex items-center justify-center gap-1.5">
-            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/45 [&_.verse-text]:text-white/45" />
+          <motion.p variants={fadeUp} className="text-white/60 text-xs sm:text-sm flex items-center justify-center gap-1.5">
+            <VerseLink reference="Philippians 4:6" text="Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God." className="text-white/60 [&_.verse-text]:text-white/60" />
           </motion.p>
 
           {/* Search bar */}
@@ -308,7 +308,7 @@ export default function Index() {
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-gold/90 text-white text-xs font-medium hover:bg-gold transition-colors"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 rounded-xl bg-forest text-white text-xs font-semibold hover:bg-forest-dark transition-colors"
               >
                 Search
               </button>
@@ -317,14 +317,14 @@ export default function Index() {
 
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-1">
             <Link to="/prayers">
-              <Button size="lg" className="btn-gold rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto shadow-[0_8px_32px_-8px_hsl(42_85%_46%/0.6)]">
+              <Button size="lg" className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto font-semibold bg-forest hover:bg-forest-dark text-white border-0 shadow-[0_8px_32px_-8px_hsl(150_38%_26%/0.7)] transition-all duration-200">
                 Explore Prayers <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
             <Link to="/assistant">
               <Button
                 size="lg" variant="outline"
-                className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto backdrop-blur-sm"
+                className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto backdrop-blur-sm font-medium bg-white/15 border-white/40 text-white hover:bg-white/25 hover:border-white/60 transition-all duration-200"
               >
                 <Sparkles className="w-4 h-4" /> PrayerAssist.ing
               </Button>
