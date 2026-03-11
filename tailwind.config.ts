@@ -83,6 +83,7 @@ export default {
       },
       backgroundImage: {
         "gradient-gold": "var(--gradient-gold)",
+        "gradient-terra": "var(--gradient-terra)",
         "gradient-forest": "var(--gradient-forest)",
         "gradient-divine": "var(--gradient-divine)",
       },
@@ -90,6 +91,7 @@ export default {
         prayer: "var(--shadow-prayer)",
         card: "var(--shadow-card)",
         gold: "var(--shadow-gold)",
+        terra: "var(--shadow-terra)",
         lift: "var(--shadow-lift)",
       },
     },
