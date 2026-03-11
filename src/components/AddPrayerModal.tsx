@@ -201,7 +201,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
                 </FormControl>
                 <div className="flex justify-between items-center">
                   <FormMessage />
-                  <span className={`text-xs ml-auto ${charCount > 900 ? "text-destructive" : "text-muted-foreground"}`}>{charCount}/1000</span>
+                  <span className={`text-xs ml-auto ${wordCount > 4500 ? "text-destructive" : "text-muted-foreground"}`}>{wordCount.toLocaleString()}/{MAX_WORDS.toLocaleString()} words</span>
                 </div>
               </FormItem>
             )} />
