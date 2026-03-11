@@ -372,6 +372,28 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
 
                   <div className="flex-1" />
 
+                  {/* Listen button */}
+                  <motion.button
+                    onClick={toggleTts}
+                    whileTap={{ scale: 0.85 }}
+                    title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60 relative"
+                    style={{ color: ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : ttsPlaying ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <VolumeX className="w-3.5 h-3.5" />
+                      </motion.div>
+                    ) : (
+                      <Volume2 className="w-3.5 h-3.5" />
+                    )}
+                  </motion.button>
+
                   <Link
                     to={`/prayer/${card.id}`}
                     onClick={e => e.stopPropagation()}
