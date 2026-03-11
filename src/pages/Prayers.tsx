@@ -90,20 +90,14 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [liked, setLiked] = useState(false);
   const [prayed, setPrayed] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [scriptureOpen, setScriptureOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [likesCount, setLikesCount] = useState(card.likes_count);
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
   const [prayAnim, setPrayAnim] = useState(false);
-  const [textExpanded, setTextExpanded] = useState(false);
-  const [isTruncated, setIsTruncated] = useState(false);
-  const textRef = useRef<HTMLParagraphElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    const el = textRef.current;
-    if (el) setIsTruncated(el.scrollHeight > 112);
-  }, [card.prayer_text]);
 
   useEffect(() => {
     if (!userId) return;
@@ -118,7 +112,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     checkInteractions();
   }, [card.id, userId]);
 
-  const toggleLike = async () => {
+  const toggleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to like prayers" }); return; }
     setLikeAnim(true);
     setTimeout(() => setLikeAnim(false), 400);
@@ -131,7 +126,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     }
   };
 
-  const togglePrayed = async () => {
+  const togglePrayed = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to track prayers" }); return; }
     setPrayAnim(true);
     setTimeout(() => setPrayAnim(false), 400);
@@ -145,7 +141,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     }
   };
 
-  const toggleSave = async () => {
+  const toggleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to save prayers" }); return; }
     if (saved) {
       await supabase.from("user_saved_prayers").delete().eq("prayer_id", card.id).eq("user_id", userId);
@@ -162,19 +159,19 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   return (
     <motion.div
       variants={cardVariants}
-      whileHover={{ y: -6, scale: 1.015 }}
+      whileHover={collapsed ? {} : { y: -6, scale: 1.015 }}
       transition={{ type: "spring", stiffness: 320, damping: 26 }}
-      className="prayer-card-premium group flex flex-col"
+      className="prayer-card-premium group flex flex-col overflow-hidden"
       style={{ willChange: "transform" }}
     >
       {/* Glass inner */}
-      <div className="flex flex-col flex-1 p-5 space-y-3.5">
+      <div className="flex flex-col flex-1 p-5">
 
-        {/* Header */}
-        <div className="flex items-start justify-between gap-2">
+        {/* Header — always visible */}
+        <div className="flex items-start justify-between gap-2 mb-3.5">
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className="font-display font-semibold text-foreground text-base sm:text-lg leading-tight line-clamp-2"
+              <h3 className="font-display font-semibold text-base sm:text-lg leading-tight line-clamp-2"
                 style={{ color: "hsl(25 35% 14%)" }}>
                 {card.title}
               </h3>
@@ -183,130 +180,172 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           <SourceBadge source={(card as PrayerCard).source} status={card.status} />
         </div>
 
-        {/* Prayer text — soft fade truncation */}
-        <div className="relative">
-          <motion.div
-            animate={{ height: textExpanded ? "auto" : 112 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-            style={{ minHeight: 0 }}
-          >
-            <p ref={textRef} className={`${textClass} leading-relaxed`}
-              style={{ color: "hsl(25 28% 28%)" }}>
-              {card.prayer_text}
-            </p>
-          </motion.div>
-          {!textExpanded && isTruncated && (
-            <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
-              style={{ background: "linear-gradient(to bottom, transparent, hsl(38 60% 99%))" }} />
-          )}
+        {/* Prayer text — click anywhere to collapse card chrome */}
+        <div
+          className="cursor-pointer select-none"
+          onClick={() => setCollapsed(v => !v)}
+        >
+          <p className={`${textClass} leading-relaxed`} style={{ color: "hsl(25 28% 28%)" }}>
+            {card.prayer_text}
+          </p>
         </div>
-        {isTruncated && (
-          <button
-            onClick={() => setTextExpanded(v => !v)}
-            className="text-xs font-medium transition-opacity hover:opacity-80 -mt-1"
-            style={{ color: "hsl(42 75% 40%)" }}
-          >
-            {textExpanded ? "Read less ↑" : "Read more →"}
-          </button>
-        )}
 
-        {/* Extended prayer toggle */}
-        {card.extended_prayer && (
-          <div>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-xs font-medium flex items-center gap-1 transition-colors"
-              style={{ color: "hsl(42 75% 40%)" }}
+        {/* Collapsible chrome: scripture / tags / actions / comments */}
+        <AnimatePresence initial={false}>
+          {!collapsed ? (
+            <motion.div
+              key="chrome"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
             >
-              <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown className="w-3.5 h-3.5" />
+              <div className="space-y-3.5 mt-3.5">
+
+                {/* Bottom-row toggles: scripture ←→ tags */}
+                <div className="flex items-center justify-between gap-2">
+                  {/* Show scripture (left) */}
+                  {card.extended_prayer ? (
+                    <button
+                      onClick={() => setScriptureOpen(v => !v)}
+                      className="text-xs font-medium flex items-center gap-1 transition-colors"
+                      style={{ color: "hsl(42 75% 40%)" }}
+                    >
+                      <motion.div animate={{ rotate: scriptureOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </motion.div>
+                      {scriptureOpen ? "Hide scripture" : "Show scripture"}
+                    </button>
+                  ) : <div />}
+
+                  {/* Show tags (right) */}
+                  {card.tags && card.tags.length > 0 && (
+                    <button
+                      onClick={() => setTagsOpen(v => !v)}
+                      className="text-xs font-medium flex items-center gap-1 transition-colors"
+                      style={{ color: "hsl(42 75% 40%)" }}
+                    >
+                      <Tag className="w-3 h-3" />
+                      {tagsOpen ? "Hide tags" : "Tags"}
+                      <motion.div animate={{ rotate: tagsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-3 h-3" />
+                      </motion.div>
+                    </button>
+                  )}
+                </div>
+
+                {/* Scripture accordion */}
+                <AnimatePresence>
+                  {scriptureOpen && card.extended_prayer && (
+                    <motion.p
+                      key="scripture"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="verse-text text-sm overflow-hidden"
+                    >
+                      {card.extended_prayer}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+
+                {/* Tags accordion */}
+                <AnimatePresence>
+                  {tagsOpen && card.tags && card.tags.length > 0 && (
+                    <motion.div
+                      key="tags"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="flex flex-wrap gap-1.5 overflow-hidden"
+                    >
+                      {card.tags.map(tag => {
+                        const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                        return (
+                          <span key={tag}
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
+                            style={{ background: palette.bg, color: palette.text }}>
+                            #{tag}
+                          </span>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Action row */}
+                <div className="flex items-center gap-0.5 pt-2 border-t" style={{ borderColor: "hsl(38 22% 90%)" }}>
+                  <motion.button
+                    onClick={toggleLike}
+                    animate={likeAnim ? { scale: [1, 1.4, 1] } : {}}
+                    transition={{ duration: 0.35 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                    style={{ color: liked ? "hsl(0 72% 51%)" : "hsl(25 18% 56%)" }}
+                  >
+                    <Heart className={`w-3.5 h-3.5 transition-all ${liked ? "fill-current scale-110" : ""}`} />
+                    <span>{likesCount}</span>
+                  </motion.button>
+
+                  <motion.button
+                    onClick={togglePrayed}
+                    animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
+                    transition={{ duration: 0.35 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                    style={{ color: prayed ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    <HandMetal className={`w-3.5 h-3.5 ${prayed ? "text-primary" : ""}`} />
+                    <span>{prayedCount}</span>
+                  </motion.button>
+
+                  <div className="flex-1" />
+
+                  <Link
+                    to={`/prayer/${card.id}`}
+                    onClick={e => e.stopPropagation()}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: "hsl(25 18% 56%)" }}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+
+                  <motion.button
+                    onClick={toggleSave}
+                    whileTap={{ scale: 0.85 }}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: saved ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
+                  </motion.button>
+                </div>
+
+                {/* Comments */}
+                <Comments prayerId={card.id} uploaderId={card.source === "community" ? (card.created_by ?? null) : null} />
+              </div>
+            </motion.div>
+          ) : (
+            /* Collapsed state — bouncing up arrow tap target */
+            <motion.div
+              key="collapsed"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex justify-center items-end cursor-pointer mt-3 pb-1"
+              style={{ minHeight: 32 }}
+              onClick={() => setCollapsed(false)}
+            >
+              <motion.div
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ChevronUp className="w-5 h-5" style={{ color: "hsl(42 75% 55%)" }} />
               </motion.div>
-              {expanded ? "Hide scripture" : "Show scripture"}
-            </button>
-            <AnimatePresence>
-              {expanded && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="verse-text text-sm mt-2 overflow-hidden"
-                >
-                  {card.extended_prayer}
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* Tags */}
-        {card.tags && card.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {card.tags.map(tag => {
-              const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
-              return (
-                <span key={tag}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
-                  style={{ background: palette.bg, color: palette.text }}>
-                  #{tag}
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Action row */}
-        <div className="flex items-center gap-0.5 pt-2 border-t" style={{ borderColor: "hsl(38 22% 90%)" }}>
-
-          {/* Like */}
-          <motion.button
-            onClick={toggleLike}
-            animate={likeAnim ? { scale: [1, 1.4, 1] } : {}}
-            transition={{ duration: 0.35 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
-            style={{ color: liked ? "hsl(0 72% 51%)" : "hsl(25 18% 56%)" }}
-          >
-            <Heart className={`w-3.5 h-3.5 transition-all ${liked ? "fill-current scale-110" : ""}`} />
-            <span>{likesCount}</span>
-          </motion.button>
-
-          {/* Prayed */}
-          <motion.button
-            onClick={togglePrayed}
-            animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
-            transition={{ duration: 0.35 }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
-            style={{ color: prayed ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
-          >
-            <HandMetal className={`w-3.5 h-3.5 ${prayed ? "text-primary" : ""}`} />
-            <span>{prayedCount}</span>
-          </motion.button>
-
-          <div className="flex-1" />
-
-          {/* External link */}
-          <Link
-            to={`/prayer/${card.id}`}
-            className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
-            style={{ color: "hsl(25 18% 56%)" }}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </Link>
-
-          {/* Save */}
-          <motion.button
-            onClick={toggleSave}
-            whileTap={{ scale: 0.85 }}
-            className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
-            style={{ color: saved ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
-          >
-            <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
-          </motion.button>
-        </div>
-
-        {/* Comments */}
-        <Comments prayerId={card.id} uploaderId={card.source === "community" ? (card.created_by ?? null) : null} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );
