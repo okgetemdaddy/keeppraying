@@ -129,6 +129,7 @@ export default function Prayers() {
           <Link to="/" className="font-display font-bold text-xl text-foreground">KeepPray.ing</Link>
           <div className="flex items-center gap-2">
             <Link to="/assistant"><Button variant="outline" size="sm" className="rounded-xl gap-1.5"><Sparkles className="w-3.5 h-3.5" />PrayerAssist</Button></Link>
+            {user && <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={() => setAddOpen(true)}><Plus className="w-3.5 h-3.5" />Add Prayer</Button>}
             {user ? <Link to="/board"><Button size="sm" className="btn-gold rounded-xl">My Board</Button></Link>
               : <Link to="/auth"><Button size="sm" className="btn-gold rounded-xl">Sign In</Button></Link>}
           </div>
