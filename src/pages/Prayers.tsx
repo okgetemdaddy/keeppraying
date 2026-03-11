@@ -11,7 +11,7 @@ import Comments from "@/components/Comments";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
-  Users, ShieldCheck, ToggleLeft, ToggleRight, Loader2, X, ChevronDown
+  Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp
 } from "lucide-react";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
