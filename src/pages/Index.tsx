@@ -13,7 +13,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
-import heroVideo from "@/assets/hero-video.mp4";
+import heroVideoA from "@/assets/hero-video-a.mp4";
+import heroVideoB from "@/assets/hero-video-b.mp4";
+import heroVideoC from "@/assets/hero-video-c.mp4";
+
+const HERO_CLIPS = [heroVideoA, heroVideoB, heroVideoC];
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -117,6 +121,7 @@ export default function Index() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [clipIndex, setClipIndex] = useState(0);
   const navigate = useNavigate();
   const { session } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
@@ -243,17 +248,18 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax background video */}
+        {/* Parallax background video — three clips cycling A→B→C→A */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
           <video
+            key={clipIndex}
             autoPlay
-            loop
             muted
             playsInline
             poster={heroBg}
+            onEnded={() => setClipIndex(i => (i + 1) % HERO_CLIPS.length)}
             className="w-full h-full object-cover object-center"
           >
-            <source src={heroVideo} type="video/mp4" />
+            <source src={HERO_CLIPS[clipIndex]} type="video/mp4" />
           </video>
         </motion.div>
 
