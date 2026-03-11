@@ -24,8 +24,8 @@ export default function Blog() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="font-display font-bold text-xl text-foreground">KeepPray.ing</Link>
-          <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" />Home</Link>
+          <Link to="/" className="font-display font-bold text-xl text-foreground">KeepGrow.ing</Link>
+          <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" />KeepPray.ing</Link>
         </div>
       </header>
       <div className="container mx-auto px-4 py-12 max-w-4xl">
