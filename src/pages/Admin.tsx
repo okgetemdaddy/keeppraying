@@ -313,7 +313,7 @@ export default function Admin() {
         {activeTab === "blog" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">Blog Posts</h2>
+              <h2 className="font-display text-xl font-semibold">KeepGrow.ing Posts</h2>
               <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setShowBlogForm(!showBlogForm)}>
                 <PlusCircle className="w-4 h-4" />New Post
               </Button>
