@@ -409,7 +409,7 @@ export default function Admin() {
     </div>
   );
 }
-          <div className="space-y-4">
+
             <div className="flex items-center justify-between">
               <h2 className="font-display text-xl font-semibold">AI FAQ Reports</h2>
               <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={generateFaq} disabled={genFaq}>
