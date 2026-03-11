@@ -106,10 +106,10 @@ const SEED_PRAYERS = [
 
 const NAV_LINKS = [
   { label: "Prayers", href: "/prayers" },
-  { label: "PrayerAssist", href: "/assistant" },
-  { label: "War Room", href: "/war-room" },
+  { label: "PrayerAssist.ing", href: "/assistant" },
+  { label: "KeepFight.ing", href: "/war-room" },
   { label: "Games", href: "/games" },
-  { label: "Blog", href: "/blog" },
+  { label: "KeepGrow.ing", href: "/blog" },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
