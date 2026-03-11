@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, type Variants } from "framer-motion";
 import { Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot } from "lucide-react";
-
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
+import VerseLink from "@/components/VerseLink";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -19,6 +20,7 @@ function ContactForm() {
   const [aiReply, setAiReply] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
+  const { session } = useAuth();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,9 +30,11 @@ function ContactForm() {
 
     setSending(true);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (session?.access_token) headers["Authorization"] = `Bearer ${session.access_token}`;
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/contact-form`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: name.trim() || null, email: email.trim() || null, message: trimmed }),
       });
       const data = await resp.json();
