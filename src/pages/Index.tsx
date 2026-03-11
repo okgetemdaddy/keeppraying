@@ -327,7 +327,7 @@ export default function Index() {
                 size="lg" variant="outline"
                 className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto backdrop-blur-sm"
               >
-                <Sparkles className="w-4 h-4" /> PrayerAssist AI
+                <Sparkles className="w-4 h-4" /> PrayerAssist.ing
               </Button>
             </Link>
           </motion.div>
