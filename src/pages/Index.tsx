@@ -88,7 +88,7 @@ export default function Index() {
           <motion.p variants={fadeUp} className="text-white/50 text-sm">— Matthew 6:6</motion.p>
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link to="/prayers"><Button size="lg" className="btn-gold rounded-2xl h-12 px-8 text-base gap-2">Explore Prayers <ArrowRight className="w-4 h-4" /></Button></Link>
-            <Link to="/assistant"><Button size="lg" className="rounded-2xl h-12 px-8 text-base gap-2 bg-white/15 backdrop-blur border border-white/30 text-white hover:bg-white/25"><Sparkles className="w-4 h-4" /> PrayerAssist AI</Button></Link>
+            <Link to="/assistant"><Button size="lg" variant="outline" className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10"><Sparkles className="w-4 h-4" /> PrayerAssist AI</Button></Link>
           </motion.div>
         </motion.div>
       </section>
