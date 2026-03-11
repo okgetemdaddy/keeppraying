@@ -44,6 +44,12 @@
     --forest: 150 38% 26%;
     --forest-light: 150 22% 90%;
     --forest-dark: 150 45% 18%;
+
+    /* Terracotta — hero accent */
+    --terra: 16 68% 46%;
+    --terra-light: 16 70% 90%;
+    --terra-dark: 14 72% 34%;
+    --terra-glow: 18 75% 54%;
     --cream: 38 60% 97%;
     --warm-brown: 25 35% 14%;
     --amber-soft: 35 68% 85%;
@@ -55,11 +61,13 @@
     --gradient-card: linear-gradient(145deg, hsl(38 50% 99%), hsl(42 45% 97%));
     --gradient-gold: linear-gradient(135deg, hsl(42 85% 44%), hsl(35 82% 54%));
     --gradient-forest: linear-gradient(135deg, hsl(150 38% 26%), hsl(150 32% 36%));
+    --gradient-terra: linear-gradient(135deg, hsl(16 68% 46%), hsl(18 75% 58%));
     --gradient-warroom: linear-gradient(160deg, hsl(220 60% 6%), hsl(35 40% 12%), hsl(220 50% 8%));
 
     /* Shadows */
     --shadow-prayer: 0 4px 28px -8px hsl(42 75% 46% / 0.18), 0 2px 10px -4px hsl(25 35% 14% / 0.08);
     --shadow-card: 0 2px 14px -4px hsl(25 35% 14% / 0.10);
+    --shadow-terra: 0 4px 22px -4px hsl(16 68% 46% / 0.45);
     --shadow-gold: 0 4px 22px -4px hsl(42 85% 46% / 0.38);
     --shadow-lift: 0 8px 36px -12px hsl(25 35% 14% / 0.18);
     --shadow-nav: 0 4px 24px -8px hsl(25 35% 14% / 0.12);
