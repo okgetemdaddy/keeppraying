@@ -164,7 +164,7 @@ export default function WarRoom() {
           </AnimatePresence>
         ) : (
           <div className="text-center space-y-5 sm:space-y-6 max-w-lg w-full px-2">
-            <h1 className="font-display text-3xl sm:text-4xl font-bold" style={{ color: theme.text }}>The War Room</h1>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold" style={{ color: theme.text }}>KeepFight.ing</h1>
             <p className="font-display italic text-base sm:text-lg leading-relaxed" style={{ color: theme.muted }}>
               "The weapons we fight with are not the weapons of the world. On the contrary, they have divine power to demolish strongholds."
             </p>

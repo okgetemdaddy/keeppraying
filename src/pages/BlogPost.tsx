@@ -32,7 +32,7 @@ export default function BlogPost() {
       .single()
       .then(({ data }) => {
         setPost(data);
-        if (data) document.title = `${data.title} | KeepPray.ing Blog`;
+        if (data) document.title = `${data.title} | KeepGrow.ing`;
         setLoading(false);
       });
     return () => { document.title = "KeepPray.ing"; };
@@ -47,7 +47,7 @@ export default function BlogPost() {
   if (!post) return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
       <p className="text-muted-foreground font-display italic">Post not found.</p>
-      <Link to="/blog"><Button className="btn-gold rounded-xl">Back to Blog</Button></Link>
+      <Link to="/blog"><Button className="btn-gold rounded-xl">Back to KeepGrow.ing</Button></Link>
     </div>
   );
 
@@ -56,7 +56,7 @@ export default function BlogPost() {
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 h-14 flex items-center gap-3">
           <Link to="/blog" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-sm">
-            <ArrowLeft className="w-4 h-4" />Blog
+            <ArrowLeft className="w-4 h-4" />KeepGrow.ing
           </Link>
         </div>
       </header>
@@ -94,7 +94,7 @@ export default function BlogPost() {
           <div className="pt-8 border-t border-border text-center space-y-3">
             <p className="verse-text text-sm">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
             <div className="flex gap-3 justify-center">
-              <Link to="/blog"><Button variant="outline" className="rounded-xl">More Articles</Button></Link>
+              <Link to="/blog"><Button variant="outline" className="rounded-xl">More from KeepGrow.ing</Button></Link>
               <Link to="/prayers"><Button className="btn-gold rounded-xl">Browse Prayers</Button></Link>
             </div>
           </div>

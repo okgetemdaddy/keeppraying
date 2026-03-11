@@ -106,10 +106,10 @@ const SEED_PRAYERS = [
 
 const NAV_LINKS = [
   { label: "Prayers", href: "/prayers" },
-  { label: "PrayerAssist", href: "/assistant" },
-  { label: "War Room", href: "/war-room" },
+  { label: "PrayerAssist.ing", href: "/assistant" },
+  { label: "KeepFight.ing", href: "/war-room" },
   { label: "Games", href: "/games" },
-  { label: "Blog", href: "/blog" },
+  { label: "KeepGrow.ing", href: "/blog" },
 ];
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -327,7 +327,7 @@ export default function Index() {
                 size="lg" variant="outline"
                 className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto backdrop-blur-sm"
               >
-                <Sparkles className="w-4 h-4" /> PrayerAssist AI
+                <Sparkles className="w-4 h-4" /> PrayerAssist.ing
               </Button>
             </Link>
           </motion.div>
@@ -494,12 +494,12 @@ export default function Index() {
                 link: "/board", colorClass: "text-forest", bgClass: "bg-forest/10", hoverGlow: "hsl(150 38% 26% / 0.2)"
               },
               {
-                icon: Sparkles, title: "PrayerAssist AI",
+                icon: Sparkles, title: "PrayerAssist.ing",
                 desc: "Your AI prayer companion — answers Bible questions, crafts prayers, and provides biblical guidance.",
                 link: "/assistant", colorClass: "text-primary", bgClass: "bg-primary/10", hoverGlow: "hsl(42 75% 46% / 0.25)"
               },
               {
-                icon: Shield, title: "The War Room",
+                icon: Shield, title: "KeepFight.ing",
                 desc: "An immersive prayer sanctuary with ambient music, themes, and focused playlist mode.",
                 link: "/war-room", colorClass: "text-gold", bgClass: "bg-gold/10", hoverGlow: "hsl(42 85% 46% / 0.25)"
               },
@@ -629,8 +629,8 @@ export default function Index() {
               <ul className="space-y-2.5">
                 {[
                   { label: "Board", href: "/board" },
-                  { label: "Prayer Assist", href: "/assistant" },
-                  { label: "War Room", href: "/war-room" },
+                { label: "PrayerAssist.ing", href: "/assistant" },
+                  { label: "KeepFight.ing", href: "/war-room" },
                   { label: "Bible Games", href: "/games" },
                 ].map(({ label, href }) => (
                   <li key={label}>

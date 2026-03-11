@@ -14,7 +14,7 @@ export default function Blog() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Faith & Prayer Blog | KeepPray.ing";
+    document.title = "KeepGrow.ing | Faith & Growth Blog";
     supabase.from("blog_posts").select("id,title,slug,excerpt,cover_image_url,created_at").eq("published", true).order("created_at", { ascending: false })
       .then(({ data }) => { setPosts(data || []); setLoading(false); });
     return () => { document.title = "KeepPray.ing"; };
@@ -24,14 +24,14 @@ export default function Blog() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="font-display font-bold text-xl text-foreground">KeepPray.ing</Link>
-          <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" />Home</Link>
+          <Link to="/" className="font-display font-bold text-xl text-foreground">KeepGrow.ing</Link>
+          <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" />KeepPray.ing</Link>
         </div>
       </header>
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <div className="text-center mb-12">
-          <h1 className="font-display text-4xl font-bold mb-3">Faith & Prayer Blog</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto">Reflections, teachings, and encouragement for your prayer journey</p>
+          <h1 className="font-display text-4xl font-bold mb-3">KeepGrow.ing</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto">Reflections, teachings, and encouragement for your faith journey</p>
           <p className="verse-text text-sm mt-3">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
         </div>
         {loading ? (

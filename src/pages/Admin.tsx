@@ -161,7 +161,7 @@ export default function Admin() {
     { id: "stats", label: "Stats", icon: BarChart2 },
     { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
-    { id: "blog", label: "Blog", icon: BookOpen },
+    { id: "blog", label: "KeepGrow.ing", icon: BookOpen },
     { id: "faq", label: "FAQ Report", icon: FileText },
     { id: "insights", label: "AI Insights", icon: Sparkles },
   ] as const;
@@ -313,7 +313,7 @@ export default function Admin() {
         {activeTab === "blog" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">Blog Posts</h2>
+              <h2 className="font-display text-xl font-semibold">KeepGrow.ing Posts</h2>
               <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setShowBlogForm(!showBlogForm)}>
                 <PlusCircle className="w-4 h-4" />New Post
               </Button>
@@ -321,7 +321,7 @@ export default function Admin() {
 
             {showBlogForm && (
               <div className="prayer-card p-5">
-                <h3 className="font-semibold mb-4">Create Blog Post</h3>
+                <h3 className="font-semibold mb-4">Create KeepGrow.ing Post</h3>
                 <Form {...blogForm}>
                   <form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
@@ -376,7 +376,7 @@ export default function Admin() {
               </div>
             )}
 
-            {blogPosts.length === 0 ? <p className="text-muted-foreground text-sm">No blog posts yet. Create your first one!</p> : (
+            {blogPosts.length === 0 ? <p className="text-muted-foreground text-sm">No posts yet. Create your first one!</p> : (
               <div className="space-y-3">
                 {blogPosts.map(post => (
                   <div key={post.id} className="prayer-card p-4 flex items-center gap-3">
@@ -407,7 +407,7 @@ export default function Admin() {
                 Generate Weekly FAQ
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">AI analyzes the last 100 PrayerAssist conversations and summarizes common questions and themes.</p>
+            <p className="text-sm text-muted-foreground">AI analyzes the last 100 PrayerAssist.ing conversations and summarizes common questions and themes.</p>
             {reports.length === 0 ? <p className="text-sm text-muted-foreground italic">No reports yet. Click "Generate Weekly FAQ" to create the first one.</p> : (
               reports.map(r => (
                 <div key={r.id} className="prayer-card p-5 space-y-3">
