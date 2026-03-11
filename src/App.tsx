@@ -20,7 +20,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// 🔧 DEV MODE: Set to false to re-enable authentication
+const DEV_BYPASS_AUTH = true;
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (DEV_BYPASS_AUTH) return <>{children}</>;
   const { user, loading } = useAuth();
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -35,6 +39,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
+  if (DEV_BYPASS_AUTH) return <>{children}</>;
   const { user, isAdmin, loading } = useAuth();
   if (loading) return null;
   if (!user || !isAdmin) return <Navigate to="/" replace />;
