@@ -11,16 +11,30 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
 import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
-  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search,
+  BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+const TEXT_STYLES = [
+  { value: "classic", label: "Classic" },
+  { value: "serif", label: "Serif" },
+  { value: "script", label: "Script" },
+  { value: "bold", label: "Bold" },
+  { value: "light", label: "Light" },
+  { value: "italic", label: "Italic" },
+  { value: "gold", label: "Gold" },
+  { value: "shadow", label: "Shadow" },
+  { value: "outline", label: "Outline" },
+  { value: "minimal", label: "Minimal" },
+];
 
 const blogSchema = z.object({
   title: z.string().min(3, "Title required"),
@@ -31,6 +45,16 @@ const blogSchema = z.object({
   published: z.boolean().default(false),
 });
 type BlogFormValues = z.infer<typeof blogSchema>;
+
+const prayerCardSchema = z.object({
+  title: z.string().max(100).optional(),
+  prayer_text: z.string().min(10, "Prayer text required").max(5000),
+  extended_prayer: z.string().max(5000).optional(),
+  tags: z.string().optional(),
+  text_style: z.string().default("classic"),
+  background_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+});
+type PrayerCardFormValues = z.infer<typeof prayerCardSchema>;
 
 interface PrayerStat { id: string; title: string | null; prayer_text: string; likes_count: number; prayed_count: number; views: number; }
 interface ContactSubmission { id: string; name: string | null; email: string | null; message: string; created_at: string; ai_reply: string | null; replied_at: string | null; }
@@ -53,12 +77,19 @@ export default function Admin() {
   const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
+  const [showPrayerForm, setShowPrayerForm] = useState(false);
+  const [savingPrayer, setSavingPrayer] = useState(false);
   const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
   const { toast } = useToast();
 
   const blogForm = useForm<BlogFormValues>({
     resolver: zodResolver(blogSchema),
     defaultValues: { title: "", slug: "", excerpt: "", content: "", cover_image_url: "", published: false },
+  });
+
+  const prayerForm = useForm<PrayerCardFormValues>({
+    resolver: zodResolver(prayerCardSchema),
+    defaultValues: { title: "", prayer_text: "", extended_prayer: "", tags: "", text_style: "classic", background_url: "" },
   });
 
   const load = useCallback(async () => {
@@ -160,6 +191,36 @@ export default function Admin() {
     load();
   };
 
+  const onPrayerCardSubmit = async (values: PrayerCardFormValues) => {
+    if (!user) return;
+    setSavingPrayer(true);
+    try {
+      const tagsArr = values.tags
+        ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
+        : [];
+      const { error } = await supabase.from("prayer_cards").insert({
+        title: values.title || null,
+        prayer_text: values.prayer_text.trim(),
+        extended_prayer: values.extended_prayer?.trim() || null,
+        tags: tagsArr.length ? tagsArr : null,
+        text_style: values.text_style,
+        background_url: values.background_url || null,
+        created_by: user.id,
+        source: "admin",
+        status: "approved",
+      });
+      if (error) throw error;
+      toast({ title: "Prayer card published! 🙏" });
+      prayerForm.reset();
+      setShowPrayerForm(false);
+      load();
+    } catch (e) {
+      toast({ title: "Failed to save prayer", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
+    } finally {
+      setSavingPrayer(false);
+    }
+  };
+
   const loadVerses = useCallback(async (search = "") => {
     setVerseSearching(true);
     try {
@@ -221,23 +282,114 @@ export default function Admin() {
 
         {/* ── MODERATION TAB ── */}
         {activeTab === "moderation" && (
-          <div>
-            <h2 className="font-display text-xl font-semibold mb-4">Review Queue ({pending.length})</h2>
-            {pending.length === 0 ? <p className="text-muted-foreground text-sm">No prayers pending review 🙏</p> : (
-              <div className="space-y-4">
-                {pending.map(p => (
-                  <div key={p.id} className="prayer-card p-5 space-y-3">
-                    {p.title && <h3 className="font-semibold">{p.title}</h3>}
-                    <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
-                      <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
-                    </div>
-                  </div>
-                ))}
+          <div className="space-y-6">
+            {/* Create Prayer Card */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display text-xl font-semibold">Create Prayer Card</h2>
+                <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setShowPrayerForm(v => !v)}>
+                  <PlusCircle className="w-4 h-4" />{showPrayerForm ? "Cancel" : "New Prayer Card"}
+                </Button>
               </div>
-            )}
+
+              {showPrayerForm && (
+                <div className="prayer-card p-5 mb-6">
+                  <p className="text-xs text-muted-foreground mb-4">Cards created here are automatically published as <span className="font-semibold text-primary">Curated (Admin)</span> and visible immediately.</p>
+                  <Form {...prayerForm}>
+                    <form onSubmit={prayerForm.handleSubmit(onPrayerCardSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormField control={prayerForm.control} name="title" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Title (optional)</FormLabel>
+                            <FormControl><Input {...field} placeholder="e.g. Morning Surrender" className="rounded-xl text-sm" maxLength={100} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={prayerForm.control} name="text_style" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Text Style</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="rounded-xl text-sm"><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {TEXT_STYLES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <FormField control={prayerForm.control} name="prayer_text" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Prayer Text <span className="text-destructive">*</span></FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Write the prayer…" rows={5} className="rounded-xl text-sm resize-none" maxLength={5000} />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground text-right">{field.value?.length ?? 0}/5000</p>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={prayerForm.control} name="extended_prayer" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs">Scripture / Extended Prayer (optional)</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} placeholder="Related scripture or extended meditation… (e.g. John 3:16)" rows={3} className="rounded-xl text-sm resize-none" maxLength={5000} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <FormField control={prayerForm.control} name="tags" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Tags (comma-separated)</FormLabel>
+                            <FormControl><Input {...field} placeholder="peace, healing, morning-prayer" className="rounded-xl text-sm" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={prayerForm.control} name="background_url" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">Background Image URL (optional)</FormLabel>
+                            <FormControl><Input {...field} placeholder="https://…" className="rounded-xl text-sm" /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <div className="flex gap-2 pt-1">
+                        <Button type="submit" disabled={savingPrayer} className="btn-gold rounded-xl gap-1.5 text-sm">
+                          {savingPrayer ? <><Loader2 className="w-4 h-4 animate-spin" />Publishing…</> : <><ScrollText className="w-4 h-4" />Publish Prayer Card</>}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => { setShowPrayerForm(false); prayerForm.reset(); }} className="rounded-xl text-sm">Cancel</Button>
+                      </div>
+                    </form>
+                  </Form>
+                </div>
+              )}
+            </div>
+
+            {/* Review Queue */}
+            <div>
+              <h2 className="font-display text-xl font-semibold mb-4">Community Review Queue ({pending.length})</h2>
+              {pending.length === 0 ? <p className="text-muted-foreground text-sm">No prayers pending review 🙏</p> : (
+                <div className="space-y-4">
+                  {pending.map(p => (
+                    <div key={p.id} className="prayer-card p-5 space-y-3">
+                      {p.title && <h3 className="font-semibold">{p.title}</h3>}
+                      <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
+                        <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
