@@ -415,28 +415,21 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Parallax background video — three clips cycling A→B→C→A */}
+        {/* Static parallax background image */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
-          <video
-            key={clipIndex}
-            autoPlay
-            muted
-            playsInline
-            poster={heroBg}
-            onEnded={() => setClipIndex(i => (i + 1) % HERO_CLIPS.length)}
-            className="w-full h-full object-cover object-center"
-          >
-            <source src={HERO_CLIPS[clipIndex]} type="video/mp4" />
-          </video>
+          <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
         </motion.div>
 
+        {/* Canvas: god rays + particles + birds */}
+        <HeroCanvas />
+
         {/* Layered overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/55" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/50" style={{ zIndex: 3 }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20" style={{ zIndex: 3 }} />
 
         {/* Glowing orbs */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-gold/10 blur-3xl animate-pulse pointer-events-none" />
-        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-gold/5 blur-3xl animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-gold/10 blur-3xl animate-pulse pointer-events-none" style={{ zIndex: 4 }} />
+        <div className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-gold/5 blur-3xl animate-pulse pointer-events-none" style={{ zIndex: 4, animationDelay: "1.5s" }} />
 
         <motion.div
           style={{ opacity: heroOpacity }}
