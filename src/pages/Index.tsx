@@ -318,10 +318,10 @@ export default function Index() {
             </Link>
             <Link to="/assistant">
               <Button
-                size="lg" variant="outline"
-                className="rounded-2xl h-12 px-8 text-base gap-2 border-white/25 text-white hover:bg-white/10 hover:border-white/40 w-full sm:w-auto backdrop-blur-sm"
+                size="lg"
+                className="rounded-2xl h-12 px-8 text-base gap-2 w-full sm:w-auto bg-white/15 backdrop-blur-sm border border-white/35 text-white hover:bg-white/25 hover:border-white/55 transition-all duration-200 shadow-[0_4px_20px_-4px_hsl(0_0%_100%/0.15)]"
               >
-                <Sparkles className="w-4 h-4" /> PrayerAssist.ing
+                <Sparkles className="w-4 h-4 text-gold" /> PrayerAssist.ing
               </Button>
             </Link>
           </motion.div>
