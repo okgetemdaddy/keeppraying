@@ -32,7 +32,7 @@ export default function PrayerAssist() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const send = async (text: string) => {
+  const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
     const userMsg: Message = { role: "user", content: text };
     setMessages(prev => [...prev, userMsg]);
