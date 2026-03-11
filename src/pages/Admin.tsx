@@ -160,12 +160,27 @@ export default function Admin() {
     load();
   };
 
+  const loadVerses = useCallback(async (search = "") => {
+    setVerseSearching(true);
+    try {
+      let q = supabase.from("verse_summaries").select("*").order("created_at", { ascending: false }).limit(50);
+      if (search.trim()) {
+        q = q.or(`reference.ilike.%${search}%,summary.ilike.%${search}%,exegesis.ilike.%${search}%`);
+      }
+      const { data } = await q;
+      setVerseSummaries((data as VerseSummary[]) || []);
+    } finally {
+      setVerseSearching(false);
+    }
+  }, []);
+
   const TABS = [
     { id: "moderation", label: "Moderation", icon: Check },
     { id: "stats", label: "Stats", icon: BarChart2 },
     { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
     { id: "blog", label: "KeepGrow.ing", icon: BookOpen },
+    { id: "verses", label: "Verses", icon: BookMarked },
     { id: "faq", label: "FAQ Report", icon: FileText },
     { id: "insights", label: "AI Insights", icon: Sparkles },
   ] as const;
