@@ -22,6 +22,7 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const cacheRef = useRef<Record<string, string>>({});
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const openedByClickRef = useRef(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768);
@@ -68,17 +69,24 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
       if (!summary && !loading) fetchSummary();
     }, 300);
   };
+
   const handleMouseLeave = () => {
     if (isMobile) return;
+    // Don't close if opened by a click
+    if (openedByClickRef.current) return;
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setOpen(false), 280);
   };
 
   const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isMobile) return;
     e.stopPropagation();
     updatePos();
-    if (open) { setOpen(false); return; }
+    if (open) {
+      openedByClickRef.current = false;
+      setOpen(false);
+      return;
+    }
+    openedByClickRef.current = true;
     setOpen(true);
     if (!summary && !loading) fetchSummary();
   };
