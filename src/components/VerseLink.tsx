@@ -23,7 +23,6 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const cacheRef = useRef<Record<string, string>>({});
   const triggerRef = useRef<HTMLSpanElement>(null);
-  const openedByClickRef = useRef(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768);
@@ -53,17 +52,27 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
     }
   }, [reference, text]);
 
-  const updatePos = () => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const x = Math.min(Math.max(rect.left + rect.width / 2, 144), window.innerWidth - 144);
-    const y = rect.bottom + window.scrollY + 8;
-    setPos({ x, y });
+  const calcPos = (clientX: number, clientY: number) => {
+    const tooltipW = 320;
+    const tooltipH = 160;
+    const offset = 16;
+    const left = clientX + tooltipW + offset > window.innerWidth
+      ? clientX - tooltipW - offset / 2
+      : clientX + offset;
+    const top = clientY + tooltipH + offset > window.innerHeight
+      ? clientY - tooltipH - offset / 2
+      : clientY + offset;
+    return { x: left, y: top };
   };
 
-  const handleMouseEnter = () => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     if (isMobile) return;
-    updatePos();
+    setPos(calcPos(e.clientX, e.clientY));
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    setPos(calcPos(e.clientX, e.clientY));
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setOpen(true);
@@ -73,40 +82,31 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
 
   const handleMouseLeave = () => {
     if (isMobile) return;
-    if (openedByClickRef.current) return;
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setOpen(false), 280);
   };
 
   const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
-    updatePos();
-    if (open) {
-      openedByClickRef.current = false;
-      setOpen(false);
-      return;
-    }
-    openedByClickRef.current = true;
+    if (open) { setOpen(false); return; }
     setOpen(true);
     if (!summary && !loading) fetchSummary();
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isMobile) return;
     const close = (e: MouseEvent) => {
       if (triggerRef.current && triggerRef.current.contains(e.target as Node)) return;
-      openedByClickRef.current = false;
       setOpen(false);
     };
     setTimeout(() => document.addEventListener("click", close), 50);
     return () => document.removeEventListener("click", close);
-  }, [open]);
+  }, [open, isMobile]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   const seeMore = (e: React.MouseEvent) => {
     e.stopPropagation();
-    openedByClickRef.current = false;
     setOpen(false);
     const query = `Please give me an in-depth biblical exegesis of ${reference}${text ? `: "${text}"` : ""}. Explain its historical context, Greek/Hebrew meaning, theological significance, and practical application for today.`;
     navigate(`/assistant?q=${encodeURIComponent(query)}`);
@@ -124,12 +124,7 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
           onMouseEnter={() => clearTimeout(timeoutRef.current)}
           onMouseLeave={handleMouseLeave}
           className="fixed z-[9999] w-80 prayer-card p-4 shadow-2xl border border-primary/20"
-          style={{
-            left: `${pos.x}px`,
-            top: `${pos.y}px`,
-            transform: "translateX(-50%)",
-            maxWidth: "calc(100vw - 2rem)",
-          }}
+          style={{ left: `${pos.x}px`, top: `${pos.y}px`, maxWidth: "calc(100vw - 2rem)" }}
         >
           <div className="flex items-center gap-2 mb-2.5">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30">
@@ -161,7 +156,7 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9998] bg-black/40"
-            onClick={() => { openedByClickRef.current = false; setOpen(false); }}
+            onClick={() => setOpen(false)}
           />
           <motion.div
             key="sheet"
@@ -178,7 +173,7 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
                 <BookMarked className="w-4 h-4 text-primary" strokeWidth={2.5} />
                 <span className="text-sm font-semibold text-primary">{reference}</span>
               </span>
-              <button onClick={() => { openedByClickRef.current = false; setOpen(false); }} className="text-muted-foreground p-1"><X className="w-4 h-4" /></button>
+              <button onClick={() => setOpen(false)} className="text-muted-foreground p-1"><X className="w-4 h-4" /></button>
             </div>
             {loading ? (
               <div className="flex items-center gap-2 py-3">
@@ -206,7 +201,7 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
         className={`inline-flex items-center gap-1 cursor-pointer group relative select-none ${className}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={handleTap}
+        onMouseMove={handleMouseMove}
         onTouchEnd={e => { e.preventDefault(); handleTap(e as unknown as React.MouseEvent); }}
       >
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 group-hover:bg-primary/25 group-hover:border-primary/50 transition-all">
@@ -218,4 +213,3 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
     </>
   );
 }
-
