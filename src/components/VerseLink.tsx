@@ -92,16 +92,21 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
   };
 
   useEffect(() => {
-    if (!open || !isMobile) return;
-    const close = () => setOpen(false);
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (triggerRef.current && triggerRef.current.contains(e.target as Node)) return;
+      openedByClickRef.current = false;
+      setOpen(false);
+    };
     setTimeout(() => document.addEventListener("click", close), 50);
     return () => document.removeEventListener("click", close);
-  }, [open, isMobile]);
+  }, [open]);
 
   useEffect(() => () => clearTimeout(timeoutRef.current), []);
 
   const seeMore = (e: React.MouseEvent) => {
     e.stopPropagation();
+    openedByClickRef.current = false;
     setOpen(false);
     const query = `Please give me an in-depth biblical exegesis of ${reference}${text ? `: "${text}"` : ""}. Explain its historical context, Greek/Hebrew meaning, theological significance, and practical application for today.`;
     navigate(`/assistant?q=${encodeURIComponent(query)}`);
