@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { Loader2, ExternalLink, X, BookMarked } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,7 +73,6 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
 
   const handleMouseLeave = () => {
     if (isMobile) return;
-    // Don't close if opened by a click
     if (openedByClickRef.current) return;
     clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setOpen(false), 280);
@@ -112,6 +112,93 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
     navigate(`/assistant?q=${encodeURIComponent(query)}`);
   };
 
+  const tooltip = (
+    <AnimatePresence>
+      {open && !isMobile && (
+        <motion.div
+          key="tooltip"
+          initial={{ opacity: 0, y: -4, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.97 }}
+          transition={{ duration: 0.15 }}
+          onMouseEnter={() => clearTimeout(timeoutRef.current)}
+          onMouseLeave={handleMouseLeave}
+          className="fixed z-[9999] w-80 prayer-card p-4 shadow-2xl border border-primary/20"
+          style={{
+            left: `${pos.x}px`,
+            top: `${pos.y}px`,
+            transform: "translateX(-50%)",
+            maxWidth: "calc(100vw - 2rem)",
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30">
+              <BookMarked className="w-3 h-3 text-primary flex-shrink-0" strokeWidth={2.5} />
+              <span className="text-xs font-semibold text-primary">{reference}</span>
+            </span>
+          </div>
+          {loading ? (
+            <div className="flex items-center gap-2 py-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Getting AI summary…</span>
+            </div>
+          ) : (
+            <p className="text-xs text-foreground/80 leading-relaxed">{summary}</p>
+          )}
+          {!loading && summary && (
+            <button onClick={seeMore} className="mt-2.5 flex items-center gap-1 text-xs text-primary hover:underline font-medium">
+              Deep-dive exegesis <ExternalLink className="w-3 h-3" />
+            </button>
+          )}
+        </motion.div>
+      )}
+
+      {open && isMobile && (
+        <>
+          <motion.div
+            key="backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9998] bg-black/40"
+            onClick={() => { openedByClickRef.current = false; setOpen(false); }}
+          />
+          <motion.div
+            key="sheet"
+            initial={{ opacity: 0, y: 80 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 80 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-[9999] prayer-card rounded-t-2xl rounded-b-none p-5 pb-8 shadow-2xl border-t border-primary/20"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
+            <div className="flex items-center justify-between mb-3">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
+                <BookMarked className="w-4 h-4 text-primary" strokeWidth={2.5} />
+                <span className="text-sm font-semibold text-primary">{reference}</span>
+              </span>
+              <button onClick={() => { openedByClickRef.current = false; setOpen(false); }} className="text-muted-foreground p-1"><X className="w-4 h-4" /></button>
+            </div>
+            {loading ? (
+              <div className="flex items-center gap-2 py-3">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Getting AI summary…</span>
+              </div>
+            ) : (
+              <p className="text-sm text-foreground/80 leading-relaxed">{summary}</p>
+            )}
+            {!loading && summary && (
+              <button onClick={seeMore} className="mt-4 flex items-center gap-1.5 text-sm text-primary font-medium">
+                Deep-dive exegesis <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+
   return (
     <>
       <span
@@ -122,97 +209,13 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
         onClick={handleTap}
         onTouchEnd={e => { e.preventDefault(); handleTap(e as unknown as React.MouseEvent); }}
       >
-        {/* Pronounced badge-style verse icon */}
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30 group-hover:bg-primary/25 group-hover:border-primary/50 transition-all">
           <BookMarked className="w-3 h-3 text-primary flex-shrink-0" strokeWidth={2.5} />
           <span className="verse-text text-xs font-semibold text-primary group-hover:text-primary/90">{reference}</span>
         </span>
       </span>
-
-      <AnimatePresence>
-        {open && !isMobile && (
-          <motion.div
-            key="tooltip"
-            initial={{ opacity: 0, y: -4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            onMouseEnter={() => clearTimeout(timeoutRef.current)}
-            onMouseLeave={handleMouseLeave}
-            className="fixed z-[9999] w-80 prayer-card p-4 shadow-2xl border border-primary/20"
-            style={{
-              left: `${pos.x}px`,
-              top: `${pos.y}px`,
-              transform: "translateX(-50%)",
-              maxWidth: "calc(100vw - 2rem)",
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/30">
-                <BookMarked className="w-3 h-3 text-primary flex-shrink-0" strokeWidth={2.5} />
-                <span className="text-xs font-semibold text-primary">{reference}</span>
-              </span>
-            </div>
-            {loading ? (
-              <div className="flex items-center gap-2 py-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Getting AI summary…</span>
-              </div>
-            ) : (
-              <p className="text-xs text-foreground/80 leading-relaxed">{summary}</p>
-            )}
-            {!loading && summary && (
-              <button onClick={seeMore} className="mt-2.5 flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                Deep-dive exegesis <ExternalLink className="w-3 h-3" />
-              </button>
-            )}
-          </motion.div>
-        )}
-
-        {open && isMobile && (
-          <>
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9998] bg-black/40"
-              onClick={() => setOpen(false)}
-            />
-            <motion.div
-              key="sheet"
-              initial={{ opacity: 0, y: 80 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 80 }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[9999] prayer-card rounded-t-2xl rounded-b-none p-5 pb-8 shadow-2xl border-t border-primary/20"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="w-10 h-1 bg-border rounded-full mx-auto mb-4" />
-              <div className="flex items-center justify-between mb-3">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
-                  <BookMarked className="w-4 h-4 text-primary" strokeWidth={2.5} />
-                  <span className="text-sm font-semibold text-primary">{reference}</span>
-                </span>
-                <button onClick={() => setOpen(false)} className="text-muted-foreground p-1"><X className="w-4 h-4" /></button>
-              </div>
-              {loading ? (
-                <div className="flex items-center gap-2 py-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Getting AI summary…</span>
-                </div>
-              ) : (
-                <p className="text-sm text-foreground/80 leading-relaxed">{summary}</p>
-              )}
-              {!loading && summary && (
-                <button onClick={seeMore} className="mt-4 flex items-center gap-1.5 text-sm text-primary font-medium">
-                  Deep-dive exegesis <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {createPortal(tooltip, document.body)}
     </>
   );
 }
+
