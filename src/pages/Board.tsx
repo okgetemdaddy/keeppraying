@@ -629,6 +629,115 @@ export default function Board() {
       </Dialog>
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
+
+      {/* ── Testify Sheet ──────────────────────────────────────────────── */}
+      <Sheet open={testifyOpen} onOpenChange={o => { setTestifyOpen(o); if (!o) { setTestifyBody(""); setTestifyReject(""); } }}>
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto flex flex-col gap-0 p-0">
+          <div className="p-6 pb-4 border-b" style={{ borderColor: "hsl(38 22% 90%)" }}>
+            <SheetHeader>
+              <SheetTitle className="font-display text-2xl flex items-center gap-2">
+                <Feather className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
+                Share a Testimony
+              </SheetTitle>
+              <SheetDescription className="text-sm leading-relaxed">
+                Tell the story of how God moved. This doesn't have to be connected to any prayer — just share what He did.
+              </SheetDescription>
+            </SheetHeader>
+          </div>
+
+          <div className="flex-1 p-6 space-y-5">
+            <div className="relative">
+              <div
+                className="absolute top-2 right-3 font-display font-bold leading-none pointer-events-none select-none"
+                style={{ fontSize: "4rem", color: "hsl(42 80% 60% / 0.12)" }}
+                aria-hidden
+              >
+                "
+              </div>
+              <textarea
+                ref={testifyRef}
+                value={testifyBody}
+                onChange={e => {
+                  setTestifyBody(e.target.value);
+                  const el = testifyRef.current;
+                  if (el) { el.style.height = "auto"; el.style.height = Math.max(220, el.scrollHeight) + "px"; }
+                }}
+                placeholder="Lord answered my prayer when…"
+                maxLength={4000}
+                rows={8}
+                className="w-full resize-none outline-none rounded-2xl font-display text-base leading-[1.85] transition-shadow"
+                style={{
+                  minHeight: 220,
+                  padding: "1.25rem 1.25rem",
+                  background: "hsl(42 55% 99%)",
+                  boxShadow: "inset 0 2px 14px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)",
+                  color: "hsl(25 30% 18%)",
+                }}
+                onFocus={e => { e.target.style.boxShadow = "inset 0 2px 16px hsl(42 75% 46% / 0.10), 0 0 0 2px hsl(42 75% 55%)"; }}
+                onBlur={e => { e.target.style.boxShadow = "inset 0 2px 14px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)"; }}
+              />
+              <span
+                className="absolute bottom-3 right-4 text-[11px] pointer-events-none"
+                style={{ color: testifyBody.length > 3800 ? "hsl(0 72% 51%)" : "hsl(25 18% 66%)" }}
+              >
+                {testifyBody.length}/4000
+              </span>
+            </div>
+
+            {testifyReject && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm rounded-xl px-4 py-3"
+                style={{ background: "hsl(0 72% 97%)", color: "hsl(0 72% 40%)", border: "1px solid hsl(0 72% 88%)" }}
+              >
+                {testifyReject}
+              </motion.div>
+            )}
+
+            <Button
+              onClick={async () => {
+                if (!user || testifyBody.trim().length < 10) return;
+                setTestifySubmitting(true);
+                setTestifyReject("");
+                try {
+                  const { data: modData } = await supabase.functions.invoke("moderate-testimony", {
+                    body: { text: testifyBody.trim() },
+                  });
+                  if (modData && !modData.approved) {
+                    setTestifyReject(modData.reason || "Your testimony couldn't be posted at this time.");
+                    setTestifySubmitting(false);
+                    return;
+                  }
+                  const { error } = await supabase.from("testimonies").insert({
+                    user_id: user.id,
+                    body: testifyBody.trim(),
+                    prayer_id: null,
+                  });
+                  if (error) throw error;
+                  toast({ title: "Your testimony has been shared 🕊️", description: "Thank you for sharing what God has done!" });
+                  setTestifyBody("");
+                  setTestifyOpen(false);
+                } catch {
+                  toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+                } finally {
+                  setTestifySubmitting(false);
+                }
+              }}
+              disabled={testifySubmitting || testifyBody.trim().length < 10}
+              className="w-full h-12 rounded-2xl text-base gap-2.5 btn-gold"
+            >
+              {testifySubmitting
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Reviewing…</>
+                : <><Feather className="w-4 h-4" />Share Testimony</>}
+            </Button>
+
+            <p className="text-xs text-center" style={{ color: "hsl(25 18% 62%)" }}>
+              All testimonies are reviewed before publishing.
+            </p>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
