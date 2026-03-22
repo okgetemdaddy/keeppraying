@@ -20,24 +20,6 @@ import { SiteNav } from "@/components/SiteNav";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
 
-// ─── Bible reference parser ───────────────────────────────────────────────────
-// Matches references like "John 3:16", "1 Corinthians 13:4-7", "Psalm 23", etc.
-const VERSE_REGEX = /\b((?:\d\s)?[A-Z][a-z]+(?:\s[A-Z][a-z]+)*)\s(\d+)(?::(\d+)(?:-(\d+))?)?\b/g;
-
-function renderWithVerseLinks(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let last = 0;
-  let match: RegExpExecArray | null;
-  VERSE_REGEX.lastIndex = 0;
-  while ((match = VERSE_REGEX.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index));
-    const ref = match[0];
-    parts.push(<VerseLink key={`${ref}-${match.index}`} reference={ref} />);
-    last = match.index + ref.length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts;
-}
 
 // ─── Design tokens (tag colors by keyword) ───────────────────────────────────
 const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
