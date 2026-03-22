@@ -468,7 +468,33 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                   >
                     <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
                   </motion.button>
+
+                  {/* Testify button */}
+                  <motion.button
+                    onClick={e => { e.stopPropagation(); setTestifyOpen(true); }}
+                    whileTap={{ scale: 0.85 }}
+                    className="flex items-center gap-1 p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: testimonyCount > 0 ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                    title="Testify — share how God answered this prayer"
+                  >
+                    <Bird className="w-3.5 h-3.5" />
+                    {testimonyCount > 0 && <span className="text-xs">{testimonyCount}</span>}
+                  </motion.button>
                 </div>
+
+                {/* Testify Sheet */}
+                <Sheet open={testifyOpen} onOpenChange={setTestifyOpen}>
+                  <SheetContent side="right" className="w-full sm:max-w-md p-0 overflow-hidden">
+                    <SheetHeader className="sr-only">
+                      <SheetTitle>Testify</SheetTitle>
+                    </SheetHeader>
+                    <TestifyBack
+                      prayerId={card.id}
+                      prayerAuthorId={card.created_by}
+                      onFlipBack={() => setTestifyOpen(false)}
+                    />
+                  </SheetContent>
+                </Sheet>
 
                 {/* Comments */}
                 <Comments prayerId={card.id} uploaderId={card.source === "community" ? (card.created_by ?? null) : null} />
