@@ -124,6 +124,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedFloat, setPrayedFloat] = useState(false);
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
+  const [testifyOpen, setTestifyOpen] = useState(false);
+  const [testimonyCount, setTestimonyCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
