@@ -237,6 +237,13 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
               <div className="pt-2 pb-1 space-y-2">
                 {session ? (
                   <>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileOpen(false)}>
+                        <Button variant="outline" className="rounded-xl w-full gap-2">
+                          <ShieldCheck className="w-4 h-4 text-gold" /> Admin Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     <Link to="/board" onClick={() => setMobileOpen(false)}>
                       <Button variant="outline" className="rounded-xl w-full gap-2">
                         <LayoutDashboard className="w-4 h-4" /> My Board
