@@ -376,7 +376,7 @@ export default function Index() {
       </motion.div>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden -mt-16">
         {/* Static parallax background image */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
           <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
