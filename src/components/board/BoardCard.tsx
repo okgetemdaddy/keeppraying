@@ -605,12 +605,13 @@ interface ActionButtonsProps {
   onPickFont: (family: string) => void;
   onPickRandomFont: () => void;
   currentFont: string | null | undefined;
+  onAddToPlaylist?: (prayerId: string) => void;
 }
 
 function ActionButtons({
   item, accentColor, textColor,
   onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
-  onPickFont, onPickRandomFont, currentFont,
+  onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
 }: ActionButtonsProps) {
   return (
     <>
@@ -664,6 +665,19 @@ function ActionButtons({
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
 
+          {/* Add to playlist */}
+          {onAddToPlaylist && item.prayer_cards && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={() => onAddToPlaylist(item.prayer_cards!.id)}
+              >
+                <ListPlus className="w-3.5 h-3.5" /> Add to Playlist
+              </DropdownMenuItem>
+            </>
+          )}
+
           {/* Font picker — owner only */}
           {isOwner && (
             <>
@@ -673,7 +687,6 @@ function ActionButtons({
                   <Type className="w-3.5 h-3.5" /> Font
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-52 rounded-xl max-h-72 overflow-y-auto">
-                  {/* Random pick */}
                   <DropdownMenuItem
                     className="text-xs gap-2 font-medium"
                     onClick={onPickRandomFont}
