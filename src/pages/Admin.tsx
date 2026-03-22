@@ -83,6 +83,15 @@ export default function Admin() {
   const [savingPrayer, setSavingPrayer] = useState(false);
   const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
   const { toast } = useToast();
+  // AI Enrich — opened after a prayer card is first saved so we have a card ID
+  const [enrichCardId, setEnrichCardId] = useState<string | null>(null);
+  const [enrichCardText, setEnrichCardText] = useState("");
+  const [enrichCardExtended, setEnrichCardExtended] = useState<string | null>(null);
+  const [enrichOpen, setEnrichOpen] = useState(false);
+  // Verse editing
+  const [editingVerseId, setEditingVerseId] = useState<string | null>(null);
+  const [editingVerse, setEditingVerse] = useState<Partial<VerseSummary>>({});
+  const [savingVerse, setSavingVerse] = useState(false);
 
   const blogForm = useForm<BlogFormValues>({
     resolver: zodResolver(blogSchema),
