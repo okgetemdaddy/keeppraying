@@ -10,6 +10,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { ArrowLeft, Heart, HandMetal, Bookmark, Share2, Sparkles, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 

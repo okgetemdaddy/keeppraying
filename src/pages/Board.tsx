@@ -21,6 +21,7 @@ import {
   GripVertical, Heart, Bookmark, Pin, ChevronDown, ChevronUp, PlusCircle,
   BookOpen, Loader2, ListMusic, Sparkles, Trash2, ArrowLeft,
 } from "lucide-react";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {

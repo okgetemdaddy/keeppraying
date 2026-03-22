@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Flame, Sun, Moon, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 const TRACKS = [
   { name: "Peaceful Piano", url: "https://cdn.pixabay.com/audio/2024/11/12/audio_df5987b5e6.mp3" },
