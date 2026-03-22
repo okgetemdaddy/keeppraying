@@ -232,27 +232,40 @@ export function BoardCard({
 
   // ── render ───────────────────────────────────────────────────────────────────
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.96, y: 8 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.94, y: 4 }}
-      whileHover={{ y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
-      transition={{ layout: { type: "spring", stiffness: 300, damping: 28 }, default: { duration: 0.25 } }}
-      style={{
-        background: cardBg,
-        borderColor: cardBorder,
-        color: textColor,
-        opacity: isDragging ? 0.45 : 1,
-        backdropFilter: "blur(16px) saturate(1.6)",
-        WebkitBackdropFilter: "blur(16px) saturate(1.6)",
-        boxShadow: item.pinned
-          ? `inset 3px 0 0 ${accentColor}, 0 4px 24px -8px rgba(0,0,0,0.16)`
-          : "0 2px 16px -4px rgba(0,0,0,0.10)",
-        willChange: "transform",
-      }}
-      className="relative rounded-2xl border overflow-hidden"
-    >
+    <div style={{ perspective: "1200px", willChange: "transform" }}>
+      <motion.div
+        layout
+        initial={{ opacity: 0, scale: 0.96, y: 8 }}
+        animate={{ opacity: flipped ? undefined : 1, scale: flipped ? undefined : 1, y: flipped ? undefined : 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 4 }}
+        transition={{ layout: { type: "spring", stiffness: 300, damping: 28 }, default: { duration: 0.25 } }}
+        style={{
+          opacity: isDragging ? 0.45 : 1,
+          transformStyle: "preserve-3d",
+          position: "relative",
+          minHeight: size === "large" ? 320 : size === "medium" ? 220 : 140,
+        }}
+        className="relative"
+      >
+        {/* ── FRONT face ───────────────────────────────────────────────── */}
+        <motion.div
+          animate={{ rotateY: flipped ? -180 : 0 }}
+          transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 18 }}
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            background: cardBg,
+            borderColor: cardBorder,
+            color: textColor,
+            backdropFilter: "blur(16px) saturate(1.6)",
+            WebkitBackdropFilter: "blur(16px) saturate(1.6)",
+            boxShadow: item.pinned
+              ? `inset 3px 0 0 ${accentColor}, 0 4px 24px -8px rgba(0,0,0,0.16)`
+              : "0 2px 16px -4px rgba(0,0,0,0.10)",
+          }}
+          whileHover={flipped ? {} : { y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
+          className="relative rounded-2xl border overflow-hidden"
+        >
       {/* Glass sheen */}
       <div className="absolute inset-0 pointer-events-none rounded-2xl"
         style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
