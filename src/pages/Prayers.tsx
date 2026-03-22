@@ -14,7 +14,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
-  Volume2, VolumeX, Loader2,
+  Volume2, VolumeX, Loader2, Share2,
 } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 
@@ -91,6 +91,8 @@ function SourceBadge({ source, status }: { source?: string; status: string }) {
 }
 
 // ─── Prayer card item ─────────────────────────────────────────────────────────
+const PRAYER_CHAR_LIMIT = 320;
+
 function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | null }) {
   const [liked, setLiked] = useState(false);
   const [prayed, setPrayed] = useState(false);
@@ -98,6 +100,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [likesCount, setLikesCount] = useState(card.likes_count);
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
@@ -106,6 +109,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
   useEffect(() => {
     if (!userId) return;
@@ -234,14 +238,26 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           <SourceBadge source={(card as PrayerCard).source} status={card.status} />
         </div>
 
-        {/* Prayer text — click anywhere to collapse card chrome */}
-        <div
-          className="cursor-pointer select-none"
-          onClick={() => setCollapsed(v => !v)}
-        >
-          <p className={`${textClass} leading-relaxed`} style={{ color: "hsl(25 28% 28%)" }}>
-            {card.prayer_text}
+        {/* Prayer text — truncated with See more, click to collapse chrome */}
+        <div className="select-none">
+          <p
+            className={`${textClass} leading-relaxed cursor-pointer`}
+            style={{ color: "hsl(25 28% 28%)" }}
+            onClick={() => setCollapsed(v => !v)}
+          >
+            {isTruncated && !expanded
+              ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
+              : card.prayer_text}
           </p>
+          {isTruncated && (
+            <button
+              onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+              className="mt-1.5 text-xs font-medium transition-colors"
+              style={{ color: "hsl(42 75% 40%)" }}
+            >
+              {expanded ? "See less" : "See more…"}
+            </button>
+          )}
         </div>
 
         {/* Collapsible chrome: scripture / tags / actions / comments */}
@@ -376,6 +392,23 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                     ) : (
                       <Volume2 className="w-3.5 h-3.5" />
                     )}
+                  </motion.button>
+
+                  {/* Share button */}
+                  <motion.button
+                    onClick={e => {
+                      e.stopPropagation();
+                      const url = `${window.location.origin}/prayer/${card.id}`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        toast({ title: "Link copied! 🔗" });
+                      });
+                    }}
+                    whileTap={{ scale: 0.85 }}
+                    title="Share prayer"
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: "hsl(25 18% 56%)" }}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
                   </motion.button>
 
                   <Link
