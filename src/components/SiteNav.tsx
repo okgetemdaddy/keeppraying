@@ -23,7 +23,7 @@ interface SiteNavProps {
 }
 
 function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
