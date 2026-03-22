@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, ArrowRight, BookOpen, ArrowLeft } from "lucide-react";
+import VerseLink from "@/components/VerseLink";
 
 interface BlogPost {
   id: string; title: string; slug: string; excerpt: string | null;

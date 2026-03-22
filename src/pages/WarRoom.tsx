@@ -132,7 +132,7 @@ export default function WarRoom() {
                 {currentPrayer.prayer_text}
               </p>
               {currentPrayer.extended_prayer && (
-                <p className="text-sm" style={{ color: theme.muted }}>{currentPrayer.extended_prayer}</p>
+                <p className="text-sm" style={{ color: theme.muted }}>{renderWithVerseLinks(currentPrayer.extended_prayer)}</p>
               )}
               <div className="flex items-center justify-center gap-6 pt-4">
                 <button

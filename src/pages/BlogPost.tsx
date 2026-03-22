@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Calendar, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import VerseLink from "@/components/VerseLink";
 
 interface BlogPostFull {
   id: string;

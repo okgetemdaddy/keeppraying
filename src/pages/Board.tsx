@@ -111,7 +111,7 @@ function SortableCard({ item, onUpdate, onRemove }: {
           {expanded ? "Hide scripture" : "Show scripture"}
         </button>
       )}
-      {expanded && card.extended_prayer && <p className="verse-text text-xs">{card.extended_prayer}</p>}
+      {expanded && card.extended_prayer && <p className="verse-text text-xs">{renderWithVerseLinks(card.extended_prayer)}</p>}
 
       {/* Notes */}
       <div className="border-t border-border pt-2">

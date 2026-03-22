@@ -153,7 +153,7 @@ export default function Prayer() {
 
             {card.extended_prayer && (
               <blockquote className="border-l-2 border-primary pl-4 verse-text">
-                {card.extended_prayer}
+                {renderWithVerseLinks(card.extended_prayer)}
               </blockquote>
             )}
 
