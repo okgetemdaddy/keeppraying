@@ -31,7 +31,15 @@ export default function Auth() {
       } else if (mode === "signin") {
         const { error } = await signIn(email, password);
         if (error) throw error;
-        navigate("/prayers");
+        // Check for a post-login redirect intent
+        const pendingRaw = sessionStorage.getItem("kp_post_login");
+        if (pendingRaw) {
+          sessionStorage.removeItem("kp_post_login");
+          const pending = JSON.parse(pendingRaw) as { path: string };
+          navigate(pending.path || "/prayers");
+        } else {
+          navigate("/prayers");
+        }
       } else {
         const { error } = await signUp(email, password, name);
         if (error) throw error;
