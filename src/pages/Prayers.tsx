@@ -14,7 +14,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
-  Volume2, VolumeX, Loader2,
+  Volume2, VolumeX, Loader2, Share2,
 } from "lucide-react";
 import { SiteNav } from "@/components/SiteNav";
 
