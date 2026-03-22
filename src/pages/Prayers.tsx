@@ -578,7 +578,7 @@ export default function Prayers() {
       </section>
 
       {/* ── Search + Filters ───────────────────────────────────────────── */}
-      <section className="sticky top-14 z-30 py-4 border-b"
+      <section className="sticky top-16 z-30 py-4 border-b"
         style={{ borderColor: "hsl(38 22% 90%)", background: "hsl(38 55% 97% / 0.95)", backdropFilter: "blur(12px)" }}>
         <div className="container mx-auto px-4 max-w-4xl space-y-3">
 
