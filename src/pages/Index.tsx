@@ -269,7 +269,89 @@ function ContactForm() {
   );
 }
 
-// ─── Seed data ────────────────────────────────────────────────────────────────
+// ─── VerseLink intro arrow (Lord's Prayer section) ────────────────────────────
+function VerseLinkIntro() {
+  const [show, setShow] = useState(false);
+  const [seen] = useState(() => {
+    try { return localStorage.getItem("verselink_intro_seen") === "1"; } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (seen) return;
+    // Delay so user has time to read the prayer first
+    const t = setTimeout(() => {
+      setShow(true);
+      try { localStorage.setItem("verselink_intro_seen", "1"); } catch {}
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [seen]);
+
+  return (
+    <div className="mt-10 flex flex-col items-center gap-3">
+      {/* The VerseLink badge itself — always visible */}
+      <VerseLink reference="Matthew 6:9-13" text="The Lord's Prayer" />
+
+      {/* Animated arrow + copy — only for first-time visitors */}
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex flex-col items-center gap-2 pointer-events-none select-none"
+          >
+            {/* Curved SVG arrow pointing UP at the badge */}
+            <svg
+              width="80"
+              height="56"
+              viewBox="0 0 80 56"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="-mt-1 -mb-1 rotate-180"
+              aria-hidden="true"
+            >
+              {/* Curved path drawn upward toward the badge */}
+              <motion.path
+                d="M 40,54 C 40,32 20,20 8,8"
+                stroke="hsl(42 85% 46%)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                fill="none"
+                strokeDasharray="65"
+                initial={{ strokeDashoffset: 65 }}
+                animate={{ strokeDashoffset: 0 }}
+                transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
+              />
+              {/* Arrowhead at the top (near the badge) */}
+              <motion.path
+                d="M 4,12 L 8,7 L 13,10"
+                stroke="hsl(42 85% 46%)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.1, duration: 0.3 }}
+              />
+            </svg>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3, duration: 0.5 }}
+              className="text-xs text-muted-foreground font-body italic"
+            >
+              Hover any scripture badge for an instant AI summary ✨
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+
 const SEED_PRAYERS = [
   { title: "The Lord's Prayer", preview: "Our Father in heaven, hallowed be your name. Your kingdom come, your will be done…", likes: 847, prayed: 2103, tags: ["lords-prayer", "foundational"], color: "from-amber-50 to-yellow-50" },
   { title: "A Prayer of Peace", preview: "Lord, I come to You casting every anxiety at Your feet. Guard my heart and mind with Your peace…", likes: 634, prayed: 1587, tags: ["peace", "philippians"], color: "from-emerald-50 to-teal-50" },
@@ -519,7 +601,7 @@ export default function Index() {
         <div className="container mx-auto px-4 max-w-3xl text-center space-y-6 relative">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }}>
             <p className="text-xs tracking-widest uppercase text-muted-foreground mb-8 font-body">
-              Matthew 6:9–13
+              The Lord's Prayer
             </p>
             <div className="space-y-4 font-display text-lg sm:text-xl leading-loose text-foreground">
               {[
@@ -540,6 +622,9 @@ export default function Index() {
                 </motion.p>
               ))}
             </div>
+
+            {/* VerseLink badge + animated intro arrow */}
+            <VerseLinkIntro />
           </motion.div>
         </div>
       </section>

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Flame, Sun, Moon, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 const TRACKS = [
   { name: "Peaceful Piano", url: "https://cdn.pixabay.com/audio/2024/11/12/audio_df5987b5e6.mp3" },
@@ -132,7 +133,7 @@ export default function WarRoom() {
                 {currentPrayer.prayer_text}
               </p>
               {currentPrayer.extended_prayer && (
-                <p className="text-sm" style={{ color: theme.muted }}>{currentPrayer.extended_prayer}</p>
+                <p className="text-sm" style={{ color: theme.muted }}>{renderWithVerseLinks(currentPrayer.extended_prayer)}</p>
               )}
               <div className="flex items-center justify-center gap-6 pt-4">
                 <button

@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Calendar, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import VerseLink from "@/components/VerseLink";
 
 interface BlogPostFull {
   id: string;
@@ -92,7 +93,7 @@ export default function BlogPost() {
           )}
 
           <div className="pt-8 border-t border-border text-center space-y-3">
-            <p className="verse-text text-sm">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
+            <p className="verse-text text-sm">"Your word is a lamp to my feet and a light to my path." — <VerseLink reference="Psalm 119:105" text="Your word is a lamp to my feet and a light to my path." /></p>
             <div className="flex gap-3 justify-center">
               <Link to="/blog"><Button variant="outline" className="rounded-xl">More from KeepGrow.ing</Button></Link>
               <Link to="/prayers"><Button className="btn-gold rounded-xl">Browse Prayers</Button></Link>

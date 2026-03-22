@@ -21,6 +21,7 @@ import {
   GripVertical, Heart, Bookmark, Pin, ChevronDown, ChevronUp, PlusCircle,
   BookOpen, Loader2, ListMusic, Sparkles, Trash2, ArrowLeft,
 } from "lucide-react";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
@@ -111,7 +112,7 @@ function SortableCard({ item, onUpdate, onRemove }: {
           {expanded ? "Hide scripture" : "Show scripture"}
         </button>
       )}
-      {expanded && card.extended_prayer && <p className="verse-text text-xs">{card.extended_prayer}</p>}
+      {expanded && card.extended_prayer && <p className="verse-text text-xs">{renderWithVerseLinks(card.extended_prayer)}</p>}
 
       {/* Notes */}
       <div className="border-t border-border pt-2">

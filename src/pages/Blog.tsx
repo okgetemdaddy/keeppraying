@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, ArrowRight, BookOpen, ArrowLeft } from "lucide-react";
+import VerseLink from "@/components/VerseLink";
 
 interface BlogPost {
   id: string; title: string; slug: string; excerpt: string | null;
@@ -32,7 +33,7 @@ export default function Blog() {
         <div className="text-center mb-12">
           <h1 className="font-display text-4xl font-bold mb-3">KeepGrow.ing</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">Reflections, teachings, and encouragement for your faith journey</p>
-          <p className="verse-text text-sm mt-3">"Your word is a lamp to my feet and a light to my path." — Psalm 119:105</p>
+          <p className="verse-text text-sm mt-3">"Your word is a lamp to my feet and a light to my path." — <VerseLink reference="Psalm 119:105" text="Your word is a lamp to my feet and a light to my path." /></p>
         </div>
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-64 rounded-2xl shimmer" />)}</div>
