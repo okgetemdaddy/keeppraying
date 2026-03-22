@@ -552,6 +552,17 @@ export function BoardCard({
 
             {/* Action buttons */}
             <div className="flex items-center gap-0.5">
+              {isPublic && (
+                <button
+                  onClick={() => setFlipped(true)}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/40"
+                  style={{ color: accentColor }}
+                  title="Share your testimony"
+                >
+                  <Bird className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Testify</span>
+                </button>
+              )}
               <ActionButtons
                 item={item} accentColor={accentColor} textColor={textColor}
                 onFavorite={toggleFavorite} onPin={togglePin} onShare={handleShare}
