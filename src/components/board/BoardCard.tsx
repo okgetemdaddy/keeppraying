@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,11 +12,12 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   GripVertical, Heart, Pin, ChevronDown, ChevronUp, Sparkles,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
-  MoreHorizontal, Tag, Share2,
+  MoreHorizontal, Tag, Share2, Type, Shuffle, Check,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub,
+  DropdownMenuSubTrigger, DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
@@ -27,18 +28,30 @@ type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const PRAYER_CHAR_LIMIT = 320;
 
-const TEXT_STYLE_CLASSES: Record<string, string> = {
-  classic:       "font-body text-base",
-  scripture:     "font-display text-base italic",
-  peaceful:      "font-body text-base",
-  bold:          "font-body text-base font-semibold",
-  gentle:        "font-body text-sm leading-relaxed",
-  strong:        "font-display text-lg font-bold",
-  modern:        "font-body text-sm tracking-wide",
-  compassionate: "font-display text-base",
-  whisper:       "font-body text-sm italic",
-  royal:         "font-display font-bold tracking-wider",
-};
+// ── Google Fonts curated for prayer/devotional reading ───────────────────────
+export const PRAYER_FONTS: { label: string; family: string; url: string }[] = [
+  { label: "Playfair Display",  family: "Playfair Display",  url: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "Lora",              family: "Lora",              url: "https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "Cormorant Garamond",family: "Cormorant Garamond",url: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "EB Garamond",       family: "EB Garamond",       url: "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "Crimson Text",      family: "Crimson Text",      url: "https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "Libre Baskerville", family: "Libre Baskerville", url: "https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" },
+  { label: "Cinzel",            family: "Cinzel",            url: "https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&display=swap" },
+  { label: "Spectral",          family: "Spectral",          url: "https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "GFS Didot",         family: "GFS Didot",         url: "https://fonts.googleapis.com/css2?family=GFS+Didot&display=swap" },
+  { label: "Josefin Slab",      family: "Josefin Slab",      url: "https://fonts.googleapis.com/css2?family=Josefin+Slab:ital,wght@0,400;0,600;1,400&display=swap" },
+  { label: "Sorts Mill Goudy",  family: "Sorts Mill Goudy",  url: "https://fonts.googleapis.com/css2?family=Sorts+Mill+Goudy:ital@0;1&display=swap" },
+  { label: "Inter",             family: "Inter",             url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" },
+];
+
+// Lazy-load a Google Font link tag if not already present
+function loadFont(url: string) {
+  if (document.querySelector(`link[href="${url}"]`)) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = url;
+  document.head.appendChild(link);
+}
 
 const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
   "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
@@ -86,20 +99,30 @@ export function BoardCard({
   const [tagsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
+  // Font picker state
+  const [pendingFont, setPendingFont] = useState<string | null>(null);
+  const [savingFont, setSavingFont] = useState(false);
+  const [fontOpen, setFontOpen] = useState(false);
+
   if (!card) return null;
 
-  const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
   const isOwner = !!(userId && card.created_by === userId);
   const isPrivate = card.status === "private";
+  const isPublic = card.status === "approved";
   const size: CardSize = (item as { card_size?: CardSize }).card_size || "medium";
   const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
-  // Theme-aware colours (fall back to the /prayers warm palette)
-  const accentColor   = themeVars?.["--board-accent"]      || "hsl(42 75% 40%)";
-  const cardBg        = themeVars?.["--board-card-bg"]      || "hsl(var(--card) / 0.97)";
-  const cardBorder    = themeVars?.["--board-card-border"]  || "hsl(var(--border) / 0.7)";
-  const textColor     = themeVars?.["--board-text"]         || "hsl(25 35% 14%)";
-  const subtleText    = `${textColor}80`;
+  // Active font: pendingFont (preview) > card's text_style as a font family > default
+  const activeFontFamily = pendingFont
+    ?? PRAYER_FONTS.find(f => f.family === card.text_style)?.family
+    ?? null;
+
+  // Theme colours
+  const accentColor = themeVars?.["--board-accent"]     || "hsl(42 75% 40%)";
+  const cardBg      = themeVars?.["--board-card-bg"]     || "hsl(var(--card) / 0.97)";
+  const cardBorder  = themeVars?.["--board-card-border"] || "hsl(var(--border) / 0.7)";
+  const textColor   = themeVars?.["--board-text"]        || "hsl(25 35% 14%)";
+  const subtleText  = `${textColor}80`;
 
   // ── actions ─────────────────────────────────────────────────────────────────
 
@@ -132,6 +155,36 @@ export function BoardCard({
     const url = `${window.location.origin}/prayer/${card.id}`;
     navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
   };
+
+  const pickFont = (family: string) => {
+    const font = PRAYER_FONTS.find(f => f.family === family);
+    if (font) loadFont(font.url);
+    setPendingFont(family);
+  };
+
+  const pickRandomFont = () => {
+    const others = PRAYER_FONTS.filter(f => f.family !== (pendingFont ?? card.text_style));
+    const pick = others[Math.floor(Math.random() * others.length)];
+    loadFont(pick.url);
+    setPendingFont(pick.family);
+  };
+
+  const saveFont = async () => {
+    if (!pendingFont || !isOwner) return;
+    setSavingFont(true);
+    try {
+      await supabase.from("prayer_cards").update({ text_style: pendingFont }).eq("id", card.id);
+      onRefresh();
+      setPendingFont(null);
+      toast({ title: "Font saved ✨" });
+    } catch {
+      toast({ title: "Could not save font", variant: "destructive" });
+    } finally {
+      setSavingFont(false);
+    }
+  };
+
+  const cancelFont = () => setPendingFont(null);
 
   const handlePublicToggle = async (makePublic: boolean) => {
     if (!isOwner) return;
@@ -171,7 +224,6 @@ export function BoardCard({
   };
 
   // ── derived ──────────────────────────────────────────────────────────────────
-  // For small/medium: actions live in the footer row. For large: keep them inline.
   const actionsInFooter = size !== "large";
 
   // ── render ───────────────────────────────────────────────────────────────────
@@ -203,7 +255,7 @@ export function BoardCard({
 
       <div className="relative p-4 flex flex-col gap-3">
 
-        {/* ── Top drag handle row ───────────────────────────────────────── */}
+        {/* ── Drag handle + content ────────────────────────────────────── */}
         <div className="flex items-start gap-2">
           <button
             {...dragHandleProps}
@@ -214,18 +266,20 @@ export function BoardCard({
           </button>
 
           <div className="flex-1 min-w-0">
-            {/* Title */}
             {card.title && (
               <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: textColor }}>
                 {card.title}
               </h3>
             )}
 
-            {/* Prayer text */}
+            {/* Prayer text — with optional custom font */}
             <div className="select-none">
               <p
-                className={`${textClass} leading-relaxed text-sm cursor-pointer`}
-                style={{ color: subtleText }}
+                className="leading-relaxed text-sm cursor-pointer"
+                style={{
+                  color: subtleText,
+                  fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
+                }}
                 onClick={() => setCollapsed(v => !v)}
               >
                 {isTruncated && !expanded
@@ -242,23 +296,57 @@ export function BoardCard({
                 </button>
               )}
             </div>
+
+            {/* Font preview banner */}
+            <AnimatePresence>
+              {pendingFont && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden mt-2"
+                >
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl"
+                    style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}30` }}>
+                    <span className="text-[10px]" style={{ color: `${textColor}60` }}>
+                      Preview:
+                    </span>
+                    <span className="text-xs flex-1" style={{ fontFamily: `"${pendingFont}", serif`, color: textColor }}>
+                      {pendingFont}
+                    </span>
+                    <button
+                      onClick={saveFont}
+                      disabled={savingFont}
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all"
+                      style={{ background: accentColor, color: "white" }}
+                    >
+                      {savingFont ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-2.5 h-2.5" />}
+                      Save
+                    </button>
+                    <button
+                      onClick={cancelFont}
+                      className="text-[10px] px-1.5 py-0.5 rounded-lg transition-opacity hover:opacity-70"
+                      style={{ color: `${textColor}50` }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Actions column — only shown at top for LARGE cards */}
+          {/* Top-right actions — large cards only */}
           {!actionsInFooter && (
             <div className="flex items-center gap-1 shrink-0">
               <ActionButtons
-                item={item}
-                accentColor={accentColor}
-                textColor={textColor}
-                onFavorite={toggleFavorite}
-                onPin={togglePin}
-                onShare={handleShare}
-                onCardSize={setCardSize}
-                onEnrich={() => setEnrichOpen(true)}
-                onRemove={onRemove}
-                isOwner={isOwner}
-                size={size}
+                item={item} accentColor={accentColor} textColor={textColor}
+                onFavorite={toggleFavorite} onPin={togglePin} onShare={handleShare}
+                onCardSize={setCardSize} onEnrich={() => setEnrichOpen(true)}
+                onRemove={onRemove} isOwner={isOwner} size={size}
+                onPickFont={pickFont} onPickRandomFont={pickRandomFont}
+                currentFont={pendingFont ?? card.text_style}
               />
             </div>
           )}
@@ -276,7 +364,7 @@ export function BoardCard({
               className="overflow-hidden space-y-3"
             >
               {/* Status badges */}
-              {((card.tags && card.tags.length > 0) || card.status === "ai_generated" || (isPrivate && isOwner)) && (
+              {(card.status === "ai_generated" || (isPrivate && isOwner) || card.status === "pending") && (
                 <div className="flex flex-wrap gap-1">
                   {card.status === "ai_generated" && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
@@ -308,7 +396,6 @@ export function BoardCard({
                       {scriptureOpen ? "Hide scripture" : "Show scripture"}
                     </button>
                   ) : <div />}
-
                   {card.tags && card.tags.length > 0 && (
                     <button
                       onClick={() => setTagsOpen(v => !v)}
@@ -367,7 +454,7 @@ export function BoardCard({
                 )}
               </AnimatePresence>
 
-              {/* Notes — medium / large only */}
+              {/* Notes */}
               {size !== "small" && (
                 <div className="pt-2 border-t" style={{ borderColor: `${textColor}10` }}>
                   {editingNotes ? (
@@ -399,8 +486,8 @@ export function BoardCard({
                 </div>
               )}
 
-              {/* Comments — large only */}
-              {size === "large" && (
+              {/* Comments — large + PUBLIC cards only */}
+              {size === "large" && isPublic && (
                 <>
                   <button
                     onClick={() => setShowComments(s => !s)}
@@ -417,13 +504,13 @@ export function BoardCard({
           )}
         </AnimatePresence>
 
-        {/* ── Footer row (small + medium): visibility toggle + action buttons ── */}
+        {/* ── Footer row (small + medium) ───────────────────────────────── */}
         {actionsInFooter && (
           <div
             className="flex items-center justify-between gap-2 pt-2 border-t"
             style={{ borderColor: `${textColor}12` }}
           >
-            {/* Left: visibility */}
+            {/* Visibility toggle */}
             {isOwner ? (
               <div className="flex items-center gap-1.5">
                 {togglingPublic ? (
@@ -445,26 +532,21 @@ export function BoardCard({
               </div>
             ) : <div />}
 
-            {/* Right: heart + pin + share + menu */}
+            {/* Action buttons */}
             <div className="flex items-center gap-0.5">
               <ActionButtons
-                item={item}
-                accentColor={accentColor}
-                textColor={textColor}
-                onFavorite={toggleFavorite}
-                onPin={togglePin}
-                onShare={handleShare}
-                onCardSize={setCardSize}
-                onEnrich={() => setEnrichOpen(true)}
-                onRemove={onRemove}
-                isOwner={isOwner}
-                size={size}
+                item={item} accentColor={accentColor} textColor={textColor}
+                onFavorite={toggleFavorite} onPin={togglePin} onShare={handleShare}
+                onCardSize={setCardSize} onEnrich={() => setEnrichOpen(true)}
+                onRemove={onRemove} isOwner={isOwner} size={size}
+                onPickFont={pickFont} onPickRandomFont={pickRandomFont}
+                currentFont={pendingFont ?? card.text_style}
               />
             </div>
           </div>
         )}
 
-        {/* ── Large card: visibility toggle below the chrome ───────────── */}
+        {/* ── Large card: visibility toggle ────────────────────────────── */}
         {!actionsInFooter && isOwner && (
           <div className="flex items-center gap-1.5 pt-2 border-t" style={{ borderColor: `${textColor}12` }}>
             {togglingPublic ? (
@@ -503,7 +585,7 @@ export function BoardCard({
   );
 }
 
-// ── Shared action buttons component ─────────────────────────────────────────
+// ── Shared action buttons ────────────────────────────────────────────────────
 interface ActionButtonsProps {
   item: SavedPrayer & { card_size?: CardSize };
   accentColor: string;
@@ -516,11 +598,15 @@ interface ActionButtonsProps {
   onRemove: (id: string) => void;
   isOwner: boolean;
   size: CardSize;
+  onPickFont: (family: string) => void;
+  onPickRandomFont: () => void;
+  currentFont: string | null | undefined;
 }
 
 function ActionButtons({
   item, accentColor, textColor,
   onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
+  onPickFont, onPickRandomFont, currentFont,
 }: ActionButtonsProps) {
   return (
     <>
@@ -561,7 +647,9 @@ function ActionButtons({
             <MoreHorizontal className="w-3.5 h-3.5" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44 rounded-xl">
+        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+
+          {/* Size */}
           <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("small")}>
             <Minimize2 className="w-3.5 h-3.5" /> Small {size === "small" && "✓"}
           </DropdownMenuItem>
@@ -571,14 +659,47 @@ function ActionButtons({
           <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("large")}>
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
+
+          {/* Font picker — owner only */}
           {isOwner && (
             <>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="text-xs gap-2">
+                  <Type className="w-3.5 h-3.5" /> Font
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-52 rounded-xl max-h-72 overflow-y-auto">
+                  {/* Random pick */}
+                  <DropdownMenuItem
+                    className="text-xs gap-2 font-medium"
+                    onClick={onPickRandomFont}
+                  >
+                    <Shuffle className="w-3.5 h-3.5" />
+                    Random font 🎲
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {PRAYER_FONTS.map(font => (
+                    <DropdownMenuItem
+                      key={font.family}
+                      className="text-xs gap-2"
+                      onClick={() => onPickFont(font.family)}
+                    >
+                      <span style={{ fontFamily: `"${font.family}", serif`, flex: 1 }}>
+                        {font.label}
+                      </span>
+                      {currentFont === font.family && <Check className="w-3 h-3 opacity-60" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-xs gap-2" onClick={onEnrich}>
                 <Sparkles className="w-3.5 h-3.5" /> AI Enrich
               </DropdownMenuItem>
             </>
           )}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-xs gap-2 text-destructive focus:text-destructive"
