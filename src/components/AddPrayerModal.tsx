@@ -12,30 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Upload, Sparkles } from "lucide-react";
-
-const FAITH_KEYWORDS = ["prayer","pray","lord","god","jesus","christ","holy","spirit","father","heaven","faith","grace","mercy","love","peace","hope","forgiveness","blessing","salvation","worship","praise","scripture","bible","amen","healing","strength","guidance","trust","wisdom","gratitude","thankful","provision","protection","intercession","devotion","righteousness","eternal","covenant","redemption","sanctification"];
-
-function extractTags(text: string): string[] {
-  const lower = text.toLowerCase();
-  const found = FAITH_KEYWORDS.filter(kw => lower.includes(kw));
-  // Also extract common prayer topics
-  const topicMap: Record<string, string[]> = {
-    "morning-prayer": ["morning","wake","arise","sunrise","today","day begins"],
-    "healing": ["heal","sick","illness","disease","health","recovery"],
-    "peace": ["peace","anxiety","worry","fear","calm","rest"],
-    "strength": ["strength","strong","weak","tired","exhausted","endurance"],
-    "forgiveness": ["forgive","forgiveness","sin","repent","mercy"],
-    "intercession": ["intercede","others","family","nation","world","people"],
-    "gratitude": ["thankful","grateful","gratitude","bless","blessed"],
-    "guidance": ["guide","direction","path","wisdom","discern","purpose"],
-  };
-  const topics: string[] = [];
-  for (const [tag, patterns] of Object.entries(topicMap)) {
-    if (patterns.some(p => lower.includes(p))) topics.push(tag);
-  }
-  const combined = [...new Set([...found.slice(0, 3), ...topics.slice(0, 3)])];
-  return combined.slice(0, 5);
-}
+import { useNavigate } from "react-router-dom";
 
 const TEXT_STYLES = [
   { value: "classic", label: "Classic", preview: "font-body text-base" },
@@ -50,7 +27,6 @@ const TEXT_STYLES = [
   { value: "royal", label: "Royal Proclamation", preview: "font-display font-bold tracking-wider" },
 ];
 
-// 5000 words ≈ ~30000 chars (average word = 5 chars + space)
 const MAX_WORDS = 5000;
 const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -72,14 +48,12 @@ interface AddPrayerModalProps {
   onSuccess?: () => void;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
 export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [bgFile, setBgFile] = useState<File | null>(null);
-  const [moderating, setModerating] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -88,37 +62,11 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
   const onSubmit = async (values: FormValues) => {
     if (!user) { toast({ title: "Please sign in to submit a prayer" }); return; }
-
-    setModerating(true);
-    try {
-      // Moderate content
-      const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-prayer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ prayer_text: values.prayer_text, title: values.title }),
-      });
-      if (modResp.ok) {
-        const modResult = await modResp.json();
-        if (!modResult.approved) {
-          toast({
-            title: "Prayer not submitted",
-            description: modResult.reason || "Your prayer didn't meet our community guidelines. Please revise and try again.",
-            variant: "destructive",
-          });
-          setModerating(false);
-          return;
-        }
-      }
-    } catch {
-      // Moderation failed, continue anyway
-    }
-    setModerating(false);
     setSubmitting(true);
 
     try {
       let background_url: string | null = null;
 
-      // Upload background image if provided
       if (bgFile) {
         const ext = bgFile.name.split(".").pop();
         const path = `${user.id}/${Date.now()}.${ext}`;
@@ -129,25 +77,42 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         }
       }
 
-      const tags = extractTags(values.prayer_text);
-
-      const { error } = await supabase.from("prayer_cards").insert({
+      // Insert prayer as private — immediately visible on board
+      const { data: card, error } = await supabase.from("prayer_cards").insert({
         title: values.title || null,
         prayer_text: values.prayer_text,
         extended_prayer: values.extended_prayer || null,
         text_style: values.text_style,
         background_url,
-        tags,
-        status: "pending",
+        tags: [],
+        status: "private",
         created_by: user.id,
-      });
+      }).select("id").single();
 
       if (error) throw error;
 
+      // Auto-add to board
+      if (card?.id) {
+        await supabase.from("user_saved_prayers").insert({
+          user_id: user.id,
+          prayer_id: card.id,
+          position: 0,
+        });
+      }
+
       toast({
-        title: "Prayer submitted! 🙏",
-        description: "Your prayer has been submitted for review. It will appear in the collection once approved.",
+        title: "Prayer saved to your board 🙏",
+        description: "It's private by default. Open your board to add tags, scripture, or share with the community.",
+        action: (
+          <button
+            onClick={() => navigate("/board")}
+            className="text-xs font-medium underline underline-offset-2 hover:no-underline"
+          >
+            View Board
+          </button>
+        ) as React.ReactElement,
       });
+
       form.reset();
       setBgFile(null);
       onOpenChange(false);
@@ -170,9 +135,9 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Share a Prayer</DialogTitle>
+          <DialogTitle className="font-display text-2xl">Write a Prayer</DialogTitle>
           <DialogDescription>
-            Submit your prayer to the community. All prayers are reviewed before publishing.
+            Your prayer is saved privately to your board. You can choose to share it with the community afterwards.
           </DialogDescription>
         </DialogHeader>
 
@@ -265,10 +230,10 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
               <Button type="button" variant="outline" className="rounded-xl flex-1" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting || moderating} className="btn-gold rounded-xl flex-1 gap-2">
-                {moderating ? <><Loader2 className="w-4 h-4 animate-spin" />Checking…</> :
-                 submitting ? <><Loader2 className="w-4 h-4 animate-spin" />Submitting…</> :
-                 <><Sparkles className="w-4 h-4" />Submit Prayer</>}
+              <Button type="submit" disabled={submitting} className="btn-gold rounded-xl flex-1 gap-2">
+                {submitting
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</>
+                  : <><Sparkles className="w-4 h-4" />Save to Board</>}
               </Button>
             </div>
           </form>
