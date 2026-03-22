@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   GripVertical, Heart, Pin, ChevronDown, ChevronUp, Sparkles,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
-  MoreHorizontal,
+  MoreHorizontal, Tag, Share2,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -25,19 +25,31 @@ type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
 };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const PRAYER_CHAR_LIMIT = 320;
 
 const TEXT_STYLE_CLASSES: Record<string, string> = {
-  classic: "font-body text-base",
-  scripture: "font-display text-base italic",
-  peaceful: "font-body text-base",
-  bold: "font-body text-base font-semibold",
-  gentle: "font-body text-sm leading-relaxed",
-  strong: "font-display text-lg font-bold",
-  modern: "font-body text-sm tracking-wide",
+  classic:       "font-body text-base",
+  scripture:     "font-display text-base italic",
+  peaceful:      "font-body text-base",
+  bold:          "font-body text-base font-semibold",
+  gentle:        "font-body text-sm leading-relaxed",
+  strong:        "font-display text-lg font-bold",
+  modern:        "font-body text-sm tracking-wide",
   compassionate: "font-display text-base",
-  whisper: "font-body text-sm italic",
-  royal: "font-display font-bold tracking-wider",
+  whisper:       "font-body text-sm italic",
+  royal:         "font-display font-bold tracking-wider",
 };
+
+const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
+  "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
+  "healing":        { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
+  "peace":          { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
+  "faith":          { bg: "hsl(42 80% 92%)",  text: "hsl(38 75% 32%)" },
+  "morning-prayer": { bg: "hsl(35 68% 88%)",  text: "hsl(35 65% 32%)" },
+  "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
+  "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
+};
+const DEFAULT_TAG = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
 type CardSize = "small" | "medium" | "large";
 
@@ -70,6 +82,9 @@ export function BoardCard({
   const [togglingPublic, setTogglingPublic] = useState(false);
   const [enrichOpen, setEnrichOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [scriptureOpen, setScriptureOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   if (!card) return null;
 
@@ -77,8 +92,16 @@ export function BoardCard({
   const isOwner = !!(userId && card.created_by === userId);
   const isPrivate = card.status === "private";
   const size: CardSize = (item as { card_size?: CardSize }).card_size || "medium";
+  const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
-  const accentColor = themeVars?.["--board-accent"] || "hsl(var(--primary))";
+  // Theme-aware colours (fall back to the /prayers warm palette)
+  const accentColor   = themeVars?.["--board-accent"]      || "hsl(42 75% 40%)";
+  const cardBg        = themeVars?.["--board-card-bg"]      || "hsl(var(--card) / 0.97)";
+  const cardBorder    = themeVars?.["--board-card-border"]  || "hsl(var(--border) / 0.7)";
+  const textColor     = themeVars?.["--board-text"]         || "hsl(25 35% 14%)";
+  const subtleText    = `${textColor}80`;
+
+  // ── actions ─────────────────────────────────────────────────────────────────
 
   const saveNotes = async () => {
     await supabase.from("user_saved_prayers").update({ notes }).eq("id", item.id);
@@ -102,6 +125,12 @@ export function BoardCard({
   const setCardSize = async (s: CardSize) => {
     await supabase.from("user_saved_prayers").update({ card_size: s } as { card_size: string }).eq("id", item.id);
     onUpdate(item.id, { card_size: s } as Partial<SavedPrayer & { card_size: CardSize }>);
+  };
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/prayer/${card.id}`;
+    navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
   };
 
   const handlePublicToggle = async (makePublic: boolean) => {
@@ -141,241 +170,320 @@ export function BoardCard({
     }
   };
 
-  const cardBg = themeVars?.["--board-card-bg"] || "hsl(var(--card) / 0.92)";
-  const cardBorder = themeVars?.["--board-card-border"] || "hsl(var(--border) / 0.7)";
-  const textColor = themeVars?.["--board-text"] || "hsl(var(--foreground))";
+  // ── derived ──────────────────────────────────────────────────────────────────
+  // For small/medium: actions live in the footer row. For large: keep them inline.
+  const actionsInFooter = size !== "large";
 
-  const textLineClamp = size === "small" ? "line-clamp-2" : size === "medium" ? "line-clamp-4" : "";
-
+  // ── render ───────────────────────────────────────────────────────────────────
   return (
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.96, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.94, y: 4 }}
-      whileHover={{ y: -2, boxShadow: `0 16px 48px -12px ${accentColor}35, 0 4px 16px -4px rgba(0,0,0,0.15)` }}
+      whileHover={{ y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
       transition={{ layout: { type: "spring", stiffness: 300, damping: 28 }, default: { duration: 0.25 } }}
       style={{
         background: cardBg,
         borderColor: cardBorder,
         color: textColor,
         opacity: isDragging ? 0.45 : 1,
-        backdropFilter: "blur(14px) saturate(1.5)",
-        WebkitBackdropFilter: "blur(14px) saturate(1.5)",
+        backdropFilter: "blur(16px) saturate(1.6)",
+        WebkitBackdropFilter: "blur(16px) saturate(1.6)",
         boxShadow: item.pinned
-          ? `inset 2px 0 0 ${accentColor}, 0 4px 24px -8px rgba(0,0,0,0.18)`
-          : "0 2px 14px -4px rgba(0,0,0,0.14)",
+          ? `inset 3px 0 0 ${accentColor}, 0 4px 24px -8px rgba(0,0,0,0.16)`
+          : "0 2px 16px -4px rgba(0,0,0,0.10)",
         willChange: "transform",
       }}
-      className="relative rounded-2xl border overflow-hidden select-none"
+      className="relative rounded-2xl border overflow-hidden"
     >
-      {/* Subtle glass sheen */}
-      <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{
-        background: "linear-gradient(145deg, rgba(255,255,255,0.22) 0%, transparent 55%)"
-      }} />
+      {/* Glass sheen */}
+      <div className="absolute inset-0 pointer-events-none rounded-2xl"
+        style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
 
-      <div className="relative p-4 space-y-3">
-        {/* Header row */}
+      <div className="relative p-4 flex flex-col gap-3">
+
+        {/* ── Top drag handle row ───────────────────────────────────────── */}
         <div className="flex items-start gap-2">
-          {/* Drag handle */}
           <button
             {...dragHandleProps}
-            className="mt-1 opacity-40 hover:opacity-80 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+            className="mt-1 opacity-30 hover:opacity-70 transition-opacity cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
             aria-label="Drag to reorder"
           >
             <GripVertical className="w-4 h-4" style={{ color: textColor }} />
           </button>
 
           <div className="flex-1 min-w-0">
+            {/* Title */}
             {card.title && (
-              <h3 className="font-display font-semibold mb-0.5 text-sm leading-snug" style={{ color: textColor }}>
+              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: textColor }}>
                 {card.title}
               </h3>
             )}
-            <p className={`${textClass} leading-relaxed text-sm ${textLineClamp}`} style={{ color: textColor }}>
-              {card.prayer_text}
-            </p>
-          </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={toggleFavorite}
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: item.favorite ? "#ef4444" : `${textColor}70` }}
-              aria-label="Favourite"
-            >
-              <Heart className={`w-4 h-4 ${item.favorite ? "fill-current" : ""}`} />
-            </button>
-            <button
-              onClick={togglePin}
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: item.pinned ? accentColor : `${textColor}70` }}
-              aria-label="Pin"
-            >
-              <Pin className="w-4 h-4" />
-            </button>
-
-            {/* More menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="p-1.5 rounded-lg transition-colors" style={{ color: `${textColor}70` }} aria-label="More options">
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44 rounded-xl">
-                <DropdownMenuItem className="text-xs gap-2" onClick={() => setCardSize("small")}>
-                  <Minimize2 className="w-3.5 h-3.5" /> Small {size === "small" && "✓"}
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-xs gap-2" onClick={() => setCardSize("medium")}>
-                  <Square className="w-3.5 h-3.5" /> Medium {size === "medium" && "✓"}
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-xs gap-2" onClick={() => setCardSize("large")}>
-                  <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
-                </DropdownMenuItem>
-                {isOwner && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-xs gap-2" onClick={() => setEnrichOpen(true)}>
-                      <Sparkles className="w-3.5 h-3.5" /> AI Enrich
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-xs gap-2 text-destructive focus:text-destructive"
-                  onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }}
+            {/* Prayer text */}
+            <div className="select-none">
+              <p
+                className={`${textClass} leading-relaxed text-sm cursor-pointer`}
+                style={{ color: subtleText }}
+                onClick={() => setCollapsed(v => !v)}
+              >
+                {isTruncated && !expanded
+                  ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
+                  : card.prayer_text}
+              </p>
+              {isTruncated && (
+                <button
+                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  className="mt-1 text-xs font-medium transition-colors"
+                  style={{ color: accentColor }}
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Remove
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {expanded ? "See less" : "See more…"}
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Actions column — only shown at top for LARGE cards */}
+          {!actionsInFooter && (
+            <div className="flex items-center gap-1 shrink-0">
+              <ActionButtons
+                item={item}
+                accentColor={accentColor}
+                textColor={textColor}
+                onFavorite={toggleFavorite}
+                onPin={togglePin}
+                onShare={handleShare}
+                onCardSize={setCardSize}
+                onEnrich={() => setEnrichOpen(true)}
+                onRemove={onRemove}
+                isOwner={isOwner}
+                size={size}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Tags */}
-        {((card.tags && card.tags.length > 0) || card.status === "ai_generated" || (isPrivate && isOwner)) && (
-          <div className="flex flex-wrap gap-1">
-            {card.tags?.map(tag => (
-              <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: `${accentColor}22`, color: accentColor }}>
-                #{tag}
-              </span>
-            ))}
-            {card.status === "ai_generated" && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: `${accentColor}22`, color: accentColor }}>
-                <Sparkles className="w-2.5 h-2.5" />AI
-              </span>
-            )}
-            {isPrivate && isOwner && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: `${textColor}14`, color: `${textColor}80` }}>
-                <Lock className="w-2.5 h-2.5" />Private
-              </span>
-            )}
-            {card.status === "pending" && isOwner && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                style={{ background: `${textColor}10`, color: `${textColor}60` }}>
-                In review
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Scripture expand */}
-        {card.extended_prayer && size !== "small" && (
-          <>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="text-xs flex items-center gap-1 transition-opacity hover:opacity-80"
-              style={{ color: accentColor }}
+        {/* ── Collapsible chrome ────────────────────────────────────────── */}
+        <AnimatePresence initial={false}>
+          {!collapsed && (
+            <motion.div
+              key="chrome"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden space-y-3"
             >
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              {expanded ? "Hide scripture" : "Show scripture"}
-            </button>
-            {expanded && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="font-display italic text-xs leading-relaxed"
-                style={{ color: `${textColor}80` }}
-              >
-                {renderWithVerseLinks(card.extended_prayer)}
-              </motion.p>
-            )}
-          </>
-        )}
-
-        {/* Owner: public toggle */}
-        {isOwner && size !== "small" && (
-          <div className="flex items-center justify-between gap-3 pt-2 border-t" style={{ borderColor: `${textColor}12` }}>
-            <div className="flex items-center gap-1.5">
-              {togglingPublic ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
-              ) : isPrivate ? (
-                <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}55` }} />
-              ) : (
-                <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+              {/* Status badges */}
+              {((card.tags && card.tags.length > 0) || card.status === "ai_generated" || (isPrivate && isOwner)) && (
+                <div className="flex flex-wrap gap-1">
+                  {card.status === "ai_generated" && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: `${accentColor}20`, color: accentColor }}>
+                      <Sparkles className="w-2.5 h-2.5" />AI
+                    </span>
+                  )}
+                  {card.status === "pending" && isOwner && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: `${textColor}10`, color: `${textColor}60` }}>
+                      In review
+                    </span>
+                  )}
+                </div>
               )}
-              <span className="text-xs" style={{ color: `${textColor}60` }}>
-                {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
-              </span>
-              <Switch
-                checked={!isPrivate}
-                onCheckedChange={handlePublicToggle}
-                disabled={togglingPublic || card.status === "approved"}
-                className="scale-75 origin-left"
+
+              {/* Scripture / Tags toggles */}
+              {size !== "small" && (
+                <div className="flex items-center justify-between gap-2">
+                  {card.extended_prayer ? (
+                    <button
+                      onClick={() => setScriptureOpen(v => !v)}
+                      className="text-xs font-medium flex items-center gap-1 transition-colors"
+                      style={{ color: accentColor }}
+                    >
+                      <motion.div animate={{ rotate: scriptureOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </motion.div>
+                      {scriptureOpen ? "Hide scripture" : "Show scripture"}
+                    </button>
+                  ) : <div />}
+
+                  {card.tags && card.tags.length > 0 && (
+                    <button
+                      onClick={() => setTagsOpen(v => !v)}
+                      className="text-xs font-medium flex items-center gap-1 transition-colors"
+                      style={{ color: accentColor }}
+                    >
+                      <Tag className="w-3 h-3" />
+                      {tagsOpen ? "Hide tags" : "Tags"}
+                      <motion.div animate={{ rotate: tagsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-3 h-3" />
+                      </motion.div>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Scripture accordion */}
+              <AnimatePresence>
+                {scriptureOpen && card.extended_prayer && (
+                  <motion.p
+                    key="scripture"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="font-display italic text-xs leading-relaxed overflow-hidden"
+                    style={{ color: `${textColor}75` }}
+                  >
+                    {renderWithVerseLinks(card.extended_prayer)}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              {/* Tags accordion */}
+              <AnimatePresence>
+                {tagsOpen && card.tags && card.tags.length > 0 && (
+                  <motion.div
+                    key="tags"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22 }}
+                    className="flex flex-wrap gap-1.5 overflow-hidden"
+                  >
+                    {card.tags.map(tag => {
+                      const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                      return (
+                        <span key={tag}
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
+                          style={{ background: palette.bg, color: palette.text }}>
+                          #{tag}
+                        </span>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Notes — medium / large only */}
+              {size !== "small" && (
+                <div className="pt-2 border-t" style={{ borderColor: `${textColor}10` }}>
+                  {editingNotes ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        placeholder="Personal notes, reflection…"
+                        rows={2}
+                        className="text-xs rounded-xl resize-none bg-transparent border-border"
+                        style={{ color: textColor }}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={saveNotes} className="btn-gold rounded-xl h-7 text-xs">Save</Button>
+                        <Button size="sm" variant="outline" onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }} className="rounded-xl h-7 text-xs">Cancel</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setEditingNotes(true)}
+                      className="text-xs w-full text-left transition-opacity hover:opacity-80"
+                      style={{ color: `${textColor}45` }}
+                    >
+                      {item.notes
+                        ? <span className="italic">"{item.notes}"</span>
+                        : <span>+ Add notes…</span>}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Comments — large only */}
+              {size === "large" && (
+                <>
+                  <button
+                    onClick={() => setShowComments(s => !s)}
+                    className="text-xs flex items-center gap-1 transition-opacity hover:opacity-80"
+                    style={{ color: `${textColor}50` }}
+                  >
+                    {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    {showComments ? "Hide comments" : "Comments"}
+                  </button>
+                  {showComments && <Comments prayerId={card.id} />}
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Footer row (small + medium): visibility toggle + action buttons ── */}
+        {actionsInFooter && (
+          <div
+            className="flex items-center justify-between gap-2 pt-2 border-t"
+            style={{ borderColor: `${textColor}12` }}
+          >
+            {/* Left: visibility */}
+            {isOwner ? (
+              <div className="flex items-center gap-1.5">
+                {togglingPublic ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
+                ) : isPrivate ? (
+                  <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
+                ) : (
+                  <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                )}
+                <span className="text-xs" style={{ color: `${textColor}55` }}>
+                  {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
+                </span>
+                <Switch
+                  checked={!isPrivate}
+                  onCheckedChange={handlePublicToggle}
+                  disabled={togglingPublic || card.status === "approved"}
+                  className="scale-75 origin-left"
+                />
+              </div>
+            ) : <div />}
+
+            {/* Right: heart + pin + share + menu */}
+            <div className="flex items-center gap-0.5">
+              <ActionButtons
+                item={item}
+                accentColor={accentColor}
+                textColor={textColor}
+                onFavorite={toggleFavorite}
+                onPin={togglePin}
+                onShare={handleShare}
+                onCardSize={setCardSize}
+                onEnrich={() => setEnrichOpen(true)}
+                onRemove={onRemove}
+                isOwner={isOwner}
+                size={size}
               />
             </div>
           </div>
         )}
 
-        {/* Notes */}
-        {size !== "small" && (
-          <div className="pt-2 border-t" style={{ borderColor: `${textColor}10` }}>
-            {editingNotes ? (
-              <div className="space-y-2">
-                <Textarea
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Personal notes, reflection…"
-                  rows={2}
-                  className="text-xs rounded-xl resize-none bg-transparent border-border"
-                  style={{ color: textColor }}
-                />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={saveNotes} className="btn-gold rounded-xl h-7 text-xs">Save</Button>
-                  <Button size="sm" variant="outline" onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }} className="rounded-xl h-7 text-xs">Cancel</Button>
-                </div>
-              </div>
+        {/* ── Large card: visibility toggle below the chrome ───────────── */}
+        {!actionsInFooter && isOwner && (
+          <div className="flex items-center gap-1.5 pt-2 border-t" style={{ borderColor: `${textColor}12` }}>
+            {togglingPublic ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
+            ) : isPrivate ? (
+              <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
             ) : (
-              <button
-                onClick={() => setEditingNotes(true)}
-                className="text-xs w-full text-left transition-opacity hover:opacity-80"
-                style={{ color: `${textColor}50` }}
-              >
-                {item.notes
-                  ? <span className="italic">"{item.notes}"</span>
-                  : <span>+ Add notes…</span>}
-              </button>
+              <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
             )}
+            <span className="text-xs" style={{ color: `${textColor}55` }}>
+              {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
+            </span>
+            <Switch
+              checked={!isPrivate}
+              onCheckedChange={handlePublicToggle}
+              disabled={togglingPublic || card.status === "approved"}
+              className="scale-75 origin-left"
+            />
           </div>
-        )}
-
-        {/* Comments toggle for large */}
-        {size === "large" && (
-          <>
-            <button
-              onClick={() => setShowComments(s => !s)}
-              className="text-xs flex items-center gap-1 transition-opacity hover:opacity-80"
-              style={{ color: `${textColor}50` }}
-            >
-              {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              {showComments ? "Hide comments" : "Comments"}
-            </button>
-            {showComments && <Comments prayerId={card.id} />}
-          </>
         )}
       </div>
 
@@ -392,5 +500,94 @@ export function BoardCard({
         />
       )}
     </motion.div>
+  );
+}
+
+// ── Shared action buttons component ─────────────────────────────────────────
+interface ActionButtonsProps {
+  item: SavedPrayer & { card_size?: CardSize };
+  accentColor: string;
+  textColor: string;
+  onFavorite: () => void;
+  onPin: () => void;
+  onShare: (e: React.MouseEvent) => void;
+  onCardSize: (s: CardSize) => void;
+  onEnrich: () => void;
+  onRemove: (id: string) => void;
+  isOwner: boolean;
+  size: CardSize;
+}
+
+function ActionButtons({
+  item, accentColor, textColor,
+  onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
+}: ActionButtonsProps) {
+  return (
+    <>
+      <button
+        onClick={onFavorite}
+        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+        style={{ color: item.favorite ? "hsl(0 72% 51%)" : `${textColor}55` }}
+        aria-label="Favourite"
+      >
+        <Heart className={`w-3.5 h-3.5 ${item.favorite ? "fill-current" : ""}`} />
+      </button>
+
+      <button
+        onClick={onPin}
+        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+        style={{ color: item.pinned ? accentColor : `${textColor}55` }}
+        aria-label="Pin"
+      >
+        <Pin className="w-3.5 h-3.5" />
+      </button>
+
+      <button
+        onClick={onShare}
+        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+        style={{ color: `${textColor}55` }}
+        aria-label="Share"
+      >
+        <Share2 className="w-3.5 h-3.5" />
+      </button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+            style={{ color: `${textColor}55` }}
+            aria-label="More options"
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44 rounded-xl">
+          <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("small")}>
+            <Minimize2 className="w-3.5 h-3.5" /> Small {size === "small" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("medium")}>
+            <Square className="w-3.5 h-3.5" /> Medium {size === "medium" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("large")}>
+            <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
+          </DropdownMenuItem>
+          {isOwner && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-xs gap-2" onClick={onEnrich}>
+                <Sparkles className="w-3.5 h-3.5" /> AI Enrich
+              </DropdownMenuItem>
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-xs gap-2 text-destructive focus:text-destructive"
+            onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }}
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Remove
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
   );
 }
