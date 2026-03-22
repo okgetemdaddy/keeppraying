@@ -1,41 +1,27 @@
 
-## What's missing on the PrayerAssist.ing page
+## Forgot Password — Full Flow
 
-Looking at the screenshot and the code, here is exactly what's missing:
+Two things to build:
 
-**1. "Matthew 7:7" at the bottom is plain text — not a VerseLink**
+**1. Forgot Password mode on `/auth`**
+Add a third mode `"forgot"` to the existing Auth page state machine. When the user clicks "Forgot password?" (a small link under the password field in Sign In mode), the form switches to a single email field with a "Send Reset Link" button. On submit it calls `supabase.auth.resetPasswordForEmail()` with a redirect to `/reset-password`. A success state then shows a confirmation message ("Check your inbox") so the user knows the email is on its way.
 
-Line 195:
-```tsx
-<p className="verse-text text-sm">"Ask and it will be given to you…" — Matthew 7:7</p>
-```
-The reference `Matthew 7:7` is hardcoded as a plain string. It should be a `<VerseLink reference="Matthew 7:7" />` component so users get the interactive hover tooltip with the full verse text — exactly the same as the system already does on the Prayers page.
+**2. New `/reset-password` page**
+Create `src/pages/ResetPassword.tsx` — a new public route that:
+- Detects the `type=recovery` token from the URL hash on mount (Supabase sets this when the user clicks the email link)
+- Shows a "Set New Password" form (new password + confirm password fields)
+- On submit calls `supabase.auth.updateUser({ password })` 
+- On success navigates to `/auth` with a toast saying "Password updated — please sign in"
+- Matches the same split-panel visual design as the Auth page (hero image left, form right)
 
-**2. The suggestion cards show "Explain how to pray for someone else (intercession)" — but the label in the screenshot says "Explain how to pray for someone else (intercession)". The suggestion text in code (line 85) reads:**
-```
-"Explain how to pray for someone else (intercession)"
-```
-This matches, so that's fine.
+**3. Register the route in `App.tsx`**
+Add `<Route path="/reset-password" element={<ResetPassword />} />` as a public route (no auth wrapper).
 
-**3. Global auto-detection of verse references is missing from the welcome/empty screen**
+**4. Add `resetPassword` to `AuthContext`**
+Add `resetPassword(email: string)` to the context so it's callable from the Auth page cleanly, same pattern as `signIn` / `signUp`.
 
-The `renderWithVerseLinks` utility exists in `src/lib/renderWithVerseLinks.tsx` and is used on the Prayers page. On the PrayerAssist welcome screen, the subtitle text and the footer verse quote are rendered as plain strings — none of the scripture references auto-link.
-
-The quote at the bottom (`"Ask and it will be given to you…" — Matthew 7:7`) needs the `Matthew 7:7` portion wrapped in a `<VerseLink>`.
-
----
-
-### The fix — one file, two changes in `src/pages/PrayerAssist.tsx`
-
-**Change 1** — Line 195: Replace the static verse citation with a `<VerseLink>`:
-```tsx
-// Before
-<p className="verse-text text-sm">"Ask and it will be given to you…" — Matthew 7:7</p>
-
-// After
-<p className="verse-text text-sm">
-  "Ask and it will be given to you…" — <VerseLink reference="Matthew 7:7" />
-</p>
-```
-
-That's the only missing piece visible in the screenshot — the `VerseLink` is already imported (line 11), so no new imports needed. This is a single-line targeted fix.
+### Files changed
+- `src/contexts/AuthContext.tsx` — add `resetPassword` method
+- `src/pages/Auth.tsx` — add `"forgot"` mode, "Forgot password?" link, success state
+- `src/pages/ResetPassword.tsx` — new page (created)
+- `src/App.tsx` — register `/reset-password` route
