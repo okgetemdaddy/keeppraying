@@ -75,6 +75,7 @@ interface BoardCardProps {
   onRemove: (id: string) => void;
   onRefresh: () => void;
   themeVars?: Record<string, string>;
+  onAddToPlaylist?: (prayerId: string) => void;
 }
 
 export function BoardCard({
@@ -86,6 +87,7 @@ export function BoardCard({
   onRemove,
   onRefresh,
   themeVars,
+  onAddToPlaylist,
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
