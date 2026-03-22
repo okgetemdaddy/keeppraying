@@ -209,7 +209,7 @@ export default function Admin() {
       const tagsArr = values.tags
         ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
         : [];
-      const { error } = await supabase.from("prayer_cards").insert({
+      const { data: newCard, error } = await supabase.from("prayer_cards").insert({
         title: values.title || null,
         prayer_text: values.prayer_text.trim(),
         extended_prayer: values.extended_prayer?.trim() || null,
@@ -219,16 +219,45 @@ export default function Admin() {
         created_by: user.id,
         source: "admin",
         status: "approved",
-      });
+      }).select("id").single();
       if (error) throw error;
       toast({ title: "Prayer card published! 🙏" });
       prayerForm.reset();
       setShowPrayerForm(false);
       load();
+      // Offer AI Enrich right after saving
+      if (newCard?.id) {
+        setEnrichCardId(newCard.id);
+        setEnrichCardText(values.prayer_text.trim());
+        setEnrichCardExtended(values.extended_prayer?.trim() || null);
+        setEnrichOpen(true);
+      }
     } catch (e) {
       toast({ title: "Failed to save prayer", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
     } finally {
       setSavingPrayer(false);
+    }
+  };
+
+  const saveVerseEdit = async () => {
+    if (!editingVerseId) return;
+    setSavingVerse(true);
+    try {
+      const { error } = await supabase.from("verse_summaries").update({
+        reference: editingVerse.reference,
+        verse_text: editingVerse.verse_text ?? null,
+        summary: editingVerse.summary ?? null,
+        exegesis: editingVerse.exegesis ?? null,
+      }).eq("id", editingVerseId);
+      if (error) throw error;
+      toast({ title: "Verse saved ✓" });
+      setEditingVerseId(null);
+      setEditingVerse({});
+      loadVerses(verseSearch);
+    } catch (e) {
+      toast({ title: "Save failed", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
+    } finally {
+      setSavingVerse(false);
     }
   };
 
