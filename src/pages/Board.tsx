@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { ThemeSelector } from "@/components/board/ThemeSelector";
 import { AmbientPlayer } from "@/components/board/AmbientPlayer";
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
+import { SiteNav } from "@/components/SiteNav";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors, DragEndEvent,
@@ -25,9 +26,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  PlusCircle, BookOpen, ListMusic, ArrowLeft,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles,
+  PlusCircle, BookOpen, ListMusic,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, Link as LinkIcon,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -208,71 +210,62 @@ export default function Board() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 
       {/* Header */}
-      <motion.header
-        animate={{ opacity: immersive ? 0 : 1, y: immersive ? -56 : 0 }}
+      <motion.div
+        animate={{ opacity: immersive ? 0 : 1, y: immersive ? -64 : 0 }}
         transition={{ duration: 0.35 }}
         onMouseEnter={() => immersive && setImmersive(false)}
-        className="sticky top-0 z-40 border-b border-white/10 backdrop-blur-xl"
-        style={{ background: "rgba(0,0,0,0.22)" }}
+        className="sticky top-0 z-50"
       >
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-white/60 hover:text-white/90 transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <span className="font-display font-bold text-lg text-white/90">My Prayer Board</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <ThemeSelector
-              currentTheme={prefs.theme}
-              animationsEnabled={prefs.animations_enabled}
-              onThemeChange={(id) => savePrefs({ theme: id })}
-              onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
-            />
-
-            {saved.length > 0 && (
-              <>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10 hidden sm:flex"
-                  onClick={autoArrange}
-                >
-                  <LayoutGrid className="w-4 h-4" /> Arrange
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                  onClick={() => setPlaylistOpen(true)}
-                >
-                  <ListMusic className="w-4 h-4" />
-                  <span className="hidden sm:inline">Playlist</span>
-                </Button>
-              </>
-            )}
-
-            <Button
-              size="sm"
-              className="btn-gold rounded-xl gap-1.5"
-              onClick={() => setAddOpen(true)}
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Add Prayer</span>
-            </Button>
-
-            {/* Immersive toggle */}
-            <button
-              onClick={() => setImmersive(i => !i)}
-              className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors hidden md:block"
-              title="Immersive mode"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </motion.header>
+        <SiteNav
+          dark
+          rightSlot={
+            <div className="flex items-center gap-1.5">
+              <ThemeSelector
+                currentTheme={prefs.theme}
+                animationsEnabled={prefs.animations_enabled}
+                onThemeChange={(id) => savePrefs({ theme: id })}
+                onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+              />
+              {saved.length > 0 && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10 hidden sm:flex"
+                    onClick={autoArrange}
+                  >
+                    <LayoutGrid className="w-4 h-4" /> Arrange
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
+                    onClick={() => setPlaylistOpen(true)}
+                  >
+                    <ListMusic className="w-4 h-4" />
+                    <span className="hidden sm:inline">Playlist</span>
+                  </Button>
+                </>
+              )}
+              <Button
+                size="sm"
+                className="btn-gold rounded-xl gap-1.5"
+                onClick={() => setAddOpen(true)}
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Add Prayer</span>
+              </Button>
+              <button
+                onClick={() => setImmersive(i => !i)}
+                className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors hidden md:block"
+                title="Immersive mode"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            </div>
+          }
+        />
+      </motion.div>
 
       {/* Main content */}
       <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">

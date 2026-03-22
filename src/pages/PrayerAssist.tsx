@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
+import { Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { SiteNav } from "@/components/SiteNav";
 import PrayerCardLink from "@/components/PrayerCardLink";
 
 interface Message { role: "user" | "assistant"; content: string; }
@@ -167,19 +168,7 @@ export default function PrayerAssist() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 h-14 flex items-center gap-3">
-          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-gold flex items-center justify-center"><Sparkles className="w-4 h-4 text-white" /></div>
-            <div>
-              <span className="font-display font-semibold text-foreground">PrayerAssist.ing</span>
-              <span className="text-xs text-muted-foreground ml-2">Your AI Prayer Companion</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <SiteNav />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">

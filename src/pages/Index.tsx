@@ -6,13 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion, useScroll, useTransform, useInView, type Variants, AnimatePresence } from "framer-motion";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
-  Search, Menu, X, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
+  Search, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
+import { SiteNav } from "@/components/SiteNav";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -347,24 +348,14 @@ const NAV_LINKS = [
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Index() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [searchVal, setSearchVal] = useState("");
   const navigate = useNavigate();
-  const { session } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
 
   // Parallax
   const { scrollY } = useScroll();
   const bgY = useTransform(scrollY, [0, 600], ["0%", "20%"]);
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.4]);
-
-  // Nav scroll shadow
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -376,103 +367,13 @@ export default function Index() {
     <div className="min-h-screen bg-background">
 
       {/* ── Navigation ──────────────────────────────────────────────────── */}
-      <motion.nav
+      <motion.div
         initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
-            ? "bg-card/80 backdrop-blur-xl border-b border-border shadow-card"
-            : "bg-transparent"
-        }`}
       >
-        <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link to="/" className="flex-shrink-0 group">
-            <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
-              <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>Keep</span>
-              <span className="nav-pray-glow">Pray</span>
-              <span className={`transition-colors duration-300 ${scrolled ? "text-foreground" : "text-white"}`}>.ing</span>
-            </span>
-          </Link>
-
-          {/* Desktop links */}
-          <motion.div
-            initial="hidden" animate="show" variants={stagger}
-            className="hidden md:flex items-center gap-1"
-          >
-            {NAV_LINKS.map(({ label, href }) => (
-              <motion.div key={label} variants={navItem}>
-                <Link
-                  to={href}
-                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                    ${scrolled ? "text-foreground/70 hover:text-foreground hover:bg-muted" : "text-white/75 hover:text-white hover:bg-white/10"}`}
-                >
-                  {label}
-                  <span className="absolute bottom-1 left-3 right-3 h-px bg-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Right CTA */}
-          <div className="hidden md:flex items-center gap-2">
-            {session ? (
-              <Link to="/board">
-                <Button size="sm" variant="ghost" className={`rounded-xl text-sm ${scrolled ? "" : "text-white hover:bg-white/10"}`}>
-                  My Board
-                </Button>
-              </Link>
-            ) : null}
-            <Link to="/auth">
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
-                Get Started <ArrowRight className="w-3.5 h-3.5" />
-              </Button>
-            </Link>
-          </div>
-
-          {/* Hamburger */}
-          <button
-            onClick={() => setMobileOpen(v => !v)}
-            className={`md:hidden p-2 rounded-xl transition-colors ${scrolled ? "text-foreground hover:bg-muted" : "text-white hover:bg-white/10"}`}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-        </div>
-
-        {/* Mobile drawer */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="md:hidden bg-card/95 backdrop-blur-xl border-b border-border overflow-hidden"
-            >
-              <div className="container mx-auto px-4 py-4 space-y-1">
-                {NAV_LINKS.map(({ label, href }) => (
-                  <Link
-                    key={label} to={href}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
-                  >
-                    {label}
-                  </Link>
-                ))}
-                <div className="pt-2 pb-1">
-                  <Link to="/auth" onClick={() => setMobileOpen(false)}>
-                    <Button className="btn-gold rounded-xl w-full gap-2">
-                      Get Started <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+        <SiteNav transparent />
+      </motion.div>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
