@@ -425,6 +425,134 @@ export type Database = {
         }
         Relationships: []
       }
+      testimonies: {
+        Row: {
+          body: string
+          created_at: string
+          flagged: boolean
+          id: string
+          prayer_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          flagged?: boolean
+          id?: string
+          prayer_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          flagged?: boolean
+          id?: string
+          prayer_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimonies_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimony_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          testimony_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          testimony_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          testimony_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimony_comments_testimony_id_fkey"
+            columns: ["testimony_id"]
+            isOneToOne: false
+            referencedRelation: "testimonies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimony_flags: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          testimony_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          testimony_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          testimony_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimony_flags_testimony_id_fkey"
+            columns: ["testimony_id"]
+            isOneToOne: false
+            referencedRelation: "testimonies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimony_likes: {
+        Row: {
+          created_at: string
+          id: string
+          testimony_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          testimony_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          testimony_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimony_likes_testimony_id_fkey"
+            columns: ["testimony_id"]
+            isOneToOne: false
+            referencedRelation: "testimonies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_saved_prayers: {
         Row: {
           card_size: string
