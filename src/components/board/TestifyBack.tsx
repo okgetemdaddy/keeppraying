@@ -223,17 +223,26 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
   };
 
   const fetchComments = async (testimonyId: string) => {
-    const { data } = await supabase
+    const { data: commentsData } = await supabase
       .from("testimony_comments")
-      .select("*, profiles(id, full_name, avatar_url)")
+      .select("id, testimony_id, user_id, body, created_at")
       .eq("testimony_id", testimonyId)
       .order("created_at", { ascending: true });
-    if (data) {
-      setTestimonies(prev => prev.map(t => t.id === testimonyId ? {
-        ...t,
-        comments: (data as TestimonyComment[]).map(c => ({ ...c, profiles: Array.isArray(c.profiles) ? c.profiles[0] : c.profiles })),
-      } : t));
-    }
+    if (!commentsData) return;
+
+    // Fetch profiles separately
+    const userIds = [...new Set(commentsData.map(c => c.user_id))];
+    const { data: profilesData } = userIds.length
+      ? await supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds)
+      : { data: [] };
+    const profilesMap = Object.fromEntries((profilesData || []).map(p => [p.id, p]));
+
+    const comments: TestimonyComment[] = commentsData.map(c => ({
+      ...c,
+      profiles: profilesMap[c.user_id] || null,
+    }));
+
+    setTestimonies(prev => prev.map(t => t.id === testimonyId ? { ...t, comments } : t));
   };
 
   const submitComment = async (testimonyId: string) => {
