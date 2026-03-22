@@ -119,6 +119,11 @@ export default function Board() {
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [testifyOpen, setTestifyOpen] = useState(false);
+  const [testifyBody, setTestifyBody] = useState("");
+  const [testifySubmitting, setTestifySubmitting] = useState(false);
+  const [testifyReject, setTestifyReject] = useState("");
+  const testifyRef = useRef<HTMLTextAreaElement>(null);
 
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
