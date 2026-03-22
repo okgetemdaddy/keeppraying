@@ -519,7 +519,7 @@ export default function Index() {
         <div className="container mx-auto px-4 max-w-3xl text-center space-y-6 relative">
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }}>
             <p className="text-xs tracking-widest uppercase text-muted-foreground mb-8 font-body">
-              Matthew 6:9–13
+              The Lord's Prayer
             </p>
             <div className="space-y-4 font-display text-lg sm:text-xl leading-loose text-foreground">
               {[
@@ -540,6 +540,9 @@ export default function Index() {
                 </motion.p>
               ))}
             </div>
+
+            {/* VerseLink badge + animated intro arrow */}
+            <VerseLinkIntro />
           </motion.div>
         </div>
       </section>
