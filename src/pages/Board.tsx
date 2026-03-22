@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import { ThemeSelector } from "@/components/board/ThemeSelector";
 import { AmbientPlayer } from "@/components/board/AmbientPlayer";
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
+import { SiteNav } from "@/components/SiteNav";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors, DragEndEvent,
@@ -25,9 +26,10 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  PlusCircle, BookOpen, ListMusic, ArrowLeft,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles,
+  PlusCircle, BookOpen, ListMusic,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, Link as LinkIcon,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
