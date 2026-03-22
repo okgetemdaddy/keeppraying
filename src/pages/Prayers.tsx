@@ -394,6 +394,87 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                     )}
                   </motion.button>
 
+                  {/* Share button */}
+                  <motion.button
+                    onClick={e => {
+                      e.stopPropagation();
+                      const url = `${window.location.origin}/prayer/${card.id}`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        toast({ title: "Link copied! 🔗" });
+                      });
+                    }}
+                    whileTap={{ scale: 0.85 }}
+                    title="Share prayer"
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: "hsl(25 18% 56%)" }}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                  </motion.button>
+
+                  <Link
+                    to={`/prayer/${card.id}`}
+                    onClick={e => e.stopPropagation()}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: "hsl(25 18% 56%)" }}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+
+                  <motion.button
+                    onClick={toggleSave}
+                    whileTap={{ scale: 0.85 }}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: saved ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
+                  </motion.button>
+                </div>
+                  <motion.button
+                    onClick={toggleLike}
+                    animate={likeAnim ? { scale: [1, 1.4, 1] } : {}}
+                    transition={{ duration: 0.35 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                    style={{ color: liked ? "hsl(0 72% 51%)" : "hsl(25 18% 56%)" }}
+                  >
+                    <Heart className={`w-3.5 h-3.5 transition-all ${liked ? "fill-current scale-110" : ""}`} />
+                    <span>{likesCount}</span>
+                  </motion.button>
+
+                  <motion.button
+                    onClick={togglePrayed}
+                    animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
+                    transition={{ duration: 0.35 }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                    style={{ color: prayed ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    <HandMetal className={`w-3.5 h-3.5 ${prayed ? "text-primary" : ""}`} />
+                    <span>{prayedCount}</span>
+                  </motion.button>
+
+                  <div className="flex-1" />
+
+                  {/* Listen button */}
+                  <motion.button
+                    onClick={toggleTts}
+                    whileTap={{ scale: 0.85 }}
+                    title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
+                    className="p-1.5 rounded-lg transition-all hover:bg-accent/60 relative"
+                    style={{ color: ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : ttsPlaying ? (
+                      <motion.div
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <VolumeX className="w-3.5 h-3.5" />
+                      </motion.div>
+                    ) : (
+                      <Volume2 className="w-3.5 h-3.5" />
+                    )}
+                  </motion.button>
+
                   <Link
                     to={`/prayer/${card.id}`}
                     onClick={e => e.stopPropagation()}
