@@ -101,6 +101,7 @@ export function BoardCard({
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [flipped, setFlipped] = useState(false);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
