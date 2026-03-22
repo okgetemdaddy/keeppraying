@@ -1,0 +1,1 @@
+ALTER TABLE public.testimonies ALTER COLUMN prayer_id DROP NOT NULL;
