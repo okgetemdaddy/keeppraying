@@ -6,13 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { motion, useScroll, useTransform, useInView, type Variants, AnimatePresence } from "framer-motion";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
-  Search, Menu, X, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
+  Search, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
+import { SiteNav } from "@/components/SiteNav";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
