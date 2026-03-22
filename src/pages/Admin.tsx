@@ -424,9 +424,12 @@ export default function Admin() {
                       {p.title && <h3 className="font-semibold">{p.title}</h3>}
                       <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
                       <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
-                      <div className="flex gap-2">
+                    <div className="flex gap-2">
                         <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
                         <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
+                        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/40" onClick={async () => { if (!confirm("Permanently delete this prayer?")) return; await supabase.from("prayer_cards").delete().eq("id", p.id); setPending(prev => prev.filter(x => x.id !== p.id)); toast({ title: "Prayer deleted" }); }}>
+                          <Trash2 className="w-3.5 h-3.5" />Delete
+                        </Button>
                       </div>
                     </div>
                   ))}
