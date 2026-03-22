@@ -1,234 +1,79 @@
 import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import AddPrayerModal from "@/components/AddPrayerModal";
-import AIEnrichPanel from "@/components/AIEnrichPanel";
-import Comments from "@/components/Comments";
+import { BoardCard } from "@/components/board/BoardCard";
+import { ThemeCanvas } from "@/components/board/ThemeCanvas";
+import { ThemeSelector } from "@/components/board/ThemeSelector";
+import { AmbientPlayer } from "@/components/board/AmbientPlayer";
+import { BOARD_THEMES } from "@/components/board/boardThemes";
+import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
+  useSensor, useSensors, DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable,
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  rectSortingStrategy, useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  GripVertical, Heart, Bookmark, Pin, ChevronDown, ChevronUp, PlusCircle,
-  BookOpen, Loader2, ListMusic, Sparkles, Trash2, ArrowLeft, Globe, Lock,
+  PlusCircle, BookOpen, ListMusic, ArrowLeft,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles,
 } from "lucide-react";
-import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
+type CardSize = "small" | "medium" | "large";
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
   prayer_cards: PrayerCard | null;
+  card_size?: CardSize;
 };
 
-const TEXT_STYLE_CLASSES: Record<string, string> = {
-  classic: "font-body text-base",
-  scripture: "font-display text-base italic",
-  peaceful: "font-body text-base text-muted-foreground",
-  bold: "font-body text-base font-semibold",
-  gentle: "font-body text-sm leading-relaxed",
-  strong: "font-display text-lg font-bold",
-  modern: "font-body text-sm tracking-wide",
-  compassionate: "font-display text-base",
-  whisper: "font-body text-sm text-muted-foreground italic",
-  royal: "font-display font-bold tracking-wider",
-};
-
-function SortableCard({ item, userId, onUpdate, onRemove, onRefresh }: {
+// Sortable wrapper that passes drag handle + theme vars down to BoardCard
+function SortableBoardCard({
+  item,
+  userId,
+  onUpdate,
+  onRemove,
+  onRefresh,
+  themeVars,
+}: {
   item: SavedPrayer;
   userId: string | undefined;
-  onUpdate: (id: string, updates: Partial<SavedPrayer>) => void;
+  onUpdate: (id: string, updates: Partial<SavedPrayer & { card_size: CardSize }>) => void;
   onRemove: (id: string) => void;
   onRefresh: () => void;
+  themeVars: Record<string, string>;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-  const [expanded, setExpanded] = useState(false);
-  const [editingNotes, setEditingNotes] = useState(false);
-  const [notes, setNotes] = useState(item.notes || "");
-  const [togglingPublic, setTogglingPublic] = useState(false);
-  const [enrichOpen, setEnrichOpen] = useState(false);
-  const card = item.prayer_cards;
-  const { toast } = useToast();
+  const size = item.card_size || "medium";
 
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
-
-  if (!card) return null;
-
-  const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
-  const isOwner = userId && card.created_by === userId;
-  const isPrivate = card.status === "private";
-
-  const saveNotes = async () => {
-    await supabase.from("user_saved_prayers").update({ notes }).eq("id", item.id);
-    onUpdate(item.id, { notes });
-    setEditingNotes(false);
-    toast({ title: "Notes saved" });
-  };
-
-  const togglePin = async () => {
-    const newVal = !item.pinned;
-    await supabase.from("user_saved_prayers").update({ pinned: newVal }).eq("id", item.id);
-    onUpdate(item.id, { pinned: newVal });
-  };
-
-  const toggleFavorite = async () => {
-    const newVal = !item.favorite;
-    await supabase.from("user_saved_prayers").update({ favorite: newVal }).eq("id", item.id);
-    onUpdate(item.id, { favorite: newVal });
-  };
-
-  const handlePublicToggle = async (makePublic: boolean) => {
-    if (!isOwner) return;
-    setTogglingPublic(true);
-    try {
-      if (makePublic) {
-        // Run moderation before making public
-        const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-prayer`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ prayer_text: card.prayer_text, title: card.title }),
-        });
-        if (modResp.ok) {
-          const modResult = await modResp.json();
-          if (!modResult.approved) {
-            toast({
-              title: "Cannot make public",
-              description: modResult.reason || "Your prayer didn't meet community guidelines.",
-              variant: "destructive",
-            });
-            setTogglingPublic(false);
-            return;
-          }
-        }
-        const { error } = await supabase.from("prayer_cards").update({ status: "pending" }).eq("id", card.id);
-        if (error) throw error;
-        toast({ title: "Submitted for community review 🙏", description: "Your prayer will appear publicly once approved." });
-      } else {
-        const { error } = await supabase.from("prayer_cards").update({ status: "private" }).eq("id", card.id);
-        if (error) throw error;
-        toast({ title: "Prayer set to private" });
-      }
-      onRefresh();
-    } catch (e) {
-      toast({ title: "Failed to update visibility", variant: "destructive" });
-    } finally {
-      setTogglingPublic(false);
-    }
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || "transform 200ms cubic-bezier(0.2,0,0,1)",
+    zIndex: isDragging ? 50 : undefined,
+    gridColumn: size === "large" ? "span 2" : size === "small" ? "span 1" : "span 1",
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={`prayer-card p-4 space-y-3 ${item.pinned ? "border-l-2 border-primary" : ""}`}>
-      <div className="flex items-start gap-2">
-        <button {...attributes} {...listeners} className="mt-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none">
-          <GripVertical className="w-4 h-4" />
-        </button>
-        <div className="flex-1 min-w-0">
-          {card.title && <h3 className="font-display font-semibold text-foreground mb-1">{card.title}</h3>}
-          <p className={`${textClass} text-foreground leading-relaxed text-sm line-clamp-3`}>{card.prayer_text}</p>
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={toggleFavorite} className={`p-1.5 rounded-lg transition-colors ${item.favorite ? "text-red-500" : "text-muted-foreground hover:text-foreground"}`}>
-            <Heart className={`w-4 h-4 ${item.favorite ? "fill-current" : ""}`} />
-          </button>
-          <button onClick={togglePin} className={`p-1.5 rounded-lg transition-colors ${item.pinned ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-            <Pin className="w-4 h-4" />
-          </button>
-          <button onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-1">
-        {card.tags?.map(tag => <span key={tag} className="tag-pill text-xs">#{tag}</span>)}
-        {card.status === "ai_generated" && <span className="tag-pill"><Sparkles className="w-2.5 h-2.5" />AI</span>}
-        {isPrivate && isOwner && <span className="tag-pill flex items-center gap-1 text-xs"><Lock className="w-2.5 h-2.5" />Private</span>}
-        {card.status === "pending" && isOwner && <span className="tag-pill text-xs opacity-70">Pending review</span>}
-      </div>
-
-      {card.extended_prayer && (
-        <button onClick={() => setExpanded(!expanded)} className="text-xs text-primary hover:underline flex items-center gap-1">
-          {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          {expanded ? "Hide scripture" : "Show scripture"}
-        </button>
-      )}
-      {expanded && card.extended_prayer && <p className="verse-text text-xs">{renderWithVerseLinks(card.extended_prayer)}</p>}
-
-      {/* Owner controls: Public toggle + AI Enrich */}
-      {isOwner && (
-        <div className="flex items-center justify-between gap-3 border-t border-border pt-2">
-          <div className="flex items-center gap-2">
-            {togglingPublic
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-              : isPrivate
-                ? <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                : <Globe className="w-3.5 h-3.5 text-primary" />
-            }
-            <span className="text-xs text-muted-foreground">
-              {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
-            </span>
-            <Switch
-              checked={!isPrivate}
-              onCheckedChange={handlePublicToggle}
-              disabled={togglingPublic || card.status === "approved"}
-              className="scale-75 origin-left"
-            />
-          </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 text-xs gap-1.5 text-primary hover:text-primary rounded-lg"
-            onClick={() => setEnrichOpen(true)}
-          >
-            <Sparkles className="w-3 h-3" /> AI Enrich
-          </Button>
-        </div>
-      )}
-
-      {/* Notes */}
-      <div className="border-t border-border pt-2">
-        {editingNotes ? (
-          <div className="space-y-2">
-            <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Personal notes, reflection…" rows={2} className="text-xs rounded-xl resize-none" />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={saveNotes} className="btn-gold rounded-xl h-7 text-xs">Save</Button>
-              <Button size="sm" variant="outline" onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }} className="rounded-xl h-7 text-xs">Cancel</Button>
-            </div>
-          </div>
-        ) : (
-          <button onClick={() => setEditingNotes(true)} className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-left">
-            {item.notes ? <span className="italic">"{item.notes}"</span> : <span className="opacity-60">+ Add personal notes…</span>}
-          </button>
-        )}
-      </div>
-
-      <Comments prayerId={card.id} />
-
-      {isOwner && (
-        <AIEnrichPanel
-          open={enrichOpen}
-          onOpenChange={setEnrichOpen}
-          cardId={card.id}
-          prayerText={card.prayer_text}
-          extendedPrayer={card.extended_prayer}
-          existingTags={card.tags || []}
-          onApplied={onRefresh}
-        />
-      )}
+    <div ref={setNodeRef} style={style}>
+      <BoardCard
+        item={item}
+        userId={userId}
+        isDragging={isDragging}
+        dragHandleProps={{ ...attributes, ...listeners }}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+        onRefresh={onRefresh}
+        themeVars={themeVars}
+      />
     </div>
   );
 }
@@ -236,6 +81,9 @@ function SortableCard({ item, userId, onUpdate, onRemove, onRefresh }: {
 export default function Board() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
+
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -243,10 +91,18 @@ export default function Board() {
   const [playlistName, setPlaylistName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
+  const [immersive, setImmersive] = useState(false);
 
+  const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
+
+  // Apply theme CSS variables on the board element
+  const themeVars = theme.vars;
+
+  // Sensors — include TouchSensor for mobile
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const fetchSaved = useCallback(async () => {
@@ -258,7 +114,7 @@ export default function Board() {
       .eq("user_id", user.id)
       .order("position", { ascending: true })
       .order("created_at", { ascending: false });
-    // Sort: pinned first
+
     const sorted = (data || []).sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
@@ -277,7 +133,10 @@ export default function Board() {
       const oldIndex = prev.findIndex(i => i.id === active.id);
       const newIndex = prev.findIndex(i => i.id === over.id);
       const newOrder = arrayMove(prev, oldIndex, newIndex);
-      const updates = newOrder.map((item, index) => ({ id: item.id, position: index, user_id: item.user_id, prayer_id: item.prayer_id, created_at: item.created_at }));
+      const updates = newOrder.map((item, index) => ({
+        id: item.id, position: index,
+        user_id: item.user_id, prayer_id: item.prayer_id, created_at: item.created_at,
+      }));
       supabase.from("user_saved_prayers").upsert(updates).then(({ error }) => {
         if (error) console.error("Position update error:", error);
       });
@@ -285,7 +144,7 @@ export default function Board() {
     });
   };
 
-  const updateItem = (id: string, updates: Partial<SavedPrayer>) => {
+  const updateItem = (id: string, updates: Partial<SavedPrayer & { card_size: CardSize }>) => {
     setSaved(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   };
 
@@ -294,98 +153,209 @@ export default function Board() {
     toast({ title: "Removed from board" });
   };
 
+  const autoArrange = () => {
+    setSaved(prev => {
+      const pinned = prev.filter(p => p.pinned);
+      const rest = prev.filter(p => !p.pinned);
+      const newOrder = [...pinned, ...rest];
+      const updates = newOrder.map((item, index) => ({
+        id: item.id, position: index,
+        user_id: item.user_id, prayer_id: item.prayer_id, created_at: item.created_at,
+      }));
+      supabase.from("user_saved_prayers").upsert(updates);
+      return newOrder;
+    });
+    toast({ title: "Board arranged ✨" });
+  };
+
   const savePlaylist = async () => {
     if (!playlistName.trim() || selectedIds.length === 0 || !user) return;
     setSavingPlaylist(true);
     const { error } = await supabase.from("prayer_playlists").insert({
-      user_id: user.id,
-      name: playlistName.trim(),
-      prayer_ids: selectedIds,
+      user_id: user.id, name: playlistName.trim(), prayer_ids: selectedIds,
     });
     if (error) { toast({ title: "Failed to save playlist", variant: "destructive" }); }
     else {
       toast({ title: `Playlist "${playlistName}" saved! 🎵` });
-      setPlaylistOpen(false);
-      setPlaylistName("");
-      setSelectedIds([]);
+      setPlaylistOpen(false); setPlaylistName(""); setSelectedIds([]);
     }
     setSavingPlaylist(false);
   };
 
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!user && prefsLoaded) navigate("/auth", { replace: true });
+  }, [user, prefsLoaded, navigate]);
+
+  if (!user) return null;
+
   const pinned = saved.filter(s => s.pinned);
   const unpinned = saved.filter(s => !s.pinned);
 
+  const bgTransitionStyle = {
+    transition: "background 0.8s ease",
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+    <div
+      className={`relative min-h-screen overflow-hidden ${theme.bgClass}`}
+      style={{ ...bgTransitionStyle, ...Object.fromEntries(Object.entries(themeVars)) }}
+    >
+      {/* Animated canvas background */}
+      <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
+
+      {/* Overlay tint */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
+
+      {/* Header */}
+      <motion.header
+        animate={{ opacity: immersive ? 0 : 1, y: immersive ? -56 : 0 }}
+        transition={{ duration: 0.35 }}
+        onMouseEnter={() => immersive && setImmersive(false)}
+        className="sticky top-0 z-40 border-b border-white/10 backdrop-blur-xl"
+        style={{ background: "rgba(0,0,0,0.22)" }}
+      >
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="w-5 h-5" /></Link>
-            <span className="font-display font-bold text-xl text-foreground">My Prayer Board</span>
+            <Link to="/" className="text-white/60 hover:text-white/90 transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <span className="font-display font-bold text-lg text-white/90">My Prayer Board</span>
           </div>
+
           <div className="flex items-center gap-2">
+            <ThemeSelector
+              currentTheme={prefs.theme}
+              animationsEnabled={prefs.animations_enabled}
+              onThemeChange={(id) => savePrefs({ theme: id })}
+              onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+            />
+
             {saved.length > 0 && (
-              <Button size="sm" variant="outline" className="rounded-xl gap-1.5" onClick={() => setPlaylistOpen(true)}>
-                <ListMusic className="w-4 h-4" />Playlist
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10 hidden sm:flex"
+                  onClick={autoArrange}
+                >
+                  <LayoutGrid className="w-4 h-4" /> Arrange
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
+                  onClick={() => setPlaylistOpen(true)}
+                >
+                  <ListMusic className="w-4 h-4" />
+                  <span className="hidden sm:inline">Playlist</span>
+                </Button>
+              </>
             )}
-            <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setAddOpen(true)}>
-              <PlusCircle className="w-4 h-4" />Add Prayer
+
+            <Button
+              size="sm"
+              className="btn-gold rounded-xl gap-1.5"
+              onClick={() => setAddOpen(true)}
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Prayer</span>
             </Button>
+
+            {/* Immersive toggle */}
+            <button
+              onClick={() => setImmersive(i => !i)}
+              className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors hidden md:block"
+              title="Immersive mode"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      {/* Main content */}
+      <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
         {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-40 rounded-2xl shimmer" />)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-44 rounded-2xl shimmer" />
+            ))}
           </div>
         ) : saved.length === 0 ? (
-          <div className="text-center py-20 space-y-5">
-            <BookOpen className="w-14 h-14 text-primary mx-auto opacity-60" />
-            <div>
-              <h2 className="font-display text-2xl font-bold mb-2">Your board is empty</h2>
-              <p className="text-muted-foreground text-sm">Write a prayer or save prayers from the collection to build your personal prayer board.</p>
-            </div>
-            <div className="flex gap-3 justify-center">
-              <Link to="/prayers"><Button className="btn-gold rounded-xl gap-2">Browse Prayers</Button></Link>
-              <Button variant="outline" className="rounded-xl gap-2" onClick={() => setAddOpen(true)}>
-                <PlusCircle className="w-4 h-4" />Write a Prayer
-              </Button>
-            </div>
-          </div>
+          <EmptyBoard onAdd={() => setAddOpen(true)} themeVars={themeVars} />
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Pinned section */}
               {pinned.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><Pin className="w-3 h-3" />Pinned</p>
-                  <SortableContext items={pinned.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                    {pinned.map(item => (
-                      <SortableCard key={item.id} item={item} userId={user?.id} onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved} />
-                    ))}
-                  </SortableContext>
-                </div>
-              )}
-              {unpinned.length > 0 && (
-                <div>
-                  {pinned.length > 0 && <p className="text-xs text-muted-foreground mb-2">All saved prayers</p>}
-                  <SortableContext items={unpinned.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-4">
-                      {unpinned.map(item => (
-                        <SortableCard key={item.id} item={item} userId={user?.id} onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved} />
+                <section>
+                  <p className="text-xs font-medium mb-3 flex items-center gap-1.5 text-white/50">
+                    <Pin className="w-3 h-3" />Pinned
+                  </p>
+                  <SortableContext items={pinned.map(i => i.id)} strategy={rectSortingStrategy}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {pinned.map(item => (
+                        <SortableBoardCard
+                          key={item.id} item={item} userId={user?.id}
+                          onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved}
+                          themeVars={themeVars}
+                        />
                       ))}
                     </div>
                   </SortableContext>
-                </div>
+                </section>
+              )}
+
+              {/* All saved */}
+              {unpinned.length > 0 && (
+                <section>
+                  {pinned.length > 0 && (
+                    <p className="text-xs font-medium mb-3 text-white/50">All saved prayers</p>
+                  )}
+                  <SortableContext items={unpinned.map(i => i.id)} strategy={rectSortingStrategy}>
+                    <motion.div
+                      layout
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                    >
+                      <AnimatePresence>
+                        {unpinned.map(item => (
+                          <SortableBoardCard
+                            key={item.id} item={item} userId={user?.id}
+                            onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved}
+                            themeVars={themeVars}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  </SortableContext>
+                </section>
               )}
             </div>
           </DndContext>
         )}
       </div>
 
-      {/* Playlist builder dialog */}
+      {/* Floating Add Prayer FAB (mobile) */}
+      {saved.length > 0 && (
+        <motion.button
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+          onClick={() => setAddOpen(true)}
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 btn-gold flex items-center gap-2 px-5 py-3 rounded-full shadow-2xl text-sm font-medium"
+        >
+          <PlusCircle className="w-4 h-4" /> Add Prayer
+        </motion.button>
+      )}
+
+      {/* Ambient sound player */}
+      <AmbientPlayer
+        soundId={prefs.sound_id}
+        volume={prefs.sound_volume}
+        onChange={(updates) => savePrefs(updates as { sound_id?: string | null; sound_volume?: number })}
+      />
+
+      {/* Playlist builder */}
       <Dialog open={playlistOpen} onOpenChange={setPlaylistOpen}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -397,12 +367,9 @@ export default function Board() {
             <div className="space-y-2">
               {saved.map(item => item.prayer_cards && (
                 <label key={item.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedIds.includes(item.id) ? "border-primary bg-accent" : "border-border hover:bg-muted/50"}`}>
-                  <input type="checkbox" className="mt-0.5" checked={selectedIds.includes(item.id)} onChange={e => {
-                    setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id));
-                  }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.prayer_cards.title || item.prayer_cards.prayer_text.slice(0, 40) + "…"}</p>
-                  </div>
+                  <input type="checkbox" className="mt-0.5" checked={selectedIds.includes(item.id)}
+                    onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id))} />
+                  <p className="text-sm font-medium truncate">{item.prayer_cards.title || item.prayer_cards.prayer_text.slice(0, 40) + "…"}</p>
                 </label>
               ))}
             </div>
@@ -416,5 +383,52 @@ export default function Board() {
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
     </div>
+  );
+}
+
+// Empty state component
+function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record<string, string> }) {
+  const textColor = themeVars["--board-text"] || "hsl(var(--foreground))";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="flex flex-col items-center justify-center text-center py-24 px-6 space-y-6"
+    >
+      <motion.div
+        animate={{ y: [0, -8, 0], opacity: [0.5, 0.8, 0.5] }}
+        transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+      >
+        <BookOpen className="w-16 h-16 mx-auto" style={{ color: themeVars["--board-accent"] || "hsl(var(--primary))", opacity: 0.6 }} />
+      </motion.div>
+
+      <div className="space-y-2">
+        <h2 className="font-display text-2xl font-bold" style={{ color: textColor }}>
+          Your sacred space awaits
+        </h2>
+        <p className="text-sm max-w-xs mx-auto leading-relaxed" style={{ color: `${textColor}70` }}>
+          "When you pray, go into your room…" — Matthew 6:6
+        </p>
+        <p className="text-xs max-w-sm mx-auto" style={{ color: `${textColor}50` }}>
+          Write a prayer or save prayers from the collection to build your personal prayer board.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3 justify-center">
+        <Link to="/prayers">
+          <Button className="rounded-xl gap-2" style={{ background: themeVars["--board-accent"] || "" }}>
+            <Sparkles className="w-4 h-4" /> Browse Prayers
+          </Button>
+        </Link>
+        <Button
+          variant="outline"
+          className="rounded-xl gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20"
+          onClick={onAdd}
+        >
+          <PlusCircle className="w-4 h-4" /> Write a Prayer
+        </Button>
+      </div>
+    </motion.div>
   );
 }

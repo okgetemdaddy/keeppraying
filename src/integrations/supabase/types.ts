@@ -137,6 +137,39 @@ export type Database = {
         }
         Relationships: []
       }
+      board_preferences: {
+        Row: {
+          animations_enabled: boolean
+          created_at: string
+          id: string
+          sound_id: string | null
+          sound_volume: number
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          animations_enabled?: boolean
+          created_at?: string
+          id?: string
+          sound_id?: string | null
+          sound_volume?: number
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          animations_enabled?: boolean
+          created_at?: string
+          id?: string
+          sound_id?: string | null
+          sound_volume?: number
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           created_at: string
@@ -394,8 +427,10 @@ export type Database = {
       }
       user_saved_prayers: {
         Row: {
+          card_size: string
           created_at: string
           favorite: boolean | null
+          grid_position: number
           id: string
           notes: string | null
           pinned: boolean | null
@@ -404,8 +439,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          card_size?: string
           created_at?: string
           favorite?: boolean | null
+          grid_position?: number
           id?: string
           notes?: string | null
           pinned?: boolean | null
@@ -414,8 +451,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          card_size?: string
           created_at?: string
           favorite?: boolean | null
+          grid_position?: number
           id?: string
           notes?: string | null
           pinned?: boolean | null
