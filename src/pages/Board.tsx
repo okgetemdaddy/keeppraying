@@ -370,6 +370,15 @@ export default function Board() {
               )}
               <Button
                 size="sm"
+                variant="ghost"
+                className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => setTestifyOpen(true)}
+              >
+                <Feather className="w-4 h-4" />
+                <span className="hidden sm:inline">Testify</span>
+              </Button>
+              <Button
+                size="sm"
                 className="btn-gold rounded-xl gap-1.5"
                 onClick={() => setAddOpen(true)}
               >
