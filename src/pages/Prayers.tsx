@@ -11,11 +11,15 @@ import Comments from "@/components/Comments";
 import VerseLink from "@/components/VerseLink";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { TestifyBack } from "@/components/board/TestifyBack";
 import {
   Heart, Bookmark, Search, Plus, Sparkles, ExternalLink,
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
-  Volume2, VolumeX, Loader2, Share2,
+  Volume2, VolumeX, Loader2, Share2, Bird,
 } from "lucide-react";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from "@/components/ui/sheet";
 import { SiteNav } from "@/components/SiteNav";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
