@@ -600,7 +600,41 @@ export function BoardCard({
           onApplied={onRefresh}
         />
       )}
-    </motion.div>
+        </motion.div>{/* end front face */}
+
+        {/* ── BACK face — TestifyBack ──────────────────────────────────── */}
+        <motion.div
+          animate={{ rotateY: flipped ? 0 : 180 }}
+          transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 18 }}
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            position: "absolute",
+            inset: 0,
+            borderRadius: "1rem",
+            overflow: "hidden",
+            background: cardBg,
+            borderColor: cardBorder,
+            border: `1px solid ${cardBorder}`,
+            backdropFilter: "blur(16px) saturate(1.6)",
+            WebkitBackdropFilter: "blur(16px) saturate(1.6)",
+            boxShadow: "0 4px 24px -8px rgba(0,0,0,0.16)",
+            minHeight: size === "large" ? 320 : size === "medium" ? 220 : 140,
+          }}
+        >
+          {flipped && (
+            <TestifyBack
+              prayerId={card.id}
+              prayerAuthorId={card.created_by}
+              onFlipBack={() => setFlipped(false)}
+              accentColor={accentColor}
+              textColor={textColor}
+              cardBg={cardBg}
+            />
+          )}
+        </motion.div>
+      </motion.div>{/* end layout motion.div */}
+    </div>
   );
 }
 
