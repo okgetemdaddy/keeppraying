@@ -671,31 +671,83 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground italic">No verse summaries cached yet. They appear automatically when users hover over scripture references.</p>
             ) : (
               <div className="space-y-3">
-                {verseSummaries.map(v => (
-                  <div key={v.id} className="prayer-card p-4 space-y-2">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
-                        <BookMarked className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-semibold text-primary">{v.reference}</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
-                    </div>
-                    {v.summary && (
+                {verseSummaries.map(v => {
+                  const isEditing = editingVerseId === v.id;
+                  return (
+                    <div key={v.id} className="prayer-card p-4 space-y-3">
+                      {/* Header row */}
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        {isEditing ? (
+                          <Input
+                            value={editingVerse.reference ?? ""}
+                            onChange={e => setEditingVerse(p => ({ ...p, reference: e.target.value }))}
+                            className="rounded-xl text-sm font-semibold text-primary w-40"
+                            placeholder="Reference"
+                          />
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
+                            <BookMarked className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-xs font-semibold text-primary">{v.reference}</span>
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                          {isEditing ? (
+                            <>
+                              <Button size="sm" className="btn-gold rounded-xl gap-1.5 h-7 text-xs" onClick={saveVerseEdit} disabled={savingVerse}>
+                                {savingVerse ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}Save
+                              </Button>
+                              <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1" onClick={() => { setEditingVerseId(null); setEditingVerse({}); }}>
+                                <XCircle className="w-3.5 h-3.5" />Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="rounded-xl h-7 text-xs gap-1" onClick={() => { setEditingVerseId(v.id); setEditingVerse({ reference: v.reference, verse_text: v.verse_text ?? "", summary: v.summary ?? "", exegesis: v.exegesis ?? "" }); }}>
+                              <Pencil className="w-3.5 h-3.5" />Edit
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Verse text */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Verse Text</p>
+                        {isEditing ? (
+                          <Textarea value={editingVerse.verse_text ?? ""} onChange={e => setEditingVerse(p => ({ ...p, verse_text: e.target.value }))} rows={2} className="rounded-xl text-sm resize-none" placeholder="Verse text…" />
+                        ) : (
+                          <p className="text-sm text-foreground/80 italic leading-relaxed">{v.verse_text || <span className="text-muted-foreground/50">—</span>}</p>
+                        )}
+                      </div>
+
+                      {/* Summary */}
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
-                        <p className="text-sm text-foreground/80 leading-relaxed">{v.summary}</p>
+                        {isEditing ? (
+                          <Textarea value={editingVerse.summary ?? ""} onChange={e => setEditingVerse(p => ({ ...p, summary: e.target.value }))} rows={3} className="rounded-xl text-sm resize-none" placeholder="Summary…" />
+                        ) : (
+                          <p className="text-sm text-foreground/80 leading-relaxed">{v.summary || <span className="text-muted-foreground/50">—</span>}</p>
+                        )}
                       </div>
-                    )}
-                    {v.exegesis && (
-                      <details className="group">
-                        <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
-                          <span>▶ View Exegesis</span>
-                        </summary>
-                        <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
-                      </details>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Exegesis */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Exegesis</p>
+                        {isEditing ? (
+                          <Textarea value={editingVerse.exegesis ?? ""} onChange={e => setEditingVerse(p => ({ ...p, exegesis: e.target.value }))} rows={5} className="rounded-xl text-sm resize-none font-body" placeholder="In-depth exegesis…" />
+                        ) : (
+                          v.exegesis ? (
+                            <details className="group">
+                              <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
+                                <span>▶ View Exegesis</span>
+                              </summary>
+                              <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
+                            </details>
+                          ) : <span className="text-sm text-muted-foreground/50">—</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
