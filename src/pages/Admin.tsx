@@ -17,7 +17,7 @@ import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
-  Pencil, Save, XCircle,
+  Pencil, Save, XCircle, Scroll, Trash2,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
@@ -81,7 +81,7 @@ export default function Admin() {
   const [showBlogForm, setShowBlogForm] = useState(false);
   const [showPrayerForm, setShowPrayerForm] = useState(false);
   const [savingPrayer, setSavingPrayer] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies">("moderation");
+  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayers">("moderation");
   const { toast } = useToast();
   // AI Enrich — opened after a prayer card is first saved so we have a card ID
   const [enrichCardId, setEnrichCardId] = useState<string | null>(null);
@@ -279,6 +279,7 @@ export default function Admin() {
 
   const TABS = [
     { id: "moderation", label: "Moderation", icon: Check },
+    { id: "prayers", label: "Prayers", icon: Scroll },
     { id: "stats", label: "Stats", icon: BarChart2 },
     { id: "users", label: "Users", icon: Users },
     { id: "contacts", label: "Contact", icon: Mail },
@@ -423,9 +424,12 @@ export default function Admin() {
                       {p.title && <h3 className="font-semibold">{p.title}</h3>}
                       <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
                       <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
-                      <div className="flex gap-2">
+                    <div className="flex gap-2">
                         <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
                         <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
+                        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/40" onClick={async () => { if (!confirm("Permanently delete this prayer?")) return; await supabase.from("prayer_cards").delete().eq("id", p.id); setPending(prev => prev.filter(x => x.id !== p.id)); toast({ title: "Prayer deleted" }); }}>
+                          <Trash2 className="w-3.5 h-3.5" />Delete
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -645,6 +649,9 @@ export default function Admin() {
         {/* ── TESTIMONIES TAB ── */}
         {activeTab === "testimonies" && <TestimoniesAdminTab />}
 
+        {/* ── PRAYERS TAB ── */}
+        {activeTab === "prayers" && <PrayersAdminTab />}
+
         {/* ── VERSES TAB ── */}
         {activeTab === "verses" && (
           <div className="space-y-4">
@@ -779,6 +786,209 @@ export default function Admin() {
   );
 }
 
+function PrayersAdminTab() {
+  interface AdminPrayer {
+    id: string; title: string | null; prayer_text: string;
+    extended_prayer: string | null; tags: string[] | null;
+    text_style: string | null; background_url: string | null;
+    status: string; source: string; created_at: string;
+    likes_count: number; prayed_count: number; views: number;
+  }
+
+  const [prayers, setPrayers] = useState<AdminPrayer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<AdminPrayer> & { tagsRaw?: string }>({});
+  const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+
+  const loadPrayers = async (q = "") => {
+    setLoading(true);
+    let query = supabase
+      .from("prayer_cards")
+      .select("id,title,prayer_text,extended_prayer,tags,text_style,background_url,status,source,created_at,likes_count,prayed_count,views")
+      .eq("source", "admin")
+      .order("created_at", { ascending: false });
+    if (q.trim()) {
+      query = query.or(`title.ilike.%${q}%,prayer_text.ilike.%${q}%`);
+    }
+    const { data } = await query;
+    setPrayers((data as AdminPrayer[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { loadPrayers(); }, []);
+
+  const startEdit = (p: AdminPrayer) => {
+    setEditingId(p.id);
+    setEditForm({ ...p, tagsRaw: (p.tags || []).join(", ") });
+  };
+  const cancelEdit = () => { setEditingId(null); setEditForm({}); };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    setSaving(true);
+    const tagsArr = editForm.tagsRaw
+      ? editForm.tagsRaw.split(",").map((t: string) => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
+      : [];
+    const { error } = await supabase.from("prayer_cards").update({
+      title: editForm.title || null,
+      prayer_text: (editForm.prayer_text || "").trim(),
+      extended_prayer: editForm.extended_prayer?.trim() || null,
+      tags: tagsArr.length ? tagsArr : null,
+      text_style: editForm.text_style || "classic",
+      background_url: editForm.background_url || null,
+      status: editForm.status || "approved",
+    }).eq("id", editingId);
+    setSaving(false);
+    if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Prayer updated ✓" });
+    cancelEdit();
+    loadPrayers(searchQuery);
+  };
+
+  const deletePrayer = async (id: string) => {
+    if (!confirm("Permanently delete this prayer card? This cannot be undone.")) return;
+    const { error } = await supabase.from("prayer_cards").delete().eq("id", id);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Prayer deleted" });
+    loadPrayers(searchQuery);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="font-display text-xl font-semibold">Admin Prayer Cards ({prayers.length})</h2>
+        <p className="text-xs text-muted-foreground">Only visible to admin. Edit or delete any prayer posted from the admin dashboard.</p>
+      </div>
+
+      {/* Search */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") loadPrayers(searchQuery); }}
+            placeholder="Search by title or prayer text…"
+            className="pl-9 rounded-xl text-sm"
+          />
+        </div>
+        <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => loadPrayers(searchQuery)} disabled={loading}>
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}Search
+        </Button>
+        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setSearchQuery(""); loadPrayers(""); }}>Clear</Button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted-foreground py-6">
+          <Loader2 className="w-5 h-5 animate-spin" /><span className="text-sm">Loading prayers…</span>
+        </div>
+      ) : prayers.length === 0 ? (
+        <p className="text-sm text-muted-foreground italic">No admin prayer cards found.</p>
+      ) : (
+        <div className="space-y-4">
+          {prayers.map(p => {
+            const isEditing = editingId === p.id;
+            return (
+              <div key={p.id} className="prayer-card p-5 space-y-3">
+                {/* Header row */}
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    {!isEditing && (
+                      <p className="font-semibold text-sm truncate">{p.title || <span className="text-muted-foreground italic">No title</span>}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
+                      <Badge variant={p.status === "approved" ? "default" : "secondary"} className="text-[10px] h-5">{p.status}</Badge>
+                      <span className="text-xs text-muted-foreground">❤️ {p.likes_count} · 🙏 {p.prayed_count} · 👁️ {p.views}</span>
+                    </div>
+                  </div>
+                  {/* Actions */}
+                  {!isEditing ? (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button size="sm" variant="ghost" className="rounded-xl h-7 text-xs gap-1" onClick={() => startEdit(p)}>
+                        <Pencil className="w-3.5 h-3.5" />Edit
+                      </Button>
+                      <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/40" onClick={() => deletePrayer(p.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />Delete
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button size="sm" className="btn-gold rounded-xl gap-1.5 h-7 text-xs" onClick={saveEdit} disabled={saving}>
+                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}Save
+                      </Button>
+                      <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1" onClick={cancelEdit}>
+                        <XCircle className="w-3.5 h-3.5" />Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Edit form or preview */}
+                {isEditing ? (
+                  <div className="space-y-3 pt-2 border-t border-border">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Title</label>
+                        <Input value={editForm.title || ""} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} placeholder="Title (optional)" className="rounded-xl text-sm" maxLength={100} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Text Style</label>
+                        <select
+                          value={editForm.text_style || "classic"}
+                          onChange={e => setEditForm(f => ({ ...f, text_style: e.target.value }))}
+                          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                        >
+                          {TEXT_STYLES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Prayer Text <span className="text-destructive">*</span></label>
+                      <Textarea value={editForm.prayer_text || ""} onChange={e => setEditForm(f => ({ ...f, prayer_text: e.target.value }))} rows={5} className="rounded-xl text-sm resize-none" maxLength={5000} />
+                      <p className="text-xs text-muted-foreground text-right mt-0.5">{(editForm.prayer_text || "").length}/5000</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Scripture / Extended Prayer</label>
+                      <Textarea value={editForm.extended_prayer || ""} onChange={e => setEditForm(f => ({ ...f, extended_prayer: e.target.value }))} rows={3} className="rounded-xl text-sm resize-none" maxLength={5000} />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Tags (comma-separated)</label>
+                        <Input value={editForm.tagsRaw || ""} onChange={e => setEditForm(f => ({ ...f, tagsRaw: e.target.value }))} placeholder="peace, healing, faith" className="rounded-xl text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
+                        <select
+                          value={editForm.status || "approved"}
+                          onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
+                        >
+                          <option value="approved">Approved</option>
+                          <option value="pending">Pending</option>
+                          <option value="rejected">Rejected</option>
+                          <option value="private">Private</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Background Image URL</label>
+                      <Input value={editForm.background_url || ""} onChange={e => setEditForm(f => ({ ...f, background_url: e.target.value }))} placeholder="https://…" className="rounded-xl text-sm" />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 function TestimoniesAdminTab() {
   const [flags, setFlags] = useState<{id:string;reason:string|null;created_at:string;testimony_id:string;user_id:string;testimonies:{body:string;prayer_id:string;flagged:boolean}|null}[]>([]);
   const [loading, setLoading] = useState(true);
