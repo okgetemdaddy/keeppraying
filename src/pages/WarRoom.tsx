@@ -161,7 +161,7 @@ function SettingsPanel({
   }, [open]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={panelRef}>
       <button
         onClick={() => setOpen(o => !o)}
         className="p-1.5 sm:p-2 rounded-lg transition-all touch-manipulation"
