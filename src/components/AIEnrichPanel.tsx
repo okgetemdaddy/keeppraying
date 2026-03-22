@@ -4,12 +4,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Sparkles, Tag, BookOpen } from "lucide-react";
+import { Loader2, Sparkles, Tag, BookOpen, Quote } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { VERSE_REGEX } from "@/lib/renderWithVerseLinks";
 
 interface Verse {
   ref: string;
   text: string;
+  cited_in_prayer?: boolean;
 }
 
 interface EnrichResult {
