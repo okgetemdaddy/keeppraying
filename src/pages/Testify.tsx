@@ -1,17 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { SiteNav } from "@/components/SiteNav";
 import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
   Search, X, Loader2, Heart, Share2, Flag, MessageCircle,
-  RotateCcw, ChevronDown,
+  ChevronDown, Feather, ArrowRight, BookOpen,
 } from "lucide-react";
-import { motion as m } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface Profile {
@@ -22,7 +25,7 @@ interface Profile {
 
 interface TestimonyResult {
   id: string;
-  prayer_id: string;
+  prayer_id: string | null;
   user_id: string;
   body: string;
   flagged: boolean;
@@ -40,31 +43,49 @@ interface TestimonyResult {
   user_flagged?: boolean;
 }
 
-function Avatar({ profile }: { profile?: Profile | null }) {
+function AvatarBubble({ profile, size = "md" }: { profile?: Profile | null; size?: "sm" | "md" }) {
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
     : "?";
+  const cls = size === "sm" ? "w-6 h-6 text-[9px]" : "w-9 h-9 text-xs";
   if (profile?.avatar_url) {
-    return <img src={profile.avatar_url} alt={profile.full_name || ""} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />;
+    return <img src={profile.avatar_url} alt={profile.full_name || ""} className={`${cls} rounded-full object-cover flex-shrink-0`} />;
   }
   return (
-    <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+    <div className={`${cls} rounded-full flex items-center justify-center font-bold flex-shrink-0`}
       style={{ background: "hsl(42 75% 55%)", color: "white" }}>
       {initials}
     </div>
   );
 }
 
-function TestimonyFlipCard({ testimony, highlight }: { testimony: TestimonyResult; highlight?: boolean }) {
+// ── StandaloneTestimonyCard ───────────────────────────────────────────────────
+function StandaloneTestimonyCard({
+  testimony,
+  highlight,
+  testimonyCountForPrayer,
+}: {
+  testimony: TestimonyResult;
+  highlight?: boolean;
+  testimonyCountForPrayer: number;
+}) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [flipped, setFlipped] = useState(false);
   const [userLiked, setUserLiked] = useState(testimony.user_liked || false);
   const [likesCount, setLikesCount] = useState(testimony.likes_count || 0);
   const [userFlagged, setUserFlagged] = useState(testimony.user_flagged || false);
+  const [expanded, setExpanded] = useState(false);
+  const [prayerOpen, setPrayerOpen] = useState(false);
 
-  // Auto-highlight if linked
-  useEffect(() => { if (highlight) setFlipped(false); }, [highlight]);
+  const TRUNCATE_AT = 480;
+  const isLong = testimony.body.length > TRUNCATE_AT;
+  const displayBody = expanded || !isLong ? testimony.body : testimony.body.slice(0, TRUNCATE_AT);
+
+  const prayer = testimony.prayer_cards;
+  const displayName = testimony.profiles?.full_name || "Anonymous";
+  const dateStr = new Date(testimony.created_at).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  });
 
   const toggleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -93,220 +114,393 @@ function TestimonyFlipCard({ testimony, highlight }: { testimony: TestimonyResul
     toast({ title: "Flagged for review. Thank you." });
   };
 
-  const prayer = testimony.prayer_cards;
-  const displayName = testimony.profiles?.full_name || "Anonymous";
-
   return (
-    <div
-      className="relative"
-      style={{ perspective: "1200px", height: "100%", minHeight: 260 }}
-    >
-      <motion.div
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 18 }}
-        style={{ transformStyle: "preserve-3d", height: "100%", position: "relative" }}
-      >
-        {/* FRONT — testimony */}
-        <div
+    <>
+      {/* 2.5D wrapper — perspective on the parent */}
+      <div style={{ perspective: "1000px" }} className="h-full">
+        <motion.div
+          whileHover={{ rotateX: 3, rotateY: -2, scale: 1.012, y: -5 }}
+          transition={{ type: "spring", stiffness: 200, damping: 22 }}
           className={cn(
-            "absolute inset-0 rounded-2xl border overflow-hidden flex flex-col p-5 gap-3",
-            highlight && "ring-2"
+            "relative flex flex-col h-full rounded-2xl overflow-hidden",
+            highlight && "ring-2 ring-offset-2"
           )}
           style={{
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            background: "hsl(var(--card))",
-            borderColor: "hsl(38 22% 88%)",
-            boxShadow: highlight ? "0 0 0 2px hsl(42 75% 55%)" : "0 2px 16px -4px rgba(0,0,0,0.10)",
+            transformStyle: "preserve-3d",
+            background: "linear-gradient(145deg, hsl(42 55% 99%) 0%, hsl(38 50% 97%) 100%)",
+            boxShadow: highlight
+              ? "0 0 0 2px hsl(42 75% 55%), 0 8px 40px -8px hsl(42 75% 55% / 0.35), 0 2px 8px -2px rgba(0,0,0,0.08)"
+              : "0 4px 24px -6px hsl(42 75% 46% / 0.18), 0 1px 4px -1px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)",
           }}
         >
-          {/* Author */}
-          <div className="flex items-center gap-2.5">
-            <Avatar profile={testimony.profiles} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: "hsl(25 35% 14%)" }}>{displayName}</p>
-              <p className="text-[10px]" style={{ color: "hsl(25 18% 56%)" }}>
-                {new Date(testimony.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              </p>
-            </div>
+          {/* Glass sheen overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none rounded-2xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)",
+            }}
+          />
+
+          {/* Decorative gold quote mark */}
+          <div
+            className="absolute top-2 right-4 font-display font-bold leading-none select-none pointer-events-none"
+            style={{ fontSize: "6rem", lineHeight: 1, color: "hsl(42 80% 60% / 0.10)" }}
+            aria-hidden
+          >
+            "
           </div>
 
-          {/* Prayer title */}
-          {prayer?.title && (
-            <p className="text-[10px] font-medium px-2 py-1 rounded-lg"
-              style={{ background: "hsl(42 80% 92%)", color: "hsl(38 75% 32%)" }}>
-              ✦ {prayer.title}
-            </p>
-          )}
+          <div className="relative flex flex-col h-full p-5 gap-4">
+            {/* Author row */}
+            <div className="flex items-center gap-2.5">
+              <AvatarBubble profile={testimony.profiles} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate" style={{ color: "hsl(25 35% 14%)" }}>{displayName}</p>
+                <p className="text-[10px]" style={{ color: "hsl(25 18% 56%)" }}>{dateStr}</p>
+              </div>
+            </div>
 
-          {/* Testimony excerpt */}
-          <p className="text-sm leading-relaxed flex-1" style={{ color: "hsl(25 28% 28%)" }}>
-            {testimony.body.length > 300 ? testimony.body.slice(0, 297) + "…" : testimony.body}
-          </p>
+            {/* Testimony body — hero text */}
+            <div className="flex-1">
+              <AnimatePresence initial={false}>
+                <motion.p
+                  key={expanded ? "expanded" : "collapsed"}
+                  initial={false}
+                  animate={{ opacity: 1 }}
+                  className="font-display leading-[1.75] text-[0.95rem]"
+                  style={{ color: "hsl(25 30% 22%)" }}
+                >
+                  {displayBody}
+                  {!expanded && isLong && (
+                    <button
+                      onClick={() => setExpanded(true)}
+                      className="ml-1.5 text-sm font-medium hover:underline underline-offset-2 transition-colors"
+                      style={{ color: "hsl(42 75% 42%)" }}
+                    >
+                      read more…
+                    </button>
+                  )}
+                  {expanded && isLong && (
+                    <button
+                      onClick={() => setExpanded(false)}
+                      className="ml-1.5 text-sm font-medium hover:underline underline-offset-2 transition-colors"
+                      style={{ color: "hsl(42 75% 42%)" }}
+                    >
+                      show less
+                    </button>
+                  )}
+                </motion.p>
+              </AnimatePresence>
+            </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 pt-2 border-t" style={{ borderColor: "hsl(38 22% 90%)" }}>
-            <button
-              onClick={toggleLike}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors hover:bg-accent/40"
-              style={{ color: userLiked ? "hsl(0 72% 51%)" : "hsl(25 18% 56%)" }}
-            >
-              <Heart className={cn("w-3.5 h-3.5", userLiked && "fill-current")} />
-              <span>{likesCount}</span>
-            </button>
-            <button onClick={handleShare} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors hover:bg-accent/40" style={{ color: "hsl(25 18% 56%)" }}>
-              <Share2 className="w-3.5 h-3.5" />
-            </button>
-            {!userFlagged && testimony.user_id !== user?.id && (
-              <button onClick={handleFlag} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs transition-colors hover:bg-accent/40" style={{ color: "hsl(25 18% 56%)" }} title="Flag for review">
-                <Flag className="w-3.5 h-3.5" />
-              </button>
-            )}
-            <div className="flex-1" />
+            {/* Prayer reference pill */}
             {prayer && (
-              <button
-                onClick={e => { e.stopPropagation(); setFlipped(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={{ background: "hsl(42 80% 92%)", color: "hsl(38 75% 32%)" }}
-              >
-                <RotateCcw className="w-3 h-3" /> See the Prayer 🙏
-              </button>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  to={`/prayer/${prayer.id}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:scale-105 active:scale-95"
+                  style={{
+                    background: "hsl(42 80% 92%)",
+                    color: "hsl(38 75% 32%)",
+                    boxShadow: "0 1px 4px -1px hsl(42 75% 46% / 0.20)",
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <BookOpen className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate max-w-[160px]">
+                    {prayer.title || prayer.prayer_text.slice(0, 40) + "…"}
+                  </span>
+                  <ArrowRight className="w-3 h-3 flex-shrink-0 opacity-60" />
+                </Link>
+                {testimonyCountForPrayer > 1 && (
+                  <span className="text-[10px]" style={{ color: "hsl(25 18% 60%)" }}>
+                    · {testimonyCountForPrayer} testimonies
+                  </span>
+                )}
+              </div>
             )}
-          </div>
-        </div>
 
-        {/* BACK — full prayer */}
-        <div
-          className="absolute inset-0 rounded-2xl border overflow-hidden flex flex-col p-5 gap-3"
-          style={{
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            transform: "rotateY(180deg)",
-            background: "hsl(42 55% 97%)",
-            borderColor: "hsl(38 22% 88%)",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold" style={{ color: "hsl(42 75% 40%)" }}>The Prayer 🙏</p>
-            <button
-              onClick={() => setFlipped(false)}
-              className="flex items-center gap-1 text-xs transition-colors hover:opacity-70"
-              style={{ color: "hsl(25 18% 56%)" }}
-            >
-              <RotateCcw className="w-3 h-3" /> Back
-            </button>
-          </div>
-          {prayer?.title && (
-            <h3 className="font-display font-semibold text-base" style={{ color: "hsl(25 35% 14%)" }}>{prayer.title}</h3>
-          )}
-          <p className="text-sm leading-relaxed flex-1 overflow-y-auto" style={{ color: "hsl(25 28% 28%)" }}>
-            {prayer?.prayer_text}
-          </p>
-          {prayer?.tags && prayer.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {prayer.tags.map(tag => (
-                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "hsl(42 80% 90%)", color: "hsl(38 75% 35%)" }}>
-                  #{tag}
-                </span>
-              ))}
+            {/* Divider */}
+            <div className="border-t" style={{ borderColor: "hsl(38 22% 90%)" }} />
+
+            {/* Actions */}
+            <div className="flex items-center gap-0.5">
+              <button
+                onClick={toggleLike}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-red-50 active:scale-95"
+                style={{ color: userLiked ? "hsl(0 72% 51%)" : "hsl(25 18% 58%)" }}
+              >
+                <Heart className={cn("w-3.5 h-3.5 transition-all", userLiked && "fill-current scale-110")} />
+                <span className="font-medium">{likesCount > 0 ? likesCount : ""}</span>
+              </button>
+
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40 active:scale-95"
+                style={{ color: "hsl(25 18% 58%)" }}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+
+              {!userFlagged && testimony.user_id !== user?.id && (
+                <button
+                  onClick={handleFlag}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40 active:scale-95"
+                  style={{ color: "hsl(25 18% 58%)" }}
+                  title="Flag for review"
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <div className="flex-1" />
+
+              {/* See the Prayer button — opens sheet */}
+              {prayer && (
+                <button
+                  onClick={e => { e.stopPropagation(); setPrayerOpen(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:brightness-95 active:scale-95"
+                  style={{ background: "hsl(42 80% 92%)", color: "hsl(38 75% 32%)" }}
+                >
+                  🙏 See Prayer
+                </button>
+              )}
             </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Prayer Sheet */}
+      {prayer && (
+        <Sheet open={prayerOpen} onOpenChange={setPrayerOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader className="mb-5">
+              <SheetTitle className="font-display text-xl flex items-center gap-2">
+                🙏 The Prayer
+              </SheetTitle>
+              <SheetDescription>
+                The prayer this testimony is a response to.
+              </SheetDescription>
+            </SheetHeader>
+            {prayer.title && (
+              <h3 className="font-display font-semibold text-lg mb-3" style={{ color: "hsl(25 35% 14%)" }}>{prayer.title}</h3>
+            )}
+            <p className="text-sm leading-relaxed" style={{ color: "hsl(25 28% 28%)" }}>{prayer.prayer_text}</p>
+            {prayer.extended_prayer && (
+              <p className="text-sm leading-relaxed mt-4 italic opacity-70" style={{ color: "hsl(25 28% 28%)" }}>{prayer.extended_prayer}</p>
+            )}
+            {prayer.tags && prayer.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-4">
+                {prayer.tags.map(tag => (
+                  <span key={tag} className="text-xs px-2.5 py-1 rounded-full font-medium"
+                    style={{ background: "hsl(42 80% 90%)", color: "hsl(38 75% 35%)" }}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="mt-6">
+              <Link
+                to={`/prayer/${prayer.id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline"
+                style={{ color: "hsl(42 75% 42%)" }}
+                onClick={() => setPrayerOpen(false)}
+              >
+                View full prayer <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+    </>
   );
 }
 
+// ── TestifySheet — submission form ───────────────────────────────────────────
+function TestifySheet({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [body, setBody] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const textRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoGrow = () => {
+    const el = textRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !body.trim()) return;
+    setSubmitting(true);
+    setRejectReason("");
+    try {
+      const { data: modData } = await supabase.functions.invoke("moderate-testimony", {
+        body: { text: body.trim() },
+      });
+      if (modData && !modData.approved) {
+        setRejectReason(modData.reason || "Your testimony couldn't be posted at this time.");
+        setSubmitting(false);
+        return;
+      }
+      const { error } = await supabase.from("testimonies").insert({
+        user_id: user.id,
+        body: body.trim(),
+        prayer_id: null,
+      });
+      if (error) throw error;
+      toast({ title: "Your testimony has been shared 🕊️", description: "Thank you for sharing what God has done!" });
+      setBody("");
+      onOpenChange(false);
+      onSuccess();
+    } catch {
+      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto flex flex-col gap-0 p-0">
+        {/* Header */}
+        <div className="p-6 pb-4 border-b" style={{ borderColor: "hsl(38 22% 90%)" }}>
+          <SheetHeader>
+            <SheetTitle className="font-display text-2xl flex items-center gap-2">
+              <Feather className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
+              Share Your Testimony
+            </SheetTitle>
+            <SheetDescription className="text-sm leading-relaxed">
+              Tell the story of how God moved. This doesn't need to be connected to any specific prayer — just share what He did.
+            </SheetDescription>
+          </SheetHeader>
+        </div>
+
+        {/* Form */}
+        <div className="flex-1 p-6 space-y-5">
+          <div className="relative">
+            {/* Decorative quote */}
+            <div
+              className="absolute top-2 right-3 font-display font-bold leading-none pointer-events-none select-none"
+              style={{ fontSize: "4rem", color: "hsl(42 80% 60% / 0.12)" }}
+              aria-hidden
+            >
+              "
+            </div>
+            <textarea
+              ref={textRef}
+              value={body}
+              onChange={e => { setBody(e.target.value); autoGrow(); }}
+              onInput={autoGrow}
+              placeholder="Lord answered my prayer when…"
+              maxLength={4000}
+              rows={8}
+              className="w-full resize-none outline-none rounded-2xl text-base leading-[1.85] transition-shadow font-display"
+              style={{
+                minHeight: 220,
+                padding: "1.25rem 1.25rem",
+                background: "hsl(42 55% 99%)",
+                boxShadow: "inset 0 2px 14px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)",
+                color: "hsl(25 30% 18%)",
+                fontFamily: "inherit",
+              }}
+              onFocus={e => {
+                e.target.style.boxShadow = "inset 0 2px 16px hsl(42 75% 46% / 0.10), 0 0 0 2px hsl(42 75% 55%)";
+              }}
+              onBlur={e => {
+                e.target.style.boxShadow = "inset 0 2px 14px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)";
+              }}
+            />
+            <span
+              className="absolute bottom-3 right-4 text-[11px] pointer-events-none"
+              style={{ color: body.length > 3800 ? "hsl(0 72% 51%)" : "hsl(25 18% 66%)" }}
+            >
+              {body.length}/4000
+            </span>
+          </div>
+
+          {rejectReason && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm rounded-xl px-4 py-3"
+              style={{ background: "hsl(0 72% 97%)", color: "hsl(0 72% 40%)", border: "1px solid hsl(0 72% 88%)" }}
+            >
+              {rejectReason}
+            </motion.div>
+          )}
+
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting || body.trim().length < 10}
+            className="w-full h-12 rounded-2xl text-base gap-2.5 btn-gold"
+          >
+            {submitting
+              ? <><Loader2 className="w-4 h-4 animate-spin" />Reviewing…</>
+              : <><Feather className="w-4 h-4" />Share Testimony</>}
+          </Button>
+
+          <p className="text-xs text-center" style={{ color: "hsl(25 18% 62%)" }}>
+            All testimonies are reviewed before publishing to ensure they honor God.
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+// ── Page size ─────────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
 
+// ── Main Testify page ─────────────────────────────────────────────────────────
 export default function Testify() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [testimonies, setTestimonies] = useState<TestimonyResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(0);
-  const { user } = useAuth();
+  const [testifyOpen, setTestifyOpen] = useState(false);
+
   const highlightId = searchParams.get("t");
 
-  const fetchTestimonies = useCallback(async (reset = true) => {
-    setLoading(true);
-    const currentPage = reset ? 0 : page;
-    if (reset) setPage(0);
-
-    try {
-      let q = supabase
-        .from("testimonies")
-        .select("*, profiles(id, full_name, avatar_url), prayer_cards(id, title, prayer_text, tags, extended_prayer)")
-        .order("created_at", { ascending: false })
-        .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
-
-      if (search.trim()) {
-        q = q.ilike("body", `%${search.trim()}%`);
-      }
-
-      const { data } = await q;
-
-      if (!data) { setLoading(false); return; }
-      setHasMore(data.length === PAGE_SIZE);
-
-      // Fetch likes
-      const ids = data.map(t => t.id);
-      const [{ data: likesData }, { data: flagsData }] = await Promise.all([
-        ids.length ? supabase.from("testimony_likes").select("testimony_id, user_id").in("testimony_id", ids) : { data: [] },
-        user && ids.length ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
-      ]);
-
-      const likesMap: Record<string, number> = {};
-      const userLikedSet = new Set<string>();
-      (likesData || []).forEach((l: { testimony_id: string; user_id: string }) => {
-        likesMap[l.testimony_id] = (likesMap[l.testimony_id] || 0) + 1;
-        if (l.user_id === user?.id) userLikedSet.add(l.testimony_id);
-      });
-      const userFlaggedSet = new Set((flagsData || []).map((f: { testimony_id: string }) => f.testimony_id));
-
-      const enriched: TestimonyResult[] = data.map(t => ({
-        ...t,
-        profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
-        prayer_cards: Array.isArray(t.prayer_cards) ? t.prayer_cards[0] : t.prayer_cards,
-        likes_count: likesMap[t.id] || 0,
-        user_liked: userLikedSet.has(t.id),
-        user_flagged: userFlaggedSet.has(t.id),
-      }));
-
-      setTestimonies(reset ? enriched : prev => [...prev, ...enriched]);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, user?.id, page]);
-
-  useEffect(() => { fetchTestimonies(true); }, [search, user?.id]);
-
+  // Open sheet if ?testify=1 (post-auth redirect)
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) setSearch(q);
-  }, []);
+    if (searchParams.get("testify") === "1" && user) {
+      setTestifyOpen(true);
+      // Clean the param
+      const next = new URLSearchParams(searchParams);
+      next.delete("testify");
+      setSearchParams(next, { replace: true });
+    }
+  }, [user]);
 
-  const loadMore = async () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    setLoading(true);
+  // Compute testimony count per prayer from the loaded set
+  const testimonyCountByPrayer = testimonies.reduce<Record<string, number>>((acc, t) => {
+    if (t.prayer_id) acc[t.prayer_id] = (acc[t.prayer_id] || 0) + 1;
+    return acc;
+  }, {});
 
-    let q = supabase
-      .from("testimonies")
-      .select("*, profiles(id, full_name, avatar_url), prayer_cards(id, title, prayer_text, tags, extended_prayer)")
-      .order("created_at", { ascending: false })
-      .range(nextPage * PAGE_SIZE, (nextPage + 1) * PAGE_SIZE - 1);
-    if (search.trim()) q = q.ilike("body", `%${search.trim()}%`);
-    const { data } = await q;
-
-    if (!data) { setLoading(false); return; }
-    setHasMore(data.length === PAGE_SIZE);
-
+  const enrichTestimonies = useCallback(async (data: TestimonyResult[]) => {
     const ids = data.map(t => t.id);
+    if (!ids.length) return data;
     const [{ data: likesData }, { data: flagsData }] = await Promise.all([
-      ids.length ? supabase.from("testimony_likes").select("testimony_id, user_id").in("testimony_id", ids) : { data: [] },
-      user && ids.length ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
+      supabase.from("testimony_likes").select("testimony_id, user_id").in("testimony_id", ids),
+      user ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
     ]);
     const likesMap: Record<string, number> = {};
     const userLikedSet = new Set<string>();
@@ -315,18 +509,73 @@ export default function Testify() {
       if (l.user_id === user?.id) userLikedSet.add(l.testimony_id);
     });
     const userFlaggedSet = new Set((flagsData || []).map((f: { testimony_id: string }) => f.testimony_id));
-
-    const enriched: TestimonyResult[] = data.map(t => ({
+    return data.map(t => ({
       ...t,
-      profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
-      prayer_cards: Array.isArray(t.prayer_cards) ? t.prayer_cards[0] : t.prayer_cards,
       likes_count: likesMap[t.id] || 0,
       user_liked: userLikedSet.has(t.id),
       user_flagged: userFlaggedSet.has(t.id),
     }));
+  }, [user?.id]);
 
+  const fetchTestimonies = useCallback(async (reset = true) => {
+    setLoading(true);
+    const currentPage = reset ? 0 : page;
+    if (reset) setPage(0);
+    try {
+      let q = supabase
+        .from("testimonies")
+        .select("*, profiles(id, full_name, avatar_url), prayer_cards(id, title, prayer_text, tags, extended_prayer)")
+        .order("created_at", { ascending: false })
+        .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
+      if (search.trim()) q = q.ilike("body", `%${search.trim()}%`);
+      const { data } = await q;
+      if (!data) { setLoading(false); return; }
+      setHasMore(data.length === PAGE_SIZE);
+      const normalised = data.map(t => ({
+        ...t,
+        profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
+        prayer_cards: Array.isArray(t.prayer_cards) ? t.prayer_cards[0] : t.prayer_cards,
+      })) as TestimonyResult[];
+      const enriched = await enrichTestimonies(normalised);
+      setTestimonies(reset ? enriched : prev => [...prev, ...enriched]);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, user?.id, enrichTestimonies]);
+
+  useEffect(() => { fetchTestimonies(true); }, [search, user?.id]);
+
+  const loadMore = async () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    setLoading(true);
+    let q = supabase
+      .from("testimonies")
+      .select("*, profiles(id, full_name, avatar_url), prayer_cards(id, title, prayer_text, tags, extended_prayer)")
+      .order("created_at", { ascending: false })
+      .range(nextPage * PAGE_SIZE, (nextPage + 1) * PAGE_SIZE - 1);
+    if (search.trim()) q = q.ilike("body", `%${search.trim()}%`);
+    const { data } = await q;
+    if (!data) { setLoading(false); return; }
+    setHasMore(data.length === PAGE_SIZE);
+    const normalised = data.map(t => ({
+      ...t,
+      profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
+      prayer_cards: Array.isArray(t.prayer_cards) ? t.prayer_cards[0] : t.prayer_cards,
+    })) as TestimonyResult[];
+    const enriched = await enrichTestimonies(normalised);
     setTestimonies(prev => [...prev, ...enriched]);
     setLoading(false);
+  };
+
+  const handleTestifyClick = () => {
+    if (user) {
+      setTestifyOpen(true);
+    } else {
+      sessionStorage.setItem("kp_post_login", JSON.stringify({ path: "/testify?testify=1" }));
+      navigate("/auth");
+      toast({ title: "Sign in to share your testimony 🕊️", description: "You'll be taken straight to the form after signing in." });
+    }
   };
 
   return (
@@ -335,14 +584,16 @@ export default function Testify() {
 
       {/* Hero */}
       <section className="relative overflow-hidden pt-12 pb-8 sm:pt-16 sm:pb-12">
-        <div className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-3xl pointer-events-none"
-          style={{ background: "hsl(42 85% 68% / 0.12)" }} />
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl pointer-events-none"
+          style={{ background: "hsl(42 85% 68% / 0.10)" }} />
+        <div className="absolute top-8 right-1/4 w-64 h-64 rounded-full blur-3xl pointer-events-none"
+          style={{ background: "hsl(150 50% 68% / 0.06)" }} />
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="container mx-auto px-4 max-w-3xl text-center space-y-4 relative"
+          className="container mx-auto px-4 max-w-3xl text-center space-y-5 relative"
         >
           <p className="text-xs tracking-[0.3em] uppercase font-medium" style={{ color: "hsl(42 75% 45%)" }}>
             Answered Prayers
@@ -351,16 +602,32 @@ export default function Testify() {
             Testify 🕊️
           </h1>
           <p className="text-base sm:text-lg leading-relaxed max-w-xl mx-auto" style={{ color: "hsl(25 28% 42%)" }}>
-            Real stories of God answering prayer. Search testimonies, be encouraged, and share your own.
+            Real stories of God answering prayer. Read, be encouraged, and share your own story.
           </p>
 
+          {/* CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <Button
+              onClick={handleTestifyClick}
+              className="btn-gold h-12 px-8 rounded-2xl text-base gap-2.5 shadow-lg"
+              style={{ boxShadow: "0 4px 20px -4px hsl(42 75% 46% / 0.45)" }}
+            >
+              <Feather className="w-4 h-4" />
+              Share Your Testimony
+            </Button>
+          </motion.div>
+
           {/* Search bar */}
-          <div className="relative max-w-lg mx-auto mt-6">
+          <div className="relative max-w-lg mx-auto mt-2">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "hsl(25 18% 56%)" }} />
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search testimonies… (healing, peace, provision…)"
+              placeholder="Search testimonies… healing, peace, provision…"
               className="pl-11 pr-10 h-12 rounded-2xl border-2 text-sm shadow-sm focus-visible:ring-0"
               style={{
                 borderColor: search ? "hsl(42 75% 55%)" : "hsl(38 22% 84%)",
@@ -377,36 +644,40 @@ export default function Testify() {
         </motion.div>
       </section>
 
-      {/* Cards */}
+      {/* Cards grid */}
       <main className="container mx-auto px-4 pb-16 max-w-6xl">
         {loading && testimonies.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border p-5 space-y-3 animate-pulse" style={{ background: "hsl(var(--card))", borderColor: "hsl(38 22% 88%)", height: 260 }}>
+              <div key={i} className="rounded-2xl border p-5 space-y-3 animate-pulse" style={{ background: "hsl(var(--card))", borderColor: "hsl(38 22% 88%)", minHeight: 260 }}>
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full shimmer" />
-                  <div className="flex-1 space-y-1">
-                    <div className="h-3.5 w-24 rounded shimmer" />
-                    <div className="h-2.5 w-16 rounded shimmer" />
+                  <div className="w-9 h-9 rounded-full shimmer" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 w-28 rounded shimmer" />
+                    <div className="h-2.5 w-18 rounded shimmer" />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="h-3 w-full rounded shimmer" />
-                  <div className="h-3 w-5/6 rounded shimmer" />
-                  <div className="h-3 w-4/5 rounded shimmer" />
+                <div className="space-y-2">
+                  <div className="h-3.5 w-full rounded shimmer" />
+                  <div className="h-3.5 w-5/6 rounded shimmer" />
+                  <div className="h-3.5 w-4/5 rounded shimmer" />
+                  <div className="h-3.5 w-3/4 rounded shimmer" />
                 </div>
               </div>
             ))}
           </div>
         ) : testimonies.length === 0 ? (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20 space-y-4">
-            <p className="text-4xl">🕊️</p>
-            <p className="font-display text-lg font-semibold" style={{ color: "hsl(25 35% 20%)" }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20 space-y-5">
+            <p className="text-5xl">🕊️</p>
+            <p className="font-display text-xl font-semibold" style={{ color: "hsl(25 35% 20%)" }}>
               {search ? "No testimonies found" : "No testimonies yet"}
             </p>
             <p className="text-sm" style={{ color: "hsl(25 18% 56%)" }}>
-              {search ? `Try searching for something else, or be the first to testify!` : "Be the first to share how God answered your prayer!"}
+              {search ? "Try different words, or share yours!" : "Be the first to share how God answered your prayer!"}
             </p>
+            <Button onClick={handleTestifyClick} className="btn-gold rounded-2xl gap-2 mt-2">
+              <Feather className="w-4 h-4" /> Share Your Testimony
+            </Button>
           </motion.div>
         ) : (
           <>
@@ -425,17 +696,16 @@ export default function Testify() {
                 <motion.div
                   key={testimony.id}
                   variants={{ hidden: { opacity: 0, y: 24, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } } }}
-                  style={{ height: 280 }}
                 >
-                  <TestimonyFlipCard
+                  <StandaloneTestimonyCard
                     testimony={testimony}
                     highlight={testimony.id === highlightId}
+                    testimonyCountForPrayer={testimony.prayer_id ? (testimonyCountByPrayer[testimony.prayer_id] || 1) : 0}
                   />
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* Load more */}
             {hasMore && (
               <div className="flex justify-center mt-10">
                 <Button
@@ -445,13 +715,20 @@ export default function Testify() {
                   className="rounded-2xl gap-2 px-8 h-11"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronDown className="w-4 h-4" />}
-                  Load more testimonies
+                  Load more
                 </Button>
               </div>
             )}
           </>
         )}
       </main>
+
+      {/* Testify sheet */}
+      <TestifySheet
+        open={testifyOpen}
+        onOpenChange={setTestifyOpen}
+        onSuccess={() => fetchTestimonies(true)}
+      />
     </div>
   );
 }
