@@ -10,12 +10,13 @@ import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
 
 export default function Auth() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [resetSent, setResetSent] = useState(false);
+  const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
