@@ -162,7 +162,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     } else {
       await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
       setPrayed(true); setPrayedCount(c => c + 1);
-      toast({ title: "Prayer recorded 🙏" });
+      setPrayedFloat(true);
+      setTimeout(() => setPrayedFloat(false), 1200);
     }
   };
 
