@@ -687,7 +687,7 @@ export default function Index() {
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
             <Link to="/auth">
               <Button size="lg" className="btn-gold rounded-2xl h-13 px-12 text-base gap-2 shadow-[0_8px_40px_-8px_hsl(42_85%_46%/0.5)]">
-                Start Praying Free <ArrowRight className="w-4 h-4" />
+                Start Praying <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </motion.div>
