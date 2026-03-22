@@ -17,7 +17,7 @@ import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
-  Pencil, Save, XCircle,
+  Pencil, Save, XCircle, Scroll, Trash2,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
