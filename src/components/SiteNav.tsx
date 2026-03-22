@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
