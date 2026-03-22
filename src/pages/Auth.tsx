@@ -55,8 +55,17 @@ export default function Auth() {
   const handleOAuthSignIn = async (provider: "google" | "apple") => {
     setLoading(true);
     try {
+      // Preserve post-login intent for OAuth (it survives the redirect via sessionStorage)
+      const redirectUri = (() => {
+        const pending = sessionStorage.getItem("kp_post_login");
+        if (pending) {
+          const { path } = JSON.parse(pending) as { path: string };
+          return window.location.origin + path;
+        }
+        return window.location.origin;
+      })();
       const { error } = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin,
+        redirect_uri: redirectUri,
       });
       if (error) throw error;
     } catch (err: unknown) {
