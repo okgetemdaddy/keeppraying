@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Sparkles, Tag, BookOpen } from "lucide-react";
+import { Loader2, Sparkles, Tag, BookOpen, Quote } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { VERSE_REGEX } from "@/lib/renderWithVerseLinks";
 
 interface Verse {
   ref: string;
   text: string;
+  cited_in_prayer?: boolean;
 }
 
 interface EnrichResult {
@@ -25,6 +27,17 @@ interface AIEnrichPanelProps {
   extendedPrayer?: string | null;
   existingTags?: string[];
   onApplied: () => void;
+}
+
+/** Extract all scripture references explicitly written in the prayer text */
+function extractCitedRefs(text: string): string[] {
+  const refs: string[] = [];
+  const regex = new RegExp(VERSE_REGEX.source, VERSE_REGEX.flags);
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    refs.push(match[0]);
+  }
+  return [...new Set(refs)];
 }
 
 export default function AIEnrichPanel({
@@ -43,17 +56,23 @@ export default function AIEnrichPanel({
   const [selectedVerses, setSelectedVerses] = useState<Set<string>>(new Set());
   const [applying, setApplying] = useState(false);
 
+  // Pre-compute cited refs from the prayer text
+  const citedRefs = useMemo(() => extractCitedRefs(prayerText), [prayerText]);
+
   const fetchSuggestions = async () => {
     setLoading(true);
     setResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("enrich-prayer", {
-        body: { prayer_text: prayerText, extended_prayer: extendedPrayer },
+        body: {
+          prayer_text: prayerText,
+          extended_prayer: extendedPrayer,
+          cited_refs: citedRefs,
+        },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       setResult(data as EnrichResult);
-      // Pre-select all by default
       setSelectedTags(new Set(data.tags));
       setSelectedVerses(new Set((data.verses as Verse[]).map(v => v.ref)));
     } catch (e) {
@@ -123,6 +142,9 @@ export default function AIEnrichPanel({
     onOpenChange(val);
   };
 
+  const citedVerses = result?.verses.filter(v => v.cited_in_prayer) ?? [];
+  const suggestedVerses = result?.verses.filter(v => !v.cited_in_prayer) ?? [];
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
@@ -131,15 +153,29 @@ export default function AIEnrichPanel({
             <Sparkles className="w-4 h-4 text-primary" /> AI Enrichment
           </SheetTitle>
           <SheetDescription>
-            Let AI suggest relevant tags and scripture for your prayer. Review and select which to apply.
+            AI reads your prayer deeply — surfacing scripture you cited and verses that match what you're praying about.
           </SheetDescription>
         </SheetHeader>
 
         {!result && !loading && (
           <div className="flex flex-col items-center gap-4 py-8 text-center">
             <Sparkles className="w-10 h-10 text-primary opacity-60" />
+            {citedRefs.length > 0 && (
+              <div className="w-full text-left p-3 rounded-xl bg-muted/50 border border-border">
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <Quote className="w-3 h-3" /> Found in your prayer
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {citedRefs.map(ref => (
+                    <span key={ref} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      {ref}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
-              AI will analyse your prayer and suggest meaningful tags and Bible verses that relate to your prayer.
+              AI will read your prayer's substance and suggest supporting scripture — including any verses you've already cited.
             </p>
             <Button onClick={fetchSuggestions} className="btn-gold rounded-xl gap-2">
               <Sparkles className="w-4 h-4" /> Get Suggestions
@@ -150,7 +186,7 @@ export default function AIEnrichPanel({
         {loading && (
           <div className="flex flex-col items-center gap-3 py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Analysing your prayer…</p>
+            <p className="text-sm text-muted-foreground">Reading your prayer deeply…</p>
           </div>
         )}
 
@@ -182,14 +218,45 @@ export default function AIEnrichPanel({
               </div>
             </div>
 
-            {/* Verses */}
-            {result.verses.length > 0 && (
+            {/* Verses cited in the prayer */}
+            {citedVerses.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
-                  <BookOpen className="w-3.5 h-3.5" /> Suggested Scripture
+                  <Quote className="w-3.5 h-3.5 text-primary" /> Cited in Your Prayer
                 </h3>
-                <div className="space-y-3">
-                  {result.verses.map(verse => (
+                <div className="space-y-2">
+                  {citedVerses.map(verse => (
+                    <label
+                      key={verse.ref}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        selectedVerses.has(verse.ref)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted/40"
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedVerses.has(verse.ref)}
+                        onCheckedChange={() => toggleVerse(verse.ref)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <div className="space-y-1 min-w-0">
+                        <VerseLink reference={verse.ref} />
+                        <p className="text-xs text-muted-foreground italic leading-relaxed">"{verse.text}"</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Additional suggested verses */}
+            {suggestedVerses.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
+                  <BookOpen className="w-3.5 h-3.5" /> Supporting Scripture
+                </h3>
+                <div className="space-y-2">
+                  {suggestedVerses.map(verse => (
                     <label
                       key={verse.ref}
                       className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
