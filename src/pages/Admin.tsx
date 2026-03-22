@@ -754,6 +754,22 @@ export default function Admin() {
         )}
       </div>
     </div>
+
+    {/* AI Enrich panel — opens after admin publishes a new prayer card */}
+    {enrichCardId && (
+      <AIEnrichPanel
+        open={enrichOpen}
+        onOpenChange={open => {
+          setEnrichOpen(open);
+          if (!open) { setEnrichCardId(null); setEnrichCardText(""); setEnrichCardExtended(null); }
+        }}
+        cardId={enrichCardId}
+        prayerText={enrichCardText}
+        extendedPrayer={enrichCardExtended}
+        existingTags={[]}
+        onApplied={() => { load(); setEnrichOpen(false); setEnrichCardId(null); }}
+      />
+    )}
   );
 }
 
