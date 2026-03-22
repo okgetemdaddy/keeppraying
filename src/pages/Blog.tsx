@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, ArrowRight, BookOpen, ArrowLeft } from "lucide-react";
+import { Calendar, ArrowRight, BookOpen } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { SiteNav } from "@/components/SiteNav";
 
 interface BlogPost {
   id: string; title: string; slug: string; excerpt: string | null;
@@ -23,12 +24,7 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="font-display font-bold text-xl text-foreground">KeepGrow.ing</Link>
-          <Link to="/" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" />KeepPray.ing</Link>
-        </div>
-      </header>
+      <SiteNav />
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         <div className="text-center mb-12">
           <h1 className="font-display text-4xl font-bold mb-3">KeepGrow.ing</h1>

@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowLeft, Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
+import { Send, Sparkles, BookOpen, Heart, Loader2 } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
+import { SiteNav } from "@/components/SiteNav";
 import PrayerCardLink from "@/components/PrayerCardLink";
 
 interface Message { role: "user" | "assistant"; content: string; }
