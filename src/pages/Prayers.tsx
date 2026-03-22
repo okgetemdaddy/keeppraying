@@ -91,6 +91,8 @@ function SourceBadge({ source, status }: { source?: string; status: string }) {
 }
 
 // ─── Prayer card item ─────────────────────────────────────────────────────────
+const PRAYER_CHAR_LIMIT = 320;
+
 function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | null }) {
   const [liked, setLiked] = useState(false);
   const [prayed, setPrayed] = useState(false);
@@ -98,6 +100,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [tagsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [likesCount, setLikesCount] = useState(card.likes_count);
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
@@ -106,6 +109,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+  const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
   useEffect(() => {
     if (!userId) return;
