@@ -1,176 +1,108 @@
 
-## Testify Feature — Full Implementation Plan
+## Plan: Standalone TestimonyCards + Prayer Link Reference + Board Testify Button + Prayer Input Redesign
 
-### Summary of additions based on approved plan + user refinements:
-- Any authenticated user can testify on **any public prayer** (not just their own board cards)
-- Prayer **author's testimony always appears first**
-- Testimonies have their own social actions: **like, share, save (bookmark), flag** for admin review, and **comments**
-- New `moderate-testimony` edge function
-- New `testimonies` table with `testimony_likes`, `testimony_flags`, `testimony_comments` tables
-- `TestifyBack` component with 3D flip mechanic on `BoardCard`
-- `/testify` public search page
-- Admin gets a **Testimonies tab** to review flagged submissions
+### What's being built (4 distinct pieces):
 
 ---
 
-### 1. Database Migration
+### 1. Standalone TestimonyCard — Prayer link reference + "read more"
 
-**New tables:**
+**`src/pages/Testify.tsx`** — Redesign `TestimonyFlipCard` into `StandaloneTestimonyCard`:
 
-```sql
--- Core testimonies
-CREATE TABLE public.testimonies (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  prayer_id   uuid NOT NULL REFERENCES public.prayer_cards(id) ON DELETE CASCADE,
-  user_id     uuid NOT NULL,
-  body        text NOT NULL CHECK (char_length(body) <= 4000),
-  flagged     boolean NOT NULL DEFAULT false,
-  created_at  timestamptz NOT NULL DEFAULT now()
-);
+The current card flips to show the prayer. Instead:
+- **Text is the hero** — large `font-display` quote with generous leading, full width
+- `read more...` inline expansion with `AnimatePresence` for body > 500 chars (no flip needed for text)
+- **Prayer reference pill** always visible — linked to the original prayer: `→ "Prayer Title" · 4 testimonies` — this is a clickable `<Link to="/prayer/{prayer_id}">` that navigates to the public prayer page. Shows testimony count for that prayer (fetched in the same query).
+- **2.5D hover effect**: `whileHover={{ rotateX: 3, rotateY: -2, scale: 1.01, y: -3 }}` with `perspective: 1000px` on parent, multi-layer gold ambient box-shadow
+- Gold decorative `"` quote mark as background element (absolute, large, gold, low opacity)
+- Glass sheen overlay: subtle `linear-gradient` diagonal from `rgba(255,255,255,0.06)` to transparent
+- Author avatar + name + date in top row
+- **"See the Prayer 🙏"** remains but becomes a Sheet slide-in (not flip) showing full prayer text — cleaner UX
+- Footer: like (count), share (copy link), flag, comment count badge
 
--- Likes on testimonies
-CREATE TABLE public.testimony_likes (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  testimony_id  uuid NOT NULL REFERENCES public.testimonies(id) ON DELETE CASCADE,
-  user_id       uuid NOT NULL,
-  created_at    timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(testimony_id, user_id)
-);
-
--- Flags for admin review
-CREATE TABLE public.testimony_flags (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  testimony_id  uuid NOT NULL REFERENCES public.testimonies(id) ON DELETE CASCADE,
-  user_id       uuid NOT NULL,
-  reason        text,
-  created_at    timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(testimony_id, user_id)
-);
-
--- Comments on testimonies
-CREATE TABLE public.testimony_comments (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  testimony_id  uuid NOT NULL REFERENCES public.testimonies(id) ON DELETE CASCADE,
-  user_id       uuid NOT NULL,
-  body          text NOT NULL CHECK (char_length(body) <= 500),
-  created_at    timestamptz NOT NULL DEFAULT now()
-);
-```
-
-**RLS policies:**
-- `testimonies`: public SELECT (no flagged filter — flagged ones still show, just marked), auth INSERT (own user_id), auth DELETE (own), admin ALL
-- `testimony_likes`: public SELECT, auth INSERT/DELETE (own user_id), admin ALL
-- `testimony_flags`: auth INSERT (own), admin SELECT ALL
-- `testimony_comments`: public SELECT, auth INSERT (own), auth DELETE (own)
+**Fetch testimony count per prayer**: add a `testimony_counts` map by `prayer_id` in the main fetch — group testimonies by prayer_id client-side to get count, or use the already-loaded testimonies array.
 
 ---
 
-### 2. New Edge Function — `moderate-testimony`
+### 2. `/testify` — Add a Testify button with auth-redirect intent
 
-**File:** `supabase/functions/moderate-testimony/index.ts`
+In the `/testify` hero section, add a prominent **"Share Your Testimony 🕊️"** `Button`:
+- If `user` is logged in → opens a `Sheet` with the standalone testimony submission form (textarea + optional prayer picker + submit → `moderate-testimony` → insert)
+- If `user` is NOT logged in → save the intent to `sessionStorage` (`{ redirectAfter: '/testify', action: 'testify' }`), then `navigate('/auth')`
+- On `/auth` page, after successful login, check `sessionStorage` for a pending intent and redirect accordingly — the user lands back at `/testify` and the sheet opens automatically via a `?testify=1` query param
 
-Mirrors `moderate-prayer` structure using the Lovable AI gateway. Specialized system prompt:
-- APPROVE: genuine personal testimony of God answering prayer, faith journey, gratitude
-- REJECT: profanity, hate speech, content that denies God answered the prayer, evil themes, off-topic
-- Returns `{ approved: boolean, reason: string }`
-- Fail-open (if API unavailable, defaults to approved with a flag set)
-
----
-
-### 3. New Component — `TestifyBack`
-
-**File:** `src/components/board/TestifyBack.tsx`
-
-Props: `prayerId`, `prayerAuthorId`, `currentUserId`, `onFlipBack`
-
-Structure:
-- **Header**: "Did God answer your prayer? Testify! 🕊️"
-- **Textarea**: up to 4000 chars, real-time char counter
-- **Submit button**: calls `moderate-testimony` → on approved inserts to `testimonies`; on rejected shows inline error message
-- **Past testimonies list** at the bottom:
-  - Author's testimony always first (pinned with a subtle "Prayer Author" badge)
-  - Each entry = avatar + name chip only
-  - Clicking a chip expands that testimony inline with AnimatePresence
-  - Expanded testimony shows: body, date, like button (with count), share button (copies URL), bookmark button (saves testimony id to a local collection), flag button (inserts into `testimony_flags`)
-  - Below expanded testimony: mini comment thread (inline, collapsible)
-- **Back arrow** button to flip back
+**Auth redirect pattern**:
+- Pre-login: `sessionStorage.setItem('postLoginRedirect', '/testify?testify=1')`
+- In `Auth.tsx` after sign-in success: `const redirect = sessionStorage.getItem('postLoginRedirect'); navigate(redirect || '/');`
+- In `Testify.tsx`: `useEffect` checks `searchParams.get('testify') === '1'` and opens the sheet
 
 ---
 
-### 4. Update `BoardCard.tsx` — 3D Flip Mechanic
+### 3. Board `/board` — Testify button
 
-**`src/components/board/BoardCard.tsx`**
+In `src/pages/Board.tsx` header action row (next to "Add Prayer"):
+- Add `testifyOpen` state
+- Add `<Button>` with `Bird` or `Sparkles` icon: **"Testify 🕊️"**
+- Opens a `Sheet` from the right:
+  - Title: "Share a Testimony"
+  - Description: "Tell the story of how God moved — no prayer card required."
+  - Textarea (4000 chars) + char counter
+  - Optional: prayer picker (dropdown of user's own prayers) to optionally link to a prayer
+  - Submit → calls `moderate-testimony` edge function → inserts `{ user_id, body, prayer_id: null or selected }`
+  - Success toast + sheet close
+
+**DB**: `testimonies.prayer_id` is currently `NOT NULL`. Need a migration to make it nullable for standalone testimonies. This is the same migration flagged in the last plan summary.
+
+---
+
+### 4. AddPrayerModal — Immersive prayer input redesign
+
+**`src/components/AddPrayerModal.tsx`**:
+
+The modal becomes a **full-screen Dialog** on desktop (`max-w-2xl` → `max-w-3xl sm:max-w-4xl`) with the writing area as the dominant element.
 
 Changes:
-- Add `flipped` state
-- Wrap the card content in a perspective container + two faces (front/back) with `backfaceVisibility: hidden`
-- Add a "Testify 🕊️" button:
-  - Only shown when `isPublic` (status === "approved")
-  - In footer row for small/medium, in action area for large
-- `<TestifyBack>` mounts as the back face — receives `prayerId`, `prayerAuthorId`, `currentUserId`, `onFlipBack`
-- Animation: `motion.div` with `rotateY: 0 → 180` using spring transition
-
-The flip wrapper replaces the outer `motion.div` — the hover lift stays on a parent wrapper.
-
----
-
-### 5. New Page — `/testify`
-
-**File:** `src/pages/Testify.tsx`
-
-Layout:
-- Hero search bar (ilike query on `testimonies.body`, joined with `prayer_cards`)
-- Default view (no search): recent testimonies feed — most recent 20
-- Results: testimony-first flip cards
-  - **Front**: testimony excerpt (300 chars), author avatar + name, prayer title, timestamp, like/share/flag actions
-  - **Back**: full prayer card text, tags, scripture (flip on "See the Prayer 🙏" button)
-- Pagination: "Load more" button at bottom
-- Unauthenticated users can read; must sign in to submit or interact
+- **Dialog content**: wider (`max-w-3xl`), taller (`min-h-[85vh]` on desktop), two-column layout on `sm:` — left column = form, right column = live preview card (currently preview is below the textarea and takes up space)
+- **Prayer textarea**: dramatically larger — `rows={12}` minimum, `min-h-[280px]`, with:
+  - `font-display` (Playfair Display) for the actual prayer text — feels sacred, readable
+  - `text-lg leading-[1.9]` for generous breathing room
+  - Custom CSS: `box-shadow: inset 0 2px 12px hsl(42 75% 46% / 0.08)` (inner golden glow), `border: none`, `background: hsl(38 55% 99%)` (warmest cream)
+  - Glass sheen on focus: `focus-visible:ring-0 focus-visible:shadow-[inset_0_0_0_1.5px_hsl(42_75%_55%),inset_0_2px_16px_hsl(42_75%_46%_/_0.10)]`
+  - Placeholder text: `"Lord, I come before you today…"` (prayerful, not generic)
+  - Auto-grow height as user types (via a `useRef` + `onInput` height adjust trick)
+- **Title input**: styled to look like a section heading input — larger font (`text-xl`), minimal border, warm background
+- **Preview**: moved to right column (`hidden sm:block`) — no longer stacks below the textarea eating vertical space. On mobile it's replaced by a small style badge.
+- **Extended prayer / Scripture**: collapsed behind an `<Accordion>` or expandable chevron — not shown by default, declutters the primary writing experience
+- **Background upload**: similarly collapsed into an "Extras ↓" accordion
+- **Word counter**: small, floating in bottom-right corner of the textarea, not below it
+- **Overall feel**: the modal should feel like opening a prayer journal — warm cream background, no harsh borders, soft inner shadows, faith-adjacent typography
 
 ---
 
-### 6. Integrate Testify into `/prayers` public feed cards
+### Database migration needed
 
-Add a small "Testify" button to `PrayerCardItem` in `src/pages/Prayers.tsx` that opens a `Sheet` or `Dialog` with the `TestifyBack` component (non-flip version, since cards aren't flip-able there). Shows testimony count badge if testimonies exist.
-
----
-
-### 7. Admin Dashboard — Flagged Testimonies
-
-Add a **Testimonies** sub-tab inside the existing Moderation tab in `src/pages/Admin.tsx`:
-- Lists `testimony_flags` joined with `testimonies` and `profiles`
-- Admin can view the flagged testimony, see the reporter's reason, and delete the testimony
+```sql
+ALTER TABLE public.testimonies ALTER COLUMN prayer_id DROP NOT NULL;
+```
 
 ---
 
-### 8. App Router + SiteNav
+### Files to modify
 
-**`src/App.tsx`**: Add `<Route path="/testify" element={<Testify />} />` (public, no auth guard)
-
-**`src/components/SiteNav.tsx`**: Add `{ label: "Testify", href: "/testify" }` to `NAV_LINKS`
-
----
-
-### Files to create/modify
-
-| File | Action |
+| File | Change |
 |---|---|
-| `supabase/migrations/YYYYMMDD_testimonies.sql` | New — 4 tables + RLS |
-| `supabase/functions/moderate-testimony/index.ts` | New edge function |
-| `src/components/board/TestifyBack.tsx` | New component |
-| `src/components/board/BoardCard.tsx` | Add flip state + Testify button + back face |
-| `src/pages/Testify.tsx` | New search page |
-| `src/pages/Prayers.tsx` | Add Testify button + count to public feed cards |
-| `src/pages/Admin.tsx` | Add flagged testimonies sub-tab |
-| `src/App.tsx` | Add `/testify` route |
-| `src/components/SiteNav.tsx` | Add Testify nav link |
+| `supabase/migrations/...` | Make `testimonies.prayer_id` nullable |
+| `src/pages/Testify.tsx` | Replace `TestimonyFlipCard` with `StandaloneTestimonyCard` (2.5D, read more, prayer link pill, testimony count, Testify button + auth redirect) |
+| `src/pages/Board.tsx` | Add "Testify 🕊️" button + Sheet with standalone form |
+| `src/pages/Auth.tsx` | Read `sessionStorage` post-login redirect intent |
+| `src/components/AddPrayerModal.tsx` | Full redesign — wider dialog, dominant textarea, auto-grow, inner shadows, glass sheen, right-column preview, collapsed extras |
+| `src/integrations/supabase/types.ts` | Update `testimonies.prayer_id` to `string | null` |
 
 ---
 
-### Key UX rules enforced by implementation:
-- Author's testimony always first: query orders by `(user_id = prayerAuthorId) DESC, created_at ASC`
-- Testimonies visible on **public prayers only** — `TestifyBack` only mounts when `isPublic`
-- Testimony like/share/save/flag all live inside the expanded chip on the back face
-- Comments on a testimony are nested inside the expanded chip, collapsible
-- Share testimony: copies `${origin}/testify?t=${testimonyId}`
-- Flag is one-per-user (unique constraint), shows "Flagged" state after clicking
+### Technical details
+
+- `StandaloneTestimonyCard` counts other testimonies for the same prayer by grouping the already-fetched testimonies array by `prayer_id` — zero extra DB queries
+- Auth intent: `sessionStorage` key `'kp_post_login'` stores `{ path, action }` — cleared after use
+- Auto-grow textarea: `ref.style.height = 'auto'; ref.style.height = ref.scrollHeight + 'px'` on `onInput`
+- The 2.5D card uses `style={{ perspective: '1000px' }}` on wrapper and `whileHover` on the card `motion.div` — same pattern already used in `BoardCard`
