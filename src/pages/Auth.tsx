@@ -24,7 +24,11 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signin") {
+      if (mode === "forgot") {
+        const { error } = await resetPassword(email);
+        if (error) throw error;
+        setResetSent(true);
+      } else if (mode === "signin") {
         const { error } = await signIn(email, password);
         if (error) throw error;
         navigate("/prayers");
