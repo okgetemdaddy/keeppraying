@@ -124,6 +124,14 @@ export default function Board() {
       return (a.position || 0) - (b.position || 0);
     });
     setSaved(sorted as SavedPrayer[]);
+
+    // Fetch total prayers prayed by this user
+    const { count } = await supabase
+      .from("prayed_actions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    setTotalPrayed(count || 0);
+
     setLoading(false);
   }, [user]);
 
