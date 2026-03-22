@@ -366,17 +366,17 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
 
+      {/* ── Navigation ──────────────────────────────────────────────────── */}
+      <motion.div
+        initial={{ y: -60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <SiteNav transparent />
+      </motion.div>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Nav overlaid on top of hero */}
-        <motion.div
-          initial={{ y: -60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute top-0 left-0 right-0 z-50"
-        >
-          <SiteNav transparent />
-        </motion.div>
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden -mt-16">
         {/* Static parallax background image */}
         <motion.div style={{ y: bgY }} className="absolute inset-0 scale-110">
           <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
