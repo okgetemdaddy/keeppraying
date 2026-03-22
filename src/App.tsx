@@ -21,8 +21,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// 🔧 DEV MODE: Set to false to re-enable authentication
-const DEV_BYPASS_AUTH = true;
+const DEV_BYPASS_AUTH = false;
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (DEV_BYPASS_AUTH) return <>{children}</>;
