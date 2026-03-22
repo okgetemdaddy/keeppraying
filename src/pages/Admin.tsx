@@ -779,4 +779,47 @@ export default function Admin() {
   );
 }
 
+function TestimoniesAdminTab() {
+  const [flags, setFlags] = useState<{id:string;reason:string|null;created_at:string;testimony_id:string;user_id:string;testimonies:{body:string;prayer_id:string;flagged:boolean}|null}[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("testimony_flags").select("*, testimonies(body,prayer_id,flagged)").order("created_at",{ascending:false}).limit(50);
+    setFlags((data as typeof flags) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const deleteTestimony = async (testimonyId: string) => {
+    await supabase.from("testimonies").delete().eq("id", testimonyId);
+    toast({ title: "Testimony deleted" });
+    load();
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-display text-xl font-semibold">Flagged Testimonies ({flags.length})</h2>
+      <p className="text-sm text-muted-foreground">Testimonies flagged by users for review.</p>
+      {loading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> :
+        flags.length === 0 ? <p className="text-sm text-muted-foreground italic">No flagged testimonies 🙏</p> : (
+        <div className="space-y-3">
+          {flags.map(f => (
+            <div key={f.id} className="prayer-card p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString()}</span>
+                <Button size="sm" variant="destructive" className="rounded-xl text-xs h-7" onClick={() => deleteTestimony(f.testimony_id)}>
+                  <X className="w-3 h-3" /> Delete
+                </Button>
+              </div>
+              {f.reason && <p className="text-xs text-muted-foreground">Reason: {f.reason}</p>}
+              {f.testimonies && <p className="text-sm bg-muted/40 rounded-xl p-3 line-clamp-4">{f.testimonies.body}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
