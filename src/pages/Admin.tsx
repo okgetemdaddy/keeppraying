@@ -17,9 +17,11 @@ import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
+  Pencil, Save, XCircle,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
+import AIEnrichPanel from "@/components/AIEnrichPanel";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -81,6 +83,15 @@ export default function Admin() {
   const [savingPrayer, setSavingPrayer] = useState(false);
   const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
   const { toast } = useToast();
+  // AI Enrich — opened after a prayer card is first saved so we have a card ID
+  const [enrichCardId, setEnrichCardId] = useState<string | null>(null);
+  const [enrichCardText, setEnrichCardText] = useState("");
+  const [enrichCardExtended, setEnrichCardExtended] = useState<string | null>(null);
+  const [enrichOpen, setEnrichOpen] = useState(false);
+  // Verse editing
+  const [editingVerseId, setEditingVerseId] = useState<string | null>(null);
+  const [editingVerse, setEditingVerse] = useState<Partial<VerseSummary>>({});
+  const [savingVerse, setSavingVerse] = useState(false);
 
   const blogForm = useForm<BlogFormValues>({
     resolver: zodResolver(blogSchema),
@@ -198,7 +209,7 @@ export default function Admin() {
       const tagsArr = values.tags
         ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
         : [];
-      const { error } = await supabase.from("prayer_cards").insert({
+      const { data: newCard, error } = await supabase.from("prayer_cards").insert({
         title: values.title || null,
         prayer_text: values.prayer_text.trim(),
         extended_prayer: values.extended_prayer?.trim() || null,
@@ -208,16 +219,45 @@ export default function Admin() {
         created_by: user.id,
         source: "admin",
         status: "approved",
-      });
+      }).select("id").single();
       if (error) throw error;
       toast({ title: "Prayer card published! 🙏" });
       prayerForm.reset();
       setShowPrayerForm(false);
       load();
+      // Offer AI Enrich right after saving
+      if (newCard?.id) {
+        setEnrichCardId(newCard.id);
+        setEnrichCardText(values.prayer_text.trim());
+        setEnrichCardExtended(values.extended_prayer?.trim() || null);
+        setEnrichOpen(true);
+      }
     } catch (e) {
       toast({ title: "Failed to save prayer", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
     } finally {
       setSavingPrayer(false);
+    }
+  };
+
+  const saveVerseEdit = async () => {
+    if (!editingVerseId) return;
+    setSavingVerse(true);
+    try {
+      const { error } = await supabase.from("verse_summaries").update({
+        reference: editingVerse.reference,
+        verse_text: editingVerse.verse_text ?? null,
+        summary: editingVerse.summary ?? null,
+        exegesis: editingVerse.exegesis ?? null,
+      }).eq("id", editingVerseId);
+      if (error) throw error;
+      toast({ title: "Verse saved ✓" });
+      setEditingVerseId(null);
+      setEditingVerse({});
+      loadVerses(verseSearch);
+    } catch (e) {
+      toast({ title: "Save failed", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
+    } finally {
+      setSavingVerse(false);
     }
   };
 
@@ -249,6 +289,7 @@ export default function Admin() {
   ] as const;
 
   return (
+    <>
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm">
@@ -631,37 +672,106 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground italic">No verse summaries cached yet. They appear automatically when users hover over scripture references.</p>
             ) : (
               <div className="space-y-3">
-                {verseSummaries.map(v => (
-                  <div key={v.id} className="prayer-card p-4 space-y-2">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
-                        <BookMarked className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-xs font-semibold text-primary">{v.reference}</span>
-                      </span>
-                      <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
-                    </div>
-                    {v.summary && (
+                {verseSummaries.map(v => {
+                  const isEditing = editingVerseId === v.id;
+                  return (
+                    <div key={v.id} className="prayer-card p-4 space-y-3">
+                      {/* Header row */}
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        {isEditing ? (
+                          <Input
+                            value={editingVerse.reference ?? ""}
+                            onChange={e => setEditingVerse(p => ({ ...p, reference: e.target.value }))}
+                            className="rounded-xl text-sm font-semibold text-primary w-40"
+                            placeholder="Reference"
+                          />
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
+                            <BookMarked className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-xs font-semibold text-primary">{v.reference}</span>
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                          {isEditing ? (
+                            <>
+                              <Button size="sm" className="btn-gold rounded-xl gap-1.5 h-7 text-xs" onClick={saveVerseEdit} disabled={savingVerse}>
+                                {savingVerse ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}Save
+                              </Button>
+                              <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1" onClick={() => { setEditingVerseId(null); setEditingVerse({}); }}>
+                                <XCircle className="w-3.5 h-3.5" />Cancel
+                              </Button>
+                            </>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="rounded-xl h-7 text-xs gap-1" onClick={() => { setEditingVerseId(v.id); setEditingVerse({ reference: v.reference, verse_text: v.verse_text ?? "", summary: v.summary ?? "", exegesis: v.exegesis ?? "" }); }}>
+                              <Pencil className="w-3.5 h-3.5" />Edit
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Verse text */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Verse Text</p>
+                        {isEditing ? (
+                          <Textarea value={editingVerse.verse_text ?? ""} onChange={e => setEditingVerse(p => ({ ...p, verse_text: e.target.value }))} rows={2} className="rounded-xl text-sm resize-none" placeholder="Verse text…" />
+                        ) : (
+                          <p className="text-sm text-foreground/80 italic leading-relaxed">{v.verse_text || <span className="text-muted-foreground/50">—</span>}</p>
+                        )}
+                      </div>
+
+                      {/* Summary */}
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
-                        <p className="text-sm text-foreground/80 leading-relaxed">{v.summary}</p>
+                        {isEditing ? (
+                          <Textarea value={editingVerse.summary ?? ""} onChange={e => setEditingVerse(p => ({ ...p, summary: e.target.value }))} rows={3} className="rounded-xl text-sm resize-none" placeholder="Summary…" />
+                        ) : (
+                          <p className="text-sm text-foreground/80 leading-relaxed">{v.summary || <span className="text-muted-foreground/50">—</span>}</p>
+                        )}
                       </div>
-                    )}
-                    {v.exegesis && (
-                      <details className="group">
-                        <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
-                          <span>▶ View Exegesis</span>
-                        </summary>
-                        <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
-                      </details>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Exegesis */}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Exegesis</p>
+                        {isEditing ? (
+                          <Textarea value={editingVerse.exegesis ?? ""} onChange={e => setEditingVerse(p => ({ ...p, exegesis: e.target.value }))} rows={5} className="rounded-xl text-sm resize-none font-body" placeholder="In-depth exegesis…" />
+                        ) : (
+                          v.exegesis ? (
+                            <details className="group">
+                              <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
+                                <span>▶ View Exegesis</span>
+                              </summary>
+                              <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
+                            </details>
+                          ) : <span className="text-sm text-muted-foreground/50">—</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
         )}
       </div>
     </div>
+
+    {/* AI Enrich panel — opens after admin publishes a new prayer card */}
+    {enrichCardId && (
+      <AIEnrichPanel
+        open={enrichOpen}
+        onOpenChange={open => {
+          setEnrichOpen(open);
+          if (!open) { setEnrichCardId(null); setEnrichCardText(""); setEnrichCardExtended(null); }
+        }}
+        cardId={enrichCardId}
+        prayerText={enrichCardText}
+        extendedPrayer={enrichCardExtended}
+        existingTags={[]}
+        onApplied={() => { load(); setEnrichOpen(false); setEnrichCardId(null); }}
+      />
+    )}
+    </>
   );
 }
 
