@@ -719,7 +719,7 @@ export default function Prayers() {
         {!loading && cards.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20 space-y-5"
+            className="text-center py-20 space-y-8"
           >
             <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
               style={{ background: "hsl(42 80% 92%)" }}>
