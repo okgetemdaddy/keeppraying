@@ -1,60 +1,90 @@
 
-## Full Implementation Plan
+## Plan: Shared Nav, Sign Out, Fix "Get Started" Visibility & Prayers Spacing
 
-### Issue 1: Arrow not appearing
+### What's changing and why
 
-**Root cause**: `VerseLinkIntro` fires on mount (setTimeout 1800ms) but also reads `localStorage` flag — once the previous implementation ran, `verselink_intro_seen = "1"` is set permanently so the arrow never shows again for the same browser session.
+**1. Create `src/components/SiteNav.tsx`** — a shared navigation component extracted from `Index.tsx`. Every page gets the same full nav: logo, all four links (Prayers, PrayerAssist.ing, KeepFight.ing, KeepGrow.ing), and a session-aware right side.
 
-**Fix**: Replace mount-timeout with `useInView` from Framer Motion. The component watches for when the Lord's Prayer section scrolls into view. The draw animation delay of 1.5s simulates "reading time". Remove the localStorage block entirely — the animation is tied to scroll position and `viewport={{ once: true }}` handles the "only once per session" behavior cleanly.
+Right-side logic:
+- **Signed out**: "Get Started" gold button → `/auth`
+- **Signed in**: "My Board" ghost link + avatar/name dropdown with "Sign Out" option
 
-### Issue 2: Prayer creation flow redesign
+The nav starts frosted (`bg-card/80 backdrop-blur`) on non-hero pages by default, and supports an optional `transparent` prop (for pages with dark hero backgrounds like Index) plus an optional `rightSlot` prop for page-specific controls (Board's theme/arrange/playlist/add-prayer buttons).
 
-**Database migration needed:**
-1. Alter `prayer_cards` status constraint to allow `'private'`
-2. Add RLS: owner can SELECT their own prayers at any status
-3. Broaden UPDATE policy to cover `private` status too
+Mobile drawer shows all four nav links plus the signed-in/out CTA — no hover-only states.
 
-**`AddPrayerModal.tsx` changes:**
-- Remove all moderation logic on creation (no more `moderate-prayer` call)
-- Save with `status: 'private'`, `source: 'community'`
-- After insert, auto-insert into `user_saved_prayers` so it appears on board immediately
-- Toast: "Prayer saved to your board 🙏" with "View Board" action
-- Remove "submitted for review" copy throughout
+---
 
-**`Board.tsx` — `SortableCard` changes:**
-- Add `Public/Private` toggle Switch (from `@/components/ui/switch`)
-- When toggled ON: run moderation → if approved set `status: 'pending'`, if rejected stay private
-- When toggled OFF: set `status: 'private'`  
-- Only show toggle on cards where `card.created_by === user.id`
-- Add AI Enrich button that opens an `AIEnrichPanel`
+**2. Update `Index.tsx`**
+- Replace the inline `<motion.nav>` block with `<SiteNav transparent scrollBehavior />`.
+- Wrap the "Get Started" button inside `{!session && ...}` so it is hidden when signed in. The `SiteNav` component handles this internally, so Index just uses the component.
 
-**New `src/components/AIEnrichPanel.tsx`:**
-- Sheet component sliding from right
-- Calls `enrich-prayer` edge function with `prayer_text` + `extended_prayer`
-- Shows AI-suggested tags (checkboxes) and scripture verses (checkboxes rendered as VerseLinks)
-- "Apply Selected" updates the `prayer_cards` record and refreshes the board card
+---
 
-**New `supabase/functions/enrich-prayer/index.ts`:**
-- Takes `prayer_text`, `extended_prayer`
-- Uses tool calling with Gemini to return `{ tags: string[], verses: { ref: string, text: string }[] }`
-- Returns structured JSON
+**3. Update `Board.tsx`**
+- Replace the `<motion.header>` section (ArrowLeft + "My Prayer Board" text + right controls) with `<SiteNav rightSlot={<BoardControls />} dark />`.
+- The Board-specific controls (ThemeSelector, Arrange, Playlist, Add Prayer, Immersive toggle) move into a `<BoardControls />` fragment passed as `rightSlot`.
+- Board nav stays dark/translucent overlay style via `dark` prop.
 
-**Board `fetchSaved` query change:**
-- Must now also fetch cards where `created_by = user.id` AND `status = 'private'` — these won't appear via the join currently because only approved cards are RLS-readable. With the new SELECT policy for owners, the join will work automatically.
+---
+
+**4. Update `Prayers.tsx`**
+- Replace the `<header>` with `<SiteNav />`.
+- **Fix spacing**: The "PrayerAssist.ing" button in the current header has `gap-2` container. After moving to SiteNav this won't apply. But the hero section's "Try PrayerAssist.ing" CTA (line ~590–610 area) — need to check and add `gap-3` or `mt-2` between the description text and the button row so they aren't crammed.
+
+---
+
+**5. Update `PrayerAssist.tsx`**
+- Replace the `<header>` (ArrowLeft + Sparkles logo) with `<SiteNav />`.
+- The Sparkles + "PrayerAssist.ing" branding becomes part of the page body, not the nav, or can be kept as a subtitle in the nav via `rightSlot`.
+
+---
+
+**6. Update `Blog.tsx`**
+- Replace the two-link header with `<SiteNav />`.
+
+---
+
+**7. Update `WarRoom.tsx`**
+- Replace the ArrowLeft + verse + theme icons header with `<SiteNav dark />`.
+- The WarRoom theme icons (Moon/Flame/Sun/Leaf) move into a `rightSlot`.
+
+---
+
+### `SiteNav` component design (key details)
+
+```text
+Props:
+  transparent?   boolean  — start transparent, frosted on scroll (for Index hero)
+  dark?          boolean  — dark/translucent overlay style (for Board, WarRoom)
+  rightSlot?     ReactNode — page-specific right-side controls
+  scrollBehavior? boolean — enable scroll-based transparent→frosted transition
+
+Session-aware right side (built-in, no extra props needed):
+  Signed out  → "Get Started" gold pill button
+  Signed in   → "My Board" ghost link + UserMenu dropdown
+                UserMenu: avatar circle (initials fallback) → dropdown
+                  • My Board  (→ /board)
+                  • Sign Out  (calls signOut(), navigates to /)
+
+NAV_LINKS (same as Index):
+  Prayers | PrayerAssist.ing | KeepFight.ing | KeepGrow.ing
+```
+
+### Spacing fix on `/prayers`
+
+The "Try PrayerAssist.ing" area in the hero/filter section of `Prayers.tsx` — the container div wrapping the description paragraph and button needs its `gap` increased from `gap-2` to `gap-4`, and a `mt-1` added to the Button so there's visible breathing room.
+
+---
 
 ### Files changed
 
 | File | Change |
 |---|---|
-| `supabase/migrations/new` | Add `private` to status constraint; owner SELECT policy; broaden UPDATE policy |
-| `src/pages/Index.tsx` | Replace `VerseLinkIntro` mount-timeout with `useInView` scroll trigger |
-| `src/components/AddPrayerModal.tsx` | Strip moderation on create; save as `private`; auto-add to board; new toast CTA |
-| `src/pages/Board.tsx` | Add Public/Private switch + AI Enrich button to `SortableCard`; pass `user` and `onRefresh` props |
-| `src/components/AIEnrichPanel.tsx` (new) | Sheet: shows AI tag/verse suggestions with checkboxes; applies selected to card |
-| `supabase/functions/enrich-prayer/index.ts` (new) | Edge function: returns structured tag + verse suggestions via Gemini tool calling |
-
-### Clean-up (as requested)
-- Remove dead `moderating` state and `setModerating` calls from `AddPrayerModal` after stripping moderation
-- Remove `FAITH_KEYWORDS`/`extractTags` from `AddPrayerModal` (AI enrichment replaces it — tags will be applied post-creation via `AIEnrichPanel`)
-- Remove `SUPABASE_URL` const from `AddPrayerModal` (no more direct fetch calls)
-- Remove `[seen]` dep array pattern from `VerseLinkIntro` since localStorage is no longer used
+| `src/components/SiteNav.tsx` | **New** — shared nav with session awareness, sign out, rightSlot |
+| `src/pages/Index.tsx` | Replace inline nav with `<SiteNav transparent scrollBehavior />` |
+| `src/pages/Board.tsx` | Replace header with `<SiteNav dark rightSlot={boardControls} />` |
+| `src/pages/Prayers.tsx` | Replace header with `<SiteNav />`; fix spacing on PrayerAssist CTA |
+| `src/pages/PrayerAssist.tsx` | Replace header with `<SiteNav />` |
+| `src/pages/Blog.tsx` | Replace header with `<SiteNav />` |
+| `src/pages/WarRoom.tsx` | Replace header with `<SiteNav dark rightSlot={themeIcons} />` |
