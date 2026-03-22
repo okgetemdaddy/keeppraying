@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ interface SiteNavProps {
 }
 
 function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -77,6 +77,16 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
                   {user.email}
                 </p>
               )}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <ShieldCheck className="w-4 h-4 text-gold" />
+                  Admin Dashboard
+                </Link>
+              )}
               <Link
                 to="/board"
                 onClick={() => setOpen(false)}
@@ -103,7 +113,7 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
 export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(!transparent);
-  const { session, signOut } = useAuth();
+  const { session, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -227,6 +237,13 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
               <div className="pt-2 pb-1 space-y-2">
                 {session ? (
                   <>
+                    {isAdmin && (
+                      <Link to="/admin" onClick={() => setMobileOpen(false)}>
+                        <Button variant="outline" className="rounded-xl w-full gap-2">
+                          <ShieldCheck className="w-4 h-4 text-gold" /> Admin Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     <Link to="/board" onClick={() => setMobileOpen(false)}>
                       <Button variant="outline" className="rounded-xl w-full gap-2">
                         <LayoutDashboard className="w-4 h-4" /> My Board
