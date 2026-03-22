@@ -512,30 +512,15 @@ export default function Prayers() {
     <div className="min-h-screen" style={{ background: "linear-gradient(180deg, hsl(38 60% 97%) 0%, hsl(42 55% 96%) 35%, hsl(38 50% 98%) 100%)" }}>
 
       {/* ── Sticky nav ────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 border-b"
-        style={{ borderColor: "hsl(38 22% 88%)", background: "hsl(38 60% 98% / 0.92)", backdropFilter: "blur(14px)" }}>
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="font-display font-bold text-xl" style={{ color: "hsl(25 35% 14%)" }}>
-            Keep<span className="nav-pray-glow">Pray</span>.ing
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link to="/assistant">
-              <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs">
-                <Sparkles className="w-3.5 h-3.5" />PrayerAssist.ing
-              </Button>
-            </Link>
-            {user && (
-              <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs" onClick={() => setAddOpen(true)}>
-                <Plus className="w-3.5 h-3.5" />Add Prayer
-              </Button>
-            )}
-            {user
-              ? <Link to="/board"><Button size="sm" className="btn-gold rounded-xl text-xs">My Board</Button></Link>
-              : <Link to="/auth"><Button size="sm" className="btn-gold rounded-xl text-xs">Sign In</Button></Link>
-            }
-          </div>
-        </div>
-      </header>
+      <SiteNav
+        rightSlot={
+          user ? (
+            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs hidden sm:flex" onClick={() => setAddOpen(true)}>
+              <Plus className="w-3.5 h-3.5" />Add Prayer
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* ── Hero intro section ─────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-14 pb-10 sm:pt-20 sm:pb-14">
