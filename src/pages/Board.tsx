@@ -97,14 +97,24 @@ function DrawerPrayerCard({
           ))}
         </div>
       )}
-      <Button
-        size="sm"
-        variant="outline"
-        className="rounded-xl h-7 text-xs gap-1.5 w-full"
-        onClick={() => onAddToPlaylist(card.id)}
-      >
-        <ListPlus className="w-3.5 h-3.5" /> Add to Playlist
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-xl h-7 text-xs gap-1.5 flex-1"
+          onClick={() => onAddToPlaylist(card.id)}
+        >
+          <ListPlus className="w-3.5 h-3.5" /> Add to Playlist
+        </Button>
+        <Link to={`/prayer/${card.id}`}>
+          <Button
+            size="sm"
+            className="btn-gold rounded-xl h-7 text-xs gap-1.5"
+          >
+            Go to Prayer →
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }
