@@ -11,11 +11,15 @@ import Comments from "@/components/Comments";
 import VerseLink from "@/components/VerseLink";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { TestifyBack } from "@/components/board/TestifyBack";
 import {
   Heart, Bookmark, Search, Plus, Sparkles, ExternalLink,
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
-  Volume2, VolumeX, Loader2, Share2,
+  Volume2, VolumeX, Loader2, Share2, Bird,
 } from "lucide-react";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle,
+} from "@/components/ui/sheet";
 import { SiteNav } from "@/components/SiteNav";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
@@ -120,11 +124,15 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedFloat, setPrayedFloat] = useState(false);
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
+  const [testifyOpen, setTestifyOpen] = useState(false);
+  const [testimonyCount, setTestimonyCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
   useEffect(() => {
+    supabase.from("testimonies").select("id", { count: "exact", head: true }).eq("prayer_id", card.id)
+      .then(({ count }) => setTestimonyCount(count || 0));
     if (!userId) return;
     const checkInteractions = async () => {
       const [{ data: like }, { data: pray }, { data: save }] = await Promise.all([
@@ -460,7 +468,33 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                   >
                     <Bookmark className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
                   </motion.button>
+
+                  {/* Testify button */}
+                  <motion.button
+                    onClick={e => { e.stopPropagation(); setTestifyOpen(true); }}
+                    whileTap={{ scale: 0.85 }}
+                    className="flex items-center gap-1 p-1.5 rounded-lg transition-all hover:bg-accent/60"
+                    style={{ color: testimonyCount > 0 ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                    title="Testify — share how God answered this prayer"
+                  >
+                    <Bird className="w-3.5 h-3.5" />
+                    {testimonyCount > 0 && <span className="text-xs">{testimonyCount}</span>}
+                  </motion.button>
                 </div>
+
+                {/* Testify Sheet */}
+                <Sheet open={testifyOpen} onOpenChange={setTestifyOpen}>
+                  <SheetContent side="right" className="w-full sm:max-w-md p-0 overflow-hidden">
+                    <SheetHeader className="sr-only">
+                      <SheetTitle>Testify</SheetTitle>
+                    </SheetHeader>
+                    <TestifyBack
+                      prayerId={card.id}
+                      prayerAuthorId={card.created_by}
+                      onFlipBack={() => setTestifyOpen(false)}
+                    />
+                  </SheetContent>
+                </Sheet>
 
                 {/* Comments */}
                 <Comments prayerId={card.id} uploaderId={card.source === "community" ? (card.created_by ?? null) : null} />

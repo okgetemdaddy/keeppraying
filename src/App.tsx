@@ -18,6 +18,7 @@ import Admin from "./pages/Admin";
 import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Testify from "./pages/Testify";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+            <Route path="/testify" element={<Testify />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
