@@ -94,6 +94,7 @@ export default function Board() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
   const [immersive, setImmersive] = useState(false);
+  const [totalPrayed, setTotalPrayed] = useState(0);
 
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
 
