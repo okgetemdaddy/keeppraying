@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import AddPrayerModal from "@/components/AddPrayerModal";
 import Comments from "@/components/Comments";
 import VerseLink from "@/components/VerseLink";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
@@ -19,24 +20,6 @@ import { SiteNav } from "@/components/SiteNav";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
 
-// ─── Bible reference parser ───────────────────────────────────────────────────
-// Matches references like "John 3:16", "1 Corinthians 13:4-7", "Psalm 23", etc.
-const VERSE_REGEX = /\b((?:\d\s)?[A-Z][a-z]+(?:\s[A-Z][a-z]+)*)\s(\d+)(?::(\d+)(?:-(\d+))?)?\b/g;
-
-function renderWithVerseLinks(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let last = 0;
-  let match: RegExpExecArray | null;
-  VERSE_REGEX.lastIndex = 0;
-  while ((match = VERSE_REGEX.exec(text)) !== null) {
-    if (match.index > last) parts.push(text.slice(last, match.index));
-    const ref = match[0];
-    parts.push(<VerseLink key={`${ref}-${match.index}`} reference={ref} />);
-    last = match.index + ref.length;
-  }
-  if (last < text.length) parts.push(text.slice(last));
-  return parts;
-}
 
 // ─── Design tokens (tag colors by keyword) ───────────────────────────────────
 const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
@@ -565,7 +548,7 @@ export default function Prayers() {
           </motion.blockquote>
 
           <motion.p variants={fadeUp} className="text-xs font-medium" style={{ color: "hsl(42 65% 50%)" }}>
-            — Philippians 4:6–7
+            — {renderWithVerseLinks("Philippians 4:6-7")}
           </motion.p>
 
           {/* Decorative divider */}
@@ -718,7 +701,7 @@ export default function Prayers() {
         {!loading && cards.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20 space-y-5"
+            className="text-center py-20 space-y-8"
           >
             <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center"
               style={{ background: "hsl(42 80% 92%)" }}>
