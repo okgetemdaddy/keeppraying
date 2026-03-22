@@ -989,7 +989,7 @@ function PrayersAdminTab() {
       )}
     </div>
   );
-}
+function TestimoniesAdminTab() {
   const [flags, setFlags] = useState<{id:string;reason:string|null;created_at:string;testimony_id:string;user_id:string;testimonies:{body:string;prayer_id:string;flagged:boolean}|null}[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
