@@ -566,7 +566,7 @@ export default function Prayers() {
           </motion.blockquote>
 
           <motion.p variants={fadeUp} className="text-xs font-medium" style={{ color: "hsl(42 65% 50%)" }}>
-            — Philippians 4:6–7
+            — {renderWithVerseLinks("Philippians 4:6-7")}
           </motion.p>
 
           {/* Decorative divider */}
