@@ -81,7 +81,7 @@ export default function Admin() {
   const [showBlogForm, setShowBlogForm] = useState(false);
   const [showPrayerForm, setShowPrayerForm] = useState(false);
   const [savingPrayer, setSavingPrayer] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses">("moderation");
+  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies">("moderation");
   const { toast } = useToast();
   // AI Enrich — opened after a prayer card is first saved so we have a card ID
   const [enrichCardId, setEnrichCardId] = useState<string | null>(null);
