@@ -649,6 +649,9 @@ export default function Admin() {
         {/* ── TESTIMONIES TAB ── */}
         {activeTab === "testimonies" && <TestimoniesAdminTab />}
 
+        {/* ── PRAYERS TAB ── */}
+        {activeTab === "prayers" && <PrayersAdminTab />}
+
         {/* ── VERSES TAB ── */}
         {activeTab === "verses" && (
           <div className="space-y-4">
