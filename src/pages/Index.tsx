@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { motion, useScroll, useTransform, type Variants, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, useInView, type Variants, AnimatePresence } from "framer-motion";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
   Search, Menu, X, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
