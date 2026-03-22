@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Feather,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
