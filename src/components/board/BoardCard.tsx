@@ -12,7 +12,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   GripVertical, Heart, Pin, ChevronDown, ChevronUp, Sparkles,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
-  MoreHorizontal, Tag, Share2, Type, Shuffle, Check,
+  MoreHorizontal, Tag, Share2, Type, Shuffle, Check, ListPlus,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -75,6 +75,7 @@ interface BoardCardProps {
   onRemove: (id: string) => void;
   onRefresh: () => void;
   themeVars?: Record<string, string>;
+  onAddToPlaylist?: (prayerId: string) => void;
 }
 
 export function BoardCard({
@@ -86,6 +87,7 @@ export function BoardCard({
   onRemove,
   onRefresh,
   themeVars,
+  onAddToPlaylist,
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
@@ -347,6 +349,7 @@ export function BoardCard({
                 onRemove={onRemove} isOwner={isOwner} size={size}
                 onPickFont={pickFont} onPickRandomFont={pickRandomFont}
                 currentFont={pendingFont ?? card.text_style}
+                onAddToPlaylist={onAddToPlaylist}
               />
             </div>
           )}
@@ -541,6 +544,7 @@ export function BoardCard({
                 onRemove={onRemove} isOwner={isOwner} size={size}
                 onPickFont={pickFont} onPickRandomFont={pickRandomFont}
                 currentFont={pendingFont ?? card.text_style}
+                onAddToPlaylist={onAddToPlaylist}
               />
             </div>
           </div>
@@ -601,12 +605,13 @@ interface ActionButtonsProps {
   onPickFont: (family: string) => void;
   onPickRandomFont: () => void;
   currentFont: string | null | undefined;
+  onAddToPlaylist?: (prayerId: string) => void;
 }
 
 function ActionButtons({
   item, accentColor, textColor,
   onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
-  onPickFont, onPickRandomFont, currentFont,
+  onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
 }: ActionButtonsProps) {
   return (
     <>
@@ -660,6 +665,19 @@ function ActionButtons({
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
 
+          {/* Add to playlist */}
+          {onAddToPlaylist && item.prayer_cards && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={() => onAddToPlaylist(item.prayer_cards!.id)}
+              >
+                <ListPlus className="w-3.5 h-3.5" /> Add to Playlist
+              </DropdownMenuItem>
+            </>
+          )}
+
           {/* Font picker — owner only */}
           {isOwner && (
             <>
@@ -669,7 +687,6 @@ function ActionButtons({
                   <Type className="w-3.5 h-3.5" /> Font
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-52 rounded-xl max-h-72 overflow-y-auto">
-                  {/* Random pick */}
                   <DropdownMenuItem
                     className="text-xs gap-2 font-medium"
                     onClick={onPickRandomFont}

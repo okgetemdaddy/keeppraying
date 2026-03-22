@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import AddPrayerModal from "@/components/AddPrayerModal";
 import { BoardCard } from "@/components/board/BoardCard";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
@@ -26,8 +27,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  PlusCircle, BookOpen, ListMusic,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, Link as LinkIcon,
+  PlusCircle, BookOpen, ListMusic, Heart,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -38,14 +39,9 @@ type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
   card_size?: CardSize;
 };
 
-// Sortable wrapper that passes drag handle + theme vars down to BoardCard
+// ── Sortable wrapper ──────────────────────────────────────────────────────────
 function SortableBoardCard({
-  item,
-  userId,
-  onUpdate,
-  onRemove,
-  onRefresh,
-  themeVars,
+  item, userId, onUpdate, onRemove, onRefresh, themeVars, onAddToPlaylist,
 }: {
   item: SavedPrayer;
   userId: string | undefined;
@@ -53,15 +49,16 @@ function SortableBoardCard({
   onRemove: (id: string) => void;
   onRefresh: () => void;
   themeVars: Record<string, string>;
+  onAddToPlaylist: (prayerId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-  const size = item.card_size || "medium";
+  const size = (item.card_size as CardSize) || "medium";
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: transition || "transform 200ms cubic-bezier(0.2,0,0,1)",
     zIndex: isDragging ? 50 : undefined,
-    gridColumn: size === "large" ? "span 2" : size === "small" ? "span 1" : "span 1",
+    gridColumn: size === "large" ? "span 2" : "span 1",
   };
 
   return (
@@ -75,11 +72,44 @@ function SortableBoardCard({
         onRemove={onRemove}
         onRefresh={onRefresh}
         themeVars={themeVars}
+        onAddToPlaylist={onAddToPlaylist}
       />
     </div>
   );
 }
 
+// ── Mini prayer card used inside the stats drawer ─────────────────────────────
+function DrawerPrayerCard({
+  card,
+  onAddToPlaylist,
+}: {
+  card: PrayerCard;
+  onAddToPlaylist: (id: string) => void;
+}) {
+  return (
+    <div className="prayer-card p-4 space-y-2">
+      {card.title && <h4 className="font-display font-semibold text-sm leading-snug">{card.title}</h4>}
+      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{card.prayer_text}</p>
+      {card.tags && card.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {card.tags.slice(0, 4).map(t => (
+            <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary"># {t}</span>
+          ))}
+        </div>
+      )}
+      <Button
+        size="sm"
+        variant="outline"
+        className="rounded-xl h-7 text-xs gap-1.5 w-full"
+        onClick={() => onAddToPlaylist(card.id)}
+      >
+        <ListPlus className="w-3.5 h-3.5" /> Add to Playlist
+      </Button>
+    </div>
+  );
+}
+
+// ── Main Board component ──────────────────────────────────────────────────────
 export default function Board() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -89,19 +119,27 @@ export default function Board() {
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+
+  // Stats
+  const [totalPrayed, setTotalPrayed] = useState(0);
+  const [totalLiked, setTotalLiked] = useState(0);
+
+  // Stats drawer
+  const [statsDrawer, setStatsDrawer] = useState<"prayed" | "liked" | null>(null);
+  const [drawerCards, setDrawerCards] = useState<PrayerCard[]>([]);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+
+  // Playlist builder
   const [playlistOpen, setPlaylistOpen] = useState(false);
   const [playlistName, setPlaylistName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
+
   const [immersive, setImmersive] = useState(false);
-  const [totalPrayed, setTotalPrayed] = useState(0);
 
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
-
-  // Apply theme CSS variables on the board element
   const themeVars = theme.vars;
 
-  // Sensors — include TouchSensor for mobile
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
@@ -111,12 +149,22 @@ export default function Board() {
   const fetchSaved = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("user_saved_prayers")
-      .select("*, prayer_cards(*)")
-      .eq("user_id", user.id)
-      .order("position", { ascending: true })
-      .order("created_at", { ascending: false });
+    const [{ data }, { count: prayedCount }, { count: likedCount }] = await Promise.all([
+      supabase
+        .from("user_saved_prayers")
+        .select("*, prayer_cards(*)")
+        .eq("user_id", user.id)
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("prayed_actions")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("likes")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
+    ]);
 
     const sorted = (data || []).sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
@@ -124,18 +172,58 @@ export default function Board() {
       return (a.position || 0) - (b.position || 0);
     });
     setSaved(sorted as SavedPrayer[]);
-
-    // Fetch total prayers prayed by this user
-    const { count } = await supabase
-      .from("prayed_actions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    setTotalPrayed(count || 0);
-
+    setTotalPrayed(prayedCount || 0);
+    setTotalLiked(likedCount || 0);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);
+
+  // Open stats drawer and load the relevant prayers
+  const openStatsDrawer = async (type: "prayed" | "liked") => {
+    if (!user) return;
+    setStatsDrawer(type);
+    setDrawerLoading(true);
+    setDrawerCards([]);
+    try {
+      if (type === "prayed") {
+        const { data } = await supabase
+          .from("prayed_actions")
+          .select("prayer_id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        const ids = (data || []).map(r => r.prayer_id);
+        if (ids.length > 0) {
+          const { data: cards } = await supabase
+            .from("prayer_cards")
+            .select("*")
+            .in("id", ids);
+          // Keep the order from prayed_actions
+          const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
+          setDrawerCards(ids.map(id => map[id]).filter(Boolean));
+        }
+      } else {
+        const { data } = await supabase
+          .from("likes")
+          .select("prayer_id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        const ids = (data || []).map(r => r.prayer_id);
+        if (ids.length > 0) {
+          const { data: cards } = await supabase
+            .from("prayer_cards")
+            .select("*")
+            .in("id", ids);
+          const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
+          setDrawerCards(ids.map(id => map[id]).filter(Boolean));
+        }
+      }
+    } finally {
+      setDrawerLoading(false);
+    }
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -179,11 +267,29 @@ export default function Board() {
     toast({ title: "Board arranged ✨" });
   };
 
+  // Opens the playlist builder, optionally pre-selecting a prayer card ID
+  const openPlaylist = (prayerId?: string) => {
+    if (prayerId) {
+      // Find the user_saved_prayers row whose prayer_id matches
+      const match = saved.find(s => s.prayer_cards?.id === prayerId || s.prayer_id === prayerId);
+      setSelectedIds(match ? [match.id] : []);
+    } else {
+      setSelectedIds([]);
+    }
+    setPlaylistName("");
+    setPlaylistOpen(true);
+  };
+
   const savePlaylist = async () => {
     if (!playlistName.trim() || selectedIds.length === 0 || !user) return;
     setSavingPlaylist(true);
+    // Resolve prayer_ids from saved_prayer ids OR direct prayer_ids if from drawer
+    const prayerIds = selectedIds.map(id => {
+      const s = saved.find(s => s.id === id);
+      return s ? s.prayer_id : id;
+    });
     const { error } = await supabase.from("prayer_playlists").insert({
-      user_id: user.id, name: playlistName.trim(), prayer_ids: selectedIds,
+      user_id: user.id, name: playlistName.trim(), prayer_ids: prayerIds,
     });
     if (error) { toast({ title: "Failed to save playlist", variant: "destructive" }); }
     else {
@@ -193,7 +299,6 @@ export default function Board() {
     setSavingPlaylist(false);
   };
 
-  // Redirect to auth if not logged in
   useEffect(() => {
     if (!user && prefsLoaded) navigate("/auth", { replace: true });
   }, [user, prefsLoaded, navigate]);
@@ -202,19 +307,21 @@ export default function Board() {
 
   const pinned = saved.filter(s => s.pinned);
   const unpinned = saved.filter(s => !s.pinned);
-
-  const bgTransitionStyle = {
-    transition: "background 0.8s ease",
-  };
+  const textColor = themeVars["--board-text"] || "rgba(255,255,255,0.85)";
 
   return (
     <div
-      className={`relative min-h-screen overflow-hidden ${theme.bgClass}`}
-      style={{ ...bgTransitionStyle, ...Object.fromEntries(Object.entries(themeVars)) }}
+      className="relative min-h-screen overflow-hidden"
+      style={{
+        ...Object.fromEntries(Object.entries(themeVars)),
+        transition: "background 0.8s ease",
+        background: theme.bgClass ? undefined : undefined,
+      }}
+      data-theme-bg
     >
+      <div className={`absolute inset-0 ${theme.bgClass}`} />
       {/* Animated canvas background */}
       <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
-
       {/* Overlay tint */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 
@@ -249,7 +356,7 @@ export default function Board() {
                     size="sm"
                     variant="ghost"
                     className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                    onClick={() => setPlaylistOpen(true)}
+                    onClick={() => openPlaylist()}
                   >
                     <ListMusic className="w-4 h-4" />
                     <span className="hidden sm:inline">Playlist</span>
@@ -278,21 +385,51 @@ export default function Board() {
 
       {/* Main content */}
       <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
-        {/* Prayed count stat */}
-        {!loading && totalPrayed > 0 && (
+
+        {/* ── Stats strip ───────────────────────────────────────────────── */}
+        {!loading && (totalPrayed > 0 || totalLiked > 0) && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-2 mb-6 px-4 py-2.5 rounded-2xl w-fit"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+            className="flex flex-wrap items-center gap-2 mb-6"
           >
-            <span className="text-lg">🙏</span>
-            <span className="text-sm font-medium" style={{ color: themeVars["--board-text"] || "rgba(255,255,255,0.85)" }}>
-              You've prayed <strong>{totalPrayed.toLocaleString()}</strong> {totalPrayed === 1 ? "time" : "times"}
-            </span>
+            {totalPrayed > 0 && (
+              <button
+                onClick={() => openStatsDrawer("prayed")}
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                style={{
+                  background: "rgba(255,255,255,0.10)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  cursor: "pointer",
+                }}
+              >
+                <span className="text-base">🙏</span>
+                <span className="text-xs font-medium" style={{ color: textColor }}>
+                  You've prayed <strong>{totalPrayed.toLocaleString()}</strong> {totalPrayed === 1 ? "time" : "times"}
+                </span>
+              </button>
+            )}
+            {totalLiked > 0 && (
+              <button
+                onClick={() => openStatsDrawer("liked")}
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl transition-all hover:scale-105 active:scale-95"
+                style={{
+                  background: "rgba(255,255,255,0.10)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  cursor: "pointer",
+                }}
+              >
+                <Heart className="w-4 h-4 fill-red-400 text-red-400" />
+                <span className="text-xs font-medium" style={{ color: textColor }}>
+                  <strong>{totalLiked.toLocaleString()}</strong> {totalLiked === 1 ? "prayer" : "prayers"} hearted
+                </span>
+              </button>
+            )}
           </motion.div>
         )}
+
+        {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -304,7 +441,6 @@ export default function Board() {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <div className="space-y-6">
-              {/* Pinned section */}
               {pinned.length > 0 && (
                 <section>
                   <p className="text-xs font-medium mb-3 flex items-center gap-1.5 text-white/50">
@@ -317,30 +453,27 @@ export default function Board() {
                           key={item.id} item={item} userId={user?.id}
                           onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved}
                           themeVars={themeVars}
+                          onAddToPlaylist={id => openPlaylist(id)}
                         />
                       ))}
                     </div>
                   </SortableContext>
                 </section>
               )}
-
-              {/* All saved */}
               {unpinned.length > 0 && (
                 <section>
                   {pinned.length > 0 && (
                     <p className="text-xs font-medium mb-3 text-white/50">All saved prayers</p>
                   )}
                   <SortableContext items={unpinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <motion.div
-                      layout
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-                    >
+                    <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <AnimatePresence>
                         {unpinned.map(item => (
                           <SortableBoardCard
                             key={item.id} item={item} userId={user?.id}
                             onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved}
                             themeVars={themeVars}
+                            onAddToPlaylist={id => openPlaylist(id)}
                           />
                         ))}
                       </AnimatePresence>
@@ -353,7 +486,7 @@ export default function Board() {
         )}
       </div>
 
-      {/* Floating Add Prayer FAB (mobile) */}
+      {/* FAB */}
       {saved.length > 0 && (
         <motion.button
           animate={{ scale: [1, 1.05, 1] }}
@@ -372,27 +505,110 @@ export default function Board() {
         onChange={(updates) => savePrefs(updates as { sound_id?: string | null; sound_volume?: number })}
       />
 
-      {/* Playlist builder */}
+      {/* ── Stats drawer (prayed / liked) ─────────────────────────────── */}
+      <Sheet open={!!statsDrawer} onOpenChange={o => !o && setStatsDrawer(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader className="mb-5">
+            <SheetTitle className="font-display flex items-center gap-2">
+              {statsDrawer === "prayed"
+                ? <><span className="text-xl">🙏</span> Prayers I've Prayed</>
+                : <><Heart className="w-5 h-5 fill-red-400 text-red-400" /> Hearted Prayers</>}
+            </SheetTitle>
+            <SheetDescription>
+              {statsDrawer === "prayed"
+                ? "Every prayer you've marked as prayed."
+                : "Prayers you've liked from the community."}
+            </SheetDescription>
+          </SheetHeader>
+
+          {drawerLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-7 h-7 animate-spin text-primary" />
+            </div>
+          ) : drawerCards.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-12">Nothing here yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {drawerCards.map(card => (
+                <DrawerPrayerCard
+                  key={card.id}
+                  card={card}
+                  onAddToPlaylist={prayerId => {
+                    setStatsDrawer(null);
+                    // Use prayer_id directly since these may not be on the board
+                    setSelectedIds([prayerId]);
+                    setPlaylistName("");
+                    setPlaylistOpen(true);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* ── Playlist builder dialog ───────────────────────────────────── */}
       <Dialog open={playlistOpen} onOpenChange={setPlaylistOpen}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Create Playlist</DialogTitle>
-            <DialogDescription>Select prayers to group into a playlist for the War Room.</DialogDescription>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <ListMusic className="w-5 h-5 text-primary" /> Create Playlist
+            </DialogTitle>
+            <DialogDescription>
+              Name your playlist and choose which prayers to include.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Input placeholder="Playlist name…" value={playlistName} onChange={e => setPlaylistName(e.target.value)} className="rounded-xl" />
-            <div className="space-y-2">
-              {saved.map(item => item.prayer_cards && (
-                <label key={item.id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedIds.includes(item.id) ? "border-primary bg-accent" : "border-border hover:bg-muted/50"}`}>
-                  <input type="checkbox" className="mt-0.5" checked={selectedIds.includes(item.id)}
-                    onChange={e => setSelectedIds(prev => e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id))} />
-                  <p className="text-sm font-medium truncate">{item.prayer_cards.title || item.prayer_cards.prayer_text.slice(0, 40) + "…"}</p>
-                </label>
-              ))}
-            </div>
-            <Button onClick={savePlaylist} disabled={!playlistName.trim() || selectedIds.length === 0 || savingPlaylist} className="btn-gold rounded-xl w-full gap-2">
-              {savingPlaylist ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListMusic className="w-4 h-4" />}
-              Save Playlist ({selectedIds.length} prayers)
+            <Input
+              placeholder="Playlist name…"
+              value={playlistName}
+              onChange={e => setPlaylistName(e.target.value)}
+              className="rounded-xl"
+            />
+            {/* Saved board prayers */}
+            {saved.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">From your board</p>
+                <div className="space-y-2">
+                  {saved.map(item => item.prayer_cards && (
+                    <label
+                      key={item.id}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        selectedIds.includes(item.id) ? "border-primary bg-accent" : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 accent-primary"
+                        checked={selectedIds.includes(item.id)}
+                        onChange={e => setSelectedIds(prev =>
+                          e.target.checked ? [...prev, item.id] : prev.filter(id => id !== item.id)
+                        )}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {item.prayer_cards.title || item.prayer_cards.prayer_text.slice(0, 50) + "…"}
+                        </p>
+                        {item.prayer_cards.tags && item.prayer_cards.tags.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {item.prayer_cards.tags.slice(0, 3).map(t => `#${t}`).join(" ")}
+                          </p>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            <Button
+              onClick={savePlaylist}
+              disabled={!playlistName.trim() || selectedIds.length === 0 || savingPlaylist}
+              className="btn-gold rounded-xl w-full gap-2"
+            >
+              {savingPlaylist
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <ListMusic className="w-4 h-4" />}
+              Save Playlist ({selectedIds.length} {selectedIds.length === 1 ? "prayer" : "prayers"})
             </Button>
           </div>
         </DialogContent>
@@ -403,7 +619,7 @@ export default function Board() {
   );
 }
 
-// Empty state component
+// ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record<string, string> }) {
   const textColor = themeVars["--board-text"] || "hsl(var(--foreground))";
   return (
@@ -419,7 +635,6 @@ function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record
       >
         <BookOpen className="w-16 h-16 mx-auto" style={{ color: themeVars["--board-accent"] || "hsl(var(--primary))", opacity: 0.6 }} />
       </motion.div>
-
       <div className="space-y-2">
         <h2 className="font-display text-2xl font-bold" style={{ color: textColor }}>
           Your sacred space awaits
@@ -431,7 +646,6 @@ function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record
           Write a prayer or save prayers from the collection to build your personal prayer board.
         </p>
       </div>
-
       <div className="flex flex-wrap gap-3 justify-center">
         <Link to="/prayers">
           <Button className="rounded-xl gap-2" style={{ background: themeVars["--board-accent"] || "" }}>
