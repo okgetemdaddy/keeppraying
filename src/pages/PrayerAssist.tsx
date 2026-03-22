@@ -192,7 +192,7 @@ export default function PrayerAssist() {
                   </button>
                 ))}
               </div>
-              <p className="verse-text text-sm">"Ask and it will be given to you…" — Matthew 7:7</p>
+              <p className="verse-text text-sm">"Ask and it will be given to you…" — <VerseLink reference="Matthew 7:7" /></p>
             </div>
           )}
 
