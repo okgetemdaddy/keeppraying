@@ -9,6 +9,7 @@ import type { Database } from "@/integrations/supabase/types";
 import AddPrayerModal from "@/components/AddPrayerModal";
 import Comments from "@/components/Comments";
 import VerseLink from "@/components/VerseLink";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Heart, HandMetal, Bookmark, Search, Plus, Sparkles, ExternalLink,
