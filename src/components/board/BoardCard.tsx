@@ -576,25 +576,41 @@ export function BoardCard({
           </div>
         )}
 
-        {/* ── Large card: visibility toggle ────────────────────────────── */}
-        {!actionsInFooter && isOwner && (
-          <div className="flex items-center gap-1.5 pt-2 border-t" style={{ borderColor: `${textColor}12` }}>
-            {togglingPublic ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
-            ) : isPrivate ? (
-              <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
-            ) : (
-              <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+        {/* ── Large card: visibility toggle + testify ──────────────────── */}
+        {!actionsInFooter && (
+          <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: `${textColor}12` }}>
+            {isOwner && (
+              <>
+                {togglingPublic ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
+                ) : isPrivate ? (
+                  <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
+                ) : (
+                  <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                )}
+                <span className="text-xs" style={{ color: `${textColor}55` }}>
+                  {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
+                </span>
+                <Switch
+                  checked={!isPrivate}
+                  onCheckedChange={handlePublicToggle}
+                  disabled={togglingPublic || card.status === "approved"}
+                  className="scale-75 origin-left"
+                />
+              </>
             )}
-            <span className="text-xs" style={{ color: `${textColor}55` }}>
-              {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
-            </span>
-            <Switch
-              checked={!isPrivate}
-              onCheckedChange={handlePublicToggle}
-              disabled={togglingPublic || card.status === "approved"}
-              className="scale-75 origin-left"
-            />
+            <div className="flex-1" />
+            {isPublic && (
+              <button
+                onClick={() => setFlipped(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105"
+                style={{ background: `${accentColor}15`, color: accentColor }}
+                title="Share your testimony"
+              >
+                <Bird className="w-3.5 h-3.5" />
+                Testify 🕊️
+              </button>
+            )}
           </div>
         )}
       </div>
