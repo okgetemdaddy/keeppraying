@@ -7,12 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import Comments from "@/components/Comments";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
+import { TestifyBack } from "@/components/board/TestifyBack";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
   GripVertical, Heart, Pin, ChevronDown, ChevronUp, Sparkles,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
-  MoreHorizontal, Tag, Share2, Type, Shuffle, Check, ListPlus,
+  MoreHorizontal, Tag, Share2, Type, Shuffle, Check, ListPlus, Bird,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
