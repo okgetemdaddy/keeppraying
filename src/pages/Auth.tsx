@@ -63,7 +63,7 @@ export default function Auth() {
           <p className="text-white/80 text-lg max-w-xs font-display italic leading-relaxed">
             "But when you pray, go into your room, close the door and pray to your Father, who is unseen."
           </p>
-          <p className="text-white/60 mt-3 text-sm">— Matthew 6:6</p>
+          <p className="text-white/60 mt-3 text-sm">— <VerseLink reference="Matthew 6:6" className="[&_.verse-text]:text-white/60 [&>span]:bg-white/10 [&>span]:border-white/20" /></p>
         </div>
       </div>
 
