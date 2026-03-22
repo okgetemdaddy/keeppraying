@@ -22,13 +22,13 @@ interface SiteNavProps {
   rightSlot?: ReactNode;
 }
 
-function UserMenu() {
+function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name
+    ? (user.user_metadata.full_name as string)
         .split(" ")
         .map((n: string) => n[0])
         .join("")
@@ -42,6 +42,12 @@ function UserMenu() {
     navigate("/");
   };
 
+  const chevronColor = dark
+    ? "text-white/50"
+    : scrolled
+    ? "text-foreground/50"
+    : "text-white/50";
+
   return (
     <div className="relative">
       <button
@@ -52,20 +58,19 @@ function UserMenu() {
         <div className="w-7 h-7 rounded-full bg-gradient-gold flex items-center justify-center text-white text-xs font-bold select-none shadow-sm">
           {initials}
         </div>
-        <ChevronDown className={cn("w-3.5 h-3.5 text-foreground/50 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", chevronColor, open && "rotate-180")} />
       </button>
 
       <AnimatePresence>
         {open && (
           <>
-            {/* Backdrop */}
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
             <motion.div
               initial={{ opacity: 0, y: -6, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.96 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 top-full mt-2 w-48 z-50 rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-card overflow-hidden py-1"
+              className="absolute right-0 top-full mt-2 w-52 z-50 rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-card overflow-hidden py-1"
             >
               {user?.email && (
                 <p className="px-4 py-2 text-xs text-muted-foreground truncate border-b border-border mb-1">
@@ -98,7 +103,8 @@ function UserMenu() {
 export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(!transparent);
-  const { session } = useAuth();
+  const { session, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!transparent) { setScrolled(true); return; }
@@ -108,29 +114,34 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
     return () => window.removeEventListener("scroll", onScroll);
   }, [transparent]);
 
-  // Dark mode: always use white text; light mode: adapt to scroll
-  const logoBase = dark
+  const handleMobileSignOut = async () => {
+    setMobileOpen(false);
+    await signOut();
+    navigate("/");
+  };
+
+  const logoColor = dark
     ? "text-white"
     : scrolled
     ? "text-foreground"
     : "text-white";
 
-  const linkBase = dark
+  const linkClass = dark
     ? "text-white/70 hover:text-white hover:bg-white/10"
     : scrolled
     ? "text-foreground/70 hover:text-foreground hover:bg-muted"
     : "text-white/75 hover:text-white hover:bg-white/10";
 
-  const hamburgerBase = dark
+  const hamburgerClass = dark
     ? "text-white hover:bg-white/10"
     : scrolled
     ? "text-foreground hover:bg-muted"
     : "text-white hover:bg-white/10";
 
   const navBg = dark
-    ? "bg-black/25 border-white/10 backdrop-blur-xl"
+    ? "bg-black/25 backdrop-blur-xl border-white/10"
     : scrolled
-    ? "bg-card/80 backdrop-blur-xl border-b border-border shadow-card"
+    ? "bg-card/80 backdrop-blur-xl border-border shadow-card"
     : "bg-transparent border-transparent";
 
   return (
@@ -139,13 +150,13 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
         {/* Logo */}
         <Link to="/" className="flex-shrink-0">
           <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
-            <span className={cn("transition-colors duration-300", logoBase)}>Keep</span>
+            <span className={cn("transition-colors duration-300", logoColor)}>Keep</span>
             <span className="nav-pray-glow">Pray</span>
-            <span className={cn("transition-colors duration-300", logoBase)}>.ing</span>
+            <span className={cn("transition-colors duration-300", logoColor)}>.ing</span>
           </span>
         </Link>
 
-        {/* Desktop links */}
+        {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map(({ label, href }) => (
             <Link
@@ -153,7 +164,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
               to={href}
               className={cn(
                 "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group",
-                linkBase
+                linkClass
               )}
             >
               {label}
@@ -164,12 +175,13 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          {/* Page-specific controls */}
           {rightSlot}
 
-          {/* Session-aware CTA */}
+          {/* Auth CTA — desktop only */}
           <div className="hidden md:flex items-center gap-2">
             {session ? (
-              <UserMenu />
+              <UserMenu dark={dark} scrolled={scrolled} />
             ) : (
               <Link to="/auth">
                 <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
@@ -182,7 +194,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
           {/* Hamburger */}
           <button
             onClick={() => setMobileOpen(v => !v)}
-            className={cn("md:hidden p-2 rounded-xl transition-colors", hamburgerBase)}
+            className={cn("md:hidden p-2 rounded-xl transition-colors", hamburgerClass)}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -211,6 +223,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
                   {label}
                 </Link>
               ))}
+
               <div className="pt-2 pb-1 space-y-2">
                 {session ? (
                   <>
@@ -222,16 +235,10 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
                     <Button
                       variant="ghost"
                       className="rounded-xl w-full gap-2 text-destructive hover:bg-destructive/10"
-                      onClick={async () => {
-                        setMobileOpen(false);
-                        const { useAuth: ua } = await import("@/contexts/AuthContext");
-                        // Use the hook result already available in parent scope:
-                        // We'll call signOut via the imported context
-                      }}
+                      onClick={handleMobileSignOut}
                     >
-                      {/* Rendered via MobileSignOut below */}
+                      <LogOut className="w-4 h-4" /> Sign Out
                     </Button>
-                    <MobileSignOut onClose={() => setMobileOpen(false)} />
                   </>
                 ) : (
                   <Link to="/auth" onClick={() => setMobileOpen(false)}>
