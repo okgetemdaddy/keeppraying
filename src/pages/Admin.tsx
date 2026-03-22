@@ -286,6 +286,7 @@ export default function Admin() {
     { id: "verses", label: "Verses", icon: BookMarked },
     { id: "faq", label: "FAQ Report", icon: FileText },
     { id: "insights", label: "AI Insights", icon: Sparkles },
+    { id: "testimonies", label: "Testimonies", icon: ScrollText },
   ] as const;
 
   return (
