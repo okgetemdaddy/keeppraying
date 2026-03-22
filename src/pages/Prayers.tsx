@@ -238,14 +238,26 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           <SourceBadge source={(card as PrayerCard).source} status={card.status} />
         </div>
 
-        {/* Prayer text — click anywhere to collapse card chrome */}
-        <div
-          className="cursor-pointer select-none"
-          onClick={() => setCollapsed(v => !v)}
-        >
-          <p className={`${textClass} leading-relaxed`} style={{ color: "hsl(25 28% 28%)" }}>
-            {card.prayer_text}
+        {/* Prayer text — truncated with See more, click to collapse chrome */}
+        <div className="select-none">
+          <p
+            className={`${textClass} leading-relaxed cursor-pointer`}
+            style={{ color: "hsl(25 28% 28%)" }}
+            onClick={() => setCollapsed(v => !v)}
+          >
+            {isTruncated && !expanded
+              ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
+              : card.prayer_text}
           </p>
+          {isTruncated && (
+            <button
+              onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+              className="mt-1.5 text-xs font-medium transition-colors"
+              style={{ color: "hsl(42 75% 40%)" }}
+            >
+              {expanded ? "See less" : "See more…"}
+            </button>
+          )}
         </div>
 
         {/* Collapsible chrome: scripture / tags / actions / comments */}
