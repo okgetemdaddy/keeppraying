@@ -770,6 +770,7 @@ export default function Admin() {
         onApplied={() => { load(); setEnrichOpen(false); setEnrichCardId(null); }}
       />
     )}
+    </>
   );
 }
 
