@@ -544,6 +544,7 @@ export function BoardCard({
                 onRemove={onRemove} isOwner={isOwner} size={size}
                 onPickFont={pickFont} onPickRandomFont={pickRandomFont}
                 currentFont={pendingFont ?? card.text_style}
+                onAddToPlaylist={onAddToPlaylist}
               />
             </div>
           </div>
