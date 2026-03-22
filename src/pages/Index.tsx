@@ -348,24 +348,14 @@ const NAV_LINKS = [
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Index() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [searchVal, setSearchVal] = useState("");
   const navigate = useNavigate();
-  const { session } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
 
   // Parallax
   const { scrollY } = useScroll();
   const bgY = useTransform(scrollY, [0, 600], ["0%", "20%"]);
   const heroOpacity = useTransform(scrollY, [0, 400], [1, 0.4]);
-
-  // Nav scroll shadow
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
