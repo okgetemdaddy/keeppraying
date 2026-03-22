@@ -113,7 +113,7 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
 export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(!transparent);
-  const { session, signOut } = useAuth();
+  const { session, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
