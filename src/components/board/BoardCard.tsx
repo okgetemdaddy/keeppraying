@@ -12,7 +12,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   GripVertical, Heart, Pin, ChevronDown, ChevronUp, Sparkles,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
-  MoreHorizontal, Tag, Share2, Type, Shuffle, Check,
+  MoreHorizontal, Tag, Share2, Type, Shuffle, Check, ListPlus,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
