@@ -373,16 +373,34 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                     <span>{likesCount}</span>
                   </motion.button>
 
-                  <motion.button
-                    onClick={togglePrayed}
-                    animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
-                    transition={{ duration: 0.35 }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
-                    style={{ color: prayed ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
-                  >
-                    <HandMetal className={`w-3.5 h-3.5 ${prayed ? "text-primary" : ""}`} />
-                    <span>{prayedCount}</span>
-                  </motion.button>
+                  <div className="relative">
+                    <AnimatePresence>
+                      {prayedFloat && (
+                        <motion.span
+                          key="prayed-float"
+                          initial={{ opacity: 1, y: 0, x: "-50%" }}
+                          animate={{ opacity: 0, y: -32 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 1.1, ease: "easeOut" }}
+                          className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
+                          style={{ color: "hsl(42 75% 40%)" }}
+                        >
+                          🙏 Prayed
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                    <motion.button
+                      onClick={togglePrayed}
+                      animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
+                      transition={{ duration: 0.35 }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                      style={{ color: prayed ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                      title="I prayed this"
+                    >
+                      <PrayingHandsIcon className={`w-3.5 h-3.5 ${prayed ? "fill-none stroke-current" : ""}`} />
+                      <span>{prayedCount}</span>
+                    </motion.button>
+                  </div>
 
                   <div className="flex-1" />
 
