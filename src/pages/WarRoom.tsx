@@ -81,28 +81,23 @@ export default function WarRoom() {
     <div className="min-h-screen flex flex-col transition-all duration-700" style={{ background: `linear-gradient(160deg, ${theme.bg} 0%, ${theme.bg2} 100%)`, color: theme.text }}>
 
       {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/10">
-        <Link to="/" style={{ color: theme.text, opacity: 0.6 }} className="hover:opacity-100 transition-opacity p-1">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        {/* Verse — hidden on very small screens */}
-        <p className="text-xs sm:text-sm font-display italic hidden sm:block text-center px-2" style={{ color: theme.muted }}>
-          "Be still, and know that I am God." — <VerseLink reference="Psalm 46:10" text="Be still, and know that I am God." className="[&_.verse-text]:text-inherit" />
-        </p>
-        {/* Theme icons */}
-        <div className="flex gap-0.5 sm:gap-1">
-          {THEMES.map(t => {
-            const Icon = t.Icon;
-            return (
-              <button key={t.id} onClick={() => setThemeId(t.id)} title={t.label}
-                className="p-1.5 sm:p-2 rounded-lg transition-all touch-manipulation"
-                style={{ color: theme.accent, opacity: themeId === t.id ? 1 : 0.4 }}>
-                <Icon className="w-4 h-4" />
-              </button>
-            );
-          })}
-        </div>
-      </header>
+      <SiteNav
+        dark
+        rightSlot={
+          <div className="flex gap-0.5 sm:gap-1">
+            {THEMES.map(t => {
+              const Icon = t.Icon;
+              return (
+                <button key={t.id} onClick={() => setThemeId(t.id)} title={t.label}
+                  className="p-1.5 sm:p-2 rounded-lg transition-all touch-manipulation"
+                  style={{ color: theme.accent, opacity: themeId === t.id ? 1 : 0.4 }}>
+                  <Icon className="w-4 h-4" />
+                </button>
+              );
+            })}
+          </div>
+        }
+      />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 max-w-2xl mx-auto w-full">

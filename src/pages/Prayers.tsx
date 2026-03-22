@@ -15,6 +15,7 @@ import {
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
   Volume2, VolumeX, Loader2,
 } from "lucide-react";
+import { SiteNav } from "@/components/SiteNav";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
 
