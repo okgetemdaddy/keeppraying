@@ -93,6 +93,18 @@ function SourceBadge({ source, status }: { source?: string; status: string }) {
 // ─── Prayer card item ─────────────────────────────────────────────────────────
 const PRAYER_CHAR_LIMIT = 320;
 
+// Inline praying hands SVG icon
+function PrayingHandsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2C12 2 9 5.5 9 9v4l-2 3v3h10v-3l-2-3V9c0-3.5-3-7-3-7z" />
+      <path d="M9 13H7.5a1.5 1.5 0 0 0 0 3H9" />
+      <path d="M15 13h1.5a1.5 1.5 0 0 1 0 3H15" />
+      <line x1="9" y1="19" x2="15" y2="19" />
+    </svg>
+  );
+}
+
 function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | null }) {
   const [liked, setLiked] = useState(false);
   const [prayed, setPrayed] = useState(false);
@@ -105,6 +117,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedCount, setPrayedCount] = useState(card.prayed_count);
   const [likeAnim, setLikeAnim] = useState(false);
   const [prayAnim, setPrayAnim] = useState(false);
+  const [prayedFloat, setPrayedFloat] = useState(false);
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
