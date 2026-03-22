@@ -271,82 +271,62 @@ function ContactForm() {
 
 // ─── VerseLink intro arrow (Lord's Prayer section) ────────────────────────────
 function VerseLinkIntro() {
-  const [show, setShow] = useState(false);
-  const [seen] = useState(() => {
-    try { return localStorage.getItem("verselink_intro_seen") === "1"; } catch { return false; }
-  });
-
-  useEffect(() => {
-    if (seen) return;
-    // Delay so user has time to read the prayer first
-    const t = setTimeout(() => {
-      setShow(true);
-      try { localStorage.setItem("verselink_intro_seen", "1"); } catch {}
-    }, 1800);
-    return () => clearTimeout(t);
-  }, [seen]);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <div className="mt-10 flex flex-col items-center gap-3">
-      {/* The VerseLink badge itself — always visible */}
+    <div ref={ref} className="mt-10 flex flex-col items-center gap-3">
+      {/* The VerseLink badge — always visible */}
       <VerseLink reference="Matthew 6:9-13" text="The Lord's Prayer" />
 
-      {/* Animated arrow + copy — only for first-time visitors */}
-      <AnimatePresence>
-        {show && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="flex flex-col items-center gap-2 pointer-events-none select-none"
-          >
-            {/* Curved SVG arrow pointing UP at the badge */}
-            <svg
-              width="80"
-              height="56"
-              viewBox="0 0 80 56"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="-mt-1 -mb-1 rotate-180"
-              aria-hidden="true"
-            >
-              {/* Curved path drawn upward toward the badge */}
-              <motion.path
-                d="M 40,54 C 40,32 20,20 8,8"
-                stroke="hsl(42 85% 46%)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                fill="none"
-                strokeDasharray="65"
-                initial={{ strokeDashoffset: 65 }}
-                animate={{ strokeDashoffset: 0 }}
-                transition={{ duration: 1.1, ease: "easeOut", delay: 0.2 }}
-              />
-              {/* Arrowhead at the top (near the badge) */}
-              <motion.path
-                d="M 4,12 L 8,7 L 13,10"
-                stroke="hsl(42 85% 46%)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.1, duration: 0.3 }}
-              />
-            </svg>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.3, duration: 0.5 }}
-              className="text-xs text-muted-foreground font-body italic"
-            >
-              Hover any scripture badge for an instant AI summary ✨
-            </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Animated arrow + copy — draws in when section scrolls into view */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: 1.5 }}
+        className="flex flex-col items-center gap-2 pointer-events-none select-none"
+      >
+        <svg
+          width="80"
+          height="56"
+          viewBox="0 0 80 56"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="-mt-1 -mb-1 rotate-180"
+          aria-hidden="true"
+        >
+          <motion.path
+            d="M 40,54 C 40,32 20,20 8,8"
+            stroke="hsl(42 85% 46%)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray="65"
+            initial={{ strokeDashoffset: 65 }}
+            animate={isInView ? { strokeDashoffset: 0 } : { strokeDashoffset: 65 }}
+            transition={{ duration: 1.1, ease: "easeOut", delay: 1.7 }}
+          />
+          <motion.path
+            d="M 4,12 L 8,7 L 13,10"
+            stroke="hsl(42 85% 46%)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+            transition={{ delay: 2.7, duration: 0.3 }}
+          />
+        </svg>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ delay: 2.9, duration: 0.5 }}
+          className="text-xs text-muted-foreground font-body italic"
+        >
+          Hover any scripture badge for an instant AI summary ✨
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

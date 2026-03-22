@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import AIEnrichPanel from "@/components/AIEnrichPanel";
 import Comments from "@/components/Comments";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -19,9 +21,11 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   GripVertical, Heart, Bookmark, Pin, ChevronDown, ChevronUp, PlusCircle,
-  BookOpen, Loader2, ListMusic, Sparkles, Trash2, ArrowLeft,
+  BookOpen, Loader2, ListMusic, Sparkles, Trash2, ArrowLeft, Globe, Lock,
 } from "lucide-react";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
@@ -41,15 +45,19 @@ const TEXT_STYLE_CLASSES: Record<string, string> = {
   royal: "font-display font-bold tracking-wider",
 };
 
-function SortableCard({ item, onUpdate, onRemove }: {
+function SortableCard({ item, userId, onUpdate, onRemove, onRefresh }: {
   item: SavedPrayer;
+  userId: string | undefined;
   onUpdate: (id: string, updates: Partial<SavedPrayer>) => void;
   onRemove: (id: string) => void;
+  onRefresh: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const [expanded, setExpanded] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(item.notes || "");
+  const [togglingPublic, setTogglingPublic] = useState(false);
+  const [enrichOpen, setEnrichOpen] = useState(false);
   const card = item.prayer_cards;
   const { toast } = useToast();
 
@@ -58,6 +66,8 @@ function SortableCard({ item, onUpdate, onRemove }: {
   if (!card) return null;
 
   const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
+  const isOwner = userId && card.created_by === userId;
+  const isPrivate = card.status === "private";
 
   const saveNotes = async () => {
     await supabase.from("user_saved_prayers").update({ notes }).eq("id", item.id);
@@ -76,6 +86,48 @@ function SortableCard({ item, onUpdate, onRemove }: {
     const newVal = !item.favorite;
     await supabase.from("user_saved_prayers").update({ favorite: newVal }).eq("id", item.id);
     onUpdate(item.id, { favorite: newVal });
+  };
+
+  const handlePublicToggle = async (makePublic: boolean) => {
+    if (!isOwner) return;
+    setTogglingPublic(true);
+    try {
+      if (makePublic) {
+        // Run moderation before making public
+        const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-prayer`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ prayer_text: card.prayer_text, title: card.title }),
+        });
+        if (modResp.ok) {
+          const modResult = await modResp.json();
+          if (!modResult.approved) {
+            toast({
+              title: "Cannot make public",
+              description: modResult.reason || "Your prayer didn't meet community guidelines.",
+              variant: "destructive",
+            });
+            setTogglingPublic(false);
+            return;
+          }
+        }
+        const { error } = await supabase.from("prayer_cards").update({ status: "pending" }).eq("id", card.id);
+        if (error) throw error;
+        toast({ title: "Submitted for community review 🙏", description: "Your prayer will appear publicly once approved." });
+      } else {
+        const { error } = await supabase.from("prayer_cards").update({ status: "private" }).eq("id", card.id);
+        if (error) throw error;
+        toast({ title: "Prayer set to private" });
+      }
+      onRefresh();
+    } catch (e) {
+      toast({ title: "Failed to update visibility", variant: "destructive" });
+    } finally {
+      setTogglingPublic(false);
+    }
   };
 
   return (
@@ -104,6 +156,8 @@ function SortableCard({ item, onUpdate, onRemove }: {
       <div className="flex flex-wrap gap-1">
         {card.tags?.map(tag => <span key={tag} className="tag-pill text-xs">#{tag}</span>)}
         {card.status === "ai_generated" && <span className="tag-pill"><Sparkles className="w-2.5 h-2.5" />AI</span>}
+        {isPrivate && isOwner && <span className="tag-pill flex items-center gap-1 text-xs"><Lock className="w-2.5 h-2.5" />Private</span>}
+        {card.status === "pending" && isOwner && <span className="tag-pill text-xs opacity-70">Pending review</span>}
       </div>
 
       {card.extended_prayer && (
@@ -113,6 +167,37 @@ function SortableCard({ item, onUpdate, onRemove }: {
         </button>
       )}
       {expanded && card.extended_prayer && <p className="verse-text text-xs">{renderWithVerseLinks(card.extended_prayer)}</p>}
+
+      {/* Owner controls: Public toggle + AI Enrich */}
+      {isOwner && (
+        <div className="flex items-center justify-between gap-3 border-t border-border pt-2">
+          <div className="flex items-center gap-2">
+            {togglingPublic
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+              : isPrivate
+                ? <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                : <Globe className="w-3.5 h-3.5 text-primary" />
+            }
+            <span className="text-xs text-muted-foreground">
+              {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
+            </span>
+            <Switch
+              checked={!isPrivate}
+              onCheckedChange={handlePublicToggle}
+              disabled={togglingPublic || card.status === "approved"}
+              className="scale-75 origin-left"
+            />
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs gap-1.5 text-primary hover:text-primary rounded-lg"
+            onClick={() => setEnrichOpen(true)}
+          >
+            <Sparkles className="w-3 h-3" /> AI Enrich
+          </Button>
+        </div>
+      )}
 
       {/* Notes */}
       <div className="border-t border-border pt-2">
@@ -132,6 +217,18 @@ function SortableCard({ item, onUpdate, onRemove }: {
       </div>
 
       <Comments prayerId={card.id} />
+
+      {isOwner && (
+        <AIEnrichPanel
+          open={enrichOpen}
+          onOpenChange={setEnrichOpen}
+          cardId={card.id}
+          prayerText={card.prayer_text}
+          extendedPrayer={card.extended_prayer}
+          existingTags={card.tags || []}
+          onApplied={onRefresh}
+        />
+      )}
     </div>
   );
 }
@@ -180,7 +277,6 @@ export default function Board() {
       const oldIndex = prev.findIndex(i => i.id === active.id);
       const newIndex = prev.findIndex(i => i.id === over.id);
       const newOrder = arrayMove(prev, oldIndex, newIndex);
-      // Update positions in DB
       const updates = newOrder.map((item, index) => ({ id: item.id, position: index, user_id: item.user_id, prayer_id: item.prayer_id, created_at: item.created_at }));
       supabase.from("user_saved_prayers").upsert(updates).then(({ error }) => {
         if (error) console.error("Position update error:", error);
@@ -250,12 +346,12 @@ export default function Board() {
             <BookOpen className="w-14 h-14 text-primary mx-auto opacity-60" />
             <div>
               <h2 className="font-display text-2xl font-bold mb-2">Your board is empty</h2>
-              <p className="text-muted-foreground text-sm">Save prayers from the collection to build your personal prayer board.</p>
+              <p className="text-muted-foreground text-sm">Write a prayer or save prayers from the collection to build your personal prayer board.</p>
             </div>
             <div className="flex gap-3 justify-center">
               <Link to="/prayers"><Button className="btn-gold rounded-xl gap-2">Browse Prayers</Button></Link>
               <Button variant="outline" className="rounded-xl gap-2" onClick={() => setAddOpen(true)}>
-                <PlusCircle className="w-4 h-4" />Add Your Own
+                <PlusCircle className="w-4 h-4" />Write a Prayer
               </Button>
             </div>
           </div>
@@ -267,7 +363,7 @@ export default function Board() {
                   <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><Pin className="w-3 h-3" />Pinned</p>
                   <SortableContext items={pinned.map(i => i.id)} strategy={verticalListSortingStrategy}>
                     {pinned.map(item => (
-                      <SortableCard key={item.id} item={item} onUpdate={updateItem} onRemove={removeItem} />
+                      <SortableCard key={item.id} item={item} userId={user?.id} onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved} />
                     ))}
                   </SortableContext>
                 </div>
@@ -278,7 +374,7 @@ export default function Board() {
                   <SortableContext items={unpinned.map(i => i.id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-4">
                       {unpinned.map(item => (
-                        <SortableCard key={item.id} item={item} onUpdate={updateItem} onRemove={removeItem} />
+                        <SortableCard key={item.id} item={item} userId={user?.id} onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved} />
                       ))}
                     </div>
                   </SortableContext>
