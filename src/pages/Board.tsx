@@ -278,6 +278,21 @@ export default function Board() {
 
       {/* Main content */}
       <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
+        {/* Prayed count stat */}
+        {!loading && totalPrayed > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2 mb-6 px-4 py-2.5 rounded-2xl w-fit"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            <span className="text-lg">🙏</span>
+            <span className="text-sm font-medium" style={{ color: themeVars["--board-text"] || "rgba(255,255,255,0.85)" }}>
+              You've prayed <strong>{totalPrayed.toLocaleString()}</strong> {totalPrayed === 1 ? "time" : "times"}
+            </span>
+          </motion.div>
+        )}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
