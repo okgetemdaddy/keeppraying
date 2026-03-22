@@ -131,6 +131,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
   useEffect(() => {
+    supabase.from("testimonies").select("id", { count: "exact", head: true }).eq("prayer_id", card.id)
+      .then(({ count }) => setTestimonyCount(count || 0));
     if (!userId) return;
     const checkInteractions = async () => {
       const [{ data: like }, { data: pray }, { data: save }] = await Promise.all([
