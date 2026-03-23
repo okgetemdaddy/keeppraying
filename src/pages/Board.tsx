@@ -384,7 +384,7 @@ export default function Board() {
                 className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
                 onClick={() => setTestifyOpen(true)}
               >
-                <Feather className="w-4 h-4" />
+                <Bird className="w-4 h-4" />
                 <span className="hidden sm:inline">Testify</span>
               </Button>
               <Button
