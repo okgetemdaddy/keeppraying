@@ -447,7 +447,7 @@ function TestifySheet({
           >
             {submitting
               ? <><Loader2 className="w-4 h-4 animate-spin" />Reviewing…</>
-              : <><Feather className="w-4 h-4" />Share Testimony</>}
+              : <><Bird className="w-4 h-4" />Share Testimony</>}
           </Button>
 
           <p className="text-xs text-center" style={{ color: "hsl(25 18% 62%)" }}>
