@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   Search, X, Loader2, Heart, Share2, Flag, MessageCircle,
-  ChevronDown, Feather, ArrowRight, BookOpen,
+  ChevronDown, Bird, ArrowRight, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
