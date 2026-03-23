@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   Search, X, Loader2, Heart, Share2, Flag, MessageCircle,
-  ChevronDown, Feather, ArrowRight, BookOpen,
+  ChevronDown, Bird, ArrowRight, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -377,7 +377,7 @@ function TestifySheet({
         <div className="p-6 pb-4 border-b" style={{ borderColor: "hsl(38 22% 90%)" }}>
           <SheetHeader>
             <SheetTitle className="font-display text-2xl flex items-center gap-2">
-              <Feather className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
+              <Bird className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
               Share Your Testimony
             </SheetTitle>
             <SheetDescription className="text-sm leading-relaxed">
@@ -447,7 +447,7 @@ function TestifySheet({
           >
             {submitting
               ? <><Loader2 className="w-4 h-4 animate-spin" />Reviewing…</>
-              : <><Feather className="w-4 h-4" />Share Testimony</>}
+              : <><Bird className="w-4 h-4" />Share Testimony</>}
           </Button>
 
           <p className="text-xs text-center" style={{ color: "hsl(25 18% 62%)" }}>
@@ -616,7 +616,7 @@ export default function Testify() {
               className="btn-gold h-12 px-8 rounded-2xl text-base gap-2.5 shadow-lg"
               style={{ boxShadow: "0 4px 20px -4px hsl(42 75% 46% / 0.45)" }}
             >
-              <Feather className="w-4 h-4" />
+              <Bird className="w-4 h-4" />
               Share Your Testimony
             </Button>
           </motion.div>
@@ -676,7 +676,7 @@ export default function Testify() {
               {search ? "Try different words, or share yours!" : "Be the first to share how God answered your prayer!"}
             </p>
             <Button onClick={handleTestifyClick} className="btn-gold rounded-2xl gap-2 mt-2">
-              <Feather className="w-4 h-4" /> Share Your Testimony
+              <Bird className="w-4 h-4" /> Share Your Testimony
             </Button>
           </motion.div>
         ) : (

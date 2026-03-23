@@ -9,7 +9,7 @@ import Comments from "@/components/Comments";
 import type { Database } from "@/integrations/supabase/types";
 import {
   ArrowLeft, Heart, Bookmark, Share2, Sparkles, Loader2,
-  ChevronDown, Tag, Volume2, VolumeX, ListPlus, Users, ShieldCheck, Feather,
+  ChevronDown, Tag, Volume2, VolumeX, ListPlus, Users, ShieldCheck, Bird,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
@@ -522,7 +522,7 @@ export default function Prayer() {
                   className="flex items-center gap-1 p-2 rounded-xl transition-all hover:bg-accent/60"
                   style={{ color: testimonyCount > 0 ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
                 >
-                  <Feather className="w-4 h-4" />
+                  <Bird className="w-4 h-4" />
                   {testimonyCount > 0 && <span className="text-xs">{testimonyCount}</span>}
                 </motion.button>
               </div>

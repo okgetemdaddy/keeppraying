@@ -560,7 +560,7 @@ export default function Prayers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState("");
-  const [showCommunity, setShowCommunity] = useState(false);
+  const [showCommunity, setShowCommunity] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const { user } = useAuth();
   const [searchParams] = useSearchParams();

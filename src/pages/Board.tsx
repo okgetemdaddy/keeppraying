@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Feather,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -384,7 +384,7 @@ export default function Board() {
                 className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
                 onClick={() => setTestifyOpen(true)}
               >
-                <Feather className="w-4 h-4" />
+                <Bird className="w-4 h-4" />
                 <span className="hidden sm:inline">Testify</span>
               </Button>
               <Button
@@ -646,7 +646,7 @@ export default function Board() {
           <div className="p-6 pb-4 border-b" style={{ borderColor: "hsl(38 22% 90%)" }}>
             <SheetHeader>
               <SheetTitle className="font-display text-2xl flex items-center gap-2">
-                <Feather className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
+                <Bird className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
                 Share a Testimony
               </SheetTitle>
               <SheetDescription className="text-sm leading-relaxed">
@@ -739,7 +739,7 @@ export default function Board() {
             >
               {testifySubmitting
                 ? <><Loader2 className="w-4 h-4 animate-spin" />Reviewing…</>
-                : <><Feather className="w-4 h-4" />Share Testimony</>}
+                : <><Bird className="w-4 h-4" />Share Testimony</>}
             </Button>
 
             <p className="text-xs text-center" style={{ color: "hsl(25 18% 62%)" }}>
