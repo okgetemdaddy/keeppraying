@@ -517,6 +517,26 @@ export default function Testify() {
     }));
   }, [user?.id]);
 
+  const hydrateWithProfiles = async (data: Array<{ user_id: string; prayer_id: string | null; [key: string]: unknown }>) => {
+    const userIds = [...new Set(data.map(t => t.user_id))];
+    const prayerIds = [...new Set(data.map(t => t.prayer_id).filter(Boolean))] as string[];
+    const [{ data: profilesData }, { data: prayerCardsData }] = await Promise.all([
+      userIds.length
+        ? supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds)
+        : { data: [] },
+      prayerIds.length
+        ? supabase.from("prayer_cards").select("id, title, prayer_text, tags, extended_prayer").in("id", prayerIds)
+        : { data: [] },
+    ]);
+    const profilesMap = Object.fromEntries((profilesData || []).map(p => [p.id, p]));
+    const prayerCardsMap = Object.fromEntries((prayerCardsData || []).map(pc => [pc.id, pc]));
+    return data.map(t => ({
+      ...t,
+      profiles: profilesMap[t.user_id] || null,
+      prayer_cards: t.prayer_id ? (prayerCardsMap[t.prayer_id] || null) : null,
+    }));
+  };
+
   const fetchTestimonies = useCallback(async (reset = true) => {
     setLoading(true);
     const currentPage = reset ? 0 : page;
@@ -524,19 +544,15 @@ export default function Testify() {
     try {
       let q = supabase
         .from("testimonies")
-        .select("*, profiles(id, full_name, avatar_url), prayer_cards(id, title, prayer_text, tags, extended_prayer)")
+        .select("id, prayer_id, user_id, body, flagged, created_at")
         .order("created_at", { ascending: false })
         .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
       if (search.trim()) q = q.ilike("body", `%${search.trim()}%`);
       const { data } = await q;
       if (!data) { setLoading(false); return; }
       setHasMore(data.length === PAGE_SIZE);
-      const normalised = data.map(t => ({
-        ...t,
-        profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
-        prayer_cards: Array.isArray(t.prayer_cards) ? t.prayer_cards[0] : t.prayer_cards,
-      })) as TestimonyResult[];
-      const enriched = await enrichTestimonies(normalised);
+      const hydrated = await hydrateWithProfiles(data);
+      const enriched = await enrichTestimonies(hydrated as TestimonyResult[]);
       setTestimonies(reset ? enriched : prev => [...prev, ...enriched]);
     } finally {
       setLoading(false);
@@ -551,19 +567,15 @@ export default function Testify() {
     setLoading(true);
     let q = supabase
       .from("testimonies")
-      .select("*, profiles(id, full_name, avatar_url), prayer_cards(id, title, prayer_text, tags, extended_prayer)")
+      .select("id, prayer_id, user_id, body, flagged, created_at")
       .order("created_at", { ascending: false })
       .range(nextPage * PAGE_SIZE, (nextPage + 1) * PAGE_SIZE - 1);
     if (search.trim()) q = q.ilike("body", `%${search.trim()}%`);
     const { data } = await q;
     if (!data) { setLoading(false); return; }
     setHasMore(data.length === PAGE_SIZE);
-    const normalised = data.map(t => ({
-      ...t,
-      profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
-      prayer_cards: Array.isArray(t.prayer_cards) ? t.prayer_cards[0] : t.prayer_cards,
-    })) as TestimonyResult[];
-    const enriched = await enrichTestimonies(normalised);
+    const hydrated = await hydrateWithProfiles(data);
+    const enriched = await enrichTestimonies(hydrated as TestimonyResult[]);
     setTestimonies(prev => [...prev, ...enriched]);
     setLoading(false);
   };
