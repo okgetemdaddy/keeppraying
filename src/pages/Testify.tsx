@@ -676,7 +676,7 @@ export default function Testify() {
               {search ? "Try different words, or share yours!" : "Be the first to share how God answered your prayer!"}
             </p>
             <Button onClick={handleTestifyClick} className="btn-gold rounded-2xl gap-2 mt-2">
-              <Feather className="w-4 h-4" /> Share Your Testimony
+              <Bird className="w-4 h-4" /> Share Your Testimony
             </Button>
           </motion.div>
         ) : (
