@@ -616,7 +616,7 @@ export default function Testify() {
               className="btn-gold h-12 px-8 rounded-2xl text-base gap-2.5 shadow-lg"
               style={{ boxShadow: "0 4px 20px -4px hsl(42 75% 46% / 0.45)" }}
             >
-              <Feather className="w-4 h-4" />
+              <Bird className="w-4 h-4" />
               Share Your Testimony
             </Button>
           </motion.div>
