@@ -377,7 +377,7 @@ function TestifySheet({
         <div className="p-6 pb-4 border-b" style={{ borderColor: "hsl(38 22% 90%)" }}>
           <SheetHeader>
             <SheetTitle className="font-display text-2xl flex items-center gap-2">
-              <Feather className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
+              <Bird className="w-5 h-5" style={{ color: "hsl(42 75% 45%)" }} />
               Share Your Testimony
             </SheetTitle>
             <SheetDescription className="text-sm leading-relaxed">
