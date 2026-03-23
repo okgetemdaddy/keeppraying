@@ -9,7 +9,7 @@ import Comments from "@/components/Comments";
 import type { Database } from "@/integrations/supabase/types";
 import {
   ArrowLeft, Heart, Bookmark, Share2, Sparkles, Loader2,
-  ChevronDown, Tag, Volume2, VolumeX, ListPlus, Users, ShieldCheck, Feather,
+  ChevronDown, Tag, Volume2, VolumeX, ListPlus, Users, ShieldCheck, Bird,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
