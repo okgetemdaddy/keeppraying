@@ -28,7 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Feather,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
