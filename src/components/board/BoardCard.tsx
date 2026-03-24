@@ -281,6 +281,12 @@ export function BoardCard({
         </div>
       )}
 
+      {/* Glass sheen (only for non-bg cards) */}
+      {!bgUrl && (
+        <div className="absolute inset-0 pointer-events-none rounded-2xl"
+          style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
+      )}
+
       <div className="relative p-4 flex flex-col gap-3">
 
         {/* ── Drag handle + content ────────────────────────────────────── */}
