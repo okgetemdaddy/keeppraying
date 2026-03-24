@@ -415,6 +415,34 @@ export default function Board() {
       {/* Main content */}
       <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
 
+        {/* ── Mobile layout toggle (portrait only) ──────────────────────── */}
+        {isMobile && !loading && saved.length > 0 && (
+          <div className="flex items-center justify-end mb-4">
+            <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <button
+                onClick={() => setMobileLayout("one-col")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: mobileLayout === "one-col" ? "rgba(255,255,255,0.18)" : "transparent",
+                  color: mobileLayout === "one-col" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
+                }}
+              >
+                <Square className="w-3.5 h-3.5" /> Single
+              </button>
+              <button
+                onClick={() => setMobileLayout("two-col")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: mobileLayout === "two-col" ? "rgba(255,255,255,0.18)" : "transparent",
+                  color: mobileLayout === "two-col" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
+                }}
+              >
+                <Columns2 className="w-3.5 h-3.5" /> Two Columns
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Stats strip ───────────────────────────────────────────────── */}
         {!loading && (totalPrayed > 0 || totalLiked > 0) && (
           <motion.div
