@@ -126,6 +126,7 @@ export default function Board() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
+  const isMobile = useIsMobile();
 
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +136,9 @@ export default function Board() {
   const [testifySubmitting, setTestifySubmitting] = useState(false);
   const [testifyReject, setTestifyReject] = useState("");
   const testifyRef = useRef<HTMLTextAreaElement>(null);
+
+  // Mobile layout toggle: "two-col" | "one-col"
+  const [mobileLayout, setMobileLayout] = useState<"two-col" | "one-col">("two-col");
 
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
