@@ -296,12 +296,12 @@ export function BoardCard({
             className="mt-1 opacity-30 hover:opacity-70 transition-opacity cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
             aria-label="Drag to reorder"
           >
-            <GripVertical className="w-4 h-4" style={{ color: textColor }} />
+            <GripVertical className="w-4 h-4" style={{ color: bgUrl ? "rgba(255,255,255,0.7)" : textColor }} />
           </button>
 
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: textColor }}>
+              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: bgUrl ? "rgba(255,255,255,0.95)" : textColor }}>
                 {card.title}
               </h3>
             )}
