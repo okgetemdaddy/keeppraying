@@ -488,7 +488,7 @@ export default function Board() {
 
         {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-44 rounded-2xl shimmer" />
             ))}
@@ -504,7 +504,7 @@ export default function Board() {
                     <Pin className="w-3 h-3" />Pinned
                   </p>
                   <SortableContext items={pinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
                       {pinned.map(item => (
                         <SortableBoardCard
                           key={item.id} item={item} userId={user?.id}
@@ -523,7 +523,7 @@ export default function Board() {
                     <p className="text-xs font-medium mb-3 text-white/50">All saved prayers</p>
                   )}
                   <SortableContext items={unpinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <motion.div layout className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
                       <AnimatePresence>
                         {unpinned.map(item => (
                           <SortableBoardCard
