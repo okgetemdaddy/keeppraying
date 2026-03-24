@@ -544,7 +544,7 @@ export default function Index() {
       </section>
 
       {/* ── Contact Form ─────────────────────────────────────────────────── */}
-      <section className="py-16 sm:py-20 bg-background border-t border-border">
+      <section id="contact" className="py-16 sm:py-20 bg-background border-t border-border">
         <div className="container mx-auto px-4 max-w-xl">
           <div className="text-center mb-8">
             <h2 className="font-display text-2xl sm:text-3xl font-bold mb-2">Get in Touch</h2>
