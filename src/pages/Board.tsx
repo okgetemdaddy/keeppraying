@@ -16,6 +16,7 @@ import { AmbientPlayer } from "@/components/board/AmbientPlayer";
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors, DragEndEvent,
@@ -28,7 +29,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -125,6 +126,7 @@ export default function Board() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
+  const isMobile = useIsMobile();
 
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,6 +136,9 @@ export default function Board() {
   const [testifySubmitting, setTestifySubmitting] = useState(false);
   const [testifyReject, setTestifyReject] = useState("");
   const testifyRef = useRef<HTMLTextAreaElement>(null);
+
+  // Mobile layout toggle: "two-col" | "one-col"
+  const [mobileLayout, setMobileLayout] = useState<"two-col" | "one-col">("two-col");
 
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
@@ -410,6 +415,34 @@ export default function Board() {
       {/* Main content */}
       <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
 
+        {/* ── Mobile layout toggle (portrait only) ──────────────────────── */}
+        {isMobile && !loading && saved.length > 0 && (
+          <div className="flex items-center justify-end mb-4">
+            <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)" }}>
+              <button
+                onClick={() => setMobileLayout("one-col")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: mobileLayout === "one-col" ? "rgba(255,255,255,0.18)" : "transparent",
+                  color: mobileLayout === "one-col" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
+                }}
+              >
+                <Square className="w-3.5 h-3.5" /> Single
+              </button>
+              <button
+                onClick={() => setMobileLayout("two-col")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                style={{
+                  background: mobileLayout === "two-col" ? "rgba(255,255,255,0.18)" : "transparent",
+                  color: mobileLayout === "two-col" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
+                }}
+              >
+                <Columns2 className="w-3.5 h-3.5" /> Two Columns
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ── Stats strip ───────────────────────────────────────────────── */}
         {!loading && (totalPrayed > 0 || totalLiked > 0) && (
           <motion.div
@@ -455,7 +488,7 @@ export default function Board() {
 
         {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-44 rounded-2xl shimmer" />
             ))}
@@ -471,7 +504,7 @@ export default function Board() {
                     <Pin className="w-3 h-3" />Pinned
                   </p>
                   <SortableContext items={pinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
                       {pinned.map(item => (
                         <SortableBoardCard
                           key={item.id} item={item} userId={user?.id}
@@ -490,7 +523,7 @@ export default function Board() {
                     <p className="text-xs font-medium mb-3 text-white/50">All saved prayers</p>
                   )}
                   <SortableContext items={unpinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <motion.div layout className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
                       <AnimatePresence>
                         {unpinned.map(item => (
                           <SortableBoardCard

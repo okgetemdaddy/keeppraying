@@ -231,6 +231,8 @@ export function BoardCard({
   const actionsInFooter = size !== "large";
 
   // ── render ───────────────────────────────────────────────────────────────────
+  const bgUrl = card.background_url || null;
+
   return (
     <div style={{ perspective: "1200px", willChange: "transform" }}>
       <motion.div
@@ -254,9 +256,9 @@ export function BoardCard({
           style={{
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            background: cardBg,
+            background: bgUrl ? undefined : cardBg,
             borderColor: cardBorder,
-            color: textColor,
+            color: bgUrl ? "rgba(255,255,255,0.92)" : textColor,
             backdropFilter: "blur(16px) saturate(1.6)",
             WebkitBackdropFilter: "blur(16px) saturate(1.6)",
             boxShadow: item.pinned
@@ -266,9 +268,24 @@ export function BoardCard({
           whileHover={flipped ? {} : { y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
           className="relative rounded-2xl border overflow-hidden"
         >
-      {/* Glass sheen */}
-      <div className="absolute inset-0 pointer-events-none rounded-2xl"
-        style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
+      {/* Background image */}
+      {bgUrl && (
+        <div className="absolute inset-0 rounded-2xl overflow-hidden">
+          <img
+            src={bgUrl}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.48)" }} />
+        </div>
+      )}
+
+      {/* Glass sheen (only for non-bg cards) */}
+      {!bgUrl && (
+        <div className="absolute inset-0 pointer-events-none rounded-2xl"
+          style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
+      )}
 
       <div className="relative p-4 flex flex-col gap-3">
 
@@ -279,12 +296,12 @@ export function BoardCard({
             className="mt-1 opacity-30 hover:opacity-70 transition-opacity cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
             aria-label="Drag to reorder"
           >
-            <GripVertical className="w-4 h-4" style={{ color: textColor }} />
+            <GripVertical className="w-4 h-4" style={{ color: bgUrl ? "rgba(255,255,255,0.7)" : textColor }} />
           </button>
 
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: textColor }}>
+              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: bgUrl ? "rgba(255,255,255,0.95)" : textColor }}>
                 {card.title}
               </h3>
             )}
@@ -294,7 +311,7 @@ export function BoardCard({
               <p
                 className="leading-relaxed text-sm cursor-pointer"
                 style={{
-                  color: subtleText,
+                  color: bgUrl ? "rgba(255,255,255,0.80)" : subtleText,
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
                 onClick={() => setCollapsed(v => !v)}

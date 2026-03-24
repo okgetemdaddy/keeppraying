@@ -293,8 +293,14 @@ export default function Prayer() {
     <div className="min-h-screen bg-background">
       {/* Background */}
       {card.background_url && (
-        <div className="fixed inset-0 z-0 opacity-10">
-          <img src={card.background_url} alt="" className="w-full h-full object-cover" />
+        <div className="fixed inset-0 z-0">
+          <img
+            src={card.background_url}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,0.65) 100%)" }} />
         </div>
       )}
 
