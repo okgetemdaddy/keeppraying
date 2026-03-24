@@ -16,6 +16,7 @@ import { AmbientPlayer } from "@/components/board/AmbientPlayer";
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors, DragEndEvent,
@@ -28,7 +29,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird,
+  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
