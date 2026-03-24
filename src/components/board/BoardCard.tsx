@@ -311,7 +311,7 @@ export function BoardCard({
               <p
                 className="leading-relaxed text-sm cursor-pointer"
                 style={{
-                  color: subtleText,
+                  color: bgUrl ? "rgba(255,255,255,0.80)" : subtleText,
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
                 onClick={() => setCollapsed(v => !v)}
