@@ -12,12 +12,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, AreaChart, Area } from "recharts";
 import ReactMarkdown from "react-markdown";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Check, X, Loader2, RefreshCw, Users, BookOpen, Mail,
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
-  Pencil, Save, XCircle, Scroll, Trash2,
+  Pencil, Save, XCircle, Scroll, Trash2, Shield, Activity, Settings, LayoutDashboard,
+  ChevronRight, TrendingUp, Heart, MessageSquare, Star, Bell, LogOut, Menu, ChevronDown,
+  BookText, Flag, Flame, Crown,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
@@ -64,10 +67,25 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
+type TabId = "overview" | "moderation" | "prayers" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies";
+
+const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { id: "overview",    label: "Overview",        icon: LayoutDashboard },
+  { id: "moderation",  label: "Review Queue",    icon: Shield },
+  { id: "users",       label: "User Management", icon: Users },
+  { id: "insights",    label: "Analytics",       icon: BarChart2 },
+  { id: "testimonies", label: "Moderation Log",  icon: Flag },
+  { id: "prayers",     label: "Prayers",         icon: Scroll },
+  { id: "blog",        label: "KeepGrow.ing",    icon: BookOpen },
+  { id: "verses",      label: "Verses",          icon: BookMarked },
+  { id: "faq",         label: "FAQ Report",      icon: FileText },
+  { id: "contacts",    label: "Contact",         icon: Mail },
+];
+
 export default function Admin() {
   const { user, session } = useAuth();
   const [pending, setPending] = useState<{ id: string; title: string | null; prayer_text: string; created_at: string }[]>([]);
-  const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0 });
+  const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0, testimonies: 0, users: 0 });
   const [topLiked, setTopLiked] = useState<PrayerStat[]>([]);
   const [topPrayed, setTopPrayed] = useState<PrayerStat[]>([]);
   const [signupData, setSignupData] = useState<{ date: string; count: number }[]>([]);
@@ -81,14 +99,13 @@ export default function Admin() {
   const [showBlogForm, setShowBlogForm] = useState(false);
   const [showPrayerForm, setShowPrayerForm] = useState(false);
   const [savingPrayer, setSavingPrayer] = useState(false);
-  const [activeTab, setActiveTab] = useState<"moderation" | "stats" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayers">("moderation");
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { toast } = useToast();
-  // AI Enrich — opened after a prayer card is first saved so we have a card ID
   const [enrichCardId, setEnrichCardId] = useState<string | null>(null);
   const [enrichCardText, setEnrichCardText] = useState("");
   const [enrichCardExtended, setEnrichCardExtended] = useState<string | null>(null);
   const [enrichOpen, setEnrichOpen] = useState(false);
-  // Verse editing
   const [editingVerseId, setEditingVerseId] = useState<string | null>(null);
   const [editingVerse, setEditingVerse] = useState<Partial<VerseSummary>>({});
   const [savingVerse, setSavingVerse] = useState(false);
@@ -109,6 +126,8 @@ export default function Admin() {
       { count: total },
       { count: approved },
       { count: pend },
+      { count: testimonyCount },
+      { count: userCount },
       { data: liked },
       { data: prayed },
       { data: profiles },
@@ -120,6 +139,8 @@ export default function Admin() {
       supabase.from("prayer_cards").select("*", { count: "exact", head: true }),
       supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "approved"),
       supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("testimonies").select("*", { count: "exact", head: true }),
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
       supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("likes_count", { ascending: false }).limit(5),
       supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("prayed_count", { ascending: false }).limit(5),
       supabase.from("profiles").select("created_at").order("created_at", { ascending: true }),
@@ -129,14 +150,13 @@ export default function Admin() {
     ]);
 
     setPending(p || []);
-    setStats({ total: total || 0, approved: approved || 0, pending: pend || 0 });
+    setStats({ total: total || 0, approved: approved || 0, pending: pend || 0, testimonies: testimonyCount || 0, users: userCount || 0 });
     setTopLiked((liked as PrayerStat[]) || []);
     setTopPrayed((prayed as PrayerStat[]) || []);
     setContacts((contactData as ContactSubmission[]) || []);
     setReports((reportData as AdminReport[]) || []);
     setBlogPosts((blogData as BlogPost[]) || []);
 
-    // Group signups by date (last 30 days)
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const recent = (profiles || []).filter(p => new Date(p.created_at) >= thirtyDaysAgo);
@@ -182,19 +202,13 @@ export default function Admin() {
 
   const onBlogSubmit = async (values: BlogFormValues) => {
     const { error } = await supabase.from("blog_posts").insert({
-      title: values.title,
-      slug: values.slug,
-      excerpt: values.excerpt || null,
-      content: values.content,
-      cover_image_url: values.cover_image_url || null,
-      published: values.published,
-      author_id: user?.id || null,
+      title: values.title, slug: values.slug, excerpt: values.excerpt || null,
+      content: values.content, cover_image_url: values.cover_image_url || null,
+      published: values.published, author_id: user?.id || null,
     });
     if (error) { toast({ title: "Failed to save post", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Blog post saved! 📝" });
-    blogForm.reset();
-    setShowBlogForm(false);
-    load();
+    blogForm.reset(); setShowBlogForm(false); load();
   };
 
   const togglePublish = async (id: string, current: boolean | null) => {
@@ -206,37 +220,24 @@ export default function Admin() {
     if (!user) return;
     setSavingPrayer(true);
     try {
-      const tagsArr = values.tags
-        ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
-        : [];
+      const tagsArr = values.tags ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
       const { data: newCard, error } = await supabase.from("prayer_cards").insert({
-        title: values.title || null,
-        prayer_text: values.prayer_text.trim(),
+        title: values.title || null, prayer_text: values.prayer_text.trim(),
         extended_prayer: values.extended_prayer?.trim() || null,
-        tags: tagsArr.length ? tagsArr : null,
-        text_style: values.text_style,
+        tags: tagsArr.length ? tagsArr : null, text_style: values.text_style,
         background_url: values.background_url || null,
-        created_by: user.id,
-        source: "admin",
-        status: "approved",
+        created_by: user.id, source: "admin", status: "approved",
       }).select("id").single();
       if (error) throw error;
       toast({ title: "Prayer card published! 🙏" });
-      prayerForm.reset();
-      setShowPrayerForm(false);
-      load();
-      // Offer AI Enrich right after saving
+      prayerForm.reset(); setShowPrayerForm(false); load();
       if (newCard?.id) {
-        setEnrichCardId(newCard.id);
-        setEnrichCardText(values.prayer_text.trim());
-        setEnrichCardExtended(values.extended_prayer?.trim() || null);
-        setEnrichOpen(true);
+        setEnrichCardId(newCard.id); setEnrichCardText(values.prayer_text.trim());
+        setEnrichCardExtended(values.extended_prayer?.trim() || null); setEnrichOpen(true);
       }
     } catch (e) {
       toast({ title: "Failed to save prayer", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
-    } finally {
-      setSavingPrayer(false);
-    }
+    } finally { setSavingPrayer(false); }
   };
 
   const saveVerseEdit = async () => {
@@ -244,537 +245,810 @@ export default function Admin() {
     setSavingVerse(true);
     try {
       const { error } = await supabase.from("verse_summaries").update({
-        reference: editingVerse.reference,
-        verse_text: editingVerse.verse_text ?? null,
-        summary: editingVerse.summary ?? null,
-        exegesis: editingVerse.exegesis ?? null,
+        reference: editingVerse.reference, verse_text: editingVerse.verse_text ?? null,
+        summary: editingVerse.summary ?? null, exegesis: editingVerse.exegesis ?? null,
       }).eq("id", editingVerseId);
       if (error) throw error;
       toast({ title: "Verse saved ✓" });
-      setEditingVerseId(null);
-      setEditingVerse({});
-      loadVerses(verseSearch);
+      setEditingVerseId(null); setEditingVerse({}); loadVerses(verseSearch);
     } catch (e) {
       toast({ title: "Save failed", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
-    } finally {
-      setSavingVerse(false);
-    }
+    } finally { setSavingVerse(false); }
   };
 
   const loadVerses = useCallback(async (search = "") => {
     setVerseSearching(true);
     try {
       let q = supabase.from("verse_summaries").select("*").order("created_at", { ascending: false }).limit(50);
-      if (search.trim()) {
-        q = q.or(`reference.ilike.%${search}%,summary.ilike.%${search}%,exegesis.ilike.%${search}%`);
-      }
+      if (search.trim()) q = q.or(`reference.ilike.%${search}%,summary.ilike.%${search}%,exegesis.ilike.%${search}%`);
       const { data } = await q;
       setVerseSummaries((data as VerseSummary[]) || []);
-    } finally {
-      setVerseSearching(false);
-    }
+    } finally { setVerseSearching(false); }
   }, []);
 
   useEffect(() => { if (activeTab === "verses") loadVerses(); }, [activeTab, loadVerses]);
 
-  const TABS = [
-    { id: "moderation", label: "Moderation", icon: Check },
-    { id: "prayers", label: "Prayers", icon: Scroll },
-    { id: "stats", label: "Stats", icon: BarChart2 },
-    { id: "users", label: "Users", icon: Users },
-    { id: "contacts", label: "Contact", icon: Mail },
-    { id: "blog", label: "KeepGrow.ing", icon: BookOpen },
-    { id: "verses", label: "Verses", icon: BookMarked },
-    { id: "faq", label: "FAQ Report", icon: FileText },
-    { id: "insights", label: "AI Insights", icon: Sparkles },
-    { id: "testimonies", label: "Testimonies", icon: ScrollText },
-  ] as const;
-
+  // ─── RENDER ─────────────────────────────────────────────────────────────
   return (
     <>
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm">
-          <ArrowLeft className="w-4 h-4" />Home
-        </Link>
-        <h1 className="font-display text-3xl font-bold mb-6">Admin Dashboard</h1>
+    {/* Force dark mode for the entire admin shell */}
+    <div className="dark min-h-screen flex w-full" style={{ background: "hsl(220 35% 5%)", color: "hsl(38 28% 92%)" }}>
 
-        {/* Stats summary */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[["Total Prayers", stats.total], ["Approved", stats.approved], ["Pending", stats.pending]].map(([label, val]) => (
-            <div key={String(label)} className="prayer-card p-5 text-center">
-              <div className="font-display text-3xl font-bold text-primary">{val}</div>
-              <div className="text-sm text-muted-foreground mt-1">{label}</div>
+      {/* ── SIDEBAR ── */}
+      <aside
+        className={`flex-shrink-0 flex flex-col transition-all duration-300 border-r relative z-20`}
+        style={{
+          width: sidebarOpen ? "220px" : "60px",
+          background: "hsl(220 32% 7%)",
+          borderColor: "hsl(220 26% 13%)",
+          minHeight: "100vh",
+        }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-3 py-5 border-b" style={{ borderColor: "hsl(220 26% 13%)" }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, hsl(42 85% 46%), hsl(35 82% 54%))" }}>
+            <Shield className="w-4 h-4 text-white" />
+          </div>
+          {sidebarOpen && (
+            <div>
+              <p className="text-xs font-bold leading-none" style={{ color: "hsl(42 85% 58%)" }}>Guardian Portal</p>
+              <p className="text-[10px] mt-0.5" style={{ color: "hsl(38 14% 50%)" }}>Sacred Admin</p>
             </div>
-          ))}
+          )}
         </div>
 
-        {/* Tab navigation */}
-        <div className="flex gap-1 flex-wrap sm:flex-nowrap overflow-x-auto mb-6 border-b border-border pb-2 scrollbar-none -mx-1 px-1">
-          {TABS.map(tab => {
-            const Icon = tab.icon;
+        {/* Nav */}
+        <nav className="flex-1 py-4 space-y-0.5 px-2 overflow-y-auto">
+          {NAV_ITEMS.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-t-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${activeTab === tab.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent"}`}>
-                <Icon className="w-4 h-4" />{tab.label}
-                {tab.id === "moderation" && pending.length > 0 && <span className="ml-1 bg-destructive text-destructive-foreground rounded-full text-xs w-4 h-4 flex items-center justify-center">{pending.length}</span>}
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-left transition-all duration-150 group relative"
+                style={{
+                  background: isActive ? "hsl(42 85% 46% / 0.15)" : "transparent",
+                  color: isActive ? "hsl(42 85% 58%)" : "hsl(38 14% 55%)",
+                  borderLeft: isActive ? "2px solid hsl(42 85% 46%)" : "2px solid transparent",
+                }}
+                title={!sidebarOpen ? item.label : undefined}
+              >
+                <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? "" : "group-hover:text-foreground"}`} />
+                {sidebarOpen && (
+                  <span className="text-xs font-medium truncate">{item.label}</span>
+                )}
+                {item.id === "moderation" && pending.length > 0 && (
+                  <span className="ml-auto w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center flex-shrink-0"
+                    style={{ background: "hsl(0 72% 51%)", color: "white" }}>
+                    {pending.length}
+                  </span>
+                )}
               </button>
             );
           })}
+        </nav>
+
+        {/* Bottom */}
+        <div className="p-3 border-t space-y-1" style={{ borderColor: "hsl(220 26% 13%)" }}>
+          <Link to="/"
+            className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs transition-colors"
+            style={{ color: "hsl(38 14% 50%)" }}
+          >
+            <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+            {sidebarOpen && <span>Back to Site</span>}
+          </Link>
         </div>
+      </aside>
 
-        {/* ── MODERATION TAB ── */}
-        {activeTab === "moderation" && (
-          <div className="space-y-6">
-            {/* Create Prayer Card */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-display text-xl font-semibold">Create Prayer Card</h2>
-                <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setShowPrayerForm(v => !v)}>
-                  <PlusCircle className="w-4 h-4" />{showPrayerForm ? "Cancel" : "New Prayer Card"}
-                </Button>
-              </div>
+      {/* ── MAIN AREA ── */}
+      <div className="flex-1 flex flex-col min-w-0">
 
-              {showPrayerForm && (
-                <div className="prayer-card p-5 mb-6">
-                  <p className="text-xs text-muted-foreground mb-4">Cards created here are automatically published as <span className="font-semibold text-primary">Curated (Admin)</span> and visible immediately.</p>
-                  <Form {...prayerForm}>
-                    <form onSubmit={prayerForm.handleSubmit(onPrayerCardSubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FormField control={prayerForm.control} name="title" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Title (optional)</FormLabel>
-                            <FormControl><Input {...field} placeholder="e.g. Morning Surrender" className="rounded-xl text-sm" maxLength={100} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={prayerForm.control} name="text_style" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Text Style</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="rounded-xl text-sm"><SelectValue /></SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {TEXT_STYLES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </div>
+        {/* Top header */}
+        <header className="flex items-center gap-4 px-6 py-4 border-b flex-shrink-0"
+          style={{ background: "hsl(220 32% 7%)", borderColor: "hsl(220 26% 13%)" }}>
+          <button onClick={() => setSidebarOpen(v => !v)}
+            className="p-1.5 rounded-lg transition-colors hover:bg-white/5">
+            <Menu className="w-5 h-5" style={{ color: "hsl(38 14% 55%)" }} />
+          </button>
 
-                      <FormField control={prayerForm.control} name="prayer_text" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Prayer Text <span className="text-destructive">*</span></FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="Write the prayer…" rows={5} className="rounded-xl text-sm resize-none" maxLength={5000} />
-                          </FormControl>
-                          <p className="text-xs text-muted-foreground text-right">{field.value?.length ?? 0}/5000</p>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
+          <div>
+            <h1 className="font-display text-lg font-bold leading-none" style={{ color: "hsl(38 28% 92%)" }}>
+              {NAV_ITEMS.find(n => n.id === activeTab)?.label ?? "Admin"}
+            </h1>
+            <p className="text-xs mt-0.5" style={{ color: "hsl(38 14% 50%)" }}>
+              KeepPray.ing · Guardian Portal
+            </p>
+          </div>
 
-                      <FormField control={prayerForm.control} name="extended_prayer" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Scripture / Extended Prayer (optional)</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} placeholder="Related scripture or extended meditation… (e.g. John 3:16)" rows={3} className="rounded-xl text-sm resize-none" maxLength={5000} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FormField control={prayerForm.control} name="tags" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Tags (comma-separated)</FormLabel>
-                            <FormControl><Input {...field} placeholder="peace, healing, morning-prayer" className="rounded-xl text-sm" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={prayerForm.control} name="background_url" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Background Image URL (optional)</FormLabel>
-                            <FormControl><Input {...field} placeholder="https://…" className="rounded-xl text-sm" /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </div>
-
-                      <div className="flex gap-2 pt-1">
-                        <Button type="submit" disabled={savingPrayer} className="btn-gold rounded-xl gap-1.5 text-sm">
-                          {savingPrayer ? <><Loader2 className="w-4 h-4 animate-spin" />Publishing…</> : <><ScrollText className="w-4 h-4" />Publish Prayer Card</>}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => { setShowPrayerForm(false); prayerForm.reset(); }} className="rounded-xl text-sm">Cancel</Button>
-                      </div>
-                    </form>
-                  </Form>
-                </div>
-              )}
+          <div className="ml-auto flex items-center gap-3">
+            {/* Status pill */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs"
+              style={{ background: "hsl(150 38% 26% / 0.25)", color: "hsl(150 38% 65%)", border: "1px solid hsl(150 38% 26% / 0.4)" }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              System Divine
             </div>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+              style={{ background: "linear-gradient(135deg, hsl(42 85% 46%), hsl(35 82% 54%)", color: "white" }}>
+              {user?.email?.[0]?.toUpperCase() ?? "A"}
+            </div>
+          </div>
+        </header>
 
-            {/* Review Queue */}
-            <div>
-              <h2 className="font-display text-xl font-semibold mb-4">Community Review Queue ({pending.length})</h2>
-              {pending.length === 0 ? <p className="text-muted-foreground text-sm">No prayers pending review 🙏</p> : (
-                <div className="space-y-4">
-                  {pending.map(p => (
-                    <div key={p.id} className="prayer-card p-5 space-y-3">
-                      {p.title && <h3 className="font-semibold">{p.title}</h3>}
-                      <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
-                    <div className="flex gap-2">
-                        <Button size="sm" onClick={() => review(p.id, "approved")} className="btn-gold rounded-xl gap-1.5"><Check className="w-3.5 h-3.5" />Approve</Button>
-                        <Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")} className="rounded-xl gap-1.5"><X className="w-3.5 h-3.5" />Reject</Button>
-                        <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/40" onClick={async () => { if (!confirm("Permanently delete this prayer?")) return; await supabase.from("prayer_cards").delete().eq("id", p.id); setPending(prev => prev.filter(x => x.id !== p.id)); toast({ title: "Prayer deleted" }); }}>
-                          <Trash2 className="w-3.5 h-3.5" />Delete
-                        </Button>
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6">
+          <AnimatePresence mode="wait">
+            <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}>
+
+              {/* ── OVERVIEW ── */}
+              {activeTab === "overview" && (
+                <div className="space-y-6">
+                  {/* Hero title */}
+                  <div>
+                    <h2 className="font-display text-3xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>The Altar Overview</h2>
+                    <p className="text-sm mt-1" style={{ color: "hsl(38 14% 50%)" }}>
+                      Witness the growth of the collective spirit and the rising tide of global devotion.
+                    </p>
+                  </div>
+
+                  {/* Metrics row */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {[
+                      { label: "Total Users", value: stats.users, icon: Users, color: "hsl(42 85% 58%)" },
+                      { label: "Active Warriors", value: stats.approved, icon: Flame, color: "hsl(42 85% 58%)" },
+                      { label: "Total Prayers", value: stats.total, icon: Scroll, color: "hsl(42 85% 58%)" },
+                      { label: "Testimonies", value: stats.testimonies, icon: Star, color: "hsl(42 85% 58%)" },
+                      { label: "Pending Review", value: stats.pending, icon: Shield, color: pending.length > 0 ? "hsl(0 72% 60%)" : "hsl(42 85% 58%)" },
+                    ].map((m, i) => (
+                      <motion.div key={m.label}
+                        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+                        className="rounded-xl p-4 space-y-2"
+                        style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "hsl(38 14% 50%)" }}>{m.label}</span>
+                          <m.icon className="w-3.5 h-3.5" style={{ color: m.color }} />
+                        </div>
+                        <div className="font-display text-2xl font-bold" style={{ color: m.color }}>{m.value.toLocaleString()}</div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Charts row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* User Growth — takes 2 cols */}
+                    <div className="lg:col-span-2 rounded-xl p-5"
+                      style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-sm font-semibold" style={{ color: "hsl(38 28% 88%)" }}>User Growth</h3>
+                          <p className="text-xs mt-0.5" style={{ color: "hsl(38 14% 50%)" }}>Congregation expansion over time</p>
+                        </div>
+                        <TrendingUp className="w-4 h-4" style={{ color: "hsl(42 85% 58%)" }} />
+                      </div>
+                      <ResponsiveContainer width="100%" height={180}>
+                        <AreaChart data={signupData}>
+                          <defs>
+                            <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(42, 85%, 46%)" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="hsl(42, 85%, 46%)" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 26%, 17%)" />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, fill: "hsl(38, 14%, 45%)" }} axisLine={false} tickLine={false} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: "hsl(38, 14%, 45%)" }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ background: "hsl(220,32%,13%)", border: "1px solid hsl(220,26%,18%)", borderRadius: "0.5rem", fontSize: "11px", color: "hsl(38,28%,88%)" }} />
+                          <Area type="monotone" dataKey="count" stroke="hsl(42,85%,46%)" strokeWidth={2} fill="url(#goldGrad)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Sacred Pulse / Activity feed */}
+                    <div className="rounded-xl p-5"
+                      style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold" style={{ color: "hsl(38 28% 88%)" }}>Sacred Pulse</h3>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "hsl(0 72% 51% / 0.2)", color: "hsl(0 72% 65%)" }}>Live Now</span>
+                      </div>
+                      <div className="space-y-3">
+                        {pending.slice(0, 4).map((p, i) => (
+                          <div key={p.id} className="flex items-start gap-2">
+                            <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold"
+                              style={{ background: `hsl(${220 + i * 15} 32% 18%)`, color: "hsl(42 85% 58%)" }}>
+                              {i + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium leading-tight line-clamp-2" style={{ color: "hsl(38 28% 80%)" }}>
+                                {p.title || p.prayer_text.slice(0, 60)}
+                              </p>
+                              <p className="text-[10px] mt-0.5" style={{ color: "hsl(38 14% 45%)" }}>
+                                {new Date(p.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {pending.length === 0 && (
+                          <p className="text-xs text-center py-4" style={{ color: "hsl(38 14% 45%)" }}>All prayers reviewed 🙏</p>
+                        )}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Prayer Activity charts */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="rounded-xl p-5"
+                      style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+                      <h3 className="text-sm font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Prayer Activity — Top Liked</h3>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={topLiked.map(p => ({ name: (p.title || p.prayer_text).slice(0, 14) + "…", value: p.likes_count }))}>
+                          <XAxis dataKey="name" tick={{ fontSize: 8, fill: "hsl(38,14%,45%)" }} axisLine={false} tickLine={false} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 8, fill: "hsl(38,14%,45%)" }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ background: "hsl(220,32%,13%)", border: "1px solid hsl(220,26%,18%)", borderRadius: "0.5rem", fontSize: "11px", color: "hsl(38,28%,88%)" }} />
+                          <Bar dataKey="value" fill="hsl(42,85%,46%)" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="rounded-xl p-5"
+                      style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+                      <h3 className="text-sm font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Prayer Activity — Most Prayed</h3>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={topPrayed.map(p => ({ name: (p.title || p.prayer_text).slice(0, 14) + "…", value: p.prayed_count }))}>
+                          <XAxis dataKey="name" tick={{ fontSize: 8, fill: "hsl(38,14%,45%)" }} axisLine={false} tickLine={false} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 8, fill: "hsl(38,14%,45%)" }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ background: "hsl(220,32%,13%)", border: "1px solid hsl(220,26%,18%)", borderRadius: "0.5rem", fontSize: "11px", color: "hsl(38,28%,88%)" }} />
+                          <Bar dataKey="value" fill="hsl(150,38%,35%)" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  {/* Quick action footer */}
+                  <div className="rounded-xl px-5 py-4 flex items-center gap-6 flex-wrap"
+                    style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+                    <span className="text-xs" style={{ color: "hsl(38 14% 50%)" }}>Quick actions</span>
+                    <button onClick={() => setActiveTab("moderation")}
+                      className="text-xs flex items-center gap-1.5 transition-colors hover:opacity-80"
+                      style={{ color: "hsl(42 85% 58%)" }}>
+                      <Shield className="w-3.5 h-3.5" />Review Queue ({pending.length})
+                    </button>
+                    <button onClick={() => setActiveTab("users")}
+                      className="text-xs flex items-center gap-1.5 transition-colors hover:opacity-80"
+                      style={{ color: "hsl(42 85% 58%)" }}>
+                      <Users className="w-3.5 h-3.5" />Manage Users
+                    </button>
+                    <button onClick={() => setActiveTab("prayers")}
+                      className="text-xs flex items-center gap-1.5 transition-colors hover:opacity-80"
+                      style={{ color: "hsl(42 85% 58%)" }}>
+                      <PlusCircle className="w-3.5 h-3.5" />New Prayer
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── REVIEW QUEUE (Sacred Review) ── */}
+              {activeTab === "moderation" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>
+                        ✦ Moderation Sanctuary
+                      </h2>
+                      <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>
+                        {pending.length} Pending Reviews — Curating the divine digital altar
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <GoldButton onClick={() => setShowPrayerForm(v => !v)}>
+                        <PlusCircle className="w-4 h-4" />
+                        {showPrayerForm ? "Cancel" : "New Prayer"}
+                      </GoldButton>
+                      <DarkOutlineButton onClick={load}>
+                        <RefreshCw className="w-4 h-4" />
+                      </DarkOutlineButton>
+                    </div>
+                  </div>
+
+                  {showPrayerForm && (
+                    <GuardianCard>
+                      <p className="text-xs mb-4" style={{ color: "hsl(42 85% 58%)" }}>
+                        Cards created here are automatically published as <strong>Curated (Admin)</strong> and visible immediately.
+                      </p>
+                      <Form {...prayerForm}>
+                        <form onSubmit={prayerForm.handleSubmit(onPrayerCardSubmit)} className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <FormField control={prayerForm.control} name="title" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Title (optional)</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="e.g. Morning Surrender" /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={prayerForm.control} name="text_style" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Text Style</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="rounded-xl text-sm dark-select" style={{ background: "hsl(220 26% 14%)", border: "1px solid hsl(220 26% 20%)", color: "hsl(38 28% 88%)" }}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent style={{ background: "hsl(220 32% 12%)", border: "1px solid hsl(220 26% 18%)" }}>
+                                    {TEXT_STYLES.map(s => <SelectItem key={s.value} value={s.value} style={{ color: "hsl(38 28% 88%)" }}>{s.label}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </div>
+                          <FormField control={prayerForm.control} name="prayer_text" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Prayer Text <span style={{ color: "hsl(0 72% 60%)" }}>*</span></FormLabel>
+                              <FormControl><DarkTextarea {...field} placeholder="Write the prayer…" rows={5} maxLength={5000} /></FormControl>
+                              <p className="text-xs text-right mt-0.5" style={{ color: "hsl(38 14% 45%)" }}>{field.value?.length ?? 0}/5000</p>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={prayerForm.control} name="extended_prayer" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Scripture / Extended Prayer (optional)</FormLabel>
+                              <FormControl><DarkTextarea {...field} placeholder="Related scripture… (e.g. John 3:16)" rows={3} maxLength={5000} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <FormField control={prayerForm.control} name="tags" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Tags (comma-separated)</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="peace, healing, morning-prayer" /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={prayerForm.control} name="background_url" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Background Image URL</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="https://…" /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </div>
+                          <div className="flex gap-2 pt-1">
+                            <GoldButton type="submit" disabled={savingPrayer}>
+                              {savingPrayer ? <Loader2 className="w-4 h-4 animate-spin" /> : <ScrollText className="w-4 h-4" />}
+                              Publish Prayer Card
+                            </GoldButton>
+                            <DarkOutlineButton type="button" onClick={() => { setShowPrayerForm(false); prayerForm.reset(); }}>Cancel</DarkOutlineButton>
+                          </div>
+                        </form>
+                      </Form>
+                    </GuardianCard>
+                  )}
+
+                  {/* Filter bar */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs px-3 py-1.5 rounded-full font-medium" style={{ background: "hsl(42 85% 46% / 0.15)", color: "hsl(42 85% 58%)", border: "1px solid hsl(42 85% 46% / 0.3)" }}>
+                      All Pending
+                    </span>
+                    <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>All Topics</span>
+                    <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>Last 24 Hours</span>
+                  </div>
+
+                  {pending.length === 0 ? (
+                    <GuardianCard>
+                      <p className="text-center py-6 text-sm" style={{ color: "hsl(38 14% 50%)" }}>No prayers pending review 🙏</p>
+                    </GuardianCard>
+                  ) : (
+                    <div className="space-y-3">
+                      {pending.map((p, i) => (
+                        <motion.div key={p.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
+                          <GuardianCard>
+                            <div className="flex items-start gap-3">
+                              <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold"
+                                style={{ background: "hsl(220 26% 18%)", color: "hsl(42 85% 58%)" }}>
+                                {(p.title || p.prayer_text)[0]?.toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                {p.title && <p className="font-semibold text-sm mb-1" style={{ color: "hsl(38 28% 90%)" }}>{p.title}</p>}
+                                <p className="text-sm leading-relaxed line-clamp-3" style={{ color: "hsl(38 20% 70%)" }}>{p.prayer_text}</p>
+                                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                  <span className="text-[10px]" style={{ color: "hsl(38 14% 45%)" }}>{new Date(p.created_at).toLocaleDateString()}</span>
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "hsl(150 38% 26% / 0.25)", color: "hsl(150 38% 55%)" }}>
+                                    Community Prayer
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <button onClick={() => review(p.id, "rejected")}
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/20"
+                                  style={{ background: "hsl(0 72% 51% / 0.1)", color: "hsl(0 72% 65%)", border: "1px solid hsl(0 72% 51% / 0.3)" }}>
+                                  <X className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => review(p.id, "approved")}
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-emerald-500/20"
+                                  style={{ background: "hsl(150 38% 26% / 0.15)", color: "hsl(150 38% 60%)", border: "1px solid hsl(150 38% 26% / 0.4)" }}>
+                                  <Check className="w-4 h-4" />
+                                </button>
+                                <button onClick={async () => {
+                                  if (!confirm("Permanently delete this prayer?")) return;
+                                  await supabase.from("prayer_cards").delete().eq("id", p.id);
+                                  setPending(prev => prev.filter(x => x.id !== p.id));
+                                  toast({ title: "Prayer deleted" });
+                                }}
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                                  style={{ background: "hsl(220 26% 14%)", color: "hsl(38 14% 50%)", border: "1px solid hsl(220 26% 20%)" }}>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </GuardianCard>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── USER MANAGEMENT (Guardians) ── */}
+              {activeTab === "users" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Guardians of the Altar</h2>
+                    <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Managing the devoted souls who keep the spiritual flame burning.</p>
+                  </div>
+                  {/* Inject the existing UserMonitorTab — styled wrapper */}
+                  <div className="guardian-user-tab">
+                    <UserMonitorTab />
+                  </div>
+                </div>
+              )}
+
+              {/* ── ANALYTICS (Sacred Insights) ── */}
+              {activeTab === "insights" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(42 85% 58%)" }}>✦ Sacred Insights</h2>
+                      <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>AI-powered analytics and divine engagement metrics</p>
+                    </div>
+                    <GoldButton onClick={generateFaq} disabled={genFaq}>
+                      {genFaq ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      Refresh Insights
+                    </GoldButton>
+                  </div>
+
+                  {/* AI Insights tab */}
+                  <AIInsightsTab />
+
+                  {/* Stats charts */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <GuardianCard>
+                      <h3 className="text-sm font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Prayer Intensity — Most Liked</h3>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={topLiked.map(p => ({ name: (p.title || p.prayer_text).slice(0, 14) + "…", value: p.likes_count }))}>
+                          <XAxis dataKey="name" tick={{ fontSize: 8, fill: "hsl(38,14%,45%)" }} axisLine={false} tickLine={false} />
+                          <YAxis allowDecimals={false} tick={{ fontSize: 8, fill: "hsl(38,14%,45%)" }} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={{ background: "hsl(220,32%,13%)", border: "1px solid hsl(220,26%,18%)", borderRadius: "0.5rem", fontSize: "11px", color: "hsl(38,28%,88%)" }} />
+                          <Bar dataKey="value" fill="hsl(42,85%,46%)" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </GuardianCard>
+                    <GuardianCard>
+                      <h3 className="text-sm font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Sacred Scripture Reach — Most Prayed</h3>
+                      <div className="space-y-2">
+                        {topPrayed.map((p, i) => (
+                          <div key={p.id} className="flex items-center gap-3">
+                            <p className="text-xs flex-1 truncate" style={{ color: "hsl(38 20% 70%)" }}>
+                              {p.title || p.prayer_text.slice(0, 40)}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 rounded-full" style={{
+                                width: `${Math.max(20, (p.prayed_count / (topPrayed[0]?.prayed_count || 1)) * 80)}px`,
+                                background: "linear-gradient(90deg, hsl(42,85%,46%), hsl(35,82%,54%))"
+                              }} />
+                              <span className="text-xs w-6 text-right" style={{ color: "hsl(42 85% 58%)" }}>{p.prayed_count}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {topPrayed.length === 0 && <p className="text-xs py-3 text-center" style={{ color: "hsl(38 14% 45%)" }}>No data yet</p>}
+                      </div>
+                    </GuardianCard>
+                  </div>
+                </div>
+              )}
+
+              {/* ── MODERATION LOG (Testimonies) ── */}
+              {activeTab === "testimonies" && <TestimoniesAdminTab />}
+
+              {/* ── PRAYERS ── */}
+              {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
+
+              {/* ── BLOG ── */}
+              {activeTab === "blog" && (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>KeepGrow.ing Posts</h2>
+                      <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Devotional content and faith encouragement</p>
+                    </div>
+                    <GoldButton onClick={() => setShowBlogForm(!showBlogForm)}>
+                      <PlusCircle className="w-4 h-4" />New Post
+                    </GoldButton>
+                  </div>
+
+                  {showBlogForm && (
+                    <GuardianCard>
+                      <h3 className="font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Create Post</h3>
+                      <Form {...blogForm}>
+                        <form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <FormField control={blogForm.control} name="title" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Title</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="Post title" /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={blogForm.control} name="slug" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Slug</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="post-url-slug" /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </div>
+                          <FormField control={blogForm.control} name="excerpt" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Excerpt</FormLabel>
+                              <FormControl><DarkInput {...field} placeholder="Brief description…" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={blogForm.control} name="cover_image_url" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Cover Image URL</FormLabel>
+                              <FormControl><DarkInput {...field} placeholder="https://…" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={blogForm.control} name="content" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Content (Markdown)</FormLabel>
+                              <FormControl><DarkTextarea {...field} placeholder="Write post in Markdown…" rows={8} style={{ fontFamily: "monospace" }} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          <FormField control={blogForm.control} name="published" render={({ field }) => (
+                            <FormItem className="flex items-center gap-3">
+                              <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} className="rounded" />
+                              <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Publish immediately</FormLabel>
+                            </FormItem>
+                          )} />
+                          <div className="flex gap-2">
+                            <GoldButton type="submit">Save Post</GoldButton>
+                            <DarkOutlineButton type="button" onClick={() => setShowBlogForm(false)}>Cancel</DarkOutlineButton>
+                          </div>
+                        </form>
+                      </Form>
+                    </GuardianCard>
+                  )}
+
+                  {blogPosts.length === 0 ? (
+                    <p className="text-sm" style={{ color: "hsl(38 14% 50%)" }}>No posts yet. Create your first one!</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {blogPosts.map(post => (
+                        <GuardianCard key={post.id} className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate" style={{ color: "hsl(38 28% 90%)" }}>{post.title}</p>
+                            <p className="text-xs mt-0.5" style={{ color: "hsl(38 14% 45%)" }}>
+                              {new Date(post.created_at).toLocaleDateString()} · /{post.slug}
+                            </p>
+                          </div>
+                          <span className="text-[10px] px-2 py-1 rounded-full flex-shrink-0"
+                            style={post.published
+                              ? { background: "hsl(150 38% 26% / 0.25)", color: "hsl(150 38% 55%)" }
+                              : { background: "hsl(220 26% 18%)", color: "hsl(38 14% 50%)" }}>
+                            {post.published ? "Published" : "Draft"}
+                          </span>
+                          <button onClick={() => togglePublish(post.id, post.published)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
+                            {post.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </GuardianCard>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── FAQ ── */}
+              {activeTab === "faq" && (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>AI FAQ Reports</h2>
+                      <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Weekly AI analysis of PrayerAssist conversations</p>
+                    </div>
+                    <GoldButton onClick={generateFaq} disabled={genFaq}>
+                      {genFaq ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      Generate Weekly FAQ
+                    </GoldButton>
+                  </div>
+                  {reports.length === 0 ? (
+                    <GuardianCard>
+                      <p className="text-sm italic text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>
+                        No reports yet. Click "Generate Weekly FAQ" to create the first one.
+                      </p>
+                    </GuardianCard>
+                  ) : reports.map(r => (
+                    <GuardianCard key={r.id}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-sm" style={{ color: "hsl(38 28% 90%)" }}>{r.title}</h3>
+                        <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>{new Date(r.generated_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="prose prose-sm max-w-none" style={{ color: "hsl(38 20% 75%)" }}>
+                        <ReactMarkdown>{r.content}</ReactMarkdown>
+                      </div>
+                    </GuardianCard>
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        )}
 
-        {/* ── USERS TAB ── */}
-        {activeTab === "users" && (
-          <div>
-            <h2 className="font-display text-xl font-semibold mb-4">User Monitor</h2>
-            <UserMonitorTab />
-          </div>
-        )}
+              {/* ── VERSES ── */}
+              {activeTab === "verses" && (
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Verse Summaries & Exegesis</h2>
+                      <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>{verseSummaries.length} cached scriptures</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "hsl(38 14% 45%)" }} />
+                      <DarkInput
+                        value={verseSearch}
+                        onChange={e => setVerseSearch(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") loadVerses(verseSearch); }}
+                        placeholder="Search by reference, summary, or exegesis…"
+                        className="pl-9"
+                      />
+                    </div>
+                    <GoldButton onClick={() => loadVerses(verseSearch)} disabled={verseSearching}>
+                      {verseSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                    </GoldButton>
+                    <DarkOutlineButton onClick={() => { setVerseSearch(""); loadVerses(""); }}>Clear</DarkOutlineButton>
+                  </div>
 
-        {/* ── STATS TAB ── */}
-        {activeTab === "stats" && (
-          <div className="space-y-8">
-            <div>
-              <h2 className="font-display text-xl font-semibold mb-4">User Signups (Last 14 Days)</h2>
-              <div className="prayer-card p-4">
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={signupData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "0.5rem", fontSize: "12px" }} />
-                    <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold mb-3">Top 5 Most Liked</h3>
-                <div className="prayer-card p-4">
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={topLiked.map(p => ({ name: (p.title || p.prayer_text).slice(0, 18) + "…", value: p.likes_count }))}>
-                      <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 9 }} />
-                      <Tooltip contentStyle={{ fontSize: "11px" }} />
-                      <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {verseSearching ? (
+                    <div className="flex items-center gap-2 py-6" style={{ color: "hsl(38 14% 50%)" }}>
+                      <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Searching…</span>
+                    </div>
+                  ) : verseSummaries.length === 0 ? (
+                    <GuardianCard><p className="text-sm text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>No verse summaries found.</p></GuardianCard>
+                  ) : (
+                    <div className="space-y-3">
+                      {verseSummaries.map(v => {
+                        const isEditing = editingVerseId === v.id;
+                        return (
+                          <GuardianCard key={v.id}>
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              {isEditing ? (
+                                <DarkInput value={editingVerse.reference || ""} onChange={e => setEditingVerse(p => ({ ...p, reference: e.target.value }))} className="flex-1" placeholder="Reference…" />
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                                  style={{ background: "hsl(42 85% 46% / 0.15)", color: "hsl(42 85% 58%)", border: "1px solid hsl(42 85% 46% / 0.3)" }}>
+                                  <BookMarked className="w-3 h-3" />{v.reference}
+                                </span>
+                              )}
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>{new Date(v.created_at).toLocaleDateString()}</span>
+                                {isEditing ? (
+                                  <>
+                                    <GoldButton onClick={saveVerseEdit} disabled={savingVerse} className="h-7 text-xs px-3">
+                                      {savingVerse ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}Save
+                                    </GoldButton>
+                                    <DarkOutlineButton onClick={() => { setEditingVerseId(null); setEditingVerse({}); }} className="h-7 text-xs px-3">
+                                      <XCircle className="w-3 h-3" />Cancel
+                                    </DarkOutlineButton>
+                                  </>
+                                ) : (
+                                  <button onClick={() => { setEditingVerseId(v.id); setEditingVerse({ reference: v.reference, verse_text: v.verse_text ?? "", summary: v.summary ?? "", exegesis: v.exegesis ?? "" }); }}
+                                    className="h-7 px-3 text-xs rounded-lg flex items-center gap-1 transition-colors"
+                                    style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
+                                    <Pencil className="w-3 h-3" />Edit
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-[10px] font-medium mb-1 uppercase tracking-wider" style={{ color: "hsl(38 14% 45%)" }}>Verse Text</p>
+                                {isEditing ? (
+                                  <DarkTextarea value={editingVerse.verse_text ?? ""} onChange={e => setEditingVerse(p => ({ ...p, verse_text: e.target.value }))} rows={2} placeholder="Verse text…" />
+                                ) : (
+                                  <p className="text-sm italic leading-relaxed" style={{ color: "hsl(38 20% 72%)" }}>{v.verse_text || "—"}</p>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-medium mb-1 uppercase tracking-wider" style={{ color: "hsl(38 14% 45%)" }}>Summary</p>
+                                {isEditing ? (
+                                  <DarkTextarea value={editingVerse.summary ?? ""} onChange={e => setEditingVerse(p => ({ ...p, summary: e.target.value }))} rows={3} placeholder="Summary…" />
+                                ) : (
+                                  <p className="text-sm leading-relaxed" style={{ color: "hsl(38 20% 72%)" }}>{v.summary || "—"}</p>
+                                )}
+                              </div>
+                              {(isEditing || v.exegesis) && (
+                                <div>
+                                  <p className="text-[10px] font-medium mb-1 uppercase tracking-wider" style={{ color: "hsl(38 14% 45%)" }}>Exegesis</p>
+                                  {isEditing ? (
+                                    <DarkTextarea value={editingVerse.exegesis ?? ""} onChange={e => setEditingVerse(p => ({ ...p, exegesis: e.target.value }))} rows={5} placeholder="In-depth exegesis…" />
+                                  ) : (
+                                    <details>
+                                      <summary className="text-xs cursor-pointer" style={{ color: "hsl(42 85% 55%)" }}>▶ View Exegesis</summary>
+                                      <p className="text-sm leading-relaxed mt-2 pl-3" style={{ color: "hsl(38 20% 70%)", borderLeft: "2px solid hsl(42 85% 46% / 0.3)" }}>{v.exegesis}</p>
+                                    </details>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </GuardianCard>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-3">Top 5 Most Prayed</h3>
-                <div className="prayer-card p-4">
-                  <ResponsiveContainer width="100%" height={180}>
-                    <BarChart data={topPrayed.map(p => ({ name: (p.title || p.prayer_text).slice(0, 18) + "…", value: p.prayed_count }))}>
-                      <XAxis dataKey="name" tick={{ fontSize: 9 }} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 9 }} />
-                      <Tooltip contentStyle={{ fontSize: "11px" }} />
-                      <Bar dataKey="value" fill="hsl(var(--forest))" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+              )}
 
-        {/* ── CONTACTS TAB ── */}
-        {activeTab === "contacts" && (
-          <div>
-            <h2 className="font-display text-xl font-semibold mb-4">Contact Submissions ({contacts.length})</h2>
-            {contacts.length === 0 ? <p className="text-muted-foreground text-sm">No contact submissions yet.</p> : (
-              <div className="space-y-3">
-                {contacts.map(c => (
-                  <div key={c.id} className="prayer-card p-4 space-y-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      {c.name && <span className="font-medium text-sm">{c.name}</span>}
-                      {c.email && <span className="text-xs text-muted-foreground">{c.email}</span>}
-                      <span className="text-xs text-muted-foreground ml-auto">{new Date(c.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="bg-muted/40 rounded-xl px-3 py-2">
-                      <p className="text-xs text-muted-foreground mb-1 font-medium">Message</p>
-                      <p className="text-sm text-foreground/80">{c.message}</p>
-                    </div>
-                    {c.ai_reply && (
-                      <div className="bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
-                        <p className="text-xs text-primary font-medium mb-1 flex items-center gap-1">
-                          ✦ AI Reply {c.replied_at && <span className="text-muted-foreground font-normal">· {new Date(c.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
-                        </p>
-                        <p className="text-sm text-foreground/80 whitespace-pre-line">{c.ai_reply}</p>
-                      </div>
-                    )}
+              {/* ── CONTACT ── */}
+              {activeTab === "contacts" && (
+                <div className="space-y-5">
+                  <div>
+                    <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Contact Submissions</h2>
+                    <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>{contacts.length} messages received</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── BLOG TAB ── */}
-        {activeTab === "blog" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">KeepGrow.ing Posts</h2>
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => setShowBlogForm(!showBlogForm)}>
-                <PlusCircle className="w-4 h-4" />New Post
-              </Button>
-            </div>
-
-            {showBlogForm && (
-              <div className="prayer-card p-5">
-                <h3 className="font-semibold mb-4">Create KeepGrow.ing Post</h3>
-                <Form {...blogForm}>
-                  <form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField control={blogForm.control} name="title" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Title</FormLabel>
-                          <FormControl><Input {...field} placeholder="Post title" className="rounded-xl text-sm" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={blogForm.control} name="slug" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Slug</FormLabel>
-                          <FormControl><Input {...field} placeholder="post-url-slug" className="rounded-xl text-sm" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
-                    <FormField control={blogForm.control} name="excerpt" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Excerpt</FormLabel>
-                        <FormControl><Input {...field} placeholder="Brief description…" className="rounded-xl text-sm" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={blogForm.control} name="cover_image_url" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Cover Image URL</FormLabel>
-                        <FormControl><Input {...field} placeholder="https://…" className="rounded-xl text-sm" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={blogForm.control} name="content" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Content (Markdown)</FormLabel>
-                        <FormControl><Textarea {...field} placeholder="Write post in Markdown…" rows={8} className="rounded-xl text-sm font-mono resize-none" /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    <FormField control={blogForm.control} name="published" render={({ field }) => (
-                      <FormItem className="flex items-center gap-3">
-                        <input type="checkbox" checked={field.value} onChange={e => field.onChange(e.target.checked)} className="rounded" />
-                        <FormLabel className="text-xs">Publish immediately</FormLabel>
-                      </FormItem>
-                    )} />
-                    <div className="flex gap-2">
-                      <Button type="submit" className="btn-gold rounded-xl gap-1.5 text-sm">Save Post</Button>
-                      <Button type="button" variant="outline" onClick={() => setShowBlogForm(false)} className="rounded-xl text-sm">Cancel</Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
-            )}
-
-            {blogPosts.length === 0 ? <p className="text-muted-foreground text-sm">No posts yet. Create your first one!</p> : (
-              <div className="space-y-3">
-                {blogPosts.map(post => (
-                  <div key={post.id} className="prayer-card p-4 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{post.title}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(post.created_at).toLocaleDateString()} · /{post.slug}</p>
-                    </div>
-                    <Badge variant={post.published ? "default" : "secondary"} className="text-xs flex-shrink-0">
-                      {post.published ? "Published" : "Draft"}
-                    </Badge>
-                    <Button size="sm" variant="ghost" className="rounded-lg" onClick={() => togglePublish(post.id, post.published)}>
-                      {post.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── FAQ TAB ── */}
-        {activeTab === "faq" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold">AI FAQ Reports</h2>
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={generateFaq} disabled={genFaq}>
-                {genFaq ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                Generate Weekly FAQ
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground">AI analyzes the last 100 PrayerAssist.ing conversations and summarizes common questions and themes.</p>
-            {reports.length === 0 ? <p className="text-sm text-muted-foreground italic">No reports yet. Click "Generate Weekly FAQ" to create the first one.</p> : (
-              reports.map(r => (
-                <div key={r.id} className="prayer-card p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{r.title}</h3>
-                    <span className="text-xs text-muted-foreground">{new Date(r.generated_at).toLocaleDateString()}</span>
-                  </div>
-                  <div className="prose prose-sm max-w-none text-foreground [&_h2]:font-display [&_h2]:text-base [&_strong]:text-foreground">
-                    <ReactMarkdown>{r.content}</ReactMarkdown>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* ── AI INSIGHTS TAB ── */}
-        {activeTab === "insights" && <AIInsightsTab />}
-
-        {/* ── TESTIMONIES TAB ── */}
-        {activeTab === "testimonies" && <TestimoniesAdminTab />}
-
-        {/* ── PRAYERS TAB ── */}
-        {activeTab === "prayers" && <PrayersAdminTab />}
-
-        {/* ── VERSES TAB ── */}
-        {activeTab === "verses" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <h2 className="font-display text-xl font-semibold">Verse Summaries & Exegesis</h2>
-              <span className="text-xs text-muted-foreground">{verseSummaries.length} cached</span>
-            </div>
-            <p className="text-sm text-muted-foreground">AI-generated verse summaries and in-depth exegeses are cached here to avoid redundant API calls.</p>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={verseSearch}
-                  onChange={e => setVerseSearch(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter") loadVerses(verseSearch); }}
-                  placeholder="Search by reference, summary, or exegesis…"
-                  className="pl-9 rounded-xl text-sm"
-                />
-              </div>
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => loadVerses(verseSearch)} disabled={verseSearching}>
-                {verseSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                Search
-              </Button>
-              <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setVerseSearch(""); loadVerses(""); }}>
-                Clear
-              </Button>
-            </div>
-            {verseSummaries.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">No verse summaries cached yet. They appear automatically when users hover over scripture references.</p>
-            ) : (
-              <div className="space-y-3">
-                {verseSummaries.map(v => {
-                  const isEditing = editingVerseId === v.id;
-                  return (
-                    <div key={v.id} className="prayer-card p-4 space-y-3">
-                      {/* Header row */}
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        {isEditing ? (
-                          <Input
-                            value={editingVerse.reference ?? ""}
-                            onChange={e => setEditingVerse(p => ({ ...p, reference: e.target.value }))}
-                            className="rounded-xl text-sm font-semibold text-primary w-40"
-                            placeholder="Reference"
-                          />
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/15 border border-primary/30">
-                            <BookMarked className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-xs font-semibold text-primary">{v.reference}</span>
-                          </span>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
-                          {isEditing ? (
-                            <>
-                              <Button size="sm" className="btn-gold rounded-xl gap-1.5 h-7 text-xs" onClick={saveVerseEdit} disabled={savingVerse}>
-                                {savingVerse ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}Save
-                              </Button>
-                              <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1" onClick={() => { setEditingVerseId(null); setEditingVerse({}); }}>
-                                <XCircle className="w-3.5 h-3.5" />Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <Button size="sm" variant="ghost" className="rounded-xl h-7 text-xs gap-1" onClick={() => { setEditingVerseId(v.id); setEditingVerse({ reference: v.reference, verse_text: v.verse_text ?? "", summary: v.summary ?? "", exegesis: v.exegesis ?? "" }); }}>
-                              <Pencil className="w-3.5 h-3.5" />Edit
-                            </Button>
+                  {contacts.length === 0 ? (
+                    <GuardianCard><p className="text-sm text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>No contact submissions yet.</p></GuardianCard>
+                  ) : (
+                    <div className="space-y-3">
+                      {contacts.map(c => (
+                        <GuardianCard key={c.id}>
+                          <div className="flex items-center gap-3 flex-wrap mb-3">
+                            {c.name && <span className="font-medium text-sm" style={{ color: "hsl(38 28% 90%)" }}>{c.name}</span>}
+                            {c.email && <span className="text-xs" style={{ color: "hsl(38 14% 50%)" }}>{c.email}</span>}
+                            <span className="text-xs ml-auto" style={{ color: "hsl(38 14% 45%)" }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <div className="rounded-xl px-3 py-2 mb-2" style={{ background: "hsl(220 26% 14%)" }}>
+                            <p className="text-xs font-medium mb-1" style={{ color: "hsl(38 14% 50%)" }}>Message</p>
+                            <p className="text-sm" style={{ color: "hsl(38 20% 72%)" }}>{c.message}</p>
+                          </div>
+                          {c.ai_reply && (
+                            <div className="rounded-xl px-3 py-2" style={{ background: "hsl(42 85% 46% / 0.08)", border: "1px solid hsl(42 85% 46% / 0.2)" }}>
+                              <p className="text-xs font-medium mb-1 flex items-center gap-1" style={{ color: "hsl(42 85% 58%)" }}>
+                                <Sparkles className="w-3 h-3" />AI Reply
+                                {c.replied_at && <span className="font-normal" style={{ color: "hsl(38 14% 45%)" }}>· {new Date(c.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>}
+                              </p>
+                              <p className="text-sm whitespace-pre-line" style={{ color: "hsl(38 20% 72%)" }}>{c.ai_reply}</p>
+                            </div>
                           )}
-                        </div>
-                      </div>
-
-                      {/* Verse text */}
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Verse Text</p>
-                        {isEditing ? (
-                          <Textarea value={editingVerse.verse_text ?? ""} onChange={e => setEditingVerse(p => ({ ...p, verse_text: e.target.value }))} rows={2} className="rounded-xl text-sm resize-none" placeholder="Verse text…" />
-                        ) : (
-                          <p className="text-sm text-foreground/80 italic leading-relaxed">{v.verse_text || <span className="text-muted-foreground/50">—</span>}</p>
-                        )}
-                      </div>
-
-                      {/* Summary */}
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Summary</p>
-                        {isEditing ? (
-                          <Textarea value={editingVerse.summary ?? ""} onChange={e => setEditingVerse(p => ({ ...p, summary: e.target.value }))} rows={3} className="rounded-xl text-sm resize-none" placeholder="Summary…" />
-                        ) : (
-                          <p className="text-sm text-foreground/80 leading-relaxed">{v.summary || <span className="text-muted-foreground/50">—</span>}</p>
-                        )}
-                      </div>
-
-                      {/* Exegesis */}
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Exegesis</p>
-                        {isEditing ? (
-                          <Textarea value={editingVerse.exegesis ?? ""} onChange={e => setEditingVerse(p => ({ ...p, exegesis: e.target.value }))} rows={5} className="rounded-xl text-sm resize-none font-body" placeholder="In-depth exegesis…" />
-                        ) : (
-                          v.exegesis ? (
-                            <details className="group">
-                              <summary className="text-xs font-medium text-primary cursor-pointer list-none flex items-center gap-1 hover:underline">
-                                <span>▶ View Exegesis</span>
-                              </summary>
-                              <p className="text-sm text-foreground/80 leading-relaxed mt-2 pl-2 border-l-2 border-primary/20">{v.exegesis}</p>
-                            </details>
-                          ) : <span className="text-sm text-muted-foreground/50">—</span>
-                        )}
-                      </div>
+                        </GuardianCard>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                  )}
+                </div>
+              )}
+
+            </motion.div>
+          </AnimatePresence>
+        </main>
       </div>
     </div>
 
-    {/* AI Enrich panel — opens after admin publishes a new prayer card */}
+    {/* AI Enrich panel */}
     {enrichCardId && (
       <AIEnrichPanel
         open={enrichOpen}
-        onOpenChange={open => {
-          setEnrichOpen(open);
-          if (!open) { setEnrichCardId(null); setEnrichCardText(""); setEnrichCardExtended(null); }
-        }}
+        onOpenChange={open => { setEnrichOpen(open); if (!open) { setEnrichCardId(null); setEnrichCardText(""); setEnrichCardExtended(null); } }}
         cardId={enrichCardId}
         prayerText={enrichCardText}
         extendedPrayer={enrichCardExtended}
@@ -786,7 +1060,63 @@ export default function Admin() {
   );
 }
 
-function PrayersAdminTab() {
+// ── SHARED DARK UI PRIMITIVES ────────────────────────────────────────────────
+
+function GuardianCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-xl p-5 ${className}`}
+      style={{ background: "hsl(220 32% 10%)", border: "1px solid hsl(220 26% 15%)" }}>
+      {children}
+    </div>
+  );
+}
+
+function GoldButton({ children, className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }) {
+  return (
+    <button
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      style={{ background: "linear-gradient(135deg, hsl(42 85% 44%), hsl(35 82% 54%))", color: "white", boxShadow: "0 4px 14px -4px hsl(42 85% 46% / 0.5)" }}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DarkOutlineButton({ children, className = "", ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: React.ReactNode }) {
+  return (
+    <button
+      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${className}`}
+      style={{ background: "transparent", color: "hsl(38 20% 65%)", border: "1px solid hsl(220 26% 22%)" }}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DarkInput({ className = "", style, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      className={`w-full h-10 rounded-xl px-3 text-sm outline-none transition-colors focus:ring-1 ${className}`}
+      style={{ background: "hsl(220 26% 14%)", border: "1px solid hsl(220 26% 20%)", color: "hsl(38 28% 88%)", ...style }}
+      {...props}
+    />
+  );
+}
+
+function DarkTextarea({ className = "", style, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={`w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-colors focus:ring-1 resize-none ${className}`}
+      style={{ background: "hsl(220 26% 14%)", border: "1px solid hsl(220 26% 20%)", color: "hsl(38 28% 88%)", ...style }}
+      {...props}
+    />
+  );
+}
+
+// ── PRAYERS ADMIN TAB ────────────────────────────────────────────────────────
+function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
   interface AdminPrayer {
     id: string; title: string | null; prayer_text: string;
     extended_prayer: string | null; tags: string[] | null;
@@ -805,14 +1135,10 @@ function PrayersAdminTab() {
 
   const loadPrayers = async (q = "") => {
     setLoading(true);
-    let query = supabase
-      .from("prayer_cards")
+    let query = supabase.from("prayer_cards")
       .select("id,title,prayer_text,extended_prayer,tags,text_style,background_url,status,source,created_at,likes_count,prayed_count,views")
-      .eq("source", "admin")
-      .order("created_at", { ascending: false });
-    if (q.trim()) {
-      query = query.or(`title.ilike.%${q}%,prayer_text.ilike.%${q}%`);
-    }
+      .eq("source", "admin").order("created_at", { ascending: false });
+    if (q.trim()) query = query.or(`title.ilike.%${q}%,prayer_text.ilike.%${q}%`);
     const { data } = await query;
     setPrayers((data as AdminPrayer[]) || []);
     setLoading(false);
@@ -820,32 +1146,23 @@ function PrayersAdminTab() {
 
   useEffect(() => { loadPrayers(); }, []);
 
-  const startEdit = (p: AdminPrayer) => {
-    setEditingId(p.id);
-    setEditForm({ ...p, tagsRaw: (p.tags || []).join(", ") });
-  };
+  const startEdit = (p: AdminPrayer) => { setEditingId(p.id); setEditForm({ ...p, tagsRaw: (p.tags || []).join(", ") }); };
   const cancelEdit = () => { setEditingId(null); setEditForm({}); };
 
   const saveEdit = async () => {
     if (!editingId) return;
     setSaving(true);
-    const tagsArr = editForm.tagsRaw
-      ? editForm.tagsRaw.split(",").map((t: string) => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
-      : [];
+    const tagsArr = editForm.tagsRaw ? editForm.tagsRaw.split(",").map((t: string) => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
     const { error } = await supabase.from("prayer_cards").update({
-      title: editForm.title || null,
-      prayer_text: (editForm.prayer_text || "").trim(),
+      title: editForm.title || null, prayer_text: (editForm.prayer_text || "").trim(),
       extended_prayer: editForm.extended_prayer?.trim() || null,
-      tags: tagsArr.length ? tagsArr : null,
-      text_style: editForm.text_style || "classic",
-      background_url: editForm.background_url || null,
-      status: editForm.status || "approved",
+      tags: tagsArr.length ? tagsArr : null, text_style: editForm.text_style || "classic",
+      background_url: editForm.background_url || null, status: editForm.status || "approved",
     }).eq("id", editingId);
     setSaving(false);
     if (error) { toast({ title: "Save failed", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Prayer updated ✓" });
-    cancelEdit();
-    loadPrayers(searchQuery);
+    cancelEdit(); loadPrayers(searchQuery);
   };
 
   const deletePrayer = async (id: string) => {
@@ -857,116 +1174,94 @@ function PrayersAdminTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="font-display text-xl font-semibold">Admin Prayer Cards ({prayers.length})</h2>
-        <p className="text-xs text-muted-foreground">Only visible to admin. Edit or delete any prayer posted from the admin dashboard.</p>
+        <div>
+          <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Admin Prayer Cards</h2>
+          <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>{prayers.length} curated prayers</p>
+        </div>
+        {onNewPrayer && (
+          <GoldButton onClick={() => { onNewPrayer(); }}>
+            <PlusCircle className="w-4 h-4" />New Prayer
+          </GoldButton>
+        )}
       </div>
 
-      {/* Search */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "hsl(38 14% 45%)" }} />
+          <DarkInput value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") loadPrayers(searchQuery); }}
-            placeholder="Search by title or prayer text…"
-            className="pl-9 rounded-xl text-sm"
-          />
+            placeholder="Search by title or prayer text…" className="pl-9" />
         </div>
-        <Button size="sm" className="btn-gold rounded-xl gap-1.5" onClick={() => loadPrayers(searchQuery)} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}Search
-        </Button>
-        <Button size="sm" variant="outline" className="rounded-xl" onClick={() => { setSearchQuery(""); loadPrayers(""); }}>Clear</Button>
+        <GoldButton onClick={() => loadPrayers(searchQuery)} disabled={loading}>
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+        </GoldButton>
+        <DarkOutlineButton onClick={() => { setSearchQuery(""); loadPrayers(""); }}>Clear</DarkOutlineButton>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-muted-foreground py-6">
+        <div className="flex items-center gap-2 py-6" style={{ color: "hsl(38 14% 50%)" }}>
           <Loader2 className="w-5 h-5 animate-spin" /><span className="text-sm">Loading prayers…</span>
         </div>
       ) : prayers.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">No admin prayer cards found.</p>
+        <GuardianCard><p className="text-sm italic text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>No admin prayer cards found.</p></GuardianCard>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {prayers.map(p => {
             const isEditing = editingId === p.id;
             return (
-              <div key={p.id} className="prayer-card p-5 space-y-3">
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-3 flex-wrap">
+              <GuardianCard key={p.id}>
+                <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
                   <div className="flex-1 min-w-0">
-                    {!isEditing && (
-                      <p className="font-semibold text-sm truncate">{p.title || <span className="text-muted-foreground italic">No title</span>}</p>
-                    )}
+                    {!isEditing && <p className="font-semibold text-sm truncate" style={{ color: "hsl(38 28% 90%)" }}>{p.title || <span style={{ color: "hsl(38 14% 45%)", fontStyle: "italic" }}>No title</span>}</p>}
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</span>
-                      <Badge variant={p.status === "approved" ? "default" : "secondary"} className="text-[10px] h-5">{p.status}</Badge>
-                      <span className="text-xs text-muted-foreground">❤️ {p.likes_count} · 🙏 {p.prayed_count} · 👁️ {p.views}</span>
+                      <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>{new Date(p.created_at).toLocaleDateString()}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full"
+                        style={p.status === "approved" ? { background: "hsl(150 38% 26% / 0.25)", color: "hsl(150 38% 55%)" } : { background: "hsl(220 26% 18%)", color: "hsl(38 14% 50%)" }}>
+                        {p.status}
+                      </span>
+                      <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>❤️ {p.likes_count} · 🙏 {p.prayed_count} · 👁️ {p.views}</span>
                     </div>
                   </div>
-                  {/* Actions */}
-                  {!isEditing ? (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button size="sm" variant="ghost" className="rounded-xl h-7 text-xs gap-1" onClick={() => startEdit(p)}>
-                        <Pencil className="w-3.5 h-3.5" />Edit
-                      </Button>
-                      <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/40" onClick={() => deletePrayer(p.id)}>
-                        <Trash2 className="w-3.5 h-3.5" />Delete
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button size="sm" className="btn-gold rounded-xl gap-1.5 h-7 text-xs" onClick={saveEdit} disabled={saving}>
-                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}Save
-                      </Button>
-                      <Button size="sm" variant="outline" className="rounded-xl h-7 text-xs gap-1" onClick={cancelEdit}>
-                        <XCircle className="w-3.5 h-3.5" />Cancel
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {!isEditing ? (
+                      <>
+                        <button onClick={() => startEdit(p)}
+                          className="h-7 px-3 text-xs rounded-lg flex items-center gap-1"
+                          style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
+                          <Pencil className="w-3 h-3" />Edit
+                        </button>
+                        <button onClick={() => deletePrayer(p.id)}
+                          className="h-7 px-3 text-xs rounded-lg flex items-center gap-1"
+                          style={{ background: "hsl(0 72% 51% / 0.1)", color: "hsl(0 72% 60%)", border: "1px solid hsl(0 72% 51% / 0.3)" }}>
+                          <Trash2 className="w-3 h-3" />Delete
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <GoldButton onClick={saveEdit} disabled={saving} className="h-7 text-xs px-3">
+                          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}Save
+                        </GoldButton>
+                        <DarkOutlineButton onClick={cancelEdit} className="h-7 text-xs px-3">
+                          <XCircle className="w-3 h-3" />Cancel
+                        </DarkOutlineButton>
+                      </>
+                    )}
+                  </div>
                 </div>
-
-                {/* Edit form or preview */}
                 {isEditing ? (
-                  <div className="space-y-3 pt-2 border-t border-border">
+                  <div className="space-y-3 pt-3" style={{ borderTop: "1px solid hsl(220 26% 17%)" }}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Title</label>
-                        <Input value={editForm.title || ""} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} placeholder="Title (optional)" className="rounded-xl text-sm" maxLength={100} />
+                        <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Title</label>
+                        <DarkInput value={editForm.title || ""} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} placeholder="Title (optional)" maxLength={100} />
                       </div>
                       <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Text Style</label>
-                        <select
-                          value={editForm.text_style || "classic"}
-                          onChange={e => setEditForm(f => ({ ...f, text_style: e.target.value }))}
-                          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
-                        >
-                          {TEXT_STYLES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Prayer Text <span className="text-destructive">*</span></label>
-                      <Textarea value={editForm.prayer_text || ""} onChange={e => setEditForm(f => ({ ...f, prayer_text: e.target.value }))} rows={5} className="rounded-xl text-sm resize-none" maxLength={5000} />
-                      <p className="text-xs text-muted-foreground text-right mt-0.5">{(editForm.prayer_text || "").length}/5000</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Scripture / Extended Prayer</label>
-                      <Textarea value={editForm.extended_prayer || ""} onChange={e => setEditForm(f => ({ ...f, extended_prayer: e.target.value }))} rows={3} className="rounded-xl text-sm resize-none" maxLength={5000} />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Tags (comma-separated)</label>
-                        <Input value={editForm.tagsRaw || ""} onChange={e => setEditForm(f => ({ ...f, tagsRaw: e.target.value }))} placeholder="peace, healing, faith" className="rounded-xl text-sm" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Status</label>
-                        <select
-                          value={editForm.status || "approved"}
-                          onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
-                          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm"
-                        >
+                        <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Status</label>
+                        <select value={editForm.status || "approved"} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
+                          className="w-full h-10 rounded-xl px-3 text-sm outline-none"
+                          style={{ background: "hsl(220 26% 14%)", border: "1px solid hsl(220 26% 20%)", color: "hsl(38 28% 88%)" }}>
                           <option value="approved">Approved</option>
                           <option value="pending">Pending</option>
                           <option value="rejected">Rejected</option>
@@ -975,14 +1270,23 @@ function PrayersAdminTab() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Background Image URL</label>
-                      <Input value={editForm.background_url || ""} onChange={e => setEditForm(f => ({ ...f, background_url: e.target.value }))} placeholder="https://…" className="rounded-xl text-sm" />
+                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Prayer Text <span style={{ color: "hsl(0 72% 60%)" }}>*</span></label>
+                      <DarkTextarea value={editForm.prayer_text || ""} onChange={e => setEditForm(f => ({ ...f, prayer_text: e.target.value }))} rows={5} maxLength={5000} />
+                      <p className="text-xs text-right mt-0.5" style={{ color: "hsl(38 14% 45%)" }}>{(editForm.prayer_text || "").length}/5000</p>
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Scripture / Extended Prayer</label>
+                      <DarkTextarea value={editForm.extended_prayer || ""} onChange={e => setEditForm(f => ({ ...f, extended_prayer: e.target.value }))} rows={3} maxLength={5000} />
+                    </div>
+                    <div>
+                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Tags (comma-separated)</label>
+                      <DarkInput value={editForm.tagsRaw || ""} onChange={e => setEditForm(f => ({ ...f, tagsRaw: e.target.value }))} placeholder="peace, healing, faith" />
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground line-clamp-3">{p.prayer_text}</p>
+                  <p className="text-sm line-clamp-2" style={{ color: "hsl(38 14% 55%)" }}>{p.prayer_text}</p>
                 )}
-              </div>
+              </GuardianCard>
             );
           })}
         </div>
@@ -991,18 +1295,18 @@ function PrayersAdminTab() {
   );
 }
 
+// ── TESTIMONIES ADMIN TAB ─────────────────────────────────────────────────────
 function TestimoniesAdminTab() {
-  const [flags, setFlags] = useState<{id:string;reason:string|null;created_at:string;testimony_id:string;user_id:string;testimonies:{body:string;prayer_id:string;flagged:boolean}|null}[]>([]);
+  const [flags, setFlags] = useState<{ id: string; reason: string | null; created_at: string; testimony_id: string; user_id: string; testimonies: { body: string; prayer_id: string; flagged: boolean } | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("testimony_flags").select("*, testimonies(body,prayer_id,flagged)").order("created_at",{ascending:false}).limit(50);
+    const { data } = await supabase.from("testimony_flags").select("*, testimonies(body,prayer_id,flagged)").order("created_at", { ascending: false }).limit(50);
     setFlags((data as typeof flags) || []);
     setLoading(false);
   };
-
   useEffect(() => { load(); }, []);
 
   const deleteTestimony = async (testimonyId: string) => {
@@ -1012,23 +1316,41 @@ function TestimoniesAdminTab() {
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="font-display text-xl font-semibold">Flagged Testimonies ({flags.length})</h2>
-      <p className="text-sm text-muted-foreground">Testimonies flagged by users for review.</p>
-      {loading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> :
-        flags.length === 0 ? <p className="text-sm text-muted-foreground italic">No flagged testimonies 🙏</p> : (
+    <div className="space-y-5">
+      <div>
+        <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Moderation Log</h2>
+        <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Flagged testimonies requiring review — {flags.length} flagged</p>
+      </div>
+      {loading ? (
+        <div className="flex items-center gap-2 py-6" style={{ color: "hsl(38 14% 50%)" }}>
+          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading…</span>
+        </div>
+      ) : flags.length === 0 ? (
+        <GuardianCard><p className="text-sm italic text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>No flagged testimonies 🙏</p></GuardianCard>
+      ) : (
         <div className="space-y-3">
           {flags.map(f => (
-            <div key={f.id} className="prayer-card p-4 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString()}</span>
-                <Button size="sm" variant="destructive" className="rounded-xl text-xs h-7" onClick={() => deleteTestimony(f.testimony_id)}>
-                  <X className="w-3 h-3" /> Delete
-                </Button>
+            <GuardianCard key={f.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "hsl(0 72% 51% / 0.15)", color: "hsl(0 72% 60%)", border: "1px solid hsl(0 72% 51% / 0.3)" }}>
+                      🚩 Flagged
+                    </span>
+                    <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>{new Date(f.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {f.reason && <p className="text-xs mb-2" style={{ color: "hsl(38 14% 50%)" }}>Reason: {f.reason}</p>}
+                  {f.testimonies?.body && (
+                    <p className="text-sm leading-relaxed" style={{ color: "hsl(38 20% 72%)" }}>"{f.testimonies.body}"</p>
+                  )}
+                </div>
+                <button onClick={() => deleteTestimony(f.testimony_id)}
+                  className="h-8 px-3 text-xs rounded-lg flex items-center gap-1 flex-shrink-0"
+                  style={{ background: "hsl(0 72% 51% / 0.1)", color: "hsl(0 72% 60%)", border: "1px solid hsl(0 72% 51% / 0.3)" }}>
+                  <Trash2 className="w-3 h-3" />Delete
+                </button>
               </div>
-              {f.reason && <p className="text-xs text-muted-foreground">Reason: {f.reason}</p>}
-              {f.testimonies && <p className="text-sm bg-muted/40 rounded-xl p-3 line-clamp-4">{f.testimonies.body}</p>}
-            </div>
+            </GuardianCard>
           ))}
         </div>
       )}
