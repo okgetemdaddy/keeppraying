@@ -402,7 +402,7 @@ export default function Prayer() {
                       className="flex flex-wrap gap-1.5 overflow-hidden"
                     >
                       {card.labels.map(tag => {
-                        const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                        const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
                         return (
                           <span key={tag}
                             className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
