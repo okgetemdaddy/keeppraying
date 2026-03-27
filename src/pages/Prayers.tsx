@@ -12,6 +12,7 @@ import VerseLink from "@/components/VerseLink";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { TestifyBack } from "@/components/board/TestifyBack";
+import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import {
   Heart, Bookmark, Search, Plus, Sparkles, ExternalLink,
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
