@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: "Family", href: "/family" },
   { label: "Testify", href: "/testify" },
   { label: "PrayerAssist.ing", href: "/assistant" },
+  { label: "Sermon Mode", href: "/sermon-sync" },
   { label: "KeepFight.ing", href: "/war-room" },
   { label: "Pray the World", href: "/pray-the-world" },
   { label: "KeepGrow.ing", href: "/blog" },
