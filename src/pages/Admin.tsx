@@ -1156,7 +1156,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
     const { error } = await supabase.from("prayer_cards").update({
       title: editForm.title || null, prayer_text: (editForm.prayer_text || "").trim(),
       extended_prayer: editForm.extended_prayer?.trim() || null,
-      tags: labelsArr.length ? labelsArr : null, text_style: editForm.text_style || "classic",
+      labels: labelsArr.length ? labelsArr : null, text_style: editForm.text_style || "classic",
       background_url: editForm.background_url || null, status: editForm.status || "approved",
     }).eq("id", editingId);
     setSaving(false);
