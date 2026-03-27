@@ -442,9 +442,10 @@ export default function Board() {
           </div>
         )}
 
-        {/* ── Prayer Warriors Online ─────────────────────────────────── */}
-        <div className="mb-4">
+        {/* ── Prayer Warriors Online + Streak ────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <PrayerWarriorsOnline className="backdrop-blur-sm" />
+          <StreakCounter textColor={textColor} />
         </div>
 
         {/* ── Stats strip ───────────────────────────────────────────────── */}
