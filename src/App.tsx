@@ -51,6 +51,7 @@ const App = () => (
         <BrowserRouter>
           <Toaster />
           <Sonner />
+          <UrgentPrayerNotifier />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
