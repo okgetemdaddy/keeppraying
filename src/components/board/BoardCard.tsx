@@ -423,7 +423,7 @@ export function BoardCard({
                   ) : <div />}
                   {card.labels && card.labels.length > 0 && (
                     <button
-                      onClick={() => setTagsOpen(v => !v)}
+                      onClick={() => setLabelsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: accentColor }}
                     >
