@@ -25,6 +25,8 @@ import FamilyRooms from "./pages/FamilyRooms";
 import FamilyRoomDetail from "./pages/FamilyRoomDetail";
 import PrayTheWorld from "./pages/PrayTheWorld";
 import SermonSync from "./pages/SermonSync";
+import AccountabilityCircles from "./pages/AccountabilityCircles";
+import CircleDetail from "./pages/CircleDetail";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 
 const queryClient = new QueryClient();
