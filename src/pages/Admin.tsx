@@ -1136,7 +1136,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
   const loadPrayers = async (q = "") => {
     setLoading(true);
     let query = supabase.from("prayer_cards")
-      .select("id,title,prayer_text,extended_prayer,tags,text_style,background_url,status,source,created_at,likes_count,prayed_count,views")
+      .select("id,title,prayer_text,extended_prayer,labels,text_style,background_url,status,source,created_at,likes_count,prayed_count,views")
       .eq("source", "admin").order("created_at", { ascending: false });
     if (q.trim()) query = query.or(`title.ilike.%${q}%,prayer_text.ilike.%${q}%`);
     const { data } = await query;
