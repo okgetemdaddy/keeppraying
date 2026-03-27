@@ -73,7 +73,7 @@ export default function AIEnrichPanel({
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       setResult(data as EnrichResult);
-      setSelectedTags(new Set(data.tags));
+      setSelectedTags(new Set(data.labels));
       setSelectedVerses(new Set((data.verses as Verse[]).map(v => v.ref)));
     } catch (e) {
       toast({
