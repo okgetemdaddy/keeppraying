@@ -408,6 +408,7 @@ export type Database = {
           likes_count: number
           prayed_count: number
           prayer_text: string
+          region: string | null
           source: string
           status: string
           text_style: string | null
@@ -425,6 +426,7 @@ export type Database = {
           likes_count?: number
           prayed_count?: number
           prayer_text: string
+          region?: string | null
           source?: string
           status?: string
           text_style?: string | null
@@ -442,6 +444,7 @@ export type Database = {
           likes_count?: number
           prayed_count?: number
           prayer_text?: string
+          region?: string | null
           source?: string
           status?: string
           text_style?: string | null

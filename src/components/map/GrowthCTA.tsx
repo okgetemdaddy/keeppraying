@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Heart, Users, BookOpen, Shield, Sparkles, ArrowRight } from "lucide-react";
+import { Heart, Users, BookOpen, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const BENEFITS = [
@@ -31,7 +31,11 @@ const BENEFITS = [
   },
 ];
 
-export default function GrowthCTA() {
+interface GrowthCTAProps {
+  totalPrayers: number;
+}
+
+export default function GrowthCTA({ totalPrayers }: GrowthCTAProps) {
   return (
     <div className="space-y-8">
       {/* Hero encouragement */}
@@ -49,11 +53,17 @@ export default function GrowthCTA() {
         <h2 className="font-display text-2xl sm:text-3xl font-bold mb-3" style={{ color: "hsl(42, 78%, 60%)" }}>
           Nobody nearby yet?
         </h2>
-        <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-lg mx-auto mb-6">
-          Encourage your church and everyone you know to join. Start by letting someone know 
-          you are praying for them. The more people who join, the stronger our prayer 
+        <p className="text-white/60 text-sm sm:text-base leading-relaxed max-w-lg mx-auto mb-4">
+          Encourage your church and everyone you know to join. Start by letting someone know
+          you are praying for them. The more people who join, the stronger our prayer
           covering becomes — over your neighborhood, your city, and beyond.
         </p>
+
+        {totalPrayers > 0 && (
+          <p className="text-white/40 text-sm mb-6">
+            Join <strong className="text-white/70">{totalPrayers.toLocaleString()}</strong> prayers already lifted on KeepPray.ing
+          </p>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/prayers">
@@ -81,7 +91,7 @@ export default function GrowthCTA() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="rounded-2xl border border-white/8 p-5 hover:border-white/15 transition-all"
+              className="rounded-2xl border border-white/[0.08] p-5 hover:border-white/15 transition-all"
               style={{ background: "hsla(220, 50%, 8%, 0.5)" }}
             >
               <div className="mb-3" style={{ color: "hsl(42, 78%, 60%)" }}>
