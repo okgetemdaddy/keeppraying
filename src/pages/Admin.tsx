@@ -596,10 +596,10 @@ export default function Admin() {
                             </FormItem>
                           )} />
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <FormField control={prayerForm.control} name="tags" render={({ field }) => (
+                            <FormField control={prayerForm.control} name="labels" render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Tags (comma-separated)</FormLabel>
-                                <FormControl><DarkInput {...field} placeholder="peace, healing, morning-prayer" /></FormControl>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Labels (comma-separated)</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="peace, healing, faith" /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )} />
