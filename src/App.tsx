@@ -79,6 +79,8 @@ const App = () => (
             <Route path="/family/:id" element={<ProtectedRoute><FamilyRoomDetail /></ProtectedRoute>} />
             <Route path="/pray-the-world" element={<PrayTheWorld />} />
             <Route path="/sermon-sync" element={<SermonSync />} />
+            <Route path="/circles" element={<ProtectedRoute><AccountabilityCircles /></ProtectedRoute>} />
+            <Route path="/circles/:id" element={<ProtectedRoute><CircleDetail /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
