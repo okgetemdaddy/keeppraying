@@ -11,7 +11,7 @@ import { TestifyBack } from "@/components/board/TestifyBack";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  Heart, Pin, ChevronDown, ChevronUp, Sparkles,
+  Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
 } from "lucide-react";
