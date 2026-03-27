@@ -23,6 +23,7 @@ import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
 import FamilyRooms from "./pages/FamilyRooms";
 import FamilyRoomDetail from "./pages/FamilyRoomDetail";
+import PrayTheWorld from "./pages/PrayTheWorld";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 
 const queryClient = new QueryClient();
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/groups/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
             <Route path="/family" element={<ProtectedRoute><FamilyRooms /></ProtectedRoute>} />
             <Route path="/family/:id" element={<ProtectedRoute><FamilyRoomDetail /></ProtectedRoute>} />
+            <Route path="/pray-the-world" element={<PrayTheWorld />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
