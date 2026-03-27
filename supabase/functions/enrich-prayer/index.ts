@@ -52,13 +52,13 @@ If someone prays about sickness, suggest healing verses. If about provision/fina
             type: "function",
             function: {
               name: "enrich_prayer",
-              description: "Return suggested tags and scripture verses for a prayer.",
+              description: "Return suggested labels and scripture verses for a prayer.",
               parameters: {
                 type: "object",
                 properties: {
-                  tags: {
+                  labels: {
                     type: "array",
-                    description: "3-6 short lowercase topic tags that capture the prayer's core themes",
+                    description: "3-6 short lowercase single-word labels (no hyphens) that capture the prayer's core themes",
                     items: { type: "string" },
                   },
                   verses: {
