@@ -111,7 +111,7 @@ function FlyerPreview({
     // URL
     ctx.fillStyle = template.color;
     ctx.font = "bold 36px sans-serif";
-    ctx.fillText("keeppraying.lovable.app", 600, 1400);
+    ctx.fillText("keeppray.ing", 600, 1400);
 
     // Verse
     ctx.fillStyle = "rgba(255,255,255,0.35)";
