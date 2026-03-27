@@ -329,6 +329,7 @@ export default function Board() {
                 onThemeChange={(id) => savePrefs({ theme: id })}
                 onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
               />
+              <StandbyToggle compact dark />
               {saved.length > 0 && (
                 <Button
                   size="sm"
