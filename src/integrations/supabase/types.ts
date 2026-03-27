@@ -399,27 +399,36 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          current_streak: number
           email: string | null
           full_name: string | null
           id: string
+          last_prayed_date: string | null
+          longest_streak: number
           role: string
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          current_streak?: number
           email?: string | null
           full_name?: string | null
           id: string
+          last_prayed_date?: string | null
+          longest_streak?: number
           role?: string
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          current_streak?: number
           email?: string | null
           full_name?: string | null
           id?: string
+          last_prayed_date?: string | null
+          longest_streak?: number
           role?: string
           updated_at?: string
         }
