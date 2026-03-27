@@ -399,6 +399,7 @@ export type Database = {
       }
       prayer_cards: {
         Row: {
+          audio_url: string | null
           background_url: string | null
           created_at: string
           created_by: string | null
@@ -417,6 +418,7 @@ export type Database = {
           views: number
         }
         Insert: {
+          audio_url?: string | null
           background_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -435,6 +437,7 @@ export type Database = {
           views?: number
         }
         Update: {
+          audio_url?: string | null
           background_url?: string | null
           created_at?: string
           created_by?: string | null
