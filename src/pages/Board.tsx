@@ -27,6 +27,7 @@ import {
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
@@ -371,6 +372,7 @@ export default function Board() {
                 <Bird className="w-4 h-4" />
                 <span className="hidden sm:inline">Testify</span>
               </Button>
+              <VoiceRecorder variant="compact" dark onPrayerCreated={() => fetchSaved()} />
               <Button
                 size="sm"
                 className="btn-gold rounded-xl gap-1.5"

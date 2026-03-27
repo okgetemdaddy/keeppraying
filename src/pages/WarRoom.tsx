@@ -11,6 +11,7 @@ import {
 import VerseLink from "@/components/VerseLink";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { SiteNav } from "@/components/SiteNav";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 
 // ── Tracks ────────────────────────────────────────────────────────────────────
 const TRACKS = [
@@ -384,6 +385,7 @@ export default function WarRoom() {
                 </button>
               );
             })}
+            <VoiceRecorder variant="compact" dark />
             {/* Settings panel */}
             <SettingsPanel
               theme={theme}
