@@ -180,7 +180,9 @@ export default function LocalRadar() {
           <span className="text-xl font-bold" style={{ color: "hsl(42, 78%, 60%)" }}>
             {nearbyPrayerCount}
           </span>
-          <p className="text-white/40 text-[10px]">prayers (24h)</p>
+          <p className="text-white/40 text-[10px]">
+            {userRegion ? `prayers near ${userRegion}` : "prayers (24h)"}
+          </p>
         </div>
         <div>
           <span className="text-xl font-bold text-green-400">{standbyCount}</span>
