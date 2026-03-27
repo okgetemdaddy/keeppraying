@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Download, QrCode, Church, Users, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import QRCode from "qrcode";
-import { Button } from "@/components/ui/button";
 
 const FLYER_TEMPLATES = [
   {
