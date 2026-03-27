@@ -103,7 +103,7 @@ export default function AIEnrichPanel({
       const { error } = await supabase.from("prayer_cards").update(updates).eq("id", cardId);
       if (error) throw error;
 
-      toast({ title: "Prayer enriched! ✨", description: "Tags and scripture have been applied." });
+      toast({ title: "Prayer enriched! ✨", description: "Labels and scripture have been applied." });
       onApplied();
       onOpenChange(false);
     } catch (e) {

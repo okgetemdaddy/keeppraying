@@ -1279,7 +1279,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
                       <DarkTextarea value={editForm.extended_prayer || ""} onChange={e => setEditForm(f => ({ ...f, extended_prayer: e.target.value }))} rows={3} maxLength={5000} />
                     </div>
                     <div>
-                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Tags (comma-separated)</label>
+                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Labels (comma-separated)</label>
                       <DarkInput value={editForm.labelsRaw || ""} onChange={e => setEditForm(f => ({ ...f, labelsRaw: e.target.value }))} placeholder="peace, healing, faith" />
                     </div>
                   </div>
