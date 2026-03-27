@@ -103,10 +103,10 @@ export default function PrayerCardLink({ id, title }: PrayerCardLinkProps) {
             ) : card ? (
               <>
                 <p className="text-xs text-foreground/80 leading-relaxed line-clamp-4">{card.prayer_text}</p>
-                {card.tags && card.tags.length > 0 && (
+                {card.labels && card.labels.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {card.tags.slice(0, 3).map(tag => (
-                      <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground">{tag}</span>
+                    {card.labels.slice(0, 3).map(label => (
+                      <span key={label} className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent text-accent-foreground">{label}</span>
                     ))}
                   </div>
                 )}
