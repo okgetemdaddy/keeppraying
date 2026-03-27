@@ -97,7 +97,7 @@ export function BoardCard({
   const [enrichOpen, setEnrichOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [labelsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
 
