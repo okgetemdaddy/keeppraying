@@ -124,7 +124,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
       setBgFile(null);
       if (textareaRef.current) textareaRef.current.style.height = "280px";
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.(card?.id);
     } catch (e) {
       toast({
         title: "Submission failed",
