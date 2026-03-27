@@ -37,7 +37,7 @@ serve(async (req) => {
             content: `You are a biblical scholar assistant helping to enrich a personal prayer.
 
 Your two jobs:
-1. IDENTIFY the prayer's core spiritual themes and needs (e.g. healing, provision, peace, faith, intercession, breakthrough). Extract 3-6 lowercase topic tags that capture these themes.
+1. IDENTIFY the prayer's core spiritual themes and needs (e.g. healing, provision, peace, faith, intercession, breakthrough). Extract 3-6 lowercase single-word labels that capture these themes. Do NOT use hyphens in labels — use only simple single words.
 
 2. SUGGEST SCRIPTURE — a mix of:
    a) Every verse explicitly cited/quoted in the prayer (these MUST all appear in your list, verbatim references).
@@ -52,13 +52,13 @@ If someone prays about sickness, suggest healing verses. If about provision/fina
             type: "function",
             function: {
               name: "enrich_prayer",
-              description: "Return suggested tags and scripture verses for a prayer.",
+              description: "Return suggested labels and scripture verses for a prayer.",
               parameters: {
                 type: "object",
                 properties: {
-                  tags: {
+                  labels: {
                     type: "array",
-                    description: "3-6 short lowercase topic tags that capture the prayer's core themes",
+                    description: "3-6 short lowercase single-word labels (no hyphens) that capture the prayer's core themes",
                     items: { type: "string" },
                   },
                   verses: {
@@ -76,7 +76,7 @@ If someone prays about sickness, suggest healing verses. If about provision/fina
                     },
                   },
                 },
-                required: ["tags", "verses"],
+                required: ["labels", "verses"],
                 additionalProperties: false,
               },
             },

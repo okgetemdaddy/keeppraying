@@ -35,16 +35,14 @@ function PrayingHandsIcon({ className }: { className?: string }) {
 }
 
 // ── Tag palette (matches Prayers.tsx) ─────────────────────────────────────────
-const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
-  "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
+const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
   "healing":        { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":          { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
   "faith":          { bg: "hsl(42 80% 92%)",  text: "hsl(38 75% 32%)" },
-  "morning-prayer": { bg: "hsl(35 68% 88%)",  text: "hsl(35 65% 32%)" },
   "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
-const DEFAULT_TAG = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
+const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
 // ── Source badge ──────────────────────────────────────────────────────────────
 function SourceBadge({ source, status }: { source?: string | null; status: string }) {
@@ -96,9 +94,9 @@ export default function Prayer() {
   const [prayAnim, setPrayAnim] = useState(false);
   const [prayedFloat, setPrayedFloat] = useState(false);
 
-  // Scripture / tags accordion
+  // Scripture / labels accordion
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [labelsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
 
   // TTS
   const [ttsLoading, setTtsLoading] = useState(false);
@@ -346,7 +344,7 @@ export default function Prayer() {
                 {card.prayer_text}
               </p>
 
-              {/* Scripture / Tags row + accordions */}
+              {/* Scripture / Labels row + accordions */}
               <div className="mt-5 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   {card.extended_prayer ? (
@@ -363,7 +361,7 @@ export default function Prayer() {
                   ) : <div />}
                   {card.labels && card.labels.length > 0 && (
                     <button
-                      onClick={() => setTagsOpen(v => !v)}
+                      onClick={() => setLabelsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: "hsl(42 75% 40%)" }}
                     >
@@ -404,7 +402,7 @@ export default function Prayer() {
                       className="flex flex-wrap gap-1.5 overflow-hidden"
                     >
                       {card.labels.map(tag => {
-                        const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                        const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
                         return (
                           <span key={tag}
                             className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"

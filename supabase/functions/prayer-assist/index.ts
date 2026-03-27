@@ -72,15 +72,15 @@ serve(async (req) => {
         const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         const { data: cards } = await db
           .from("prayer_cards")
-          .select("id, title, prayer_text, tags")
+          .select("id, title, prayer_text, labels")
           .in("status", ["approved", "ai_generated"])
           .order("prayed_count", { ascending: false })
           .limit(30);
 
         if (cards && cards.length > 0) {
           prayerCardContext = "\n\nAVAILABLE PRAYER CARDS IN DATABASE (reference these when relevant):\n" +
-            cards.map((c: { id: string; title: string | null; prayer_text: string; tags: string[] | null }) =>
-              `ID: ${c.id} | Title: ${c.title || "Untitled"} | Tags: ${(c.tags || []).join(", ")} | Preview: ${c.prayer_text.slice(0, 80)}…`
+            cards.map((c: { id: string; title: string | null; prayer_text: string; labels: string[] | null }) =>
+              `ID: ${c.id} | Title: ${c.title || "Untitled"} | Labels: ${(c.labels || []).join(", ")} | Preview: ${c.prayer_text.slice(0, 80)}…`
             ).join("\n");
         }
       } catch {

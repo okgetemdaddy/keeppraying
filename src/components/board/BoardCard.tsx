@@ -11,7 +11,7 @@ import { TestifyBack } from "@/components/board/TestifyBack";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  Heart, Pin, ChevronDown, ChevronUp, Sparkles,
+  Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
 } from "lucide-react";
@@ -55,11 +55,9 @@ function loadFont(url: string) {
 }
 
 const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
-  "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
   "healing":        { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":          { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
   "faith":          { bg: "hsl(42 80% 92%)",  text: "hsl(38 75% 32%)" },
-  "morning-prayer": { bg: "hsl(35 68% 88%)",  text: "hsl(35 65% 32%)" },
   "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
@@ -99,7 +97,7 @@ export function BoardCard({
   const [enrichOpen, setEnrichOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [labelsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
 
@@ -408,7 +406,7 @@ export function BoardCard({
                 </div>
               )}
 
-              {/* Scripture / Tags toggles */}
+              {/* Scripture / Labels toggles */}
               {size !== "small" && (
                 <div className="flex items-center justify-between gap-2">
                   {card.extended_prayer ? (
@@ -425,7 +423,7 @@ export function BoardCard({
                   ) : <div />}
                   {card.labels && card.labels.length > 0 && (
                     <button
-                      onClick={() => setTagsOpen(v => !v)}
+                      onClick={() => setLabelsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: accentColor }}
                     >
@@ -456,7 +454,7 @@ export function BoardCard({
                 )}
               </AnimatePresence>
 
-              {/* Tags accordion */}
+              {/* Labels accordion */}
               <AnimatePresence>
                 {labelsOpen && card.labels && card.labels.length > 0 && (
                   <motion.div

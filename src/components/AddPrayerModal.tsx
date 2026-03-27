@@ -109,7 +109,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
       toast({
         title: "Prayer saved to your board 🙏",
-        description: "Private by default. Open your board to add tags, scripture, or share with the community.",
+        description: "Private by default. Open your board to add labels, scripture, or share with the community.",
         action: (
           <button
             onClick={() => navigate("/board")}

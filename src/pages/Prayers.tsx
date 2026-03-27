@@ -27,11 +27,9 @@ type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source
 
 // ─── Design tokens (tag colors by keyword) ───────────────────────────────────
 const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
-  "lords-prayer":    { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
   "healing":         { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":           { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
   "faith":           { bg: "hsl(42 80% 92%)",  text: "hsl(38 75% 32%)" },
-  "morning-prayer":  { bg: "hsl(35 68% 88%)",  text: "hsl(35 65% 32%)" },
   "forgiveness":     { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":    { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
@@ -114,7 +112,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayed, setPrayed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [labelsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [likesCount, setLikesCount] = useState(card.likes_count);
@@ -282,7 +280,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           )}
         </div>
 
-        {/* Collapsible chrome: scripture / tags / actions / comments */}
+        {/* Collapsible chrome: scripture / labels / actions / comments */}
         <AnimatePresence initial={false}>
           {!collapsed ? (
             <motion.div
@@ -295,7 +293,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
             >
               <div className="space-y-3.5 mt-3.5">
 
-                {/* Bottom-row toggles: scripture ←→ tags */}
+                {/* Bottom-row toggles: scripture ←→ labels */}
                 <div className="flex items-center justify-between gap-2">
                   {/* Show scripture (left) */}
                   {card.extended_prayer ? (
@@ -311,10 +309,10 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                     </button>
                   ) : <div />}
 
-                  {/* Show tags (right) */}
+                  {/* Show labels (right) */}
                   {card.labels && card.labels.length > 0 && (
                     <button
-                      onClick={() => setTagsOpen(v => !v)}
+                      onClick={() => setLabelsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: "hsl(42 75% 40%)" }}
                     >
@@ -343,7 +341,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                   )}
                 </AnimatePresence>
 
-                {/* Tags accordion */}
+                {/* Labels accordion */}
                 <AnimatePresence>
                   {labelsOpen && card.labels && card.labels.length > 0 && (
                     <motion.div
@@ -553,7 +551,7 @@ function SkeletonCard() {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-const POPULAR_LABELS = ["daily-prayer", "peace", "faith", "morning-prayer", "healing", "forgiveness", "lords-prayer", "intercession"];
+const POPULAR_LABELS = ["peace", "faith", "healing", "forgiveness", "intercession"];
 
 export default function Prayers() {
   const [cards, setCards] = useState<PrayerCard[]>([]);

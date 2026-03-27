@@ -335,9 +335,9 @@ function VerseLinkIntro() {
 
 
 const SEED_PRAYERS = [
-  { title: "The Lord's Prayer", preview: "Our Father in heaven, hallowed be your name. Your kingdom come, your will be done…", likes: 847, prayed: 2103, tags: ["lords-prayer", "foundational"], color: "from-amber-50 to-yellow-50" },
-  { title: "A Prayer of Peace", preview: "Lord, I come to You casting every anxiety at Your feet. Guard my heart and mind with Your peace…", likes: 634, prayed: 1587, tags: ["peace", "philippians"], color: "from-emerald-50 to-teal-50" },
-  { title: "Morning Surrender", preview: "Good morning, Father. Before this day begins, I lay it at Your feet. Guide every thought, word, and step…", likes: 671, prayed: 1432, tags: ["morning-prayer", "surrender"], color: "from-sky-50 to-blue-50" },
+  { title: "The Lord's Prayer", preview: "Our Father in heaven, hallowed be your name. Your kingdom come, your will be done…", likes: 847, prayed: 2103, labels: ["prayer", "foundational"], color: "from-amber-50 to-yellow-50" },
+  { title: "A Prayer of Peace", preview: "Lord, I come to You casting every anxiety at Your feet. Guard my heart and mind with Your peace…", likes: 634, prayed: 1587, labels: ["peace", "philippians"], color: "from-emerald-50 to-teal-50" },
+  { title: "Morning Surrender", preview: "Good morning, Father. Before this day begins, I lay it at Your feet. Guide every thought, word, and step…", likes: 671, prayed: 1432, labels: ["surrender"], color: "from-sky-50 to-blue-50" },
 ];
 
 const NAV_LINKS = [

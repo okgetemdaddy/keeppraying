@@ -224,7 +224,7 @@ export default function Admin() {
       const { data: newCard, error } = await supabase.from("prayer_cards").insert({
         title: values.title || null, prayer_text: values.prayer_text.trim(),
         extended_prayer: values.extended_prayer?.trim() || null,
-        tags: labelsArr.length ? labelsArr : null, text_style: values.text_style,
+        labels: labelsArr.length ? labelsArr : null, text_style: values.text_style,
         background_url: values.background_url || null,
         created_by: user.id, source: "admin", status: "approved",
       }).select("id").single();
@@ -1156,7 +1156,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
     const { error } = await supabase.from("prayer_cards").update({
       title: editForm.title || null, prayer_text: (editForm.prayer_text || "").trim(),
       extended_prayer: editForm.extended_prayer?.trim() || null,
-      tags: labelsArr.length ? labelsArr : null, text_style: editForm.text_style || "classic",
+      labels: labelsArr.length ? labelsArr : null, text_style: editForm.text_style || "classic",
       background_url: editForm.background_url || null, status: editForm.status || "approved",
     }).eq("id", editingId);
     setSaving(false);
@@ -1279,7 +1279,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
                       <DarkTextarea value={editForm.extended_prayer || ""} onChange={e => setEditForm(f => ({ ...f, extended_prayer: e.target.value }))} rows={3} maxLength={5000} />
                     </div>
                     <div>
-                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Tags (comma-separated)</label>
+                      <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Labels (comma-separated)</label>
                       <DarkInput value={editForm.labelsRaw || ""} onChange={e => setEditForm(f => ({ ...f, labelsRaw: e.target.value }))} placeholder="peace, healing, faith" />
                     </div>
                   </div>

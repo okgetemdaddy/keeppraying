@@ -15,7 +15,7 @@ interface Verse {
 }
 
 interface EnrichResult {
-  tags: string[];
+  labels: string[];
   verses: Verse[];
 }
 
@@ -73,7 +73,7 @@ export default function AIEnrichPanel({
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       setResult(data as EnrichResult);
-      setSelectedTags(new Set(data.tags));
+      setSelectedTags(new Set(data.labels));
       setSelectedVerses(new Set((data.verses as Verse[]).map(v => v.ref)));
     } catch (e) {
       toast({
@@ -95,7 +95,7 @@ export default function AIEnrichPanel({
         .map(v => `${v.ref} — "${v.text}"`)
         .join("\n") || "";
 
-      const updates: Record<string, unknown> = { tags: newTags };
+      const updates: Record<string, unknown> = { labels: newTags };
       if (verseLines) {
         updates.extended_prayer = verseLines;
       }
@@ -103,7 +103,7 @@ export default function AIEnrichPanel({
       const { error } = await supabase.from("prayer_cards").update(updates).eq("id", cardId);
       if (error) throw error;
 
-      toast({ title: "Prayer enriched! ✨", description: "Tags and scripture have been applied." });
+      toast({ title: "Prayer enriched! ✨", description: "Labels and scripture have been applied." });
       onApplied();
       onOpenChange(false);
     } catch (e) {
@@ -192,13 +192,13 @@ export default function AIEnrichPanel({
 
         {result && (
           <div className="space-y-6">
-            {/* Tags */}
+            {/* Labels */}
             <div>
               <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
                 <Tag className="w-3.5 h-3.5" /> Suggested Labels
               </h3>
               <div className="flex flex-wrap gap-2">
-                {result.tags.map(tag => (
+                {result.labels.map(tag => (
                   <label
                     key={tag}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors select-none ${
