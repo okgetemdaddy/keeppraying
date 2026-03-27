@@ -15,7 +15,7 @@ interface Verse {
 }
 
 interface EnrichResult {
-  tags: string[];
+  labels: string[];
   verses: Verse[];
 }
 
