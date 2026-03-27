@@ -70,7 +70,7 @@ type CardSize = "small" | "medium" | "large";
 interface BoardCardProps {
   item: SavedPrayer & { card_size?: CardSize };
   userId: string | undefined;
-  isDragging: boolean;
+  isDragging?: boolean;
   dragHandleProps?: Record<string, unknown>;
   onUpdate: (id: string, updates: Partial<SavedPrayer & { card_size: CardSize }>) => void;
   onRemove: (id: string) => void;
