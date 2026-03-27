@@ -14,6 +14,142 @@ export type Database = {
   }
   public: {
     Tables: {
+      accountability_circle_members: {
+        Row: {
+          circle_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountability_circle_members_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accountability_circle_prayers: {
+        Row: {
+          circle_id: string
+          created_at: string
+          id: string
+          prayer_id: string
+          shared_by: string
+        }
+        Insert: {
+          circle_id: string
+          created_at?: string
+          id?: string
+          prayer_id: string
+          shared_by: string
+        }
+        Update: {
+          circle_id?: string
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          shared_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountability_circle_prayers_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountability_circle_prayers_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accountability_circles: {
+        Row: {
+          ai_encouragement: boolean
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          invite_code: string
+          max_members: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          ai_encouragement?: boolean
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          max_members?: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          ai_encouragement?: boolean
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          max_members?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      accountability_encouragements: {
+        Row: {
+          circle_id: string
+          content: string
+          generated_at: string
+          id: string
+        }
+        Insert: {
+          circle_id: string
+          content: string
+          generated_at?: string
+          id?: string
+        }
+        Update: {
+          circle_id?: string
+          content?: string
+          generated_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accountability_encouragements_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_reports: {
         Row: {
           content: string
@@ -913,6 +1049,10 @@ export type Database = {
     }
     Functions: {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_circle_member: {
+        Args: { _circle_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_family_member: {
         Args: { _room_id: string; _user_id: string }
         Returns: boolean
