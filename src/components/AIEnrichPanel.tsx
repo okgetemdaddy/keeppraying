@@ -192,13 +192,13 @@ export default function AIEnrichPanel({
 
         {result && (
           <div className="space-y-6">
-            {/* Tags */}
+            {/* Labels */}
             <div>
               <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
                 <Tag className="w-3.5 h-3.5" /> Suggested Labels
               </h3>
               <div className="flex flex-wrap gap-2">
-                {result.tags.map(tag => (
+                {result.labels.map(tag => (
                   <label
                     key={tag}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors select-none ${
