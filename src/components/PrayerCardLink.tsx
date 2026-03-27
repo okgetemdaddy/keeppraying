@@ -31,7 +31,7 @@ export default function PrayerCardLink({ id, title }: PrayerCardLinkProps) {
     try {
       const { data } = await supabase
         .from("prayer_cards")
-        .select("title, prayer_text, tags")
+        .select("title, prayer_text, labels")
         .eq("id", id)
         .maybeSingle();
       setCard(data);
