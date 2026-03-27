@@ -481,7 +481,7 @@ export function BoardCard({
                         <span key={tag}
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
                           style={{ background: palette.bg, color: palette.text }}>
-                          #{label}
+                          #{tag}
                         </span>
                       );
                     })}
