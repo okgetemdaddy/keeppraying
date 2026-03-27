@@ -95,7 +95,7 @@ export default function AIEnrichPanel({
         .map(v => `${v.ref} — "${v.text}"`)
         .join("\n") || "";
 
-      const updates: Record<string, unknown> = { tags: newTags };
+      const updates: Record<string, unknown> = { labels: newTags };
       if (verseLines) {
         updates.extended_prayer = verseLines;
       }
