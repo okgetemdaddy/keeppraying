@@ -1052,7 +1052,7 @@ export default function Admin() {
         cardId={enrichCardId}
         prayerText={enrichCardText}
         extendedPrayer={enrichCardExtended}
-        existingTags={[]}
+        existingLabels={[]}
         onApplied={() => { load(); setEnrichOpen(false); setEnrichCardId(null); }}
       />
     )}
