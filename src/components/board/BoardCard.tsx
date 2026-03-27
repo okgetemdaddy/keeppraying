@@ -454,7 +454,7 @@ export function BoardCard({
                 )}
               </AnimatePresence>
 
-              {/* Tags accordion */}
+              {/* Labels accordion */}
               <AnimatePresence>
                 {labelsOpen && card.labels && card.labels.length > 0 && (
                   <motion.div

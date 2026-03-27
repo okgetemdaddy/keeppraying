@@ -344,7 +344,7 @@ export default function Prayer() {
                 {card.prayer_text}
               </p>
 
-              {/* Scripture / Tags row + accordions */}
+              {/* Scripture / Labels row + accordions */}
               <div className="mt-5 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   {card.extended_prayer ? (

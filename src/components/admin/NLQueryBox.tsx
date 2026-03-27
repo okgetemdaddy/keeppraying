@@ -16,7 +16,7 @@ export default function NLQueryBox({ onQuery }: NLQueryBoxProps) {
 
   const presets = [
     "What's causing low user retention?",
-    "Which prayer tags are trending?",
+    "Which prayer labels are trending?",
     "Are there any spam patterns in uploads?",
     "What features would boost engagement?",
   ];
