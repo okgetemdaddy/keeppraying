@@ -441,6 +441,11 @@ export default function Board() {
           </div>
         )}
 
+        {/* ── Prayer Warriors Online ─────────────────────────────────── */}
+        <div className="mb-4">
+          <PrayerWarriorsOnline className="backdrop-blur-sm" />
+        </div>
+
         {/* ── Stats strip ───────────────────────────────────────────────── */}
         {!loading && (totalPrayed > 0 || totalLiked > 0) && (
           <motion.div
