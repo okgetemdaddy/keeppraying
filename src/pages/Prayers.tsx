@@ -280,7 +280,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
           )}
         </div>
 
-        {/* Collapsible chrome: scripture / tags / actions / comments */}
+        {/* Collapsible chrome: scripture / labels / actions / comments */}
         <AnimatePresence initial={false}>
           {!collapsed ? (
             <motion.div
