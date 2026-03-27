@@ -341,7 +341,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                   )}
                 </AnimatePresence>
 
-                {/* Tags accordion */}
+                {/* Labels accordion */}
                 <AnimatePresence>
                   {labelsOpen && card.labels && card.labels.length > 0 && (
                     <motion.div
