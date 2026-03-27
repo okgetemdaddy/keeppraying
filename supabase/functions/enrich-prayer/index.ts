@@ -37,7 +37,7 @@ serve(async (req) => {
             content: `You are a biblical scholar assistant helping to enrich a personal prayer.
 
 Your two jobs:
-1. IDENTIFY the prayer's core spiritual themes and needs (e.g. healing, provision, peace, faith, intercession, breakthrough). Extract 3-6 lowercase topic tags that capture these themes.
+1. IDENTIFY the prayer's core spiritual themes and needs (e.g. healing, provision, peace, faith, intercession, breakthrough). Extract 3-6 lowercase single-word labels that capture these themes. Do NOT use hyphens in labels — use only simple single words.
 
 2. SUGGEST SCRIPTURE — a mix of:
    a) Every verse explicitly cited/quoted in the prayer (these MUST all appear in your list, verbatim references).
