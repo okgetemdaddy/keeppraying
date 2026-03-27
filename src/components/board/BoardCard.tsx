@@ -640,7 +640,7 @@ export function BoardCard({
           cardId={card.id}
           prayerText={card.prayer_text}
           extendedPrayer={card.extended_prayer}
-          existingTags={card.labels || []}
+          existingLabels={card.labels || []}
           onApplied={onRefresh}
         />
       )}

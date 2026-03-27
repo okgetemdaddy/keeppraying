@@ -212,7 +212,7 @@ export default function AIEnrichPanel({
                       onCheckedChange={() => toggleLabel(tag)}
                       className="w-3 h-3"
                     />
-                    #{label}
+                    #{tag}
                   </label>
                 ))}
               </div>

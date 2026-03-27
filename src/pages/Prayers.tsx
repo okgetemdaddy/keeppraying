@@ -751,7 +751,7 @@ export default function Prayers() {
                     color: pal.text
                   }}
                 >
-                  #{label}
+                  #{tag}
                 </motion.button>
               );
             })}
