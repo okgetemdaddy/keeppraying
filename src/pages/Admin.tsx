@@ -1119,7 +1119,7 @@ function DarkTextarea({ className = "", style, ...props }: React.TextareaHTMLAtt
 function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
   interface AdminPrayer {
     id: string; title: string | null; prayer_text: string;
-    extended_prayer: string | null; tags: string[] | null;
+    extended_prayer: string | null; labels: string[] | null;
     text_style: string | null; background_url: string | null;
     status: string; source: string; created_at: string;
     likes_count: number; prayed_count: number; views: number;
