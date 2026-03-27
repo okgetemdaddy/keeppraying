@@ -654,6 +654,10 @@ export default function Prayers() {
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: "hsl(42 75% 55%)" }} />
             <div className="h-px w-16 rounded-full" style={{ background: "linear-gradient(to left, transparent, hsl(42 75% 60%))" }} />
           </motion.div>
+
+          <motion.div variants={fadeUp} className="flex justify-center">
+            <PrayerWarriorsOnline />
+          </motion.div>
         </motion.div>
       </section>
 
