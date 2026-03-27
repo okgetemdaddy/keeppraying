@@ -47,7 +47,7 @@ type FormValues = z.infer<typeof schema>;
 interface AddPrayerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (prayerId?: string) => void;
 }
 
 export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
