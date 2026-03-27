@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
+import { StreakCounter } from "@/components/StreakCounter";
 import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
@@ -441,9 +442,10 @@ export default function Board() {
           </div>
         )}
 
-        {/* ── Prayer Warriors Online ─────────────────────────────────── */}
-        <div className="mb-4">
+        {/* ── Prayer Warriors Online + Streak ────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <PrayerWarriorsOnline className="backdrop-blur-sm" />
+          <StreakCounter textColor={textColor} />
         </div>
 
         {/* ── Stats strip ───────────────────────────────────────────────── */}
