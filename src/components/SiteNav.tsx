@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { label: "Prayers", href: "/prayers" },
   { label: "Groups", href: "/groups" },
+  { label: "Family", href: "/family" },
   { label: "Testify", href: "/testify" },
   { label: "PrayerAssist.ing", href: "/assistant" },
   { label: "KeepFight.ing", href: "/war-room" },
