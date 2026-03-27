@@ -26,7 +26,7 @@ serve(async (req) => {
       });
     }
 
-    const systemPrompt = `You are a faith-based content moderator for KeepPraying.ing, a Christian prayer platform. 
+    const systemPrompt = `You are a faith-based content moderator for KeepPray.ing, a Christian prayer platform. 
 Your role is to review user-submitted testimonies about God answering their prayers.
 
 APPROVE if the testimony:

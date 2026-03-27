@@ -10,10 +10,11 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Sparkles, Upload, ChevronDown } from "lucide-react";
+import { Loader2, Sparkles, Upload, ChevronDown, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { REGION_COORDS } from "@/hooks/usePrayerMapData";
 
 const TEXT_STYLES = [
   { value: "classic",       label: "Classic",             preview: "font-body text-base" },
@@ -56,6 +57,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [bgFile, setBgFile] = useState<File | null>(null);
+  const [region, setRegion] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const form = useForm<FormValues>({
@@ -95,6 +97,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         labels: [],
         status: "private",
         created_by: user.id,
+        region: region || null,
       }).select("id").single();
 
       if (error) throw error;
@@ -122,6 +125,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
       form.reset();
       setBgFile(null);
+      setRegion("");
       if (textareaRef.current) textareaRef.current.style.height = "280px";
       onOpenChange(false);
       onSuccess?.(card?.id);
@@ -312,8 +316,28 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
                 </Accordion>
               </div>
 
-              {/* ── Right column — style picker + preview ────────────────── */}
+              {/* ── Right column — style picker + region + preview ────────────────── */}
               <div className="p-6 flex flex-col gap-5" style={{ background: "hsl(42 50% 98%)" }}>
+                {/* Region picker */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide flex items-center gap-1.5" style={{ color: "hsl(25 18% 52%)" }}>
+                    <Globe className="w-3 h-3" /> Region
+                  </p>
+                  <Select value={region} onValueChange={setRegion}>
+                    <SelectTrigger
+                      className="rounded-xl text-sm h-10"
+                      style={{ background: "hsl(42 55% 99%)", borderColor: "hsl(38 22% 88%)" }}
+                    >
+                      <SelectValue placeholder="Where is this prayer from?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(REGION_COORDS).map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Style picker */}
                 <div className="space-y-2">
                   <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "hsl(25 18% 52%)" }}>

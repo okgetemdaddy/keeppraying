@@ -19,11 +19,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    // Extract video ID for oEmbed metadata
+    // Extract video ID
     const videoIdMatch = youtubeUrl.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
     const videoId = videoIdMatch?.[1] || "";
 
-    // Fetch video title via oEmbed (no API key needed)
+    // Fetch video title via oEmbed
     let videoTitle = "";
     try {
       const oembed = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
@@ -33,13 +33,94 @@ serve(async (req) => {
       }
     } catch { /* non-fatal */ }
 
-    const prompt = `You are a faithful Christian ministry assistant. A user has shared a sermon video from their church.
+    // Attempt to fetch auto-generated captions/transcript
+    let transcript = "";
+    try {
+      // Fetch YouTube page to get captions track URL
+      const pageResp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+        headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "en" },
+      });
+      if (pageResp.ok) {
+        const html = await pageResp.text();
+        // Extract captions URL from the page data
+        const captionMatch = html.match(/"captionTracks":\[(\{[^}]*?"baseUrl":"([^"]+)"[^}]*?\})/);
+        if (captionMatch?.[2]) {
+          let captionUrl = captionMatch[2].replace(/\\u0026/g, "&");
+          // Fetch the captions XML
+          const captionResp = await fetch(captionUrl);
+          if (captionResp.ok) {
+            const xml = await captionResp.text();
+            // Parse text nodes from XML <text> elements
+            const textSegments = xml.match(/<text[^>]*>([^<]*)<\/text>/g);
+            if (textSegments && textSegments.length > 0) {
+              transcript = textSegments
+                .map(seg => {
+                  const content = seg.replace(/<[^>]+>/g, "").trim();
+                  // Decode HTML entities
+                  return content
+                    .replace(/&amp;/g, "&")
+                    .replace(/&lt;/g, "<")
+                    .replace(/&gt;/g, ">")
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#39;/g, "'")
+                    .replace(/&apos;/g, "'");
+                })
+                .filter(Boolean)
+                .join(" ");
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log("Caption fetch failed (non-fatal):", e);
+    }
+
+    // Truncate transcript to avoid token limits (keep first ~8000 chars)
+    const truncatedTranscript = transcript.slice(0, 8000);
+
+    const hasTranscript = truncatedTranscript.length > 100;
+
+    const prompt = hasTranscript
+      ? `You are a faithful Christian ministry assistant. A user has shared a sermon video.
+
+Video URL: ${youtubeUrl}
+Video Title: ${videoTitle || "(title unavailable)"}
+
+Here is the actual sermon transcript:
+---
+${truncatedTranscript}
+---
+
+Based on the ACTUAL sermon content above, generate the following:
+
+1. **Sermon Notes** — A concise, spiritually rich summary of the sermon's key themes (3-5 key points with Scripture references). Format as markdown bullet points.
+
+2. **Prayer Prompts** — Generate exactly 4 distinct, heartfelt prayer prompts inspired by the sermon. Each prayer prompt should:
+   - Have a short title (5-8 words)
+   - Include the prayer text (2-3 sentences that guide the user on WHAT to pray about — do NOT write the prayer itself)
+   - Include 1-2 relevant Scripture references
+   - Include 1-2 labels from: [faith, healing, gratitude, family, guidance, strength, provision, forgiveness, worship, surrender, hope, peace, joy, love, patience, wisdom, protection, breakthrough, intercession, praise]
+
+Return your response as valid JSON with this exact structure:
+{
+  "sermonTitle": "string",
+  "sermonNotes": "markdown string with bullet points",
+  "prayers": [
+    {
+      "title": "string",
+      "prayer_text": "string",
+      "verses": "string (e.g. Romans 8:28, Psalm 23:1)",
+      "labels": ["string"]
+    }
+  ]
+}`
+      : `You are a faithful Christian ministry assistant. A user has shared a sermon video from their church.
 
 Video URL: ${youtubeUrl}
 Video Title: ${videoTitle || "(title unavailable)"}
 Video ID: ${videoId}
 
-Based on the sermon title and typical themes of sermons with this title, generate the following:
+Note: The sermon transcript was not available. Based on the sermon title and typical themes of sermons with this title, generate the following:
 
 1. **Sermon Notes** — A concise, spiritually rich summary of the likely sermon themes (3-5 key points with Scripture references). Format as markdown bullet points.
 
@@ -132,11 +213,13 @@ Return your response as valid JSON with this exact structure:
     if (toolCall?.function?.arguments) {
       result = JSON.parse(toolCall.function.arguments);
     } else {
-      // Fallback: parse content as JSON
       const content = aiData.choices?.[0]?.message?.content || "";
       const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
       result = JSON.parse(cleaned);
     }
+
+    // Add metadata about whether transcript was used
+    result.transcriptUsed = hasTranscript;
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

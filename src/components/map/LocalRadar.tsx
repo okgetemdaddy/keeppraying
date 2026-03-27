@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Shield, Lock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { REGION_COORDS } from "@/hooks/usePrayerMapData";
 
 interface RadarNode {
   angle: number;
@@ -11,9 +12,36 @@ interface RadarNode {
   count?: number;
 }
 
+// Map lat/lng to nearest region
+function getNearestRegion(lat: number, lng: number): string {
+  // Approximate lat/lng for each region center
+  const regionLatLng: Record<string, { lat: number; lng: number }> = {
+    "North America": { lat: 40, lng: -100 },
+    "South America": { lat: -15, lng: -60 },
+    "Europe": { lat: 50, lng: 10 },
+    "Africa": { lat: 5, lng: 20 },
+    "Middle East": { lat: 30, lng: 45 },
+    "Central Asia": { lat: 45, lng: 65 },
+    "East Asia": { lat: 35, lng: 115 },
+    "South Asia": { lat: 20, lng: 78 },
+    "Southeast Asia": { lat: 5, lng: 110 },
+    "Oceania": { lat: -25, lng: 135 },
+    "Caribbean": { lat: 18, lng: -72 },
+    "Russia": { lat: 60, lng: 90 },
+  };
+  let nearest = "North America";
+  let minDist = Infinity;
+  for (const [name, coords] of Object.entries(regionLatLng)) {
+    const d = Math.sqrt((lat - coords.lat) ** 2 + (lng - coords.lng) ** 2);
+    if (d < minDist) { minDist = d; nearest = name; }
+  }
+  return nearest;
+}
+
 export default function LocalRadar() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [userRegion, setUserRegion] = useState<string | null>(null);
   const [nodes, setNodes] = useState<RadarNode[]>([]);
   const [nearbyPrayerCount, setNearbyPrayerCount] = useState(0);
   const [standbyCount, setStandbyCount] = useState(0);
@@ -26,41 +54,50 @@ export default function LocalRadar() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(loc);
+        setUserRegion(getNearestRegion(loc.lat, loc.lng));
+      },
       () => setPermissionDenied(true),
       { enableHighAccuracy: false, timeout: 8000 }
     );
   }, []);
 
   const fetchRadarData = useCallback(async () => {
-    // Fetch real aggregate data for radar visualization
-    const [prayedRes, standbyRes, groupRes, familyRes] = await Promise.all([
-      // Recent prayers (last 24h)
+    // Fetch real aggregate data, filtering by user's region if available
+    const [prayedRes, standbyRes, groupRes, familyRes, regionPrayerRes] = await Promise.all([
       supabase
         .from("prayed_actions")
         .select("id", { count: "exact", head: true })
         .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-      // Active standby warriors
       supabase
         .from("prayer_standby")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true),
-      // Active prayer groups
       supabase
         .from("prayer_groups")
         .select("id", { count: "exact", head: true }),
-      // Family rooms
       supabase
         .from("family_rooms")
         .select("id", { count: "exact", head: true }),
+      // Region-specific prayers
+      userRegion
+        ? supabase
+            .from("prayer_cards")
+            .select("id", { count: "exact", head: true })
+            .eq("region", userRegion)
+        : Promise.resolve({ count: 0 } as any),
     ]);
 
     const prayedCount = prayedRes.count ?? 0;
     const warriors = standbyRes.count ?? 0;
     const groups = groupRes.count ?? 0;
     const families = familyRes.count ?? 0;
+    const regionPrayers = regionPrayerRes?.count ?? 0;
 
-    setNearbyPrayerCount(prayedCount);
+    // If user has a region, weight the nearby prayer count
+    setNearbyPrayerCount(userRegion ? regionPrayers + prayedCount : prayedCount);
     setStandbyCount(warriors);
     setGroupCount(groups + families);
 
@@ -103,7 +140,7 @@ export default function LocalRadar() {
     }
 
     setNodes(radarNodes);
-  }, []);
+  }, [userRegion]);
 
   useEffect(() => {
     fetchRadarData();
@@ -143,7 +180,9 @@ export default function LocalRadar() {
           <span className="text-xl font-bold" style={{ color: "hsl(42, 78%, 60%)" }}>
             {nearbyPrayerCount}
           </span>
-          <p className="text-white/40 text-[10px]">prayers (24h)</p>
+          <p className="text-white/40 text-[10px]">
+            {userRegion ? `prayers near ${userRegion}` : "prayers (24h)"}
+          </p>
         </div>
         <div>
           <span className="text-xl font-bold text-green-400">{standbyCount}</span>
@@ -286,7 +325,9 @@ export default function LocalRadar() {
         ) : (
           <p className="text-white/30 text-xs flex items-center justify-center gap-1.5">
             <MapPin className="w-3 h-3 text-green-400/60" />
-            Showing live prayer activity · All locations anonymized
+            {userRegion
+              ? `Your area: ${userRegion} · Showing live prayer activity`
+              : "Showing live prayer activity · All locations anonymized"}
           </p>
         )}
       </div>
