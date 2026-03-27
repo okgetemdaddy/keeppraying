@@ -92,7 +92,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         extended_prayer: values.extended_prayer || null,
         text_style: values.text_style,
         background_url,
-        tags: [],
+        labels: [],
         status: "private",
         created_by: user.id,
       }).select("id").single();

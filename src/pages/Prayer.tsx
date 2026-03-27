@@ -98,7 +98,7 @@ export default function Prayer() {
 
   // Scripture / tags accordion
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [tagsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setTagsOpen] = useState(false);
 
   // TTS
   const [ttsLoading, setTtsLoading] = useState(false);
@@ -361,15 +361,15 @@ export default function Prayer() {
                       {scriptureOpen ? "Hide scripture" : "Show scripture"}
                     </button>
                   ) : <div />}
-                  {card.tags && card.tags.length > 0 && (
+                  {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setTagsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: "hsl(42 75% 40%)" }}
                     >
                       <Tag className="w-3 h-3" />
-                      {tagsOpen ? "Hide tags" : "Tags"}
-                      <motion.div animate={{ rotate: tagsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                      {labelsOpen ? "Hide labels" : "Labels"}
+                      <motion.div animate={{ rotate: labelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                         <ChevronDown className="w-3 h-3" />
                       </motion.div>
                     </button>
@@ -394,16 +394,16 @@ export default function Prayer() {
                 </AnimatePresence>
 
                 <AnimatePresence>
-                  {tagsOpen && card.tags && card.tags.length > 0 && (
+                  {labelsOpen && card.labels && card.labels.length > 0 && (
                     <motion.div
-                      key="tags"
+                      key="labels"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.25 }}
                       className="flex flex-wrap gap-1.5 overflow-hidden"
                     >
-                      {card.tags.map(tag => {
+                      {card.labels.map(tag => {
                         const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
                         return (
                           <span key={tag}

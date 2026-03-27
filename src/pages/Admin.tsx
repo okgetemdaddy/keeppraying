@@ -55,7 +55,7 @@ const prayerCardSchema = z.object({
   title: z.string().max(100).optional(),
   prayer_text: z.string().min(10, "Prayer text required").max(5000),
   extended_prayer: z.string().max(5000).optional(),
-  tags: z.string().optional(),
+  labels: z.string().optional(),
   text_style: z.string().default("classic"),
   background_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
@@ -117,7 +117,7 @@ export default function Admin() {
 
   const prayerForm = useForm<PrayerCardFormValues>({
     resolver: zodResolver(prayerCardSchema),
-    defaultValues: { title: "", prayer_text: "", extended_prayer: "", tags: "", text_style: "classic", background_url: "" },
+    defaultValues: { title: "", prayer_text: "", extended_prayer: "", labels: "", text_style: "classic", background_url: "" },
   });
 
   const load = useCallback(async () => {
@@ -220,11 +220,11 @@ export default function Admin() {
     if (!user) return;
     setSavingPrayer(true);
     try {
-      const tagsArr = values.tags ? values.tags.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
+      const labelsArr = values.labels ? values.labels.split(",").map(t => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
       const { data: newCard, error } = await supabase.from("prayer_cards").insert({
         title: values.title || null, prayer_text: values.prayer_text.trim(),
         extended_prayer: values.extended_prayer?.trim() || null,
-        tags: tagsArr.length ? tagsArr : null, text_style: values.text_style,
+        tags: labelsArr.length ? labelsArr : null, text_style: values.text_style,
         background_url: values.background_url || null,
         created_by: user.id, source: "admin", status: "approved",
       }).select("id").single();
@@ -596,10 +596,10 @@ export default function Admin() {
                             </FormItem>
                           )} />
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <FormField control={prayerForm.control} name="tags" render={({ field }) => (
+                            <FormField control={prayerForm.control} name="labels" render={({ field }) => (
                               <FormItem>
-                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Tags (comma-separated)</FormLabel>
-                                <FormControl><DarkInput {...field} placeholder="peace, healing, morning-prayer" /></FormControl>
+                                <FormLabel className="text-xs" style={{ color: "hsl(38 14% 55%)" }}>Labels (comma-separated)</FormLabel>
+                                <FormControl><DarkInput {...field} placeholder="peace, healing, faith" /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )} />
@@ -1052,7 +1052,7 @@ export default function Admin() {
         cardId={enrichCardId}
         prayerText={enrichCardText}
         extendedPrayer={enrichCardExtended}
-        existingTags={[]}
+        existingLabels={[]}
         onApplied={() => { load(); setEnrichOpen(false); setEnrichCardId(null); }}
       />
     )}
@@ -1119,7 +1119,7 @@ function DarkTextarea({ className = "", style, ...props }: React.TextareaHTMLAtt
 function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
   interface AdminPrayer {
     id: string; title: string | null; prayer_text: string;
-    extended_prayer: string | null; tags: string[] | null;
+    extended_prayer: string | null; labels: string[] | null;
     text_style: string | null; background_url: string | null;
     status: string; source: string; created_at: string;
     likes_count: number; prayed_count: number; views: number;
@@ -1128,7 +1128,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
   const [prayers, setPrayers] = useState<AdminPrayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<AdminPrayer> & { tagsRaw?: string }>({});
+  const [editForm, setEditForm] = useState<Partial<AdminPrayer> & { labelsRaw?: string }>({});
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
@@ -1136,7 +1136,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
   const loadPrayers = async (q = "") => {
     setLoading(true);
     let query = supabase.from("prayer_cards")
-      .select("id,title,prayer_text,extended_prayer,tags,text_style,background_url,status,source,created_at,likes_count,prayed_count,views")
+      .select("id,title,prayer_text,extended_prayer,labels,text_style,background_url,status,source,created_at,likes_count,prayed_count,views")
       .eq("source", "admin").order("created_at", { ascending: false });
     if (q.trim()) query = query.or(`title.ilike.%${q}%,prayer_text.ilike.%${q}%`);
     const { data } = await query;
@@ -1146,17 +1146,17 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
 
   useEffect(() => { loadPrayers(); }, []);
 
-  const startEdit = (p: AdminPrayer) => { setEditingId(p.id); setEditForm({ ...p, tagsRaw: (p.tags || []).join(", ") }); };
+  const startEdit = (p: AdminPrayer) => { setEditingId(p.id); setEditForm({ ...p, labelsRaw: (p.labels || []).join(", ") }); };
   const cancelEdit = () => { setEditingId(null); setEditForm({}); };
 
   const saveEdit = async () => {
     if (!editingId) return;
     setSaving(true);
-    const tagsArr = editForm.tagsRaw ? editForm.tagsRaw.split(",").map((t: string) => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
+    const labelsArr = editForm.labelsRaw ? editForm.labelsRaw.split(",").map((t: string) => t.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
     const { error } = await supabase.from("prayer_cards").update({
       title: editForm.title || null, prayer_text: (editForm.prayer_text || "").trim(),
       extended_prayer: editForm.extended_prayer?.trim() || null,
-      tags: tagsArr.length ? tagsArr : null, text_style: editForm.text_style || "classic",
+      tags: labelsArr.length ? labelsArr : null, text_style: editForm.text_style || "classic",
       background_url: editForm.background_url || null, status: editForm.status || "approved",
     }).eq("id", editingId);
     setSaving(false);
@@ -1280,7 +1280,7 @@ function PrayersAdminTab({ onNewPrayer }: { onNewPrayer?: () => void }) {
                     </div>
                     <div>
                       <label className="text-xs mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Tags (comma-separated)</label>
-                      <DarkInput value={editForm.tagsRaw || ""} onChange={e => setEditForm(f => ({ ...f, tagsRaw: e.target.value }))} placeholder="peace, healing, faith" />
+                      <DarkInput value={editForm.labelsRaw || ""} onChange={e => setEditForm(f => ({ ...f, labelsRaw: e.target.value }))} placeholder="peace, healing, faith" />
                     </div>
                   </div>
                 ) : (

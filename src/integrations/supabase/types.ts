@@ -297,12 +297,12 @@ export type Database = {
           created_by: string | null
           extended_prayer: string | null
           id: string
+          labels: string[] | null
           likes_count: number
           prayed_count: number
           prayer_text: string
           source: string
           status: string
-          tags: string[] | null
           text_style: string | null
           title: string | null
           updated_at: string
@@ -314,12 +314,12 @@ export type Database = {
           created_by?: string | null
           extended_prayer?: string | null
           id?: string
+          labels?: string[] | null
           likes_count?: number
           prayed_count?: number
           prayer_text: string
           source?: string
           status?: string
-          tags?: string[] | null
           text_style?: string | null
           title?: string | null
           updated_at?: string
@@ -331,12 +331,12 @@ export type Database = {
           created_by?: string | null
           extended_prayer?: string | null
           id?: string
+          labels?: string[] | null
           likes_count?: number
           prayed_count?: number
           prayer_text?: string
           source?: string
           status?: string
-          tags?: string[] | null
           text_style?: string | null
           title?: string | null
           updated_at?: string

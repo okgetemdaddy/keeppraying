@@ -25,7 +25,7 @@ interface AIEnrichPanelProps {
   cardId: string;
   prayerText: string;
   extendedPrayer?: string | null;
-  existingTags?: string[];
+  existingLabels?: string[];
   onApplied: () => void;
 }
 
@@ -46,13 +46,13 @@ export default function AIEnrichPanel({
   cardId,
   prayerText,
   extendedPrayer,
-  existingTags = [],
+  existingLabels = [],
   onApplied,
 }: AIEnrichPanelProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EnrichResult | null>(null);
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedLabels, setSelectedTags] = useState<Set<string>>(new Set());
   const [selectedVerses, setSelectedVerses] = useState<Set<string>>(new Set());
   const [applying, setApplying] = useState(false);
 
@@ -89,7 +89,7 @@ export default function AIEnrichPanel({
   const applySelected = async () => {
     setApplying(true);
     try {
-      const newTags = [...new Set([...existingTags, ...selectedTags])];
+      const newTags = [...new Set([...existingLabels, ...selectedLabels])];
       const verseLines = result?.verses
         .filter(v => selectedVerses.has(v.ref))
         .map(v => `${v.ref} — "${v.text}"`)
@@ -117,7 +117,7 @@ export default function AIEnrichPanel({
     }
   };
 
-  const toggleTag = (tag: string) => {
+  const toggleLabel = (tag: string) => {
     setSelectedTags(prev => {
       const next = new Set(prev);
       next.has(tag) ? next.delete(tag) : next.add(tag);
@@ -195,21 +195,21 @@ export default function AIEnrichPanel({
             {/* Tags */}
             <div>
               <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
-                <Tag className="w-3.5 h-3.5" /> Suggested Tags
+                <Tag className="w-3.5 h-3.5" /> Suggested Labels
               </h3>
               <div className="flex flex-wrap gap-2">
                 {result.tags.map(tag => (
                   <label
                     key={tag}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs cursor-pointer transition-colors select-none ${
-                      selectedTags.has(tag)
+                      selectedLabels.has(tag)
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border text-muted-foreground hover:bg-muted/50"
                     }`}
                   >
                     <Checkbox
-                      checked={selectedTags.has(tag)}
-                      onCheckedChange={() => toggleTag(tag)}
+                      checked={selectedLabels.has(tag)}
+                      onCheckedChange={() => toggleLabel(tag)}
                       className="w-3 h-3"
                     />
                     #{tag}
@@ -291,7 +291,7 @@ export default function AIEnrichPanel({
               </Button>
               <Button
                 onClick={applySelected}
-                disabled={applying || (selectedTags.size === 0 && selectedVerses.size === 0)}
+                disabled={applying || (selectedLabels.size === 0 && selectedVerses.size === 0)}
                 className="btn-gold rounded-xl flex-1 gap-2"
               >
                 {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}

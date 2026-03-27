@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddPrayerModal from "@/components/AddPrayerModal";
 import { BoardCard } from "@/components/board/BoardCard";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
@@ -17,19 +18,11 @@ import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
-  useSensor, useSensors, DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove, SortableContext, sortableKeyboardCoordinates,
-  rectSortingStrategy, useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, LayoutGrid, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
+  Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
+  ArrowUpDown, Filter,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -40,44 +33,26 @@ type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
   card_size?: CardSize;
 };
 
-// ── Sortable wrapper ──────────────────────────────────────────────────────────
-function SortableBoardCard({
-  item, userId, onUpdate, onRemove, onRefresh, themeVars, onAddToPlaylist,
-}: {
-  item: SavedPrayer;
-  userId: string | undefined;
-  onUpdate: (id: string, updates: Partial<SavedPrayer & { card_size: CardSize }>) => void;
-  onRemove: (id: string) => void;
-  onRefresh: () => void;
-  themeVars: Record<string, string>;
-  onAddToPlaylist: (prayerId: string) => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-  const size = (item.card_size as CardSize) || "medium";
+type SortMode =
+  | "newest"
+  | "oldest"
+  | "recently-updated"
+  | "most-prayed"
+  | "most-liked"
+  | "needs-testimony"
+  | "not-seen";
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: transition || "transform 200ms cubic-bezier(0.2,0,0,1)",
-    zIndex: isDragging ? 50 : undefined,
-    gridColumn: size === "large" ? "span 2" : "span 1",
-  };
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "recently-updated", label: "Recently updated" },
+  { value: "most-prayed", label: "Most prayed" },
+  { value: "most-liked", label: "Most liked" },
+  { value: "needs-testimony", label: "Needs testimony" },
+  { value: "not-seen", label: "Haven't seen in a while" },
+];
 
-  return (
-    <div ref={setNodeRef} style={style}>
-      <BoardCard
-        item={item}
-        userId={userId}
-        isDragging={isDragging}
-        dragHandleProps={{ ...attributes, ...listeners }}
-        onUpdate={onUpdate}
-        onRemove={onRemove}
-        onRefresh={onRefresh}
-        themeVars={themeVars}
-        onAddToPlaylist={onAddToPlaylist}
-      />
-    </div>
-  );
-}
+type FilterMode = "all" | "pinned" | "favorites";
 
 // ── Mini prayer card used inside the stats drawer ─────────────────────────────
 function DrawerPrayerCard({
@@ -91,10 +66,10 @@ function DrawerPrayerCard({
     <div className="prayer-card p-4 space-y-2">
       {card.title && <h4 className="font-display font-semibold text-sm leading-snug">{card.title}</h4>}
       <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{card.prayer_text}</p>
-      {card.tags && card.tags.length > 0 && (
+      {card.labels && card.labels.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {card.tags.slice(0, 4).map(t => (
-            <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary"># {t}</span>
+          {card.labels.slice(0, 4).map(t => (
+            <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">{t}</span>
           ))}
         </div>
       )}
@@ -137,8 +112,10 @@ export default function Board() {
   const [testifyReject, setTestifyReject] = useState("");
   const testifyRef = useRef<HTMLTextAreaElement>(null);
 
-  // Mobile layout toggle: "two-col" | "one-col"
+  // Layout & sorting
   const [mobileLayout, setMobileLayout] = useState<"two-col" | "one-col">("two-col");
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
 
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
@@ -160,12 +137,6 @@ export default function Board() {
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
   const themeVars = theme.vars;
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
   const fetchSaved = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -174,7 +145,6 @@ export default function Board() {
         .from("user_saved_prayers")
         .select("*, prayer_cards(*)")
         .eq("user_id", user.id)
-        .order("position", { ascending: true })
         .order("created_at", { ascending: false }),
       supabase
         .from("prayed_actions")
@@ -186,18 +156,54 @@ export default function Board() {
         .eq("user_id", user.id),
     ]);
 
-    const sorted = (data || []).sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
-      return (a.position || 0) - (b.position || 0);
-    });
-    setSaved(sorted as SavedPrayer[]);
+    setSaved((data || []) as SavedPrayer[]);
     setTotalPrayed(prayedCount || 0);
     setTotalLiked(likedCount || 0);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);
+
+  // Sorted & filtered items
+  const displayedItems = useMemo(() => {
+    let items = [...saved];
+
+    // Filter
+    if (filterMode === "pinned") items = items.filter(i => i.pinned);
+    if (filterMode === "favorites") items = items.filter(i => i.favorite);
+
+    // Sort
+    items.sort((a, b) => {
+      const ca = a.prayer_cards;
+      const cb = b.prayer_cards;
+      // Pinned always first
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+
+      switch (sortMode) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "recently-updated":
+          return new Date(cb?.updated_at || b.created_at).getTime() - new Date(ca?.updated_at || a.created_at).getTime();
+        case "most-prayed":
+          return (cb?.prayed_count || 0) - (ca?.prayed_count || 0);
+        case "most-liked":
+          return (cb?.likes_count || 0) - (ca?.likes_count || 0);
+        case "needs-testimony":
+          // Sort by lowest prayed_count — prayers that haven't been testified about
+          return (ca?.prayed_count || 0) - (cb?.prayed_count || 0);
+        case "not-seen":
+          // Oldest saved first (haven't interacted recently)
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return items;
+  }, [saved, sortMode, filterMode]);
 
   // Open stats drawer and load the relevant prayers
   const openStatsDrawer = async (type: "prayed" | "liked") => {
@@ -219,7 +225,6 @@ export default function Board() {
             .from("prayer_cards")
             .select("*")
             .in("id", ids);
-          // Keep the order from prayed_actions
           const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
           setDrawerCards(ids.map(id => map[id]).filter(Boolean));
         }
@@ -245,24 +250,6 @@ export default function Board() {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    setSaved(prev => {
-      const oldIndex = prev.findIndex(i => i.id === active.id);
-      const newIndex = prev.findIndex(i => i.id === over.id);
-      const newOrder = arrayMove(prev, oldIndex, newIndex);
-      const updates = newOrder.map((item, index) => ({
-        id: item.id, position: index,
-        user_id: item.user_id, prayer_id: item.prayer_id, created_at: item.created_at,
-      }));
-      supabase.from("user_saved_prayers").upsert(updates).then(({ error }) => {
-        if (error) console.error("Position update error:", error);
-      });
-      return newOrder;
-    });
-  };
-
   const updateItem = (id: string, updates: Partial<SavedPrayer & { card_size: CardSize }>) => {
     setSaved(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   };
@@ -272,25 +259,9 @@ export default function Board() {
     toast({ title: "Removed from board" });
   };
 
-  const autoArrange = () => {
-    setSaved(prev => {
-      const pinned = prev.filter(p => p.pinned);
-      const rest = prev.filter(p => !p.pinned);
-      const newOrder = [...pinned, ...rest];
-      const updates = newOrder.map((item, index) => ({
-        id: item.id, position: index,
-        user_id: item.user_id, prayer_id: item.prayer_id, created_at: item.created_at,
-      }));
-      supabase.from("user_saved_prayers").upsert(updates);
-      return newOrder;
-    });
-    toast({ title: "Board arranged ✨" });
-  };
-
   // Opens the playlist builder, optionally pre-selecting a prayer card ID
   const openPlaylist = (prayerId?: string) => {
     if (prayerId) {
-      // Find the user_saved_prayers row whose prayer_id matches
       const match = saved.find(s => s.prayer_cards?.id === prayerId || s.prayer_id === prayerId);
       setSelectedIds(match ? [match.id] : []);
     } else {
@@ -303,7 +274,6 @@ export default function Board() {
   const savePlaylist = async () => {
     if (!playlistName.trim() || selectedIds.length === 0 || !user) return;
     setSavingPlaylist(true);
-    // Resolve prayer_ids from saved_prayer ids OR direct prayer_ids if from drawer
     const prayerIds = selectedIds.map(id => {
       const s = saved.find(s => s.id === id);
       return s ? s.prayer_id : id;
@@ -325,8 +295,6 @@ export default function Board() {
 
   if (!user) return null;
 
-  const pinned = saved.filter(s => s.pinned);
-  const unpinned = saved.filter(s => !s.pinned);
   const textColor = themeVars["--board-text"] || "rgba(255,255,255,0.85)";
 
   return (
@@ -335,14 +303,11 @@ export default function Board() {
       style={{
         ...Object.fromEntries(Object.entries(themeVars)),
         transition: "background 0.8s ease",
-        background: theme.bgClass ? undefined : undefined,
       }}
       data-theme-bg
     >
       <div className={`absolute inset-0 ${theme.bgClass}`} />
-      {/* Animated canvas background */}
       <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
-      {/* Overlay tint */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 
       {/* Header */}
@@ -363,25 +328,15 @@ export default function Board() {
                 onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
               />
               {saved.length > 0 && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10 hidden sm:flex"
-                    onClick={autoArrange}
-                  >
-                    <LayoutGrid className="w-4 h-4" /> Arrange
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                    onClick={() => openPlaylist()}
-                  >
-                    <ListMusic className="w-4 h-4" />
-                    <span className="hidden sm:inline">Playlist</span>
-                  </Button>
-                </>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
+                  onClick={() => openPlaylist()}
+                >
+                  <ListMusic className="w-4 h-4" />
+                  <span className="hidden sm:inline">Playlist</span>
+                </Button>
               )}
               <Button
                 size="sm"
@@ -415,31 +370,71 @@ export default function Board() {
       {/* Main content */}
       <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
 
-        {/* ── Mobile layout toggle (portrait only) ──────────────────────── */}
-        {isMobile && !loading && saved.length > 0 && (
-          <div className="flex items-center justify-end mb-4">
-            <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <button
-                onClick={() => setMobileLayout("one-col")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{
-                  background: mobileLayout === "one-col" ? "rgba(255,255,255,0.18)" : "transparent",
-                  color: mobileLayout === "one-col" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
-                }}
-              >
-                <Square className="w-3.5 h-3.5" /> Single
-              </button>
-              <button
-                onClick={() => setMobileLayout("two-col")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-                style={{
-                  background: mobileLayout === "two-col" ? "rgba(255,255,255,0.18)" : "transparent",
-                  color: mobileLayout === "two-col" ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
-                }}
-              >
-                <Columns2 className="w-3.5 h-3.5" /> Two Columns
-              </button>
+        {/* ── Sort / Filter / Layout controls ──────────────────────── */}
+        {!loading && saved.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            {/* Sort */}
+            <div className="flex items-center gap-1.5">
+              <ArrowUpDown className="w-3.5 h-3.5" style={{ color: `${textColor}60` }} />
+              <Select value={sortMode} onValueChange={v => setSortMode(v as SortMode)}>
+                <SelectTrigger
+                  className="h-8 rounded-xl text-xs border-0 gap-1.5 min-w-[140px]"
+                  style={{ background: "rgba(255,255,255,0.10)", color: textColor }}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map(o => (
+                    <SelectItem key={o.value} value={o.value} className="text-xs">
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Filter chips */}
+            <div className="flex items-center gap-1 rounded-xl p-0.5" style={{ background: "rgba(255,255,255,0.08)" }}>
+              {(["all", "pinned", "favorites"] as FilterMode[]).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilterMode(f)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize"
+                  style={{
+                    background: filterMode === f ? "rgba(255,255,255,0.18)" : "transparent",
+                    color: filterMode === f ? textColor : `${textColor}55`,
+                  }}
+                >
+                  {f === "all" ? "All" : f === "pinned" ? "📌 Pinned" : "❤️ Favorites"}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile layout toggle */}
+            {isMobile && (
+              <div className="flex items-center gap-1 rounded-xl p-0.5 ml-auto" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <button
+                  onClick={() => setMobileLayout("one-col")}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: mobileLayout === "one-col" ? "rgba(255,255,255,0.18)" : "transparent",
+                    color: mobileLayout === "one-col" ? textColor : `${textColor}55`,
+                  }}
+                >
+                  <Square className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setMobileLayout("two-col")}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    background: mobileLayout === "two-col" ? "rgba(255,255,255,0.18)" : "transparent",
+                    color: mobileLayout === "two-col" ? textColor : `${textColor}55`,
+                  }}
+                >
+                  <Columns2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -455,11 +450,7 @@ export default function Board() {
               <button
                 onClick={() => openStatsDrawer("prayed")}
                 className="flex items-center gap-2 px-4 py-2 rounded-2xl transition-all hover:scale-105 active:scale-95"
-                style={{
-                  background: "rgba(255,255,255,0.10)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  cursor: "pointer",
-                }}
+                style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer" }}
               >
                 <span className="text-base">🙏</span>
                 <span className="text-xs font-medium" style={{ color: textColor }}>
@@ -471,11 +462,7 @@ export default function Board() {
               <button
                 onClick={() => openStatsDrawer("liked")}
                 className="flex items-center gap-2 px-4 py-2 rounded-2xl transition-all hover:scale-105 active:scale-95"
-                style={{
-                  background: "rgba(255,255,255,0.10)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  cursor: "pointer",
-                }}
+                style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer" }}
               >
                 <Heart className="w-4 h-4 fill-red-400 text-red-400" />
                 <span className="text-xs font-medium" style={{ color: textColor }}>
@@ -493,53 +480,42 @@ export default function Board() {
               <div key={i} className="h-44 rounded-2xl shimmer" />
             ))}
           </div>
-        ) : saved.length === 0 ? (
+        ) : displayedItems.length === 0 && filterMode !== "all" ? (
+          <div className="text-center py-16">
+            <p className="text-sm" style={{ color: `${textColor}60` }}>
+              No {filterMode} prayers. Try switching to "All".
+            </p>
+          </div>
+        ) : displayedItems.length === 0 ? (
           <EmptyBoard onAdd={() => setAddOpen(true)} themeVars={themeVars} />
         ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <div className="space-y-6">
-              {pinned.length > 0 && (
-                <section>
-                  <p className="text-xs font-medium mb-3 flex items-center gap-1.5 text-white/50">
-                    <Pin className="w-3 h-3" />Pinned
-                  </p>
-                  <SortableContext items={pinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
-                      {pinned.map(item => (
-                        <SortableBoardCard
-                          key={item.id} item={item} userId={user?.id}
-                          onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved}
-                          themeVars={themeVars}
-                          onAddToPlaylist={id => openPlaylist(id)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </section>
-              )}
-              {unpinned.length > 0 && (
-                <section>
-                  {pinned.length > 0 && (
-                    <p className="text-xs font-medium mb-3 text-white/50">All saved prayers</p>
-                  )}
-                  <SortableContext items={unpinned.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <motion.div layout className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
-                      <AnimatePresence>
-                        {unpinned.map(item => (
-                          <SortableBoardCard
-                            key={item.id} item={item} userId={user?.id}
-                            onUpdate={updateItem} onRemove={removeItem} onRefresh={fetchSaved}
-                            themeVars={themeVars}
-                            onAddToPlaylist={id => openPlaylist(id)}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </motion.div>
-                  </SortableContext>
-                </section>
-              )}
-            </div>
-          </DndContext>
+          <motion.div
+            layout
+            className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}
+          >
+            <AnimatePresence>
+              {displayedItems.map(item => {
+                const size = (item.card_size as CardSize) || "medium";
+                return (
+                  <div
+                    key={item.id}
+                    style={{ gridColumn: size === "large" ? "span 2" : "span 1" }}
+                  >
+                    <BoardCard
+                      item={item}
+                      userId={user?.id}
+                      isDragging={false}
+                      onUpdate={updateItem}
+                      onRemove={removeItem}
+                      onRefresh={fetchSaved}
+                      themeVars={themeVars}
+                      onAddToPlaylist={id => openPlaylist(id)}
+                    />
+                  </div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
 
@@ -592,7 +568,6 @@ export default function Board() {
                   card={card}
                   onAddToPlaylist={prayerId => {
                     setStatsDrawer(null);
-                    // Use prayer_id directly since these may not be on the board
                     setSelectedIds([prayerId]);
                     setPlaylistName("");
                     setPlaylistOpen(true);
@@ -622,7 +597,6 @@ export default function Board() {
               onChange={e => setPlaylistName(e.target.value)}
               className="rounded-xl"
             />
-            {/* Saved board prayers */}
             {saved.length > 0 && (
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2">From your board</p>
@@ -646,9 +620,9 @@ export default function Board() {
                         <p className="text-sm font-medium truncate">
                           {item.prayer_cards.title || item.prayer_cards.prayer_text.slice(0, 50) + "…"}
                         </p>
-                        {item.prayer_cards.tags && item.prayer_cards.tags.length > 0 && (
+                        {item.prayer_cards.labels && item.prayer_cards.labels.length > 0 && (
                           <p className="text-xs text-muted-foreground truncate">
-                            {item.prayer_cards.tags.slice(0, 3).map(t => `#${t}`).join(" ")}
+                            {item.prayer_cards.labels.slice(0, 3).join(", ")}
                           </p>
                         )}
                       </div>
@@ -820,8 +794,9 @@ function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record
         </Link>
         <Button
           variant="outline"
-          className="rounded-xl gap-2 border-white/20 bg-white/10 text-white hover:bg-white/20"
+          className="rounded-xl gap-2"
           onClick={onAdd}
+          style={{ borderColor: `${textColor}30`, color: textColor }}
         >
           <PlusCircle className="w-4 h-4" /> Write a Prayer
         </Button>

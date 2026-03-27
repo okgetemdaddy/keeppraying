@@ -90,7 +90,7 @@ export default function BlogPost() {
           extended_prayer: post.content ?? undefined,
           source: "community",
           status: "approved",
-          tags: ["blog", "keepgrowing"],
+          labels: ["blog", "keepgrowing"],
         })
         .select("id")
         .single();

@@ -11,9 +11,9 @@ import { TestifyBack } from "@/components/board/TestifyBack";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  GripVertical, Heart, Pin, ChevronDown, ChevronUp, Sparkles,
+  Heart, Pin, ChevronDown, ChevronUp, Sparkles,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
-  MoreHorizontal, Tag, Share2, Type, Shuffle, Check, ListPlus, Bird,
+  MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -54,7 +54,7 @@ function loadFont(url: string) {
   document.head.appendChild(link);
 }
 
-const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
+const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
   "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
   "healing":        { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":          { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
@@ -63,14 +63,14 @@ const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
   "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
-const DEFAULT_TAG = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
+const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
 type CardSize = "small" | "medium" | "large";
 
 interface BoardCardProps {
   item: SavedPrayer & { card_size?: CardSize };
   userId: string | undefined;
-  isDragging: boolean;
+  isDragging?: boolean;
   dragHandleProps?: Record<string, unknown>;
   onUpdate: (id: string, updates: Partial<SavedPrayer & { card_size: CardSize }>) => void;
   onRemove: (id: string) => void;
@@ -99,7 +99,7 @@ export function BoardCard({
   const [enrichOpen, setEnrichOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [tagsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
 
@@ -291,14 +291,6 @@ export function BoardCard({
 
         {/* ── Drag handle + content ────────────────────────────────────── */}
         <div className="flex items-start gap-2">
-          <button
-            {...dragHandleProps}
-            className="mt-1 opacity-30 hover:opacity-70 transition-opacity cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
-            aria-label="Drag to reorder"
-          >
-            <GripVertical className="w-4 h-4" style={{ color: bgUrl ? "rgba(255,255,255,0.7)" : textColor }} />
-          </button>
-
           <div className="flex-1 min-w-0">
             {card.title && (
               <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: bgUrl ? "rgba(255,255,255,0.95)" : textColor }}>
@@ -431,15 +423,15 @@ export function BoardCard({
                       {scriptureOpen ? "Hide scripture" : "Show scripture"}
                     </button>
                   ) : <div />}
-                  {card.tags && card.tags.length > 0 && (
+                  {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setTagsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: accentColor }}
                     >
                       <Tag className="w-3 h-3" />
-                      {tagsOpen ? "Hide tags" : "Tags"}
-                      <motion.div animate={{ rotate: tagsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                      {labelsOpen ? "Hide labels" : "Labels"}
+                      <motion.div animate={{ rotate: labelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                         <ChevronDown className="w-3 h-3" />
                       </motion.div>
                     </button>
@@ -466,17 +458,17 @@ export function BoardCard({
 
               {/* Tags accordion */}
               <AnimatePresence>
-                {tagsOpen && card.tags && card.tags.length > 0 && (
+                {labelsOpen && card.labels && card.labels.length > 0 && (
                   <motion.div
-                    key="tags"
+                    key="labels"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.22 }}
                     className="flex flex-wrap gap-1.5 overflow-hidden"
                   >
-                    {card.tags.map(tag => {
-                      const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                    {card.labels.map(tag => {
+                      const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
                       return (
                         <span key={tag}
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
@@ -640,7 +632,7 @@ export function BoardCard({
           cardId={card.id}
           prayerText={card.prayer_text}
           extendedPrayer={card.extended_prayer}
-          existingTags={card.tags || []}
+          existingLabels={card.labels || []}
           onApplied={onRefresh}
         />
       )}
