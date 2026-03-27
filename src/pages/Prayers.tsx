@@ -293,7 +293,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
             >
               <div className="space-y-3.5 mt-3.5">
 
-                {/* Bottom-row toggles: scripture ←→ tags */}
+                {/* Bottom-row toggles: scripture ←→ labels */}
                 <div className="flex items-center justify-between gap-2">
                   {/* Show scripture (left) */}
                   {card.extended_prayer ? (
