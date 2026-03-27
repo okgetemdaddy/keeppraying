@@ -21,6 +21,8 @@ import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
 import Groups from "./pages/Groups";
 import GroupDetail from "./pages/GroupDetail";
+import FamilyRooms from "./pages/FamilyRooms";
+import FamilyRoomDetail from "./pages/FamilyRoomDetail";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 
 const queryClient = new QueryClient();
