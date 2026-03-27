@@ -361,7 +361,7 @@ export default function Prayer() {
                       {scriptureOpen ? "Hide scripture" : "Show scripture"}
                     </button>
                   ) : <div />}
-                  {card.tags && card.tags.length > 0 && (
+                  {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setTagsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
@@ -394,7 +394,7 @@ export default function Prayer() {
                 </AnimatePresence>
 
                 <AnimatePresence>
-                  {tagsOpen && card.tags && card.tags.length > 0 && (
+                  {tagsOpen && card.labels && card.labels.length > 0 && (
                     <motion.div
                       key="tags"
                       initial={{ opacity: 0, height: 0 }}
@@ -403,7 +403,7 @@ export default function Prayer() {
                       transition={{ duration: 0.25 }}
                       className="flex flex-wrap gap-1.5 overflow-hidden"
                     >
-                      {card.tags.map(tag => {
+                      {card.labels.map(tag => {
                         const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
                         return (
                           <span key={tag}
