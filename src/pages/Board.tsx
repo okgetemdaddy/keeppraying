@@ -331,6 +331,16 @@ export default function Board() {
                 onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
               />
               <StandbyToggle compact dark />
+              <Link to="/groups">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
+                >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Groups</span>
+                </Button>
+              </Link>
               {saved.length > 0 && (
                 <Button
                   size="sm"
