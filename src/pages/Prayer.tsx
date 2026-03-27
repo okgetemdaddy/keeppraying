@@ -42,7 +42,7 @@ const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
   "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
-const DEFAULT_TAG = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
+const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
 // ── Source badge ──────────────────────────────────────────────────────────────
 function SourceBadge({ source, status }: { source?: string | null; status: string }) {
