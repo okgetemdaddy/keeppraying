@@ -125,7 +125,7 @@ export default function AIInsightsTab() {
 
       // Label pie data
       const freq: Record<string, number> = {};
-      (labelRows || []).forEach((r: { tags: string[] | null }) => {
+      (labelRows || []).forEach((r: { labels: string[] | null }) => {
         (r.labels || []).forEach((t: string) => { freq[t] = (freq[t] || 0) + 1; });
       });
       const labelData = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 5)
