@@ -140,7 +140,7 @@ export default function LocalRadar() {
     }
 
     setNodes(radarNodes);
-  }, []);
+  }, [userRegion]);
 
   useEffect(() => {
     fetchRadarData();
