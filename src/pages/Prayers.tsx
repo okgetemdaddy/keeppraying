@@ -12,6 +12,7 @@ import VerseLink from "@/components/VerseLink";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { TestifyBack } from "@/components/board/TestifyBack";
+import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import {
   Heart, Bookmark, Search, Plus, Sparkles, ExternalLink,
   Users, ShieldCheck, ToggleLeft, ToggleRight, X, ChevronDown, Tag, ChevronUp,
@@ -653,6 +654,10 @@ export default function Prayers() {
             <div className="h-px w-16 rounded-full" style={{ background: "linear-gradient(to right, transparent, hsl(42 75% 60%))" }} />
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: "hsl(42 75% 55%)" }} />
             <div className="h-px w-16 rounded-full" style={{ background: "linear-gradient(to left, transparent, hsl(42 75% 60%))" }} />
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="flex justify-center">
+            <PrayerWarriorsOnline />
           </motion.div>
         </motion.div>
       </section>

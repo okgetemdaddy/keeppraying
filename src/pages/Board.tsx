@@ -24,6 +24,8 @@ import {
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
   ArrowUpDown, Filter,
 } from "lucide-react";
+import { StandbyToggle } from "@/components/StandbyToggle";
+import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
@@ -327,6 +329,7 @@ export default function Board() {
                 onThemeChange={(id) => savePrefs({ theme: id })}
                 onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
               />
+              <StandbyToggle compact dark />
               {saved.length > 0 && (
                 <Button
                   size="sm"
@@ -437,6 +440,11 @@ export default function Board() {
             )}
           </div>
         )}
+
+        {/* ── Prayer Warriors Online ─────────────────────────────────── */}
+        <div className="mb-4">
+          <PrayerWarriorsOnline className="backdrop-blur-sm" />
+        </div>
 
         {/* ── Stats strip ───────────────────────────────────────────────── */}
         {!loading && (totalPrayed > 0 || totalLiked > 0) && (
