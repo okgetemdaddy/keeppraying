@@ -25,6 +25,8 @@ import FamilyRooms from "./pages/FamilyRooms";
 import FamilyRoomDetail from "./pages/FamilyRoomDetail";
 import PrayTheWorld from "./pages/PrayTheWorld";
 import SermonSync from "./pages/SermonSync";
+import AccountabilityCircles from "./pages/AccountabilityCircles";
+import CircleDetail from "./pages/CircleDetail";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 
 const queryClient = new QueryClient();
@@ -77,6 +79,8 @@ const App = () => (
             <Route path="/family/:id" element={<ProtectedRoute><FamilyRoomDetail /></ProtectedRoute>} />
             <Route path="/pray-the-world" element={<PrayTheWorld />} />
             <Route path="/sermon-sync" element={<SermonSync />} />
+            <Route path="/circles" element={<ProtectedRoute><AccountabilityCircles /></ProtectedRoute>} />
+            <Route path="/circles/:id" element={<ProtectedRoute><CircleDetail /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
