@@ -11,7 +11,7 @@ interface PrayerCardLinkProps {
 
 export default function PrayerCardLink({ id, title }: PrayerCardLinkProps) {
   const [open, setOpen] = useState(false);
-  const [card, setCard] = useState<{ title: string | null; prayer_text: string; tags: string[] | null } | null>(null);
+  const [card, setCard] = useState<{ title: string | null; prayer_text: string; labels: string[] | null } | null>(null);
   const [loading, setLoading] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const triggerRef = useRef<HTMLAnchorElement>(null);
