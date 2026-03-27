@@ -232,6 +232,113 @@ export type Database = {
         }
         Relationships: []
       }
+      family_room_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "family_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_room_prayers: {
+        Row: {
+          created_at: string
+          id: string
+          prayer_id: string
+          room_id: string
+          shared_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prayer_id: string
+          room_id: string
+          shared_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          room_id?: string
+          shared_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_room_prayers_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_room_prayers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "family_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_rooms: {
+        Row: {
+          child_friendly: boolean
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          invite_code: string
+          name: string
+          theme: string
+          updated_at: string
+        }
+        Insert: {
+          child_friendly?: boolean
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          name: string
+          theme?: string
+          updated_at?: string
+        }
+        Update: {
+          child_friendly?: boolean
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          invite_code?: string
+          name?: string
+          theme?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -800,6 +907,10 @@ export type Database = {
     }
     Functions: {
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_family_member: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
         Returns: boolean
