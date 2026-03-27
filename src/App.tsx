@@ -19,6 +19,8 @@ import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
+import Groups from "./pages/Groups";
+import GroupDetail from "./pages/GroupDetail";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 
 const queryClient = new QueryClient();
@@ -65,6 +67,8 @@ const App = () => (
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/testify" element={<Testify />} />
+            <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+            <Route path="/groups/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

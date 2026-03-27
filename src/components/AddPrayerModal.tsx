@@ -47,7 +47,7 @@ type FormValues = z.infer<typeof schema>;
 interface AddPrayerModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess?: () => void;
+  onSuccess?: (prayerId?: string) => void;
 }
 
 export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
@@ -124,7 +124,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
       setBgFile(null);
       if (textareaRef.current) textareaRef.current.style.height = "280px";
       onOpenChange(false);
-      onSuccess?.();
+      onSuccess?.(card?.id);
     } catch (e) {
       toast({
         title: "Submission failed",
