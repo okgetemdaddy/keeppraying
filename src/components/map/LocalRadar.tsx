@@ -94,8 +94,10 @@ export default function LocalRadar() {
     const warriors = standbyRes.count ?? 0;
     const groups = groupRes.count ?? 0;
     const families = familyRes.count ?? 0;
+    const regionPrayers = regionPrayerRes?.count ?? 0;
 
-    setNearbyPrayerCount(prayedCount);
+    // If user has a region, weight the nearby prayer count
+    setNearbyPrayerCount(userRegion ? regionPrayers + prayedCount : prayedCount);
     setStandbyCount(warriors);
     setGroupCount(groups + families);
 
