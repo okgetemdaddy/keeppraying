@@ -112,7 +112,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayed, setPrayed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [labelsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [likesCount, setLikesCount] = useState(card.likes_count);
