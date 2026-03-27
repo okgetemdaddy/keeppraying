@@ -94,9 +94,9 @@ export default function Prayer() {
   const [prayAnim, setPrayAnim] = useState(false);
   const [prayedFloat, setPrayedFloat] = useState(false);
 
-  // Scripture / tags accordion
+  // Scripture / labels accordion
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [labelsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setLabelsOpen] = useState(false);
 
   // TTS
   const [ttsLoading, setTtsLoading] = useState(false);
