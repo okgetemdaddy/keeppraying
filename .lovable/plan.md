@@ -1,108 +1,120 @@
 
-## Plan: Standalone TestimonyCards + Prayer Link Reference + Board Testify Button + Prayer Input Redesign
 
-### What's being built (4 distinct pieces):
-
----
-
-### 1. Standalone TestimonyCard — Prayer link reference + "read more"
-
-**`src/pages/Testify.tsx`** — Redesign `TestimonyFlipCard` into `StandaloneTestimonyCard`:
-
-The current card flips to show the prayer. Instead:
-- **Text is the hero** — large `font-display` quote with generous leading, full width
-- `read more...` inline expansion with `AnimatePresence` for body > 500 chars (no flip needed for text)
-- **Prayer reference pill** always visible — linked to the original prayer: `→ "Prayer Title" · 4 testimonies` — this is a clickable `<Link to="/prayer/{prayer_id}">` that navigates to the public prayer page. Shows testimony count for that prayer (fetched in the same query).
-- **2.5D hover effect**: `whileHover={{ rotateX: 3, rotateY: -2, scale: 1.01, y: -3 }}` with `perspective: 1000px` on parent, multi-layer gold ambient box-shadow
-- Gold decorative `"` quote mark as background element (absolute, large, gold, low opacity)
-- Glass sheen overlay: subtle `linear-gradient` diagonal from `rgba(255,255,255,0.06)` to transparent
-- Author avatar + name + date in top row
-- **"See the Prayer 🙏"** remains but becomes a Sheet slide-in (not flip) showing full prayer text — cleaner UX
-- Footer: like (count), share (copy link), flag, comment count badge
-
-**Fetch testimony count per prayer**: add a `testimony_counts` map by `prayer_id` in the main fetch — group testimonies by prayer_id client-side to get count, or use the already-loaded testimonies array.
+# KeepPray.ing — Complete Codebase Audit
 
 ---
 
-### 2. `/testify` — Add a Testify button with auth-redirect intent
+## 1. Every Page, Component, Table, Subscription & Feature
 
-In the `/testify` hero section, add a prominent **"Share Your Testimony 🕊️"** `Button`:
-- If `user` is logged in → opens a `Sheet` with the standalone testimony submission form (textarea + optional prayer picker + submit → `moderate-testimony` → insert)
-- If `user` is NOT logged in → save the intent to `sessionStorage` (`{ redirectAfter: '/testify', action: 'testify' }`), then `navigate('/auth')`
-- On `/auth` page, after successful login, check `sessionStorage` for a pending intent and redirect accordingly — the user lands back at `/testify` and the sheet opens automatically via a `?testify=1` query param
+### Pages (14 routes)
 
-**Auth redirect pattern**:
-- Pre-login: `sessionStorage.setItem('postLoginRedirect', '/testify?testify=1')`
-- In `Auth.tsx` after sign-in success: `const redirect = sessionStorage.getItem('postLoginRedirect'); navigate(redirect || '/');`
-- In `Testify.tsx`: `useEffect` checks `searchParams.get('testify') === '1'` and opens the sheet
+| Route | File | Description |
+|---|---|---|
+| `/` | Index.tsx (660 lines) | Homepage: animated hero with particle canvas, hero-bg.jpg, Feature Carousel (6 slides), daily verse section, FAQ accordion, contact form |
+| `/auth` | Auth.tsx | Sign up / sign in with email+password |
+| `/reset-password` | ResetPassword.tsx | Password reset flow |
+| `/prayers` | Prayers.tsx (831 lines) | Public prayer feed with search, tag filtering, like/prayed/bookmark/share/TTS actions, comments, testimony pills, source badges |
+| `/prayer/:id` | Prayer.tsx | Individual prayer detail with background image support, TTS, comments, enrichment panel |
+| `/board` | Board.tsx (831 lines) | **Protected.** Personal prayer board with drag-and-drop grid, theme selector, ambient audio, mobile column toggle, card sizing, playlists |
+| `/assistant` | PrayerAssist.tsx (253 lines) | AI chat companion (calls `prayer-assist` edge function), renders verse links and prayer card links inline |
+| `/war-room` | WarRoom.tsx (584 lines) | Immersive prayer reading space with 4 themes, 5 audio tracks, font selector, particle canvas, playlist support |
+| `/testify` | Testify.tsx (746 lines) | Testimony feed with likes, comments, flagging, linked prayer cards, manual profile hydration |
+| `/games` | Games.tsx (349 lines) | Bible Trivia (AI-generated via edge function), Verse Flashcards, Memory Match |
+| `/blog` | Blog.tsx | Public blog feed (KeepGrow.ing) |
+| `/blog/:slug` | BlogPost.tsx | Individual blog post with "pray this" button that creates a prayer card |
+| `/admin` | Admin.tsx (1359 lines) | **Admin-only.** Dark "Guardian Portal" with 10 tabs: Overview, Review Queue, Users, Analytics, Moderation Log, Prayers, KeepGrow.ing, Verses, FAQ, Contacts |
+| `*` | NotFound.tsx | 404 page |
 
----
+### Components
 
-### 3. Board `/board` — Testify button
-
-In `src/pages/Board.tsx` header action row (next to "Add Prayer"):
-- Add `testifyOpen` state
-- Add `<Button>` with `Bird` or `Sparkles` icon: **"Testify 🕊️"**
-- Opens a `Sheet` from the right:
-  - Title: "Share a Testimony"
-  - Description: "Tell the story of how God moved — no prayer card required."
-  - Textarea (4000 chars) + char counter
-  - Optional: prayer picker (dropdown of user's own prayers) to optionally link to a prayer
-  - Submit → calls `moderate-testimony` edge function → inserts `{ user_id, body, prayer_id: null or selected }`
-  - Success toast + sheet close
-
-**DB**: `testimonies.prayer_id` is currently `NOT NULL`. Need a migration to make it nullable for standalone testimonies. This is the same migration flagged in the last plan summary.
-
----
-
-### 4. AddPrayerModal — Immersive prayer input redesign
-
-**`src/components/AddPrayerModal.tsx`**:
-
-The modal becomes a **full-screen Dialog** on desktop (`max-w-2xl` → `max-w-3xl sm:max-w-4xl`) with the writing area as the dominant element.
-
-Changes:
-- **Dialog content**: wider (`max-w-3xl`), taller (`min-h-[85vh]` on desktop), two-column layout on `sm:` — left column = form, right column = live preview card (currently preview is below the textarea and takes up space)
-- **Prayer textarea**: dramatically larger — `rows={12}` minimum, `min-h-[280px]`, with:
-  - `font-display` (Playfair Display) for the actual prayer text — feels sacred, readable
-  - `text-lg leading-[1.9]` for generous breathing room
-  - Custom CSS: `box-shadow: inset 0 2px 12px hsl(42 75% 46% / 0.08)` (inner golden glow), `border: none`, `background: hsl(38 55% 99%)` (warmest cream)
-  - Glass sheen on focus: `focus-visible:ring-0 focus-visible:shadow-[inset_0_0_0_1.5px_hsl(42_75%_55%),inset_0_2px_16px_hsl(42_75%_46%_/_0.10)]`
-  - Placeholder text: `"Lord, I come before you today…"` (prayerful, not generic)
-  - Auto-grow height as user types (via a `useRef` + `onInput` height adjust trick)
-- **Title input**: styled to look like a section heading input — larger font (`text-xl`), minimal border, warm background
-- **Preview**: moved to right column (`hidden sm:block`) — no longer stacks below the textarea eating vertical space. On mobile it's replaced by a small style badge.
-- **Extended prayer / Scripture**: collapsed behind an `<Accordion>` or expandable chevron — not shown by default, declutters the primary writing experience
-- **Background upload**: similarly collapsed into an "Extras ↓" accordion
-- **Word counter**: small, floating in bottom-right corner of the textarea, not below it
-- **Overall feel**: the modal should feel like opening a prayer journal — warm cream background, no harsh borders, soft inner shadows, faith-adjacent typography
-
----
-
-### Database migration needed
-
-```sql
-ALTER TABLE public.testimonies ALTER COLUMN prayer_id DROP NOT NULL;
-```
-
----
-
-### Files to modify
-
-| File | Change |
+| Component | Purpose |
 |---|---|
-| `supabase/migrations/...` | Make `testimonies.prayer_id` nullable |
-| `src/pages/Testify.tsx` | Replace `TestimonyFlipCard` with `StandaloneTestimonyCard` (2.5D, read more, prayer link pill, testimony count, Testify button + auth redirect) |
-| `src/pages/Board.tsx` | Add "Testify 🕊️" button + Sheet with standalone form |
-| `src/pages/Auth.tsx` | Read `sessionStorage` post-login redirect intent |
-| `src/components/AddPrayerModal.tsx` | Full redesign — wider dialog, dominant textarea, auto-grow, inner shadows, glass sheen, right-column preview, collapsed extras |
-| `src/integrations/supabase/types.ts` | Update `testimonies.prayer_id` to `string | null` |
+| `SiteNav` | Global nav bar |
+| `NavLink` | Nav link helper |
+| `FeatureCarousel` | 6-slide Framer Motion welcome carousel on homepage |
+| `AddPrayerModal` | Modal for creating new prayers |
+| `Comments` | Real-time comments on prayer cards (with Supabase Realtime subscription) |
+| `AIEnrichPanel` | Sheet panel for AI tag/verse suggestions on prayers |
+| `VerseLink` | Clickable scripture reference that links to verse detail |
+| `PrayerCardLink` | Inline prayer card reference from AI assistant |
+| **board/** | |
+| `BoardCard` | Prayer card component for the board with size variants, background images, font customization, actions |
+| `ThemeCanvas` | Animated background canvas for board themes |
+| `ThemeSelector` | Theme picker dropdown |
+| `AmbientPlayer` | Howler.js audio player with volume controls |
+| `TestifyBack` | Testimony sheet/back-of-card for submitting testimonies |
+| `boardThemes.ts` | Theme definitions (golden-sunrise, midnight, dawn, etc.) |
+| `useAmbientAudio.ts` | Hook for ambient audio state |
+| **admin/** | |
+| `AIInsightsTab` | AI-powered analytics tab |
+| `AIInsightButton` | Button to trigger AI insight generation |
+| `AnomalyAlert` | Alert component for detected anomalies |
+| `InsightsMetricCard` | Metric card for insights dashboard |
+| `NLQueryBox` | Natural language query input |
+| `ReportViewer` | Report rendering component |
+| `SuggestionPanel` | AI suggestion display |
+| `UserMonitorTab` | User management/monitoring table |
+
+### Database Tables (17 tables)
+
+| Table | Key Columns | Notes |
+|---|---|---|
+| `profiles` | id, email, full_name, avatar_url, role | Created via `handle_new_user()` trigger on auth.users |
+| `prayer_cards` | title, prayer_text, extended_prayer, tags, text_style, background_url, source, status, likes_count, prayed_count, views, created_by | Core content table. `source` set by `set_prayer_source()` trigger |
+| `user_saved_prayers` | user_id, prayer_id, pinned, favorite, position, card_size, grid_position, notes | Board state per user |
+| `likes` | user_id, prayer_id | Triggers `update_prayer_likes_count()` |
+| `prayed_actions` | user_id, prayer_id | Triggers `update_prayer_prayed_count()` |
+| `comments` | user_id, prayer_id, text | Real-time enabled |
+| `testimonies` | user_id, prayer_id, body, flagged | Linked to prayers |
+| `testimony_likes` | testimony_id, user_id | |
+| `testimony_comments` | testimony_id, user_id, body | |
+| `testimony_flags` | testimony_id, user_id, reason | |
+| `board_preferences` | user_id, theme, sound_id, sound_volume, animations_enabled | |
+| `prayer_playlists` | user_id, name, prayer_ids | Array of prayer UUIDs |
+| `blog_posts` | title, slug, content, excerpt, cover_image_url, published, author_id | |
+| `verse_summaries` | reference, verse_text, summary, exegesis | Cached verse data |
+| `contact_submissions` | name, email, message, ai_reply, replied_at | |
+| `admin_reports` | title, content, report_type | |
+| `ai_monitor_reports` | report_type, summary, anomalies, suggestions, key_metrics, report_content | |
+| `ai_chat_logs` | user_id, user_message, ai_response | |
+| `site_logs` | type, message, user_id, metadata | |
+
+### Realtime Subscriptions
+
+Only **one** active realtime subscription exists:
+- `Comments.tsx` subscribes to `postgres_changes` on `comments` table filtered by `prayer_id` for INSERT and DELETE events.
+
+No realtime is enabled at the publication level (no `ALTER PUBLICATION supabase_realtime ADD TABLE` found in migrations).
+
+### Edge Functions (10)
+
+| Function | Purpose |
+|---|---|
+| `prayer-assist` | AI chat companion (Gemini/GPT) |
+| `enrich-prayer` | AI tag and verse suggestions |
+| `moderate-prayer` | Content moderation on prayer submission |
+| `moderate-testimony` | Content moderation on testimony submission |
+| `prayer-tts` | Text-to-speech via ElevenLabs |
+| `verse-summary` | AI verse summary/exegesis generation |
+| `bible-quiz` | AI-generated trivia questions |
+| `contact-form` | Contact form submission with AI reply |
+| `faq-report` | FAQ report generation |
+| `ai-monitor` | AI analytics monitoring |
+
+### Storage Buckets
+- `prayer-backgrounds` (public) — user-uploaded card backgrounds
+- `avatars` (public) — user profile images
 
 ---
 
-### Technical details
+## 2. Drag-and-Drop Status
 
-- `StandaloneTestimonyCard` counts other testimonies for the same prayer by grouping the already-fetched testimonies array by `prayer_id` — zero extra DB queries
-- Auth intent: `sessionStorage` key `'kp_post_login'` stores `{ path, action }` — cleared after use
-- Auto-grow textarea: `ref.style.height = 'auto'; ref.style.height = ref.scrollHeight + 'px'` on `onInput`
-- The 2.5D card uses `style={{ perspective: '1000px' }}` on wrapper and `whileHover` on the card `motion.div` — same pattern already used in `BoardCard`
+**Drag-and-drop has NOT been removed.** It is actively used in `Board.tsx`:
+
+- `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` are all in `package.json`
+- `Board.tsx` imports `DndContext`, `SortableContext`, `useSortable`, `arrayMove`, `rectSortingStrategy`, sensors (Pointer, Touch, Keyboard)
+- A `SortableBoardCard` wrapper component uses `useSortable` for each card
+- `handleDragEnd` reorders cards and persists `grid_position` to `user_saved_prayers`
+- The entire board grid is wrapped in `<DndContext>` → `<SortableContext>`
+
+**There are no "
