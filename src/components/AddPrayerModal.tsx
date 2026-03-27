@@ -10,10 +10,11 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Sparkles, Upload, ChevronDown } from "lucide-react";
+import { Loader2, Sparkles, Upload, ChevronDown, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { REGION_COORDS } from "@/hooks/usePrayerMapData";
 
 const TEXT_STYLES = [
   { value: "classic",       label: "Classic",             preview: "font-body text-base" },
