@@ -551,7 +551,7 @@ function SkeletonCard() {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-const POPULAR_LABELS = ["daily-prayer", "peace", "faith", "morning-prayer", "healing", "forgiveness", "lords-prayer", "intercession"];
+const POPULAR_LABELS = ["peace", "faith", "healing", "forgiveness", "intercession"];
 
 export default function Prayers() {
   const [cards, setCards] = useState<PrayerCard[]>([]);

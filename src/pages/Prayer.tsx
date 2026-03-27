@@ -35,12 +35,10 @@ function PrayingHandsIcon({ className }: { className?: string }) {
 }
 
 // ── Tag palette (matches Prayers.tsx) ─────────────────────────────────────────
-const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
-  "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
+const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
   "healing":        { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":          { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
   "faith":          { bg: "hsl(42 80% 92%)",  text: "hsl(38 75% 32%)" },
-  "morning-prayer": { bg: "hsl(35 68% 88%)",  text: "hsl(35 65% 32%)" },
   "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };

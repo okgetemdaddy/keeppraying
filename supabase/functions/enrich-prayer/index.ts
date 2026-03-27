@@ -76,7 +76,7 @@ If someone prays about sickness, suggest healing verses. If about provision/fina
                     },
                   },
                 },
-                required: ["tags", "verses"],
+                required: ["labels", "verses"],
                 additionalProperties: false,
               },
             },
