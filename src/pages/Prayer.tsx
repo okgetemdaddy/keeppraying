@@ -221,6 +221,17 @@ export default function Prayer() {
     if (ttsLoading || !card) return;
     setTtsLoading(true);
     try {
+      // Check for cached audio first
+      if ((card as any).audio_url) {
+        const audio = new Audio((card as any).audio_url);
+        audioRef.current = audio;
+        audio.onended = () => setTtsPlaying(false);
+        await audio.play();
+        setTtsPlaying(true);
+        setTtsLoading(false);
+        return;
+      }
+
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prayer-tts`,
         {
@@ -231,6 +242,17 @@ export default function Prayer() {
       );
       if (!resp.ok) throw new Error("Could not generate speech");
       const blob = await resp.blob();
+
+      // Cache to storage
+      const storagePath = `${card.id}.mp3`;
+      const { error: uploadErr } = await supabase.storage
+        .from("prayer-audio")
+        .upload(storagePath, blob, { contentType: "audio/mpeg", upsert: true });
+      if (!uploadErr) {
+        const { data: { publicUrl } } = supabase.storage.from("prayer-audio").getPublicUrl(storagePath);
+        await supabase.from("prayer_cards").update({ audio_url: publicUrl } as any).eq("id", card.id);
+      }
+
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
