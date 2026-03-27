@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
+import { StreakCounter } from "@/components/StreakCounter";
 import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
