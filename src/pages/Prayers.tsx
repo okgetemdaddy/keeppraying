@@ -309,7 +309,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                     </button>
                   ) : <div />}
 
-                  {/* Show tags (right) */}
+                  {/* Show labels (right) */}
                   {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setLabelsOpen(v => !v)}
