@@ -325,7 +325,9 @@ export default function LocalRadar() {
         ) : (
           <p className="text-white/30 text-xs flex items-center justify-center gap-1.5">
             <MapPin className="w-3 h-3 text-green-400/60" />
-            Showing live prayer activity · All locations anonymized
+            {userRegion
+              ? `Your area: ${userRegion} · Showing live prayer activity`
+              : "Showing live prayer activity · All locations anonymized"}
           </p>
         )}
       </div>

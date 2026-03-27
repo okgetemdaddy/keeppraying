@@ -316,8 +316,28 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
                 </Accordion>
               </div>
 
-              {/* ── Right column — style picker + preview ────────────────── */}
+              {/* ── Right column — style picker + region + preview ────────────────── */}
               <div className="p-6 flex flex-col gap-5" style={{ background: "hsl(42 50% 98%)" }}>
+                {/* Region picker */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide flex items-center gap-1.5" style={{ color: "hsl(25 18% 52%)" }}>
+                    <Globe className="w-3 h-3" /> Region
+                  </p>
+                  <Select value={region} onValueChange={setRegion}>
+                    <SelectTrigger
+                      className="rounded-xl text-sm h-10"
+                      style={{ background: "hsl(42 55% 99%)", borderColor: "hsl(38 22% 88%)" }}
+                    >
+                      <SelectValue placeholder="Where is this prayer from?" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.keys(REGION_COORDS).map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Style picker */}
                 <div className="space-y-2">
                   <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "hsl(25 18% 52%)" }}>

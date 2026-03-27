@@ -56,20 +56,26 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const transcriptRef = useRef("");
 
-  // Process offline queue on mount
+  // Process offline queue on mount + listen for reconnect
   useEffect(() => {
     if (!user) return;
-    const queue = getOfflineQueue();
-    if (queue.length === 0) return;
-    localStorage.removeItem(OFFLINE_KEY);
-    queue.forEach(async (item) => {
-      try {
-        await refineAndSave(item.text);
-      } catch {
-        // re-queue on failure
-        addToOfflineQueue(item.text);
+
+    const processOfflineQueue = async () => {
+      const queue = getOfflineQueue();
+      if (queue.length === 0) return;
+      localStorage.removeItem(OFFLINE_KEY);
+      for (const item of queue) {
+        try {
+          await refineAndSave(item.text);
+        } catch {
+          addToOfflineQueue(item.text);
+        }
       }
-    });
+    };
+
+    processOfflineQueue();
+    window.addEventListener("online", processOfflineQueue);
+    return () => window.removeEventListener("online", processOfflineQueue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

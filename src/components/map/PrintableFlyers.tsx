@@ -36,7 +36,7 @@ function FlyerPreview({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const downloadFlyer = () => {
+  const downloadFlyer = async () => {
     const canvas = document.createElement("canvas");
     canvas.width = 1200;
     canvas.height = 1600;
@@ -78,37 +78,36 @@ function FlyerPreview({
       ctx.fillText(`✦ ${line}`, 600, 400 + i * 55);
     });
 
-    // QR code placeholder (simple box with URL)
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.fillRect(400, 850, 400, 400);
+    // Generate real QR code
+    try {
+      const qrDataUrl = await QRCode.toDataURL("https://keeppray.ing", {
+        width: 320,
+        margin: 2,
+        color: { dark: "#0c0f1a", light: "#FFFFFF" },
+      });
+      const qrImg = new Image();
+      qrImg.src = qrDataUrl;
+      await new Promise<void>((resolve) => {
+        qrImg.onload = () => resolve();
+        qrImg.onerror = () => resolve();
+      });
+
+      // White background for QR
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.fillRect(400, 850, 400, 400);
+      ctx.drawImage(qrImg, 440, 890, 320, 320);
+    } catch {
+      // Fallback: white box with text
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.fillRect(400, 850, 400, 400);
+      ctx.fillStyle = "#0c0f1a";
+      ctx.font = "bold 24px sans-serif";
+      ctx.fillText("keeppray.ing", 600, 1060);
+    }
+
     ctx.fillStyle = "#0c0f1a";
     ctx.font = "bold 28px sans-serif";
     ctx.fillText("SCAN TO JOIN", 600, 1310);
-
-    // QR code simulation (grid pattern)
-    ctx.fillStyle = "#0c0f1a";
-    const qrStart = { x: 440, y: 890 };
-    const qrSize = 320;
-    const cells = 16;
-    const cellSize = qrSize / cells;
-    for (let row = 0; row < cells; row++) {
-      for (let col = 0; col < cells; col++) {
-        // Position markers (corners)
-        const isCorner =
-          (row < 4 && col < 4) ||
-          (row < 4 && col >= cells - 4) ||
-          (row >= cells - 4 && col < 4);
-
-        if (isCorner || Math.random() > 0.55) {
-          ctx.fillRect(
-            qrStart.x + col * cellSize,
-            qrStart.y + row * cellSize,
-            cellSize - 1,
-            cellSize - 1
-          );
-        }
-      }
-    }
 
     // URL
     ctx.fillStyle = template.color;
