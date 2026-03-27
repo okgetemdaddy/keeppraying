@@ -406,7 +406,7 @@ export function BoardCard({
                 </div>
               )}
 
-              {/* Scripture / Tags toggles */}
+              {/* Scripture / Labels toggles */}
               {size !== "small" && (
                 <div className="flex items-center justify-between gap-2">
                   {card.extended_prayer ? (
