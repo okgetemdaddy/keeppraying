@@ -38,7 +38,7 @@ interface LiveStats {
   totalLikes: number;
   totalPrayed: number;
   chatLogsWeek: number;
-  tagData: { name: string; value: number }[];
+  labelData: { name: string; value: number }[];
   signupTrend: { date: string; count: number }[];
 }
 
@@ -107,7 +107,7 @@ export default function AIInsightsTab() {
         { count: totalLikes },
         { count: totalPrayed },
         { count: chatLogsWeek },
-        { data: tagRows },
+        { data: labelRows },
         { data: profileRows },
       ] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -119,16 +119,16 @@ export default function AIInsightsTab() {
         supabase.from("likes").select("*", { count: "exact", head: true }),
         supabase.from("prayed_actions").select("*", { count: "exact", head: true }),
         supabase.from("ai_chat_logs").select("*", { count: "exact", head: true }).gte("created_at", sevenDaysAgo),
-        supabase.from("prayer_cards").select("tags").eq("status", "approved").not("tags", "is", null),
+        supabase.from("prayer_cards").select("labels").eq("status", "approved").not("labels", "is", null),
         supabase.from("profiles").select("created_at").gte("created_at", thirtyDaysAgo).order("created_at", { ascending: true }),
       ]);
 
-      // Tag pie data
+      // Label pie data
       const freq: Record<string, number> = {};
-      (tagRows || []).forEach((r: { tags: string[] | null }) => {
-        (r.tags || []).forEach((t: string) => { freq[t] = (freq[t] || 0) + 1; });
+      (labelRows || []).forEach((r: { tags: string[] | null }) => {
+        (r.labels || []).forEach((t: string) => { freq[t] = (freq[t] || 0) + 1; });
       });
-      const tagData = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 5)
+      const labelData = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 5)
         .map(([name, value]) => ({ name, value }));
 
       // Signup trend (last 14 days)
@@ -157,7 +157,7 @@ export default function AIInsightsTab() {
         totalLikes: totalLikes || 0,
         totalPrayed: totalPrayed || 0,
         chatLogsWeek: chatLogsWeek || 0,
-        tagData,
+        labelData,
         signupTrend,
       });
     } finally {
@@ -313,14 +313,14 @@ export default function AIInsightsTab() {
             </div>
           </div>
 
-          {liveStats.tagData.length > 0 && (
+          {liveStats.labelData.length > 0 && (
             <div>
-              <h3 className="font-semibold text-sm mb-3 flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-primary" />Top Prayer Tags</h3>
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-primary" />Top Prayer Labels</h3>
               <div className="prayer-card p-4">
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
-                    <Pie data={liveStats.tagData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
-                      {liveStats.tagData.map((_, idx) => (
+                    <Pie data={liveStats.labelData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
+                      {liveStats.labelData.map((_, idx) => (
                         <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
                     </Pie>
@@ -328,7 +328,7 @@ export default function AIInsightsTab() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-wrap gap-2 justify-center mt-2">
-                  {liveStats.tagData.map((t, i) => (
+                  {liveStats.labelData.map((t, i) => (
                     <span key={t.name} className="text-xs px-2 py-0.5 rounded-full border border-border" style={{ color: PIE_COLORS[i % PIE_COLORS.length] }}>
                       {t.name} ({t.value})
                     </span>

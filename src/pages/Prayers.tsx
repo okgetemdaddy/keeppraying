@@ -26,7 +26,7 @@ type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source
 
 
 // ─── Design tokens (tag colors by keyword) ───────────────────────────────────
-const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
+const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
   "lords-prayer":    { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
   "healing":         { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":           { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
@@ -35,7 +35,7 @@ const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
   "forgiveness":     { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":    { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
-const DEFAULT_TAG = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
+const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
 const TEXT_STYLE_CLASSES: Record<string, string> = {
   classic:       "font-body text-base",
@@ -114,7 +114,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayed, setPrayed] = useState(false);
   const [saved, setSaved] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [tagsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [likesCount, setLikesCount] = useState(card.likes_count);
@@ -312,15 +312,15 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
                   ) : <div />}
 
                   {/* Show tags (right) */}
-                  {card.tags && card.tags.length > 0 && (
+                  {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setTagsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: "hsl(42 75% 40%)" }}
                     >
                       <Tag className="w-3 h-3" />
-                      {tagsOpen ? "Hide tags" : "Tags"}
-                      <motion.div animate={{ rotate: tagsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                      {labelsOpen ? "Hide labels" : "Labels"}
+                      <motion.div animate={{ rotate: labelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                         <ChevronDown className="w-3 h-3" />
                       </motion.div>
                     </button>
@@ -345,22 +345,22 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
 
                 {/* Tags accordion */}
                 <AnimatePresence>
-                  {tagsOpen && card.tags && card.tags.length > 0 && (
+                  {labelsOpen && card.labels && card.labels.length > 0 && (
                     <motion.div
-                      key="tags"
+                      key="labels"
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.25 }}
                       className="flex flex-wrap gap-1.5 overflow-hidden"
                     >
-                      {card.tags.map(tag => {
-                        const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                      {card.labels.map(tag => {
+                        const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
                         return (
                           <span key={tag}
                             className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
                             style={{ background: palette.bg, color: palette.text }}>
-                            #{tag}
+                            #{label}
                           </span>
                         );
                       })}
@@ -553,13 +553,13 @@ function SkeletonCard() {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-const POPULAR_TAGS = ["daily-prayer", "peace", "faith", "morning-prayer", "healing", "forgiveness", "lords-prayer", "intercession"];
+const POPULAR_LABELS = ["daily-prayer", "peace", "faith", "morning-prayer", "healing", "forgiveness", "lords-prayer", "intercession"];
 
 export default function Prayers() {
   const [cards, setCards] = useState<PrayerCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [activeTag, setActiveTag] = useState("");
+  const [activeLabel, setActiveTag] = useState("");
   const [showCommunity, setShowCommunity] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const { user } = useAuth();
@@ -581,13 +581,13 @@ export default function Prayers() {
       .order("likes_count", { ascending: false });
 
     if (!showCommunity) q = q.eq("source", "admin");
-    if (activeTag) q = q.contains("tags", [activeTag]);
+    if (activeLabel) q = q.contains("labels", [activeLabel]);
     if (search) q = q.textSearch("prayer_text", search, { type: "websearch" });
 
     const { data } = await q.limit(50);
     setCards((data as PrayerCard[]) || []);
     setLoading(false);
-  }, [search, activeTag, showCommunity]);
+  }, [search, activeLabel, showCommunity]);
 
   useEffect(() => { fetchPrayers(); }, [fetchPrayers]);
 
@@ -718,7 +718,7 @@ export default function Prayers() {
               whileTap={{ scale: 0.93 }}
               onClick={() => setActiveTag("")}
               className="px-3 py-1 rounded-full text-xs font-medium border transition-all"
-              style={!activeTag ? {
+              style={!activeLabel ? {
                 background: "hsl(42 85% 46%)",
                 borderColor: "hsl(42 85% 40%)",
                 color: "hsl(0 0% 100%)",
@@ -731,9 +731,9 @@ export default function Prayers() {
             >
               All
             </motion.button>
-            {POPULAR_TAGS.map(tag => {
-              const active = activeTag === tag;
-              const pal = TAG_PALETTE[tag] || DEFAULT_TAG;
+            {POPULAR_LABELS.map(tag => {
+              const active = activeLabel === tag;
+              const pal = LABEL_PALETTE[tag] || DEFAULT_LABEL;
               return (
                 <motion.button
                   key={tag}
@@ -751,7 +751,7 @@ export default function Prayers() {
                     color: pal.text
                   }}
                 >
-                  #{tag}
+                  #{label}
                 </motion.button>
               );
             })}
@@ -783,7 +783,7 @@ export default function Prayers() {
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${activeTag}-${showCommunity}-${search}`}
+              key={`${activeLabel}-${showCommunity}-${search}`}
               initial="hidden"
               animate="show"
               variants={pageVariants}

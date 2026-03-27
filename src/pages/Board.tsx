@@ -91,9 +91,9 @@ function DrawerPrayerCard({
     <div className="prayer-card p-4 space-y-2">
       {card.title && <h4 className="font-display font-semibold text-sm leading-snug">{card.title}</h4>}
       <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{card.prayer_text}</p>
-      {card.tags && card.tags.length > 0 && (
+      {card.labels && card.labels.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {card.tags.slice(0, 4).map(t => (
+          {card.labels.slice(0, 4).map(t => (
             <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary"># {t}</span>
           ))}
         </div>
@@ -646,9 +646,9 @@ export default function Board() {
                         <p className="text-sm font-medium truncate">
                           {item.prayer_cards.title || item.prayer_cards.prayer_text.slice(0, 50) + "…"}
                         </p>
-                        {item.prayer_cards.tags && item.prayer_cards.tags.length > 0 && (
+                        {item.prayer_cards.labels && item.prayer_cards.labels.length > 0 && (
                           <p className="text-xs text-muted-foreground truncate">
-                            {item.prayer_cards.tags.slice(0, 3).map(t => `#${t}`).join(" ")}
+                            {item.prayer_cards.labels.slice(0, 3).map(t => `#${t}`).join(" ")}
                           </p>
                         )}
                       </div>

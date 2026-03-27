@@ -35,7 +35,7 @@ interface TestimonyResult {
     id: string;
     title: string | null;
     prayer_text: string;
-    tags: string[] | null;
+    labels: string[] | null;
     extended_prayer: string | null;
   } | null;
   likes_count?: number;
@@ -289,9 +289,9 @@ function StandaloneTestimonyCard({
             {prayer.extended_prayer && (
               <p className="text-sm leading-relaxed mt-4 italic opacity-70" style={{ color: "hsl(25 28% 28%)" }}>{prayer.extended_prayer}</p>
             )}
-            {prayer.tags && prayer.tags.length > 0 && (
+            {prayer.labels && prayer.labels.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-4">
-                {prayer.tags.map(tag => (
+                {prayer.labels.map(tag => (
                   <span key={tag} className="text-xs px-2.5 py-1 rounded-full font-medium"
                     style={{ background: "hsl(42 80% 90%)", color: "hsl(38 75% 35%)" }}>
                     #{tag}

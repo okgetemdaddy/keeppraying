@@ -54,7 +54,7 @@ function loadFont(url: string) {
   document.head.appendChild(link);
 }
 
-const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
+const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
   "lords-prayer":   { bg: "hsl(42 85% 90%)",  text: "hsl(38 75% 35%)" },
   "healing":        { bg: "hsl(150 40% 88%)", text: "hsl(150 38% 26%)" },
   "peace":          { bg: "hsl(210 55% 88%)", text: "hsl(210 55% 30%)" },
@@ -63,7 +63,7 @@ const TAG_PALETTE: Record<string, { bg: string; text: string }> = {
   "forgiveness":    { bg: "hsl(280 35% 88%)", text: "hsl(280 40% 30%)" },
   "intercession":   { bg: "hsl(150 30% 88%)", text: "hsl(150 38% 28%)" },
 };
-const DEFAULT_TAG = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
+const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
 type CardSize = "small" | "medium" | "large";
 
@@ -99,7 +99,7 @@ export function BoardCard({
   const [enrichOpen, setEnrichOpen] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [scriptureOpen, setScriptureOpen] = useState(false);
-  const [tagsOpen, setTagsOpen] = useState(false);
+  const [labelsOpen, setTagsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
 
@@ -431,15 +431,15 @@ export function BoardCard({
                       {scriptureOpen ? "Hide scripture" : "Show scripture"}
                     </button>
                   ) : <div />}
-                  {card.tags && card.tags.length > 0 && (
+                  {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setTagsOpen(v => !v)}
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
                       style={{ color: accentColor }}
                     >
                       <Tag className="w-3 h-3" />
-                      {tagsOpen ? "Hide tags" : "Tags"}
-                      <motion.div animate={{ rotate: tagsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                      {labelsOpen ? "Hide labels" : "Labels"}
+                      <motion.div animate={{ rotate: labelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                         <ChevronDown className="w-3 h-3" />
                       </motion.div>
                     </button>
@@ -466,22 +466,22 @@ export function BoardCard({
 
               {/* Tags accordion */}
               <AnimatePresence>
-                {tagsOpen && card.tags && card.tags.length > 0 && (
+                {labelsOpen && card.labels && card.labels.length > 0 && (
                   <motion.div
-                    key="tags"
+                    key="labels"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.22 }}
                     className="flex flex-wrap gap-1.5 overflow-hidden"
                   >
-                    {card.tags.map(tag => {
-                      const palette = TAG_PALETTE[tag] || DEFAULT_TAG;
+                    {card.labels.map(tag => {
+                      const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
                       return (
                         <span key={tag}
                           className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
                           style={{ background: palette.bg, color: palette.text }}>
-                          #{tag}
+                          #{label}
                         </span>
                       );
                     })}
@@ -640,7 +640,7 @@ export function BoardCard({
           cardId={card.id}
           prayerText={card.prayer_text}
           extendedPrayer={card.extended_prayer}
-          existingTags={card.tags || []}
+          existingTags={card.labels || []}
           onApplied={onRefresh}
         />
       )}
