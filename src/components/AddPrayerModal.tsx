@@ -57,6 +57,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [bgFile, setBgFile] = useState<File | null>(null);
+  const [region, setRegion] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const form = useForm<FormValues>({
