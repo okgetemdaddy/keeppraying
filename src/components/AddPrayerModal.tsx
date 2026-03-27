@@ -97,6 +97,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         labels: [],
         status: "private",
         created_by: user.id,
+        region: region || null,
       }).select("id").single();
 
       if (error) throw error;
