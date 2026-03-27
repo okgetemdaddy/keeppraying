@@ -11,6 +11,7 @@ import {
 import VerseLink from "@/components/VerseLink";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { SiteNav } from "@/components/SiteNav";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 
 // ── Tracks ────────────────────────────────────────────────────────────────────
 const TRACKS = [
