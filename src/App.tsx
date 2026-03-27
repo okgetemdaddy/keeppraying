@@ -74,6 +74,7 @@ const App = () => (
             <Route path="/groups/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
             <Route path="/family" element={<ProtectedRoute><FamilyRooms /></ProtectedRoute>} />
             <Route path="/family/:id" element={<ProtectedRoute><FamilyRoomDetail /></ProtectedRoute>} />
+            <Route path="/pray-the-world" element={<PrayTheWorld />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
