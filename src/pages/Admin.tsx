@@ -224,7 +224,7 @@ export default function Admin() {
       const { data: newCard, error } = await supabase.from("prayer_cards").insert({
         title: values.title || null, prayer_text: values.prayer_text.trim(),
         extended_prayer: values.extended_prayer?.trim() || null,
-        tags: labelsArr.length ? labelsArr : null, text_style: values.text_style,
+        labels: labelsArr.length ? labelsArr : null, text_style: values.text_style,
         background_url: values.background_url || null,
         created_by: user.id, source: "admin", status: "approved",
       }).select("id").single();
