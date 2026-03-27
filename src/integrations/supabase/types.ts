@@ -368,6 +368,33 @@ export type Database = {
         }
         Relationships: []
       }
+      prayer_standby: {
+        Row: {
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -422,6 +449,30 @@ export type Database = {
           metadata?: Json | null
           type?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      standby_responses: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          prayer_id: string
+          responder_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          prayer_id: string
+          responder_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          prayer_id?: string
+          responder_id?: string
         }
         Relationships: []
       }
