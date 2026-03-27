@@ -125,6 +125,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
       form.reset();
       setBgFile(null);
+      setRegion("");
       if (textareaRef.current) textareaRef.current.style.height = "280px";
       onOpenChange(false);
       onSuccess?.(card?.id);
