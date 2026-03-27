@@ -54,33 +54,40 @@ export default function LocalRadar() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocation(loc);
+        setUserRegion(getNearestRegion(loc.lat, loc.lng));
+      },
       () => setPermissionDenied(true),
       { enableHighAccuracy: false, timeout: 8000 }
     );
   }, []);
 
   const fetchRadarData = useCallback(async () => {
-    // Fetch real aggregate data for radar visualization
-    const [prayedRes, standbyRes, groupRes, familyRes] = await Promise.all([
-      // Recent prayers (last 24h)
+    // Fetch real aggregate data, filtering by user's region if available
+    const [prayedRes, standbyRes, groupRes, familyRes, regionPrayerRes] = await Promise.all([
       supabase
         .from("prayed_actions")
         .select("id", { count: "exact", head: true })
         .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-      // Active standby warriors
       supabase
         .from("prayer_standby")
         .select("id", { count: "exact", head: true })
         .eq("is_active", true),
-      // Active prayer groups
       supabase
         .from("prayer_groups")
         .select("id", { count: "exact", head: true }),
-      // Family rooms
       supabase
         .from("family_rooms")
         .select("id", { count: "exact", head: true }),
+      // Region-specific prayers
+      userRegion
+        ? supabase
+            .from("prayer_cards")
+            .select("id", { count: "exact", head: true })
+            .eq("region", userRegion)
+        : Promise.resolve({ count: 0 } as any),
     ]);
 
     const prayedCount = prayedRes.count ?? 0;
