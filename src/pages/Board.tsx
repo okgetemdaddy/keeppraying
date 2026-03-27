@@ -27,6 +27,7 @@ import {
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Link } from "react-router-dom";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
