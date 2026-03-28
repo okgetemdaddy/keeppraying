@@ -22,6 +22,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const TEAM_COOLDOWN_KEY = "kp_team_req_ts";
+const TEAM_COOLDOWN_MS = 5 * 60 * 1000;
+
 export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
