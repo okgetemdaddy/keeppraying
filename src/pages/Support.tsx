@@ -315,7 +315,7 @@ export default function Support() {
               Bless the Fruit of Our Labor
             </h2>
             <p className="text-muted-foreground text-sm">
-              Steady Updates
+              We treat every decision as Kingdom work that carries eternal weight.
             </p>
           </div>
 
