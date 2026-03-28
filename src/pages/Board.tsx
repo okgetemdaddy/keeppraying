@@ -383,6 +383,12 @@ export default function Board() {
                 <PlusCircle className="w-4 h-4" />
                 Add Prayer
               </button>
+              <Link to="/breathe">
+                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
+                  <Wind className="w-4 h-4 text-slate-500" />
+                  Add a Breath
+                </button>
+              </Link>
               {saved.length > 0 && (
                 <button
                   onClick={() => openPlaylist()}

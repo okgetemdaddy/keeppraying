@@ -59,6 +59,13 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       color: "hsl(220 45% 42%)",
     },
     {
+      id: "add-breath",
+      label: "Add a Breath",
+      icon: <Wind className="w-4 h-4" />,
+      onClick: go("/breathe"),
+      color: "hsl(195 50% 42%)",
+    },
+    {
       id: "assistant",
       label: "PrayerAssist.ing",
       icon: <Sparkles className="w-4 h-4" />,
