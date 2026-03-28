@@ -53,7 +53,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
-  const location = useLocation();
   return (
     <>
       <Toaster />
