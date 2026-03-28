@@ -182,7 +182,7 @@ export default function Support() {
                 </p>
                 <p className="font-semibold not-italic text-primary">
                   Pray for free!! Copy, share and edit any prayer you like. Pray with us for the continued growth of a
-                  strong community seeking the Kingdom of God…
+                  strong community seeking the Kingdom of God and His righteousness!
                 </p>
               </blockquote>
             </CardContent>
@@ -301,7 +301,7 @@ export default function Support() {
               Bless the Fruit of Our Labor
             </h2>
             <p className="text-muted-foreground text-sm">
-              See what God has been building through this community.
+              Steady Updates
             </p>
           </div>
 
