@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
-  Pin, Loader2, Maximize2, Sparkles, ListPlus, Columns2, Square,
+  Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
   ArrowUpDown, Filter, Users, Home,
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
