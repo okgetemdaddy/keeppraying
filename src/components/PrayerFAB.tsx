@@ -52,6 +52,13 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       color: "hsl(25 55% 42%)",
     },
     {
+      id: "my-board",
+      label: "My Board",
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      onClick: authGuard(() => { navigate("/board"); setOpen(false); }),
+      color: "hsl(220 45% 42%)",
+    },
+    {
       id: "assistant",
       label: "PrayerAssist.ing",
       icon: <Sparkles className="w-4 h-4" />,
