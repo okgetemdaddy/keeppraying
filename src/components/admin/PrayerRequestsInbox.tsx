@@ -33,6 +33,8 @@ export default function PrayerRequestsInbox() {
   const [responseText, setResponseText] = useState("");
   const [fulfilling, setFulfilling] = useState(false);
   const [filter, setFilter] = useState<"all" | "team" | "community">("team");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
