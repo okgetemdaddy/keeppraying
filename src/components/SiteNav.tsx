@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { label: "KeepFight.ing", href: "/war-room" },
   { label: "Pray the World", href: "/pray-the-world" },
   { label: "KeepGrow.ing", href: "/blog" },
+  { label: "Support Us", href: "/support" },
 ];
 
 interface SiteNavProps {

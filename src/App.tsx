@@ -27,6 +27,7 @@ import PrayTheWorld from "./pages/PrayTheWorld";
 import SermonSync from "./pages/SermonSync";
 import AccountabilityCircles from "./pages/AccountabilityCircles";
 import CircleDetail from "./pages/CircleDetail";
+import Support from "./pages/Support";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
@@ -91,6 +92,7 @@ function AppShell() {
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/circles" element={<ProtectedRoute><AccountabilityCircles /></ProtectedRoute>} />
         <Route path="/circles/:id" element={<ProtectedRoute><CircleDetail /></ProtectedRoute>} />
+        <Route path="/support" element={<Support />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
