@@ -59,7 +59,7 @@ function AppShell() {
       <Toaster />
       <Sonner />
       <UrgentPrayerNotifier />
-      <ScriptureEasterEgg />
+      
       <MobileTabBar />
       <PrayerFAB
         onAskCommunity={() => setCommunityOpen(true)}

@@ -201,6 +201,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
   const [scrolled, setScrolled] = useState(!transparent);
   const { session } = useAuth();
   const isMobile = useIsMobile();
+  const { currentSaying } = useSayingsCycle();
 
   useEffect(() => {
     if (!transparent) { setScrolled(true); return; }
