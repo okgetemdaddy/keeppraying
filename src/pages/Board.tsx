@@ -26,6 +26,8 @@ import {
   ArrowUpDown, Filter, Users, Home,
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
+import { BoardMobileMenu } from "@/components/board/BoardMobileMenu";
+import { NotificationBell } from "@/components/NotificationBell";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -325,85 +327,97 @@ export default function Board() {
         onMouseEnter={() => immersive && setImmersive(false)}
         className="sticky top-0 z-50"
       >
-        <SiteNav
-          dark
-          rightSlot={
-            <div className="flex items-center gap-1.5">
-              <ThemeSelector
-                currentTheme={prefs.theme}
-                animationsEnabled={prefs.animations_enabled}
-                onThemeChange={(id) => savePrefs({ theme: id })}
-                onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+        {/* Main nav bar */}
+        {isMobile ? (
+          /* ── Mobile: logo + hamburger only ── */
+          <nav className="h-14 flex items-center justify-between px-4" style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <Link to="/" className="font-display text-xl font-bold">
+              <span className="text-white">Keep</span>
+              <span className="nav-pray-glow">Pray</span>
+              <span className="text-white">.ing</span>
+            </Link>
+            <div className="flex items-center gap-1">
+              <NotificationBell dark scrolled={false} />
+              <BoardMobileMenu
+                onAddPrayer={() => setAddOpen(true)}
+                onPlaylist={() => openPlaylist()}
+                onClassical={() => setClassicalOpen(true)}
+                hasPrayers={saved.length > 0}
               />
-              <StandbyToggle compact dark />
-              <Link to="/circles" state={{ from: "board" }}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Circles</span>
-                </Button>
-              </Link>
-              <Link to="/family" state={{ from: "board" }}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">Family</span>
-                </Button>
-              </Link>
-              {saved.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                  onClick={() => openPlaylist()}
-                >
-                  <ListMusic className="w-4 h-4" />
-                  <span className="hidden sm:inline">Playlist</span>
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                onClick={() => setClassicalOpen(true)}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Classical</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                onClick={() => setTestifyOpen(true)}
-              >
-                <Bird className="w-4 h-4" />
-                <span className="hidden sm:inline">Testify</span>
-              </Button>
-              <VoiceRecorder variant="compact" dark onPrayerCreated={() => fetchSaved()} />
-              <Button
-                size="sm"
-                className="btn-gold rounded-xl gap-1.5"
-                onClick={() => setAddOpen(true)}
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Prayer</span>
-              </Button>
-              <button
-                onClick={() => setImmersive(i => !i)}
-                className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors hidden md:block"
-                title="Immersive mode"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
             </div>
-          }
-        />
+          </nav>
+        ) : (
+          /* ── Desktop: full SiteNav ── */
+          <SiteNav dark />
+        )}
+
+        {/* ── Desktop control row (below nav) ── */}
+        {!isMobile && (
+          <div
+            className="border-b"
+            style={{
+              background: "rgba(0,0,0,0.18)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+          >
+            <div className="container mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ThemeSelector
+                  currentTheme={prefs.theme}
+                  animationsEnabled={prefs.animations_enabled}
+                  onThemeChange={(id) => savePrefs({ theme: id })}
+                  onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+                />
+                <StandbyToggle compact dark />
+                <div className="w-px h-5 bg-white/10 mx-1" />
+                <Link to="/circles" state={{ from: "board" }}>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                    <Users className="w-3.5 h-3.5" />
+                    Circles
+                  </button>
+                </Link>
+                <Link to="/family" state={{ from: "board" }}>
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                    <Home className="w-3.5 h-3.5" />
+                    Family
+                  </button>
+                </Link>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAddOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(42 85% 46%) 0%, hsl(38 80% 42%) 100%)",
+                    color: "white",
+                    boxShadow: "0 2px 8px hsl(42 85% 46% / 0.3)",
+                  }}
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Add Prayer
+                </button>
+                {saved.length > 0 && (
+                  <button
+                    onClick={() => openPlaylist()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <ListMusic className="w-3.5 h-3.5" />
+                    Playlist
+                  </button>
+                )}
+                <button
+                  onClick={() => setImmersive(i => !i)}
+                  className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors"
+                  title="Immersive mode"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {/* Main content */}
