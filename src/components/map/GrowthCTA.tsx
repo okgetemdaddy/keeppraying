@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import VerseLink from "@/components/VerseLink";
 import { motion } from "framer-motion";
 import { Heart, Users, BookOpen, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
