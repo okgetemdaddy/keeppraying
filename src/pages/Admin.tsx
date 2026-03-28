@@ -1373,6 +1373,143 @@ function TestimoniesAdminTab() {
   );
 }
 
+// ── BREATH PRAYERS ADMIN TAB ───────────────────────────────────────────────
+function BreathAdminTab() {
+  const [breaths, setBreaths] = useState<{ id: string; prayer_text: string; labels: string[] | null; status: string; created_at: string; meditation_essay: string | null }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [essay, setEssay] = useState("");
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await (supabase.from("prayer_cards").select("id, prayer_text, labels, status, created_at, meditation_essay")
+      .eq("prayer_type", "breath").order("created_at", { ascending: false }).limit(100) as any);
+    setBreaths(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const approve = async (id: string) => {
+    await supabase.from("prayer_cards").update({ status: "approved" }).eq("id", id);
+    toast({ title: "Breath prayer approved ✓" }); load();
+  };
+
+  const saveEssay = async () => {
+    if (!editId) return;
+    setSaving(true);
+    await (supabase.from("prayer_cards").update({ meditation_essay: essay || null } as any).eq("id", editId) as any);
+    toast({ title: "Meditation essay saved ✨" });
+    setSaving(false); setEditId(null); setEssay(""); load();
+  };
+
+  const setDaily = async (prayerId: string) => {
+    const today = new Date().toISOString().split("T")[0];
+    await (supabase.from("daily_breath").upsert({ prayer_id: prayerId, active_date: today, selected_by: (await supabase.auth.getUser()).data.user?.id } as any, { onConflict: "active_date" }) as any);
+    toast({ title: "Set as today's breath prayer 🌬️" });
+  };
+
+  const deletePrayer = async (id: string) => {
+    await supabase.from("prayer_cards").delete().eq("id", id);
+    toast({ title: "Deleted" }); load();
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Breath Prayers</h2>
+          <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Manage, approve, and attach meditation essays — {breaths.length} total</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={load} className="rounded-lg gap-1.5" style={{ borderColor: "hsl(220 26% 18%)", color: "hsl(38 14% 60%)" }}>
+          <RefreshCw className="w-3 h-3" /> Refresh
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center gap-2 py-6" style={{ color: "hsl(38 14% 50%)" }}>
+          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading…</span>
+        </div>
+      ) : breaths.length === 0 ? (
+        <GuardianCard><p className="text-sm italic text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>No breath prayers yet 🌬️</p></GuardianCard>
+      ) : (
+        <div className="space-y-3">
+          {breaths.map(b => (
+            <GuardianCard key={b.id}>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="font-display italic text-sm leading-relaxed mb-2" style={{ color: "hsl(38 28% 88%)" }}>"{b.prayer_text}"</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{
+                        background: b.status === "approved" ? "hsl(150 38% 26% / 0.15)" : "hsl(42 85% 46% / 0.15)",
+                        color: b.status === "approved" ? "hsl(150 38% 60%)" : "hsl(42 85% 58%)",
+                        border: `1px solid ${b.status === "approved" ? "hsl(150 38% 26% / 0.3)" : "hsl(42 85% 46% / 0.3)"}`,
+                      }}>
+                      {b.status}
+                    </span>
+                    {b.meditation_essay && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: "hsl(210 55% 50% / 0.15)", color: "hsl(210 55% 70%)", border: "1px solid hsl(210 55% 50% / 0.3)" }}>
+                        📖 Has meditation
+                      </span>
+                    )}
+                    <span className="text-[10px]" style={{ color: "hsl(38 14% 45%)" }}>{new Date(b.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  {b.status !== "approved" && (
+                    <button onClick={() => approve(b.id)} className="h-7 px-2.5 text-[10px] rounded-lg flex items-center gap-1"
+                      style={{ background: "hsl(150 38% 26% / 0.15)", color: "hsl(150 38% 60%)", border: "1px solid hsl(150 38% 26% / 0.3)" }}>
+                      <Check className="w-3 h-3" />Approve
+                    </button>
+                  )}
+                  <button onClick={() => { setEditId(b.id); setEssay(b.meditation_essay || ""); }} className="h-7 px-2.5 text-[10px] rounded-lg flex items-center gap-1"
+                    style={{ background: "hsl(42 85% 46% / 0.1)", color: "hsl(42 85% 58%)", border: "1px solid hsl(42 85% 46% / 0.2)" }}>
+                    <Pencil className="w-3 h-3" />Essay
+                  </button>
+                  <button onClick={() => setDaily(b.id)} className="h-7 px-2.5 text-[10px] rounded-lg flex items-center gap-1"
+                    style={{ background: "hsl(210 55% 50% / 0.1)", color: "hsl(210 55% 70%)", border: "1px solid hsl(210 55% 50% / 0.2)" }}>
+                    <Star className="w-3 h-3" />Daily
+                  </button>
+                  <button onClick={() => deletePrayer(b.id)} className="h-7 px-2.5 text-[10px] rounded-lg flex items-center gap-1"
+                    style={{ background: "hsl(0 72% 51% / 0.1)", color: "hsl(0 72% 60%)", border: "1px solid hsl(0 72% 51% / 0.2)" }}>
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              {/* Inline essay editor */}
+              {editId === b.id && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-3 pt-3 border-t overflow-hidden" style={{ borderColor: "hsl(220 26% 15%)" }}>
+                  <p className="text-xs font-medium mb-2" style={{ color: "hsl(42 85% 58%)" }}>Meditation Essay (Markdown)</p>
+                  <textarea
+                    value={essay}
+                    onChange={e => setEssay(e.target.value)}
+                    rows={6}
+                    className="w-full rounded-lg text-sm p-3 resize-none outline-none"
+                    style={{ background: "hsl(220 32% 10%)", color: "hsl(38 28% 88%)", border: "1px solid hsl(220 26% 18%)" }}
+                    placeholder="Write a meditation or reflection on this breath prayer…"
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={() => { setEditId(null); setEssay(""); }} className="h-7 px-3 text-xs rounded-lg" style={{ color: "hsl(38 14% 50%)", border: "1px solid hsl(220 26% 18%)" }}>
+                      Cancel
+                    </button>
+                    <button onClick={saveEssay} disabled={saving} className="h-7 px-3 text-xs rounded-lg flex items-center gap-1"
+                      style={{ background: "hsl(42 85% 46% / 0.15)", color: "hsl(42 85% 58%)", border: "1px solid hsl(42 85% 46% / 0.3)" }}>
+                      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save Essay
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </GuardianCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── FEEDBACK ADMIN TAB ─────────────────────────────────────────────────────
 function FeedbackAdminTab() {
   const [items, setItems] = useState<{ id: string; feedback_type: string; title: string | null; message: string; created_at: string; user_id: string }[]>([]);
