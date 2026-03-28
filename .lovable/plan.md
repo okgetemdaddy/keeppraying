@@ -1,23 +1,20 @@
 
 
-## Plan: Restructure PrayerAssist.ing FAB Item
+## Problem
 
-**Current behavior:** The "PrayerAssist.ing" FAB item calls `onAskTeam()` which opens a prayer request modal.
+The chat input at the bottom of the PrayerAssist page (`sticky bottom-0`) is hidden behind the mobile tab bar (`fixed bottom-0 z-50`), which is approximately 60-70px tall.
 
-**Goal:** 
-1. Change "PrayerAssist.ing" to navigate to `/assistant`
-2. Add a new FAB item "Ask KeepPray.ing for a Prayer" that keeps the current `onAskTeam()` behavior
+## Fix
 
-### Changes in `src/components/PrayerFAB.tsx`
+Add bottom padding to the sticky input container on mobile so it sits above the tab bar.
 
-1. **Update the "team" item** — change label to "PrayerAssist.ing", change onClick to `go("/assistant")`, keep sparkles icon and gold color.
+### File: `src/pages/PrayerAssist.tsx`
 
-2. **Add new item** — "Ask KeepPray.ing for a Prayer" using `HandHeart` icon (already imported), calling `authGuard(() => { onAskTeam(); setOpen(false); })`, placed right after the community item. Use a warm complementary color.
+**Line 290** — Update the sticky input wrapper to include bottom padding that accounts for the mobile tab bar height:
 
-**Final FAB order:**
-1. Ask Community to Pray
-2. Ask KeepPray.ing for a Prayer *(new — takes over old onAskTeam behavior)*
-3. PrayerAssist.ing *(now navigates to /assistant)*
-4. We Pray
-5. ...rest unchanged
+```tsx
+<div className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur pb-[70px] sm:pb-0">
+```
+
+This adds ~70px of bottom padding on mobile (matching the tab bar height) and removes it on `sm:` breakpoints and above where the tab bar is hidden.
 
