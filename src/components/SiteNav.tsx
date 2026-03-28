@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const NAV_LINKS = [
   { label: "Prayers", href: "/prayers" },
@@ -195,7 +196,8 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
           {rightSlot}
 
           {/* Auth CTA — desktop only */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
+            {session && <NotificationBell dark={dark} scrolled={scrolled} />}
             {session ? (
               <UserMenu dark={dark} scrolled={scrolled} />
             ) : (
@@ -207,7 +209,8 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
             )}
           </div>
 
-          {/* Hamburger */}
+          {/* Mobile: notification bell + hamburger */}
+          {session && <div className="md:hidden"><NotificationBell dark={dark} scrolled={scrolled} /></div>}
           <button
             onClick={() => setMobileOpen(v => !v)}
             className={cn("md:hidden p-2 rounded-xl transition-colors", hamburgerClass)}
