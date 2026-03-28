@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import Comments from "@/components/Comments";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
-import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PRAYER_FONTS } from "./BoardCard";
@@ -38,6 +37,29 @@ interface PrayerViewerModalProps {
   onAddToPlaylist?: (prayerId: string) => void;
 }
 
+const THEATER_GLOW_STYLE = `
+@keyframes theater-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 20px 4px hsla(42, 85%, 46%, 0.3),
+      0 0 60px 8px hsla(42, 85%, 46%, 0.1),
+      inset 0 0 0 1px hsla(42, 85%, 46%, 0.15);
+  }
+  33% {
+    box-shadow:
+      0 0 24px 6px hsla(35, 68%, 85%, 0.4),
+      0 0 60px 8px hsla(150, 38%, 26%, 0.1),
+      inset 0 0 0 1px hsla(35, 68%, 85%, 0.2);
+  }
+  66% {
+    box-shadow:
+      0 0 20px 4px hsla(150, 38%, 26%, 0.25),
+      0 0 60px 8px hsla(42, 85%, 46%, 0.1),
+      inset 0 0 0 1px hsla(150, 38%, 26%, 0.12);
+  }
+}
+`;
+
 export function PrayerViewerModal({
   open,
   onClose,
@@ -57,7 +79,6 @@ export function PrayerViewerModal({
   const [togglingPublic, setTogglingPublic] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
-  // Sync notes when item changes
   useEffect(() => {
     setNotes(item.notes || "");
     setEditingNotes(false);
@@ -87,6 +108,7 @@ export function PrayerViewerModal({
   const isPrivate = card.status === "private";
   const isPublic = card.status === "approved";
   const bgUrl = card.background_url || null;
+  const hasImage = !!bgUrl;
 
   const accentColor = themeVars?.["--board-accent"] || "hsl(42 75% 40%)";
 
@@ -155,277 +177,298 @@ export function PrayerViewerModal({
     }
   };
 
-  const hasImage = !!bgUrl;
-
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          key="prayer-viewer-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-0 md:p-6"
-          onClick={onClose}
-        >
+    <>
+      <style>{THEATER_GLOW_STYLE}</style>
+      <AnimatePresence>
+        {open && (
           <motion.div
-            key="prayer-viewer-container"
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 30 }}
-            className="bg-white w-full h-full md:h-auto md:max-h-[85vh] md:max-w-2xl md:rounded-3xl shadow-2xl overflow-y-auto flex flex-col relative"
-            onClick={(e) => e.stopPropagation()}
+            key="prayer-viewer-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-0 md:p-6"
+            onClick={onClose}
           >
-            {/* Background image */}
-            {hasImage && (
-              <div className="absolute inset-0 md:rounded-3xl overflow-hidden">
-                <img
-                  src={bgUrl!}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" />
-              </div>
-            )}
-
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors z-10 bg-white/80"
-              aria-label="Close"
+            <motion.div
+              key="prayer-viewer-theater"
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 260, damping: 28 }}
+              className="w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl overflow-y-auto flex flex-col relative"
+              style={{
+                background: hasImage ? undefined : "white",
+                animation: "theater-glow 6s ease-in-out infinite",
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Content */}
-            <div className={`relative flex-1 p-6 md:p-10 ${hasImage ? "text-white" : ""}`}>
-              {/* Title */}
-              {card.title && (
-                <h2 className={`text-lg md:text-xl font-semibold mb-4 ${hasImage ? "text-white" : "text-slate-900"}`}>
-                  {card.title}
-                </h2>
+              {/* Background image */}
+              {hasImage && (
+                <div className="absolute inset-0 md:rounded-2xl overflow-hidden">
+                  <img
+                    src={bgUrl!}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" />
+                </div>
               )}
 
-              {/* Prayer text */}
-              <p
-                className={`text-base md:text-lg leading-relaxed font-medium mb-8 ${hasImage ? "text-white" : "text-slate-800"}`}
-                style={{
-                  fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
-                }}
+              {/* White background for non-image cards */}
+              {!hasImage && (
+                <div className="absolute inset-0 md:rounded-2xl bg-white" />
+              )}
+
+              {/* Close button — large, prominent */}
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors z-20 bg-white shadow-md"
+                aria-label="Close"
               >
-                {card.prayer_text}
-              </p>
+                <X className="w-5 h-5" />
+              </button>
 
-              {/* Extended prayer / scripture */}
-              {card.extended_prayer && (
-                <div className="mb-6">
-                  <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${hasImage ? "text-white/70" : "text-slate-500"}`}>
-                    Scripture & Meditation
-                  </h3>
-                  <p
-                    className={`text-sm md:text-base leading-relaxed italic ${hasImage ? "text-white/85" : "text-slate-600"}`}
+              {/* ── Content ── */}
+              <div className={`relative flex-1 p-8 md:p-12 ${hasImage ? "text-white" : ""}`}>
+                {/* Title */}
+                {card.title && (
+                  <h2 className={`text-xl md:text-2xl font-semibold mb-6 leading-tight ${hasImage ? "text-white" : "text-slate-900"}`}
+                    style={{ fontFamily: '"Playfair Display", serif' }}
                   >
-                    {renderWithVerseLinks(card.extended_prayer)}
-                  </p>
-                </div>
-              )}
+                    {card.title}
+                  </h2>
+                )}
 
-              {/* Meditation essay */}
-              {card.meditation_essay && (
-                <div className="mb-6">
-                  <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${hasImage ? "text-white/70" : "text-slate-500"}`}>
-                    Meditation
-                  </h3>
-                  <p className={`text-sm md:text-base leading-relaxed ${hasImage ? "text-white/85" : "text-slate-600"}`}>
-                    {card.meditation_essay}
-                  </p>
-                </div>
-              )}
+                {/* Prayer text — optimized for reading */}
+                <p
+                  className={`text-base md:text-lg leading-[1.85] font-medium mb-8 selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white" : "text-slate-800"}`}
+                  style={{
+                    fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : '"Lora", serif',
+                  }}
+                >
+                  {card.prayer_text}
+                </p>
 
-              {/* Labels */}
-              {card.labels && card.labels.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {card.labels.map((tag) => {
-                    const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
-                    return (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-                        style={hasImage ? { background: "rgba(255,255,255,0.2)", color: "white" } : { background: palette.bg, color: palette.text }}
-                      >
-                        <Tag className="w-3 h-3" />#{tag}
+                {/* See less… — closes modal */}
+                <button
+                  onClick={onClose}
+                  className={`text-sm font-semibold transition-colors ${hasImage ? "text-white/60 hover:text-white/90" : "text-slate-400 hover:text-slate-600"}`}
+                >
+                  See less…
+                </button>
+
+                {/* Extended prayer / scripture */}
+                {card.extended_prayer && (
+                  <div className="mt-8 mb-6">
+                    <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${hasImage ? "text-white/60" : "text-slate-400"}`}>
+                      Scripture & Meditation
+                    </h3>
+                    <p
+                      className={`text-sm md:text-base leading-[1.8] italic selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white/85" : "text-slate-600"}`}
+                      style={{ fontFamily: '"Lora", serif' }}
+                    >
+                      {renderWithVerseLinks(card.extended_prayer)}
+                    </p>
+                  </div>
+                )}
+
+                {/* Meditation essay */}
+                {card.meditation_essay && (
+                  <div className="mb-6">
+                    <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${hasImage ? "text-white/60" : "text-slate-400"}`}>
+                      Meditation
+                    </h3>
+                    <p className={`text-sm md:text-base leading-[1.8] selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white/85" : "text-slate-600"}`}>
+                      {card.meditation_essay}
+                    </p>
+                  </div>
+                )}
+
+                {/* Labels */}
+                {card.labels && card.labels.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-6 mt-6">
+                    {card.labels.map((tag) => {
+                      const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
+                      return (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+                          style={hasImage ? { background: "rgba(255,255,255,0.15)", color: "white" } : { background: palette.bg, color: palette.text }}
+                        >
+                          <Tag className="w-3 h-3" />#{tag}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Status badges */}
+                {(card.status === "ai_generated" || card.status === "pending") && (
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    {card.status === "ai_generated" && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+                        style={{ background: `${accentColor}20`, color: accentColor }}>
+                        <Sparkles className="w-3 h-3" />AI Generated
                       </span>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Status badges */}
-              {(card.status === "ai_generated" || card.status === "pending") && (
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {card.status === "ai_generated" && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-                      style={{ background: `${accentColor}20`, color: accentColor }}>
-                      <Sparkles className="w-3 h-3" />AI Generated
-                    </span>
-                  )}
-                  {card.status === "pending" && isOwner && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 bg-slate-100">
-                      In review
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Notes */}
-              <div className="mb-6">
-                <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${hasImage ? "text-white/70" : "text-slate-500"}`}>
-                  Personal Notes
-                </h3>
-                {editingNotes ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Personal notes, reflection…"
-                      rows={3}
-                      className="min-h-[44px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-sm resize-none w-full"
-                    />
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={saveNotes} className="rounded-xl h-8 text-xs">
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }}
-                        className="rounded-xl h-8 text-xs"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingNotes(true)}
-                    className={`min-h-[44px] w-full text-left rounded-lg px-3 py-2 text-sm transition-opacity hover:opacity-80 ${
-                      hasImage
-                        ? "bg-white/10 text-white/80 placeholder:text-white/50"
-                        : "bg-slate-50 border-none text-slate-600 placeholder:text-slate-400"
-                    }`}
-                  >
-                    {item.notes ? (
-                      <span className="italic">"{item.notes}"</span>
-                    ) : (
-                      <span className={hasImage ? "text-white/50" : "text-slate-400"}>+ Add notes…</span>
                     )}
-                  </button>
+                    {card.status === "pending" && isOwner && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 bg-slate-100">
+                        In review
+                      </span>
+                    )}
+                  </div>
                 )}
-              </div>
 
-              {/* Comments for public prayers */}
-              {isPublic && (
-                <div className="mb-6">
-                  <button
-                    onClick={() => setShowComments((s) => !s)}
-                    className={`text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${hasImage ? "text-white" : "text-slate-900"}`}
-                  >
-                    {showComments ? "Hide comments" : "Show comments"}
-                  </button>
-                  {showComments && (
-                    <div className="mt-3">
-                      <Comments prayerId={card.id} />
+                {/* Notes */}
+                <div className="mb-6 mt-8">
+                  <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${hasImage ? "text-white/60" : "text-slate-400"}`}>
+                    Personal Notes
+                  </h3>
+                  {editingNotes ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Personal notes, reflection…"
+                        rows={3}
+                        className="min-h-[52px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-xl px-4 py-3 text-sm resize-none w-full focus:ring-2 focus:ring-amber-200"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={saveNotes} className="rounded-xl h-8 text-xs bg-slate-900 text-white hover:bg-slate-800">
+                          Save
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }}
+                          className="rounded-xl h-8 text-xs"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
+                  ) : (
+                    <button
+                      onClick={() => setEditingNotes(true)}
+                      className={`min-h-[52px] w-full text-left rounded-xl px-4 py-3 text-sm transition-all ${
+                        hasImage
+                          ? "bg-white/10 text-white/80 hover:bg-white/15"
+                          : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {item.notes ? (
+                        <span className="italic">"{item.notes}"</span>
+                      ) : (
+                        <span className={hasImage ? "text-white/40" : "text-slate-400"}>+ Add notes…</span>
+                      )}
+                    </button>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* Sticky action footer */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-100 p-4 flex items-center justify-between mt-auto">
-              <div className="flex items-center gap-1">
-                {/* Favorite */}
-                <button
-                  onClick={toggleFavorite}
-                  className="p-2 rounded-lg transition-colors hover:bg-slate-100"
-                  style={{ color: item.favorite ? "hsl(0 72% 51%)" : "hsl(215 14% 60%)" }}
-                  aria-label="Favourite"
-                >
-                  <Heart className={`w-5 h-5 ${item.favorite ? "fill-current" : ""}`} />
-                </button>
-
-                {/* Pin */}
-                <button
-                  onClick={togglePin}
-                  className="p-2 rounded-lg transition-colors hover:bg-slate-100"
-                  style={{ color: item.pinned ? accentColor : "hsl(215 14% 60%)" }}
-                  aria-label="Pin"
-                >
-                  <Pin className="w-5 h-5" />
-                </button>
-
-                {/* Share */}
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-lg transition-colors hover:bg-slate-100 text-slate-400"
-                  aria-label="Share"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-
-                {/* Add to playlist */}
-                {onAddToPlaylist && (
-                  <button
-                    onClick={() => onAddToPlaylist(card.id)}
-                    className="p-2 rounded-lg transition-colors hover:bg-slate-100 text-slate-400"
-                    aria-label="Add to playlist"
-                  >
-                    <ListPlus className="w-5 h-5" />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                {/* Testify */}
+                {/* Comments for public prayers */}
                 {isPublic && (
-                  <button
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 bg-amber-50 text-amber-700"
-                    title="Share your testimony"
-                  >
-                    <Bird className="w-4 h-4" />
-                    Testify
-                  </button>
-                )}
-
-                {/* Visibility toggle */}
-                {isOwner && (
-                  <div className="flex items-center gap-1.5">
-                    {togglingPublic ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                    ) : isPrivate ? (
-                      <Lock className="w-4 h-4 text-slate-400" />
-                    ) : (
-                      <Globe className="w-4 h-4 text-slate-500" />
+                  <div className="mb-6">
+                    <button
+                      onClick={() => setShowComments((s) => !s)}
+                      className={`text-xs font-semibold transition-colors ${hasImage ? "text-white/70 hover:text-white" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      {showComments ? "Hide comments" : "Show comments"}
+                    </button>
+                    {showComments && (
+                      <div className="mt-3">
+                        <Comments prayerId={card.id} />
+                      </div>
                     )}
-                    <span className="text-xs text-slate-500 hidden sm:inline">
-                      {isPrivate ? "Private" : card.status === "pending" ? "Review" : "Public"}
-                    </span>
-                    <Switch
-                      checked={!isPrivate}
-                      onCheckedChange={handlePublicToggle}
-                      disabled={togglingPublic || card.status === "approved"}
-                      className="scale-75 origin-left"
-                    />
                   </div>
                 )}
               </div>
-            </div>
+
+              {/* ── Sticky action footer ── */}
+              <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex items-center justify-between mt-auto z-10">
+                <div className="flex items-center gap-1">
+                  {/* Favorite */}
+                  <button
+                    onClick={toggleFavorite}
+                    className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
+                    style={{ color: item.favorite ? "hsl(0 72% 51%)" : "hsl(215 14% 60%)" }}
+                    aria-label="Favourite"
+                  >
+                    <Heart className={`w-5 h-5 ${item.favorite ? "fill-current" : ""}`} />
+                  </button>
+
+                  {/* Pin */}
+                  <button
+                    onClick={togglePin}
+                    className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
+                    style={{ color: item.pinned ? accentColor : "hsl(215 14% 60%)" }}
+                    aria-label="Pin"
+                  >
+                    <Pin className="w-5 h-5" />
+                  </button>
+
+                  {/* Share */}
+                  <button
+                    onClick={handleShare}
+                    className="p-2.5 rounded-xl transition-colors hover:bg-slate-100 text-slate-400"
+                    aria-label="Share"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+
+                  {/* Add to playlist */}
+                  {onAddToPlaylist && (
+                    <button
+                      onClick={() => onAddToPlaylist(card.id)}
+                      className="p-2.5 rounded-xl transition-colors hover:bg-slate-100 text-slate-400"
+                      aria-label="Add to playlist"
+                    >
+                      <ListPlus className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Testify */}
+                  {isPublic && (
+                    <button
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 bg-amber-50 text-amber-700"
+                      title="Share your testimony"
+                    >
+                      <Bird className="w-4 h-4" />
+                      Testify
+                    </button>
+                  )}
+
+                  {/* Visibility toggle */}
+                  {isOwner && (
+                    <div className="flex items-center gap-1.5">
+                      {togglingPublic ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                      ) : isPrivate ? (
+                        <Lock className="w-4 h-4 text-slate-400" />
+                      ) : (
+                        <Globe className="w-4 h-4 text-slate-500" />
+                      )}
+                      <span className="text-xs text-slate-500 hidden sm:inline">
+                        {isPrivate ? "Private" : card.status === "pending" ? "Review" : "Public"}
+                      </span>
+                      <Switch
+                        checked={!isPrivate}
+                        onCheckedChange={handlePublicToggle}
+                        disabled={togglingPublic || card.status === "approved"}
+                        className="scale-75 origin-left"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
