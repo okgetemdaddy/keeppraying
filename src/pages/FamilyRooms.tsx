@@ -24,6 +24,7 @@ export default function FamilyRooms() {
   const { rooms, loading, createRoom, joinByCode } = useFamilyRooms();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const backLink = useBackLink();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);

@@ -5,6 +5,7 @@ import VerseLink from "@/components/VerseLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccountabilityCircles } from "@/hooks/useAccountabilityCircles";
+import { useBackLink } from "@/hooks/useBackLink";
 import { useToast } from "@/hooks/use-toast";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
