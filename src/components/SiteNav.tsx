@@ -231,13 +231,45 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
   return (
     <nav className={cn("sticky top-0 z-50 transition-all duration-500 border-b", navBg)}>
       <div className="container mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-        {/* Logo */}
-        <Link to="/" className="flex-shrink-0">
-          <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
-            <span className={cn("transition-colors duration-300", logoColor)}>Keep</span>
-            <span className="nav-pray-glow">Pray</span>
-            <span className={cn("transition-colors duration-300", logoColor)}>.ing</span>
-          </span>
+        {/* Logo — periodically morphs into a KeepPray.ing saying */}
+        <Link to="/" className="flex-shrink-0 min-w-[120px] sm:min-w-[160px]">
+          <AnimatePresence mode="wait">
+            {currentSaying ? (
+              <motion.span
+                key={currentSaying}
+                initial={{ opacity: 0, y: 8, scale: 0.92, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -6, scale: 0.95, filter: "blur(3px)" }}
+                transition={{ type: "spring", stiffness: 260, damping: 24 }}
+                className={cn(
+                  "block font-display text-sm sm:text-base italic tracking-wide max-w-[200px] sm:max-w-[280px] truncate",
+                  dark ? "text-amber-200/90" : scrolled ? "text-amber-600/90" : "text-amber-200/90"
+                )}
+              >
+                <motion.span
+                  animate={{ opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="mr-1"
+                >
+                  ✦
+                </motion.span>
+                {currentSaying}
+              </motion.span>
+            ) : (
+              <motion.span
+                key="logo"
+                initial={{ opacity: 0, y: -6, scale: 0.95, filter: "blur(3px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: 6, scale: 0.92, filter: "blur(4px)" }}
+                transition={{ type: "spring", stiffness: 300, damping: 26 }}
+                className="block font-display text-xl sm:text-2xl font-bold tracking-tight"
+              >
+                <span className={cn("transition-colors duration-300", logoColor)}>Keep</span>
+                <span className="nav-pray-glow">Pray</span>
+                <span className={cn("transition-colors duration-300", logoColor)}>.ing</span>
+              </motion.span>
+            )}
+          </AnimatePresence>
         </Link>
 
         {/* Desktop: core links + More dropdown */}
