@@ -10,11 +10,11 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const GROK_API_KEY = Deno.env.get("GROK_API_KEY");
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-  if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!GROK_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return new Response(JSON.stringify({ error: "Server not configured" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -48,7 +48,7 @@ serve(async (req) => {
       });
     }
 
-    // ── Generate via AI ──
+    // ── Generate via Grok AI ──
     let prompt: string;
     if (type === "exegesis") {
       prompt = `Please give an in-depth biblical exegesis of ${reference}${text ? `: "${text}"` : ""}. Explain its historical context, Greek/Hebrew meaning, theological significance, and practical application for today.`;
@@ -58,14 +58,14 @@ serve(async (req) => {
         : `Give a concise, plain-English summary (2-3 sentences) of the Bible verse ${reference}. Be warm, simple, and encouraging.`;
     }
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const resp = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GROK_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "grok-3-mini",
         messages: [
           {
             role: "system",
@@ -75,12 +75,12 @@ serve(async (req) => {
           },
           { role: "user", content: prompt },
         ],
-        stream: false,
       }),
     });
 
     if (!resp.ok) {
       const fallback = type === "exegesis" ? "Unable to load exegesis right now." : "Unable to load summary right now.";
+      console.error("Grok API error:", resp.status, await resp.text());
       return new Response(JSON.stringify({ [type]: fallback }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -89,7 +89,7 @@ serve(async (req) => {
     const data = await resp.json();
     const result = data.choices?.[0]?.message?.content || `No ${type} available.`;
 
-    // ── Store in DB (upsert to handle both new and update existing) ──
+    // ── Store in DB (upsert) ──
     const upsertData: Record<string, string> = { reference };
     if (text) upsertData.verse_text = text;
     if (type === "exegesis") upsertData.exegesis = result;
