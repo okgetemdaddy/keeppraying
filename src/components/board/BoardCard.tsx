@@ -812,6 +812,31 @@ function ActionButtons({
               </DropdownMenuItem>
             </>
           )}
+          {/* Image transparency slider — only when bg image exists */}
+          {hasBgImage && (
+            <>
+              <DropdownMenuSeparator />
+              <div
+                className="px-3 py-2 space-y-1.5"
+                onClick={e => e.stopPropagation()}
+                onPointerDown={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <SunDim className="w-3.5 h-3.5" />
+                  <span>Image dimming</span>
+                  <span className="ml-auto tabular-nums text-[10px]">{Math.round(overlayOpacity * 100)}%</span>
+                </div>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={[Math.round(overlayOpacity * 100)]}
+                  onValueChange={([v]) => onOverlayOpacityChange(v / 100)}
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
 
           <DropdownMenuSeparator />
           <DropdownMenuItem
