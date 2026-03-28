@@ -76,7 +76,7 @@ export default function LocalRadar() {
         .select("id", { count: "exact", head: true })
         .eq("is_active", true),
       supabase
-        .from("prayer_groups")
+        .from("accountability_circles")
         .select("id", { count: "exact", head: true }),
       supabase
         .from("family_rooms")
