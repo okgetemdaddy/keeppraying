@@ -820,8 +820,8 @@ export default function Board() {
           item={viewerItem}
           userId={user?.id}
           onUpdate={(id, updates) => {
-            updateItem(id, updates);
-            setViewerItem(prev => prev ? { ...prev, ...updates } : null);
+            updateItem(id, updates as Partial<SavedPrayer & { card_size: CardSize }>);
+            setViewerItem(prev => prev ? { ...prev, ...updates } as SavedPrayer : null);
           }}
           onRemove={(id) => {
             removeItem(id);
