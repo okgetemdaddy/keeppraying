@@ -2,34 +2,42 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User } from "lucide-react";
+import {
+  ArrowRight, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User,
+  MoreHorizontal, Globe, Sparkles, BookOpen, Users, Home, Swords,
+  Radio, Heart, HandHeart, Wind, HeartHandshake
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useIsMobile } from "@/hooks/use-mobile";
 
-const NAV_LINKS = [
-  { label: "Prayers", href: "/prayers" },
-  { label: "Breathe", href: "/breathe" },
-  { label: "Circles", href: "/circles" },
-  { label: "Family", href: "/family" },
-  { label: "Testify", href: "/testify" },
-  { label: "PrayerAssist.ing", href: "/assistant" },
-  { label: "Sermon Mode", href: "/sermon-sync" },
-  { label: "KeepFight.ing", href: "/war-room" },
-  { label: "Pray the World", href: "/pray-the-world" },
-  { label: "KeepGrow.ing", href: "/blog" },
-  { label: "Support Us", href: "/support" },
+/* ── Core visible links (desktop top bar) ── */
+const CORE_LINKS = [
+  { label: "Prayers", href: "/prayers", icon: BookOpen },
+  { label: "Breathe", href: "/breathe", icon: Wind },
+  { label: "Testify", href: "/testify", icon: HeartHandshake },
+];
+
+/* ── "More" dropdown items ── */
+const MORE_LINKS = [
+  { label: "We Pray", href: "/we-pray", icon: Globe, description: "Pray for the world together" },
+  { label: "PrayerAssist.ing", href: "/assistant", icon: Sparkles, description: "AI-guided prayer crafting" },
+  { label: "Circles", href: "/circles", icon: Users, description: "Prayer groups & accountability" },
+  { label: "Family", href: "/family", icon: Home, description: "Family prayer rooms" },
+  { label: "KeepFight.ing", href: "/war-room", icon: Swords, description: "Spiritual warfare room" },
+  { label: "Sermon Mode", href: "/sermon-sync", icon: Radio, description: "Live sermon prayer sync" },
+  { label: "KeepGrow.ing", href: "/blog", icon: BookOpen, description: "Faith articles & devotionals" },
+  { label: "Support Us", href: "/support", icon: Heart, description: "Partner with this ministry" },
 ];
 
 interface SiteNavProps {
-  /** Start transparent and frost on scroll — for hero/landing pages */
   transparent?: boolean;
-  /** Dark overlay style — for Board, WarRoom (dark bg pages) */
   dark?: boolean;
-  /** Extra controls rendered on the right, before the user CTA */
   rightSlot?: ReactNode;
 }
 
+/* ── User Menu ── */
 function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
   const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -91,7 +99,7 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
                 >
-                  <ShieldCheck className="w-4 h-4 text-gold" />
+                  <ShieldCheck className="w-4 h-4 text-primary" />
                   Admin Dashboard
                 </Link>
               )}
@@ -126,11 +134,72 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
   );
 }
 
+/* ── More Dropdown ── */
+function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
+  const [open, setOpen] = useState(false);
+
+  const triggerClass = dark
+    ? "text-white/70 hover:text-white hover:bg-white/10"
+    : scrolled
+    ? "text-foreground/70 hover:text-foreground hover:bg-muted"
+    : "text-white/75 hover:text-white hover:bg-white/10";
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+          triggerClass
+        )}
+        aria-label="More features"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+        More
+        <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", open && "rotate-180")} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute right-0 top-full mt-2 w-72 z-50 rounded-2xl border border-border bg-card/98 backdrop-blur-xl overflow-hidden py-2"
+              style={{ boxShadow: "var(--shadow-lift)" }}
+            >
+              {MORE_LINKS.map(({ label, href, icon: Icon, description }) => (
+                <Link
+                  key={href}
+                  to={href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-start gap-3 px-4 py-3 hover:bg-muted/60 transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-primary/8 group-hover:bg-primary/14 transition-colors mt-0.5">
+                    <Icon className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">{label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+                  </div>
+                </Link>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ── Main SiteNav ── */
 export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNavProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(!transparent);
-  const { session, signOut, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const { session } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!transparent) { setScrolled(true); return; }
@@ -139,12 +208,6 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, [transparent]);
-
-  const handleMobileSignOut = async () => {
-    setMobileOpen(false);
-    await signOut();
-    navigate("/");
-  };
 
   const logoColor = dark
     ? "text-white"
@@ -158,12 +221,6 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
     ? "text-foreground/70 hover:text-foreground hover:bg-muted"
     : "text-white/75 hover:text-white hover:bg-white/10";
 
-  const hamburgerClass = dark
-    ? "text-white hover:bg-white/10"
-    : scrolled
-    ? "text-foreground hover:bg-muted"
-    : "text-white hover:bg-white/10";
-
   const navBg = dark
     ? "bg-black/25 backdrop-blur-xl border-white/10"
     : scrolled
@@ -172,7 +229,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
 
   return (
     <nav className={cn("sticky top-0 z-50 transition-all duration-500 border-b", navBg)}>
-      <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="container mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex-shrink-0">
           <span className="font-display text-xl sm:text-2xl font-bold tracking-tight">
@@ -182,111 +239,57 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
           </span>
         </Link>
 
-        {/* Desktop nav links */}
-        <div className="hidden md:flex items-center gap-1">
-          {NAV_LINKS.map(({ label, href }) => (
-            <Link
-              key={label}
-              to={href}
-              className={cn(
-                "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group",
-                linkClass
-              )}
-            >
-              {label}
-              <span className="absolute bottom-1 left-3 right-3 h-px bg-gold scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
-            </Link>
-          ))}
-        </div>
+        {/* Desktop: core links + More dropdown */}
+        {!isMobile && (
+          <div className="flex items-center gap-1">
+            {CORE_LINKS.map(({ label, href }) => (
+              <Link
+                key={label}
+                to={href}
+                className={cn(
+                  "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group",
+                  linkClass
+                )}
+              >
+                {label}
+                <span className="absolute bottom-1 left-3 right-3 h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+              </Link>
+            ))}
+            <MoreDropdown dark={dark} scrolled={scrolled} />
+          </div>
+        )}
 
         {/* Right side */}
         <div className="flex items-center gap-2">
-          {/* Page-specific controls */}
           {rightSlot}
 
-          {/* Auth CTA — desktop only */}
-          <div className="hidden md:flex items-center gap-1">
-            {session && <NotificationBell dark={dark} scrolled={scrolled} />}
-            {session ? (
-              <UserMenu dark={dark} scrolled={scrolled} />
-            ) : (
-              <Link to="/auth">
-                <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
-                  Get Started <ArrowRight className="w-3.5 h-3.5" />
-                </Button>
-              </Link>
-            )}
-          </div>
+          {/* Desktop auth area */}
+          {!isMobile && (
+            <div className="flex items-center gap-1">
+              {session && <NotificationBell dark={dark} scrolled={scrolled} />}
+              {session ? (
+                <UserMenu dark={dark} scrolled={scrolled} />
+              ) : (
+                <Link to="/auth">
+                  <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
+                    Get Started <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
+          )}
 
-          {/* Mobile: notification bell + hamburger */}
-          {session && <div className="md:hidden"><NotificationBell dark={dark} scrolled={scrolled} /></div>}
-          <button
-            onClick={() => setMobileOpen(v => !v)}
-            className={cn("md:hidden p-2 rounded-xl transition-colors", hamburgerClass)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {/* Mobile: just notification bell — no hamburger, we have bottom tabs + FAB */}
+          {isMobile && session && <NotificationBell dark={dark} scrolled={scrolled} />}
+          {isMobile && !session && (
+            <Link to="/auth">
+              <Button size="sm" className="btn-gold rounded-xl gap-1.5 px-4 text-xs">
+                Get Started <ArrowRight className="w-3 h-3" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
-
-      {/* Mobile drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden bg-card/95 backdrop-blur-xl border-b border-border overflow-hidden"
-          >
-            <div className="container mx-auto px-4 py-4 space-y-1">
-              {NAV_LINKS.map(({ label, href }) => (
-                <Link
-                  key={label}
-                  to={href}
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  {label}
-                </Link>
-              ))}
-
-              <div className="pt-2 pb-1 space-y-2">
-                {session ? (
-                  <>
-                    {isAdmin && (
-                      <Link to="/admin" onClick={() => setMobileOpen(false)}>
-                        <Button variant="outline" className="rounded-xl w-full gap-2">
-                          <ShieldCheck className="w-4 h-4 text-gold" /> Admin Dashboard
-                        </Button>
-                      </Link>
-                    )}
-                    <Link to="/board" onClick={() => setMobileOpen(false)}>
-                      <Button variant="outline" className="rounded-xl w-full gap-2">
-                        <LayoutDashboard className="w-4 h-4" /> My Board
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      className="rounded-xl w-full gap-2 text-destructive hover:bg-destructive/10"
-                      onClick={handleMobileSignOut}
-                    >
-                      <LogOut className="w-4 h-4" /> Sign Out
-                    </Button>
-                  </>
-                ) : (
-                  <Link to="/auth" onClick={() => setMobileOpen(false)}>
-                    <Button className="btn-gold rounded-xl w-full gap-2">
-                      Get Started <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   );
 }

@@ -31,6 +31,7 @@ import Breathe from "./pages/Breathe";
 import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
+import { MobileTabBar } from "@/components/MobileTabBar";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
 import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
 import ScriptureEasterEgg from "@/components/ScriptureEasterEgg";
@@ -59,6 +60,7 @@ function AppShell() {
       <Sonner />
       <UrgentPrayerNotifier />
       <ScriptureEasterEgg />
+      <MobileTabBar />
       <PrayerFAB
         onAskCommunity={() => setCommunityOpen(true)}
         onAskTeam={() => setTeamOpen(true)}
@@ -188,7 +190,8 @@ function AppShell() {
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/testify" element={<Testify />} />
-        <Route path="/pray-the-world" element={<PrayTheWorld />} />
+        <Route path="/we-pray" element={<PrayTheWorld />} />
+        <Route path="/pray-the-world" element={<Navigate to="/we-pray" replace />} />
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
