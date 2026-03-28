@@ -45,10 +45,17 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       color: "hsl(150 38% 26%)",
     },
     {
-      id: "team",
+      id: "ask-keeppraying",
+      label: "Ask KeepPray.ing for a Prayer",
+      icon: <HandHeart className="w-4 h-4" />,
+      onClick: authGuard(() => { onAskTeam(); setOpen(false); }),
+      color: "hsl(25 55% 42%)",
+    },
+    {
+      id: "assistant",
       label: "PrayerAssist.ing",
       icon: <Sparkles className="w-4 h-4" />,
-      onClick: authGuard(() => { onAskTeam(); setOpen(false); }),
+      onClick: go("/assistant"),
       color: "hsl(42 85% 46%)",
     },
     {
