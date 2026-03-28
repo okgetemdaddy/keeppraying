@@ -32,6 +32,8 @@ import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Link } from "react-router-dom";
 import { PrayerCalendar } from "@/components/board/PrayerCalendar";
 import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
+import { BoardControlBar } from "@/components/board/BoardControlBar";
+import { BoardMobileMenu } from "@/components/board/BoardMobileMenu";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -328,81 +330,24 @@ export default function Board() {
         <SiteNav
           dark
           rightSlot={
-            <div className="flex items-center gap-1.5">
-              <ThemeSelector
-                currentTheme={prefs.theme}
-                animationsEnabled={prefs.animations_enabled}
-                onThemeChange={(id) => savePrefs({ theme: id })}
-                onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
-              />
-              <StandbyToggle compact dark />
-              <Link to="/circles" state={{ from: "board" }}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Circles</span>
-                </Button>
-              </Link>
-              <Link to="/family" state={{ from: "board" }}>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">Family</span>
-                </Button>
-              </Link>
-              {saved.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                  onClick={() => openPlaylist()}
-                >
-                  <ListMusic className="w-4 h-4" />
-                  <span className="hidden sm:inline">Playlist</span>
-                </Button>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                onClick={() => setClassicalOpen(true)}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Classical</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
-                onClick={() => setTestifyOpen(true)}
-              >
-                <Bird className="w-4 h-4" />
-                <span className="hidden sm:inline">Testify</span>
-              </Button>
-              <VoiceRecorder variant="compact" dark onPrayerCreated={() => fetchSaved()} />
-              <Button
-                size="sm"
-                className="btn-gold rounded-xl gap-1.5"
-                onClick={() => setAddOpen(true)}
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Add Prayer</span>
-              </Button>
-              <button
-                onClick={() => setImmersive(i => !i)}
-                className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors hidden md:block"
-                title="Immersive mode"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
+            <BoardMobileMenu
+              prefs={prefs}
+              savePrefs={savePrefs}
+              hasPrayers={saved.length > 0}
+              onAddPrayer={() => setAddOpen(true)}
+              onOpenPlaylist={() => openPlaylist()}
+              onOpenClassical={() => setClassicalOpen(true)}
+              onVoiceRecord={() => {/* handled inline */}}
+            />
           }
+        />
+        <BoardControlBar
+          prefs={prefs}
+          savePrefs={savePrefs}
+          hasPrayers={saved.length > 0}
+          onAddPrayer={() => setAddOpen(true)}
+          onOpenPlaylist={() => openPlaylist()}
+          onToggleImmersive={() => setImmersive(i => !i)}
         />
       </motion.div>
 
