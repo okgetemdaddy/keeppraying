@@ -1368,3 +1368,76 @@ function TestimoniesAdminTab() {
     </div>
   );
 }
+
+// ── FEEDBACK ADMIN TAB ─────────────────────────────────────────────────────
+function FeedbackAdminTab() {
+  const [items, setItems] = useState<{ id: string; feedback_type: string; title: string | null; message: string; created_at: string; user_id: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "feature_request" | "improvement">("all");
+
+  const load = async () => {
+    setLoading(true);
+    let q = supabase.from("feedback_submissions").select("*").order("created_at", { ascending: false }).limit(100);
+    if (filter !== "all") q = q.eq("feedback_type", filter);
+    const { data } = await q;
+    setItems((data as typeof items) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [filter]);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Community Feedback</h2>
+          <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Feature requests and improvement suggestions — {items.length} submissions</p>
+        </div>
+        <div className="flex gap-1">
+          {(["all", "feature_request", "improvement"] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              className="px-3 py-1.5 text-xs rounded-lg transition-all"
+              style={{
+                background: filter === f ? "hsl(42 85% 46% / 0.15)" : "transparent",
+                color: filter === f ? "hsl(42 85% 58%)" : "hsl(38 14% 50%)",
+                border: `1px solid ${filter === f ? "hsl(42 85% 46% / 0.3)" : "hsl(220 26% 13%)"}`,
+              }}>
+              {f === "all" ? "All" : f === "feature_request" ? "Features" : "Improvements"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {loading ? (
+        <div className="flex items-center gap-2 py-6" style={{ color: "hsl(38 14% 50%)" }}>
+          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading…</span>
+        </div>
+      ) : items.length === 0 ? (
+        <GuardianCard><p className="text-sm italic text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>No feedback yet 💛</p></GuardianCard>
+      ) : (
+        <div className="space-y-3">
+          {items.map(fb => (
+            <GuardianCard key={fb.id}>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{
+                        background: fb.feedback_type === "feature_request" ? "hsl(42 85% 46% / 0.15)" : "hsl(210 55% 50% / 0.15)",
+                        color: fb.feedback_type === "feature_request" ? "hsl(42 85% 58%)" : "hsl(210 55% 70%)",
+                        border: `1px solid ${fb.feedback_type === "feature_request" ? "hsl(42 85% 46% / 0.3)" : "hsl(210 55% 50% / 0.3)"}`,
+                      }}>
+                      {fb.feedback_type === "feature_request" ? "💡 Feature Request" : "📈 Improvement"}
+                    </span>
+                    <span className="text-xs" style={{ color: "hsl(38 14% 45%)" }}>{new Date(fb.created_at).toLocaleDateString()}</span>
+                  </div>
+                  {fb.title && <p className="text-sm font-semibold mb-1" style={{ color: "hsl(38 28% 88%)" }}>{fb.title}</p>}
+                  <p className="text-sm leading-relaxed" style={{ color: "hsl(38 20% 72%)" }}>{fb.message}</p>
+                </div>
+              </div>
+            </GuardianCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
