@@ -445,7 +445,9 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
                         className="flex items-start gap-2.5 rounded-xl px-3 py-2 transition-colors"
                         style={{ background: config.bg }}
                       >
-                        <Icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: config.color }} />
+                        <div className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: config.color }}>
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-medium" style={{ color: textColor }}>
                             {event.label}
