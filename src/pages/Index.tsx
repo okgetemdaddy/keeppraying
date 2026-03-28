@@ -463,7 +463,7 @@ export default function Index() {
           </motion.div>
 
           {/* Beta notice */}
-          <motion.p variants={fadeUp} className="text-white/40 text-xs sm:text-sm font-body tracking-wide">
+          <motion.p variants={fadeUp} className="inline-block rounded-full bg-white/10 backdrop-blur-sm border border-white/15 px-5 py-1.5 text-white/50 text-xs sm:text-sm font-body tracking-wide">
             🕊️ Currently in beta — built with love for the Church
           </motion.p>
         </motion.div>
