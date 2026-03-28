@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import AddPrayerModal from "@/components/AddPrayerModal";
 import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
+import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
 import { ThemeSelector } from "@/components/board/ThemeSelector";
 // import { AmbientPlayer } from "@/components/board/AmbientPlayer"; // Hidden for now
@@ -143,6 +144,7 @@ export default function Board() {
 
   const [immersive, setImmersive] = useState(false);
   const [classicalOpen, setClassicalOpen] = useState(false);
+  const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
 
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
   const themeVars = theme.vars;
@@ -562,6 +564,7 @@ export default function Board() {
                       onRefresh={fetchSaved}
                       themeVars={themeVars}
                       onAddToPlaylist={id => openPlaylist(id)}
+                      onOpenViewer={(itm) => setViewerItem(itm as SavedPrayer)}
                     />
                   </div>
                 );
@@ -808,6 +811,30 @@ export default function Board() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Top-level Prayer Viewer Modal (outside transformed cards) ── */}
+      {viewerItem && (
+        <PrayerViewerModal
+          open={!!viewerItem}
+          onClose={() => setViewerItem(null)}
+          item={viewerItem}
+          userId={user?.id}
+          onUpdate={(id, updates) => {
+            updateItem(id, updates as Partial<SavedPrayer & { card_size: CardSize }>);
+            setViewerItem(prev => prev ? { ...prev, ...updates } as SavedPrayer : null);
+          }}
+          onRemove={(id) => {
+            removeItem(id);
+            setViewerItem(null);
+          }}
+          onRefresh={() => {
+            fetchSaved();
+            setViewerItem(null);
+          }}
+          themeVars={themeVars}
+          onAddToPlaylist={id => openPlaylist(id)}
+        />
+      )}
     </div>
   );
 }

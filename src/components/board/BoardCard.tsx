@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import Comments from "@/components/Comments";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
-import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -78,6 +77,7 @@ interface BoardCardProps {
   onRefresh: () => void;
   themeVars?: Record<string, string>;
   onAddToPlaylist?: (prayerId: string) => void;
+  onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
 }
 
 export function BoardCard({
@@ -90,11 +90,11 @@ export function BoardCard({
   onRefresh,
   themeVars,
   onAddToPlaylist,
+  onOpenViewer,
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
   const [expanded, setExpanded] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(item.notes || "");
   const [togglingPublic, setTogglingPublic] = useState(false);
@@ -308,7 +308,7 @@ export function BoardCard({
                 style={{
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
-                onClick={() => setViewerOpen(true)}
+                onClick={() => onOpenViewer?.(item)}
               >
                 {isTruncated
                   ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
@@ -316,7 +316,7 @@ export function BoardCard({
               </p>
               {isTruncated && (
                   <button
-                  onClick={e => { e.stopPropagation(); setViewerOpen(true); }}
+                  onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
                   className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
                   See more…
@@ -672,18 +672,6 @@ export function BoardCard({
         </motion.div>
       </motion.div>{/* end layout motion.div */}
 
-      {/* Prayer Viewer Modal */}
-      <PrayerViewerModal
-        open={viewerOpen}
-        onClose={() => setViewerOpen(false)}
-        item={item}
-        userId={userId}
-        onUpdate={onUpdate}
-        onRemove={onRemove}
-        onRefresh={onRefresh}
-        themeVars={themeVars}
-        onAddToPlaylist={onAddToPlaylist}
-      />
     </div>
   );
 }
