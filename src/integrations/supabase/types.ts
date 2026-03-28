@@ -306,6 +306,36 @@ export type Database = {
         }
         Relationships: []
       }
+      breath_collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          prayer_ids: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          prayer_ids?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          prayer_ids?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           created_at: string
@@ -365,6 +395,30 @@ export type Database = {
           message?: string
           name?: string | null
           replied_at?: string | null
+        }
+        Relationships: []
+      }
+      daily_breath: {
+        Row: {
+          active_date: string
+          created_at: string
+          id: string
+          prayer_id: string
+          selected_by: string | null
+        }
+        Insert: {
+          active_date: string
+          created_at?: string
+          id?: string
+          prayer_id: string
+          selected_by?: string | null
+        }
+        Update: {
+          active_date?: string
+          created_at?: string
+          id?: string
+          prayer_id?: string
+          selected_by?: string | null
         }
         Relationships: []
       }
@@ -639,8 +693,11 @@ export type Database = {
           id: string
           labels: string[] | null
           likes_count: number
+          meditation_essay: string | null
+          meditation_link: string | null
           prayed_count: number
           prayer_text: string
+          prayer_type: string
           region: string | null
           source: string
           status: string
@@ -658,8 +715,11 @@ export type Database = {
           id?: string
           labels?: string[] | null
           likes_count?: number
+          meditation_essay?: string | null
+          meditation_link?: string | null
           prayed_count?: number
           prayer_text: string
+          prayer_type?: string
           region?: string | null
           source?: string
           status?: string
@@ -677,8 +737,11 @@ export type Database = {
           id?: string
           labels?: string[] | null
           likes_count?: number
+          meditation_essay?: string | null
+          meditation_link?: string | null
           prayed_count?: number
           prayer_text?: string
+          prayer_type?: string
           region?: string | null
           source?: string
           status?: string
