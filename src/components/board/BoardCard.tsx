@@ -707,6 +707,7 @@ function ActionButtons({
   item, accentColor, textColor,
   onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
+  hasBgImage, overlayOpacity, onOverlayOpacityChange,
 }: ActionButtonsProps) {
   return (
     <>
