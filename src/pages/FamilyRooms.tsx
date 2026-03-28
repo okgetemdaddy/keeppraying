@@ -2,7 +2,7 @@ import { useState } from "react";
 import SacredSpinner from "@/components/SacredSpinner";
 import VerseLink from "@/components/VerseLink";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyRooms } from "@/hooks/useFamilyRooms";
 import { SiteNav } from "@/components/SiteNav";
@@ -127,6 +127,12 @@ export default function FamilyRooms() {
             </AnimatePresence>
           </div>
         )}
+
+        <div className="text-center pt-10">
+          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+            ← Back to My Board
+          </Link>
+        </div>
       </div>
 
       {/* Create Dialog */}
