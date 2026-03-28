@@ -209,7 +209,7 @@ export default function AccountabilityCircles() {
         </p>
 
         <div className="text-center pt-10">
-          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors">
             ← Back to My Board
           </Link>
         </div>
