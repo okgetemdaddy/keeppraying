@@ -237,6 +237,26 @@ export function PrayerViewerModal({
 
               {/* ── Content ── */}
               <div className={`relative flex-1 p-8 md:p-12 ${hasImage ? "text-white" : ""}`}>
+                {testifying ? (
+                  <div className="min-h-[300px]">
+                    <button
+                      onClick={() => setTestifying(false)}
+                      className={`flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors ${hasImage ? "text-white/70 hover:text-white" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to prayer
+                    </button>
+                    <TestifyBack
+                      prayerId={card.id}
+                      prayerAuthorId={card.created_by}
+                      onFlipBack={() => setTestifying(false)}
+                      accentColor={accentColor}
+                      textColor={hasImage ? "white" : undefined}
+                      cardBg={hasImage ? "rgba(255,255,255,0.08)" : undefined}
+                    />
+                  </div>
+                ) : (
+                  <>
                 {/* Title */}
                 {card.title && (
                   <h2 className={`text-xl md:text-2xl font-semibold mb-6 leading-tight ${hasImage ? "text-white" : "text-slate-900"}`}
@@ -387,6 +407,8 @@ export function PrayerViewerModal({
                       </div>
                     )}
                   </div>
+                )}
+                  </>
                 )}
               </div>
 
