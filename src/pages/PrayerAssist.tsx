@@ -287,7 +287,7 @@ export default function PrayerAssist() {
       </div>
 
       {/* Input or Guest Banner */}
-      <div className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur">
+      <div className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur pb-[70px] sm:pb-0">
         <div className="container mx-auto px-4 py-4 max-w-3xl">
           {showGuestBanner ? (
             <div className="text-center space-y-3 py-2">
