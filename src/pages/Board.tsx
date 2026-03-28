@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import AddPrayerModal from "@/components/AddPrayerModal";
 import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
+import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
 import { ThemeSelector } from "@/components/board/ThemeSelector";
 // import { AmbientPlayer } from "@/components/board/AmbientPlayer"; // Hidden for now
