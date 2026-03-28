@@ -34,7 +34,7 @@ import { PrayerFAB } from "@/components/PrayerFAB";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
 import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
-import ScriptureEasterEgg from "@/components/ScriptureEasterEgg";
+
 
 import {
   LayoutGrid, Users, Heart, Home, Shield, BookOpen,
