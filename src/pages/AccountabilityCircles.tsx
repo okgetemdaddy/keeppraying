@@ -208,11 +208,13 @@ export default function AccountabilityCircles() {
           "As iron sharpens iron, so one person sharpens another." — <VerseLink reference="Proverbs 27:17" />
         </p>
 
-        <div className="text-center pt-10">
-          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-            ← Back to My Board
-          </Link>
-        </div>
+        {backLink && (
+          <div className="text-center pt-10">
+            <Link to={backLink.to} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              ← {backLink.label}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Create dialog */}

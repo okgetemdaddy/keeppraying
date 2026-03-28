@@ -336,7 +336,7 @@ export default function Board() {
                 onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
               />
               <StandbyToggle compact dark />
-              <Link to="/circles">
+              <Link to="/circles" state={{ from: "board" }}>
                 <Button
                   size="sm"
                   variant="ghost"
@@ -346,7 +346,7 @@ export default function Board() {
                   <span className="hidden sm:inline">Circles</span>
                 </Button>
               </Link>
-              <Link to="/family">
+              <Link to="/family" state={{ from: "board" }}>
                 <Button
                   size="sm"
                   variant="ghost"
