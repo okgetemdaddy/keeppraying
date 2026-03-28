@@ -13,7 +13,7 @@ import AddPrayerModal from "@/components/AddPrayerModal";
 import { BoardCard } from "@/components/board/BoardCard";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
 import { ThemeSelector } from "@/components/board/ThemeSelector";
-import { AmbientPlayer } from "@/components/board/AmbientPlayer";
+// import { AmbientPlayer } from "@/components/board/AmbientPlayer"; // Hidden for now
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
@@ -563,12 +563,12 @@ export default function Board() {
         </motion.button>
       )}
 
-      {/* Ambient sound player */}
-      <AmbientPlayer
+      {/* Ambient sound player — hidden for now */}
+      {/* <AmbientPlayer
         soundId={prefs.sound_id}
         volume={prefs.sound_volume}
         onChange={(updates) => savePrefs(updates as { sound_id?: string | null; sound_volume?: number })}
-      />
+      /> */}
 
       {/* ── Stats drawer (prayed / liked) ─────────────────────────────── */}
       <Sheet open={!!statsDrawer} onOpenChange={o => !o && setStatsDrawer(null)}>
