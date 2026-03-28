@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import Comments from "@/components/Comments";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
+import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -93,6 +94,7 @@ export function BoardCard({
   const { toast } = useToast();
   const card = item.prayer_cards;
   const [expanded, setExpanded] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(item.notes || "");
   const [togglingPublic, setTogglingPublic] = useState(false);
@@ -306,18 +308,18 @@ export function BoardCard({
                 style={{
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
-                onClick={() => setCollapsed(v => !v)}
+                onClick={() => setViewerOpen(true)}
               >
-                {isTruncated && !expanded
+                {isTruncated
                   ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
                   : card.prayer_text}
               </p>
               {isTruncated && (
                 <button
-                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  onClick={e => { e.stopPropagation(); setViewerOpen(true); }}
                   className={`mt-1.5 text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
-                  {expanded ? "See less" : "See more…"}
+                  See more…
                 </button>
               )}
             </div>
@@ -669,6 +671,19 @@ export function BoardCard({
           )}
         </motion.div>
       </motion.div>{/* end layout motion.div */}
+
+      {/* Prayer Viewer Modal */}
+      <PrayerViewerModal
+        open={viewerOpen}
+        onClose={() => setViewerOpen(false)}
+        item={item}
+        userId={userId}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+        onRefresh={onRefresh}
+        themeVars={themeVars}
+        onAddToPlaylist={onAddToPlaylist}
+      />
     </div>
   );
 }
