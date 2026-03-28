@@ -7,6 +7,7 @@ import { LogIn } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import SacredSpinner from "@/components/SacredSpinner";
+import VerseLink from "@/components/VerseLink";
 
 interface FeatureItem {
   icon: LucideIcon;
