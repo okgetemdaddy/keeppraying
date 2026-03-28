@@ -302,9 +302,8 @@ export function BoardCard({
             {/* Prayer text — with optional custom font */}
             <div className="select-none">
               <p
-                className="leading-relaxed text-sm cursor-pointer"
+                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : 'text-slate-700'}`}
                 style={{
-                  color: bgUrl ? "rgba(255,255,255,0.80)" : subtleText,
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
                 onClick={() => setCollapsed(v => !v)}
@@ -316,8 +315,7 @@ export function BoardCard({
               {isTruncated && (
                 <button
                   onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                  className="mt-1 text-xs font-medium transition-colors"
-                  style={{ color: accentColor }}
+                  className={`mt-1.5 text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
                   {expanded ? "See less" : "See more…"}
                 </button>
