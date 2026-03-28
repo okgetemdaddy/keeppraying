@@ -57,7 +57,7 @@ export function BoardMobileMenu({
       scaleY: 1,
       rotateX: 0,
       transition: {
-        type: "spring",
+        type: "spring" as const,
         stiffness: 320,
         damping: 22,
         mass: 0.8,
