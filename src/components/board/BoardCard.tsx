@@ -267,7 +267,7 @@ export function BoardCard({
               : "0 2px 16px -4px rgba(0,0,0,0.10)",
           }}
           whileHover={flipped ? {} : { y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
-          className="relative rounded-2xl border overflow-hidden"
+          className={`relative rounded-2xl overflow-hidden ${bgUrl ? 'border border-slate-100' : 'border border-slate-100 shadow-sm md:hover:shadow-md'} transition-all bg-white`}
         >
       {/* Background image */}
       {bgUrl && (
@@ -278,7 +278,7 @@ export function BoardCard({
             className="w-full h-full object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" style={{ opacity: overlayOpacity > 0 ? 1 : 0 }} />
         </div>
       )}
 
@@ -288,13 +288,13 @@ export function BoardCard({
           style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
       )}
 
-      <div className="relative p-4 flex flex-col gap-3">
+      <div className="relative p-4 md:p-6 flex flex-col gap-3">
 
         {/* ── Drag handle + content ────────────────────────────────────── */}
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: bgUrl ? "rgba(255,255,255,0.95)" : textColor }}>
+              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : 'text-slate-900'}`}>
                 {card.title}
               </h3>
             )}
@@ -302,9 +302,8 @@ export function BoardCard({
             {/* Prayer text — with optional custom font */}
             <div className="select-none">
               <p
-                className="leading-relaxed text-sm cursor-pointer"
+                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : 'text-slate-700'}`}
                 style={{
-                  color: bgUrl ? "rgba(255,255,255,0.80)" : subtleText,
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
                 onClick={() => setCollapsed(v => !v)}
@@ -316,8 +315,7 @@ export function BoardCard({
               {isTruncated && (
                 <button
                   onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-                  className="mt-1 text-xs font-medium transition-colors"
-                  style={{ color: accentColor }}
+                  className={`mt-1.5 text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
                   {expanded ? "See less" : "See more…"}
                 </button>
@@ -418,8 +416,7 @@ export function BoardCard({
                   {card.extended_prayer ? (
                     <button
                       onClick={() => setScriptureOpen(v => !v)}
-                      className="text-xs font-medium flex items-center gap-1 transition-colors"
-                      style={{ color: accentColor }}
+                      className={`text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 flex items-center gap-1 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                     >
                       <motion.div animate={{ rotate: scriptureOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                         <ChevronDown className="w-3.5 h-3.5" />
@@ -430,8 +427,7 @@ export function BoardCard({
                   {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setLabelsOpen(v => !v)}
-                      className="text-xs font-medium flex items-center gap-1 transition-colors"
-                      style={{ color: accentColor }}
+                      className={`text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 flex items-center gap-1 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                     >
                       <Tag className="w-3 h-3" />
                       {labelsOpen ? "Hide labels" : "Labels"}
@@ -487,7 +483,7 @@ export function BoardCard({
 
               {/* Notes */}
               {size !== "small" && (
-                <div className="pt-2 border-t" style={{ borderColor: `${textColor}10` }}>
+              <div className="pt-3 mt-1">
                   {editingNotes ? (
                     <div className="space-y-2">
                       <Textarea
@@ -495,8 +491,7 @@ export function BoardCard({
                         onChange={e => setNotes(e.target.value)}
                         placeholder="Personal notes, reflection…"
                         rows={2}
-                        className="text-xs rounded-xl resize-none bg-transparent border-border"
-                        style={{ color: textColor }}
+                        className="min-h-[44px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-xs resize-none w-full"
                       />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveNotes} className="btn-gold rounded-xl h-7 text-xs">Save</Button>
@@ -506,12 +501,11 @@ export function BoardCard({
                   ) : (
                     <button
                       onClick={() => setEditingNotes(true)}
-                      className="text-xs w-full text-left transition-opacity hover:opacity-80"
-                      style={{ color: `${textColor}45` }}
+                      className="min-h-[44px] w-full text-left bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-xs transition-opacity hover:opacity-80"
                     >
                       {item.notes
-                        ? <span className="italic">"{item.notes}"</span>
-                        : <span>+ Add notes…</span>}
+                        ? <span className="italic text-slate-600">"{item.notes}"</span>
+                        : <span className="text-slate-400">+ Add notes…</span>}
                     </button>
                   )}
                 </div>
@@ -538,20 +532,19 @@ export function BoardCard({
         {/* ── Footer row (small + medium) ───────────────────────────────── */}
         {actionsInFooter && (
           <div
-            className="flex items-center justify-between gap-2 pt-2 border-t"
-            style={{ borderColor: `${textColor}12` }}
+            className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-slate-400 text-xs md:text-sm"
           >
             {/* Visibility toggle */}
             {isOwner ? (
               <div className="flex items-center gap-1.5">
                 {togglingPublic ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
                 ) : isPrivate ? (
-                  <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
                 ) : (
-                  <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                  <Globe className="w-3.5 h-3.5 text-slate-500" />
                 )}
-                <span className="text-xs" style={{ color: `${textColor}55` }}>
+                <span className="text-xs text-slate-500">
                   {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
                 </span>
                 <Switch
@@ -568,8 +561,7 @@ export function BoardCard({
               {isPublic && (
                 <button
                   onClick={() => setFlipped(true)}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/40"
-                  style={{ color: accentColor }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
                   title="Share your testimony"
                 >
                   <Bird className="w-3.5 h-3.5" />
@@ -731,7 +723,7 @@ function ActionButtons({
 
       <button
         onClick={onShare}
-        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+        className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
         style={{ color: `${textColor}55` }}
         aria-label="Share"
       >
@@ -741,7 +733,7 @@ function ActionButtons({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+            className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
             style={{ color: `${textColor}55` }}
             aria-label="More options"
           >
