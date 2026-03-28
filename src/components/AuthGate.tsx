@@ -3,9 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
-import { LogIn, Check } from "lucide-react";
+import { LogIn } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import SacredSpinner from "@/components/SacredSpinner";
 
 interface FeatureItem {
   icon: LucideIcon;
