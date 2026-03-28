@@ -363,14 +363,14 @@ export default function Board() {
               />
               <StandbyToggle compact dark />
               <Link to="/circles" state={{ from: "board" }}>
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm" style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}>
-                  <Users className="w-3.5 h-3.5" />
+                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
+                  <Users className="w-4 h-4 text-slate-500" />
                   Circles
                 </button>
               </Link>
               <Link to="/family" state={{ from: "board" }}>
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm" style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}>
-                  <Home className="w-3.5 h-3.5" />
+                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
+                  <Home className="w-4 h-4 text-slate-500" />
                   Family
                 </button>
               </Link>
@@ -378,33 +378,26 @@ export default function Board() {
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium transition-all backdrop-blur-xl border border-black/10 shadow-sm"
-                style={{
-                  background: "linear-gradient(135deg, hsl(42 85% 46% / 0.7) 0%, hsl(38 80% 42% / 0.6) 100%)",
-                  color: "white",
-                  boxShadow: "0 2px 12px hsl(42 85% 46% / 0.25)",
-                }}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-sm transition-all"
               >
-                <PlusCircle className="w-3.5 h-3.5" />
+                <PlusCircle className="w-4 h-4" />
                 Add Prayer
               </button>
               {saved.length > 0 && (
                 <button
                   onClick={() => openPlaylist()}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm"
-                  style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
                 >
-                  <ListMusic className="w-3.5 h-3.5" />
+                  <ListMusic className="w-4 h-4 text-slate-500" />
                   Playlist
                 </button>
               )}
               <button
                 onClick={() => setImmersive(i => !i)}
-                className="p-2 rounded-xl backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm"
-                style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
                 title="Immersive mode"
               >
-                <Maximize2 className="w-3.5 h-3.5" />
+                <Maximize2 className="w-4 h-4" />
               </button>
             </div>
           </div>
