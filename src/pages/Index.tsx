@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, useScroll, useTransform, useInView, type Variants, AnimatePresence } from "framer-motion";
 import FeatureCarousel from "@/components/FeatureCarousel";
+import DailyBreathSection from "@/components/breath/DailyBreathSection";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
   Search, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
