@@ -144,6 +144,7 @@ export default function Board() {
 
   const [immersive, setImmersive] = useState(false);
   const [classicalOpen, setClassicalOpen] = useState(false);
+  const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
 
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
   const themeVars = theme.vars;
