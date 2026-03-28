@@ -723,7 +723,7 @@ function ActionButtons({
 
       <button
         onClick={onShare}
-        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+        className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
         style={{ color: `${textColor}55` }}
         aria-label="Share"
       >
@@ -733,7 +733,7 @@ function ActionButtons({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+            className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
             style={{ color: `${textColor}55` }}
             aria-label="More options"
           >
