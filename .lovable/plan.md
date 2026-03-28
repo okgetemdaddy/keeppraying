@@ -1,51 +1,54 @@
 
 
-## Prayer Viewer Modal — Implementation Plan
+## Prayer Viewer Modal — Complete Rebuild
 
-### What We're Building
-A full-screen (mobile) / centered floating card (desktop) modal that opens when a user clicks "See more" or the card body. It replaces the current inline expansion with a focused reading experience.
+### Summary
+Rebuild `PrayerViewerModal.tsx` as a cinematic "theater mode" reading experience with animated glowing borders. Remove all underlines from card links. Fix "Show scripture" → "Scripture" with capital S. Update `BoardCard.tsx` to add "See less…" exit trigger and remove underlines.
 
-### Architecture
+### File 1: `src/components/board/PrayerViewerModal.tsx` — Full rewrite
 
-**New file: `src/components/board/PrayerViewerModal.tsx`**
+**Backdrop**: `fixed inset-0 z-50 bg-black/80 backdrop-blur-md` — much darker, true theater dimming.
 
-A standalone modal component that receives the prayer card data and renders:
+**Theater container**: Centered reading pane with animated glowing border:
+- Outer wrapper with CSS `@keyframes` glow animation using the app's warm palette (gold `hsl(42 85% 46%)`, cream `hsl(38 60% 97%)`, forest `hsl(150 38% 26%)`)
+- Glow border via `box-shadow` cycling through warm gold → soft amber → forest green with `animation: theater-glow 6s ease-in-out infinite`
+- Container: `bg-white w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl overflow-y-auto flex flex-col relative`
+- On mobile: full screen. On desktop: floating centered card with the animated glow border.
 
-1. **Backdrop**: `fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-0 md:p-6 transition-all duration-300`
+**Close button (X)**: Large, prominent — `absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors z-20 bg-white shadow-md`
 
-2. **Container**: `bg-white w-full h-full md:h-auto md:max-h-[85vh] md:max-w-2xl md:rounded-3xl shadow-2xl overflow-y-auto flex flex-col relative`
+**Content area** (`p-8 md:p-12`):
+- Title: `text-xl md:text-2xl font-display font-semibold text-slate-900 mb-6`
+- Prayer text: `text-base md:text-lg text-slate-800 leading-[1.85] font-body selection:bg-amber-100 selection:text-slate-900` — optimized for legibility and text selection
+- Custom font support preserved
+- Scripture, labels, notes sections below with clean spacing
+- "See less…" button at bottom of prayer text: `text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors mt-4` — NO underline — closes the modal
 
-3. **Close button (X)**: `absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors z-10 bg-white/80`
+**Sticky action footer**: `sticky bottom-0 bg-white border-t border-slate-100 p-4 flex items-center justify-between mt-auto` with all action buttons (Favorite, Pin, Share, Playlist, Testify, Visibility toggle).
 
-4. **Content area** (`p-6 md:p-10`):
-   - Title in `text-lg md:text-xl font-semibold text-slate-900`
-   - Full prayer text: `text-base md:text-lg text-slate-800 leading-relaxed font-medium mb-8` with custom font support
-   - Scripture section (if extended_prayer exists)
-   - Labels display
-   - Notes section
-   - Background image with dark overlay if present, forcing `text-white`
+**Animation**: The glow border keyframes will be defined as an inline `<style>` tag or via Tailwind arbitrary values. The glow cycles:
+```
+0%   box-shadow: 0 0 20px 4px hsla(42,85%,46%,0.3), 0 0 60px 8px hsla(42,85%,46%,0.1)
+33%  box-shadow: 0 0 20px 4px hsla(35,68%,85%,0.4), 0 0 60px 8px hsla(150,38%,26%,0.1)
+66%  box-shadow: 0 0 20px 4px hsla(150,38%,26%,0.25), 0 0 60px 8px hsla(42,85%,46%,0.1)
+100% box-shadow: 0 0 20px 4px hsla(42,85%,46%,0.3), 0 0 60px 8px hsla(42,85%,46%,0.1)
+```
 
-5. **Sticky action footer**: `sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-100 p-4 flex items-center justify-between mt-auto`
-   - Contains: Favorite (heart), Testify, Share, Pin, Playlist actions
-   - Visibility toggle for owners
+### File 2: `src/components/board/BoardCard.tsx` — Targeted edits
 
-Props: `{ open, onClose, item (SavedPrayer), userId, onUpdate, onRemove, onRefresh, themeVars, onAddToPlaylist }`
+1. **Remove all underlines** from "See more…", Scripture toggle, and Labels toggle buttons:
+   - Change from `underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500` → `no-underline hover:text-amber-600`
+   
+2. **Fix "Show scripture"** → When closed show "Scripture", when open show "Hide Scripture" (capital S, remove "Show")
 
-Uses framer-motion `AnimatePresence` for enter/exit animation. Clicking backdrop closes. Escape key closes.
+3. Keep the `viewerOpen` state and `PrayerViewerModal` render as-is — just passing the updated modal.
 
-### Changes to `src/components/board/BoardCard.tsx`
+### File 3: `src/components/board/PrayerViewerModal.tsx` — Remove underlines from comment toggle too
+- Comment toggle button: remove underline classes, use clean `text-slate-500 hover:text-slate-700 font-semibold` instead.
 
-1. Add `const [viewerOpen, setViewerOpen] = useState(false)` state
-2. Change "See more" button's `onClick` to call `setViewerOpen(true)` instead of `setExpanded(v => !v)`
-3. Make the card body (prayer text area) clickable to open the viewer instead of toggling collapse
-4. Remove inline expansion logic (`expanded` state usage for text display — always show truncated on card)
-5. Render `<PrayerViewerModal>` at the bottom of the component, passing all needed props
-6. Import the new component
-
-### Technical Details
-
-- The modal uses `createPortal` or renders at component level (AnimatePresence handles mount/unmount)
-- Body scroll lock on mobile when modal is open (add `overflow-hidden` to body)
-- All existing card actions (favorite, pin, share, font, enrich, testify flip, notes, comments) are available inside the viewer
-- The card grid remains stable since cards never expand inline
+### Technical Notes
+- The glowing border animation uses a `style` element injected via React for the `@keyframes` — no tailwind config changes needed
+- Body scroll lock and Escape key handling preserved
+- framer-motion `AnimatePresence` preserved for enter/exit
+- All existing actions (favorite, pin, share, testify, visibility, notes, comments, playlist) remain in the modal footer and body
 
