@@ -267,7 +267,7 @@ export function BoardCard({
               : "0 2px 16px -4px rgba(0,0,0,0.10)",
           }}
           whileHover={flipped ? {} : { y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
-          className="relative rounded-2xl border overflow-hidden"
+          className={`relative rounded-2xl overflow-hidden ${bgUrl ? 'border border-slate-100' : 'border border-slate-100 shadow-sm md:hover:shadow-md'} transition-all bg-white`}
         >
       {/* Background image */}
       {bgUrl && (
@@ -278,7 +278,7 @@ export function BoardCard({
             className="w-full h-full object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" style={{ opacity: overlayOpacity > 0 ? 1 : 0 }} />
         </div>
       )}
 
@@ -288,7 +288,7 @@ export function BoardCard({
           style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
       )}
 
-      <div className="relative p-4 flex flex-col gap-3">
+      <div className="relative p-4 md:p-6 flex flex-col gap-3">
 
         {/* ── Drag handle + content ────────────────────────────────────── */}
         <div className="flex items-start gap-2">
