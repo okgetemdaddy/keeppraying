@@ -78,6 +78,7 @@ interface BoardCardProps {
   onRefresh: () => void;
   themeVars?: Record<string, string>;
   onAddToPlaylist?: (prayerId: string) => void;
+  onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
 }
 
 export function BoardCard({
