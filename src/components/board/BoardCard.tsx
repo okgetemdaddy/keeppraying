@@ -427,8 +427,7 @@ export function BoardCard({
                   {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setLabelsOpen(v => !v)}
-                      className="text-xs font-medium flex items-center gap-1 transition-colors"
-                      style={{ color: accentColor }}
+                      className={`text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 flex items-center gap-1 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                     >
                       <Tag className="w-3 h-3" />
                       {labelsOpen ? "Hide labels" : "Labels"}
