@@ -27,6 +27,7 @@ import PrayTheWorld from "./pages/PrayTheWorld";
 import SermonSync from "./pages/SermonSync";
 import AccountabilityCircles from "./pages/AccountabilityCircles";
 import CircleDetail from "./pages/CircleDetail";
+import Support from "./pages/Support";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
