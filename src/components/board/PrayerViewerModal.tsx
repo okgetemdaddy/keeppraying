@@ -460,6 +460,7 @@ export function PrayerViewerModal({
                   {/* Testify */}
                   {isPublic && (
                     <button
+                      onClick={() => setTestifying(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 bg-amber-50 text-amber-700"
                       title="Share your testimony"
                     >
