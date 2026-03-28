@@ -564,6 +564,7 @@ export default function Board() {
                       onRefresh={fetchSaved}
                       themeVars={themeVars}
                       onAddToPlaylist={id => openPlaylist(id)}
+                      onOpenViewer={(itm) => setViewerItem(itm as SavedPrayer)}
                     />
                   </div>
                 );
