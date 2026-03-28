@@ -811,6 +811,30 @@ export default function Board() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Top-level Prayer Viewer Modal (outside transformed cards) ── */}
+      {viewerItem && (
+        <PrayerViewerModal
+          open={!!viewerItem}
+          onClose={() => setViewerItem(null)}
+          item={viewerItem}
+          userId={user?.id}
+          onUpdate={(id, updates) => {
+            updateItem(id, updates);
+            setViewerItem(prev => prev ? { ...prev, ...updates } : null);
+          }}
+          onRemove={(id) => {
+            removeItem(id);
+            setViewerItem(null);
+          }}
+          onRefresh={() => {
+            fetchSaved();
+            setViewerItem(null);
+          }}
+          themeVars={themeVars}
+          onAddToPlaylist={id => openPlaylist(id)}
+        />
+      )}
     </div>
   );
 }
