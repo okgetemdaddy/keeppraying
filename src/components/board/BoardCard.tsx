@@ -483,7 +483,7 @@ export function BoardCard({
 
               {/* Notes */}
               {size !== "small" && (
-                <div className="pt-2 border-t" style={{ borderColor: `${textColor}10` }}>
+              <div className="pt-3 mt-1">
                   {editingNotes ? (
                     <div className="space-y-2">
                       <Textarea
@@ -491,8 +491,7 @@ export function BoardCard({
                         onChange={e => setNotes(e.target.value)}
                         placeholder="Personal notes, reflection…"
                         rows={2}
-                        className="text-xs rounded-xl resize-none bg-transparent border-border"
-                        style={{ color: textColor }}
+                        className="min-h-[44px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-xs resize-none w-full"
                       />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={saveNotes} className="btn-gold rounded-xl h-7 text-xs">Save</Button>
@@ -502,12 +501,11 @@ export function BoardCard({
                   ) : (
                     <button
                       onClick={() => setEditingNotes(true)}
-                      className="text-xs w-full text-left transition-opacity hover:opacity-80"
-                      style={{ color: `${textColor}45` }}
+                      className="min-h-[44px] w-full text-left bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-xs transition-opacity hover:opacity-80"
                     >
                       {item.notes
-                        ? <span className="italic">"{item.notes}"</span>
-                        : <span>+ Add notes…</span>}
+                        ? <span className="italic text-slate-600">"{item.notes}"</span>
+                        : <span className="text-slate-400">+ Add notes…</span>}
                     </button>
                   )}
                 </div>
