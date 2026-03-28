@@ -294,7 +294,7 @@ export function BoardCard({
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className="font-display font-semibold text-sm leading-snug mb-1" style={{ color: bgUrl ? "rgba(255,255,255,0.95)" : textColor }}>
+              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : 'text-slate-900'}`}>
                 {card.title}
               </h3>
             )}
