@@ -243,7 +243,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
                 exit={{ opacity: 0, y: -6, scale: 0.95, filter: "blur(3px)" }}
                 transition={{ type: "spring", stiffness: 260, damping: 24 }}
                 className={cn(
-                  "block font-display text-sm sm:text-base italic tracking-wide max-w-[200px] sm:max-w-[280px] truncate",
+                  "block font-display text-xs sm:text-sm italic tracking-wide leading-snug",
                   dark ? "text-amber-200/90" : scrolled ? "text-amber-600/90" : "text-amber-200/90"
                 )}
               >
