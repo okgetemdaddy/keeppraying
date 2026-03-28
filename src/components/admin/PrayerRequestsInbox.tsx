@@ -257,30 +257,93 @@ export default function PrayerRequestsInbox() {
 
                         {/* Admin response area for team requests */}
                         {req.request_type === "team" && req.status === "pending" && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium" style={{ color: "hsl(42 85% 58%)" }}>
-                              Craft a Prayer Response
-                            </p>
-                            <Textarea
-                              value={responseText}
-                              onChange={e => setResponseText(e.target.value)}
-                              placeholder="Heavenly Father, we lift up this beloved child..."
-                              className="min-h-[140px] rounded-xl text-sm resize-none"
-                              style={{
-                                background: "hsl(220 26% 7%)",
-                                borderColor: "hsl(220 26% 18%)",
-                                color: "hsl(38 28% 88%)",
-                              }}
-                            />
-                            <Button
-                              onClick={() => fulfillTeamRequest(req)}
-                              disabled={fulfilling || !responseText.trim()}
-                              className="rounded-xl h-9 text-xs gap-1.5"
-                              style={{ background: "linear-gradient(135deg, hsl(42 85% 46%), hsl(35 82% 54%))", color: "white" }}
-                            >
-                              {fulfilling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                              Craft & Deliver Prayer to User's Board
-                            </Button>
+                          <div className="space-y-3">
+                            {/* Step A: AI Prompt */}
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium" style={{ color: "hsl(42 85% 58%)" }}>
+                                Generate with AI
+                              </p>
+                              <Textarea
+                                value={aiPrompt || `Write a powerful Christian prayer ${req.message}`}
+                                onChange={e => setAiPrompt(e.target.value)}
+                                placeholder="Write a powerful Christian prayer..."
+                                className="min-h-[80px] rounded-xl text-sm resize-none"
+                                style={{
+                                  background: "hsl(220 26% 7%)",
+                                  borderColor: "hsl(220 26% 18%)",
+                                  color: "hsl(38 28% 88%)",
+                                }}
+                              />
+                              <Button
+                                onClick={async () => {
+                                  setGenerating(true);
+                                  try {
+                                    const prompt = aiPrompt || `Write a powerful Christian prayer ${req.message}`;
+                                    const { data, error } = await supabase.functions.invoke("craft-prayer", {
+                                      body: { prompt },
+                                    });
+                                    if (error) throw error;
+                                    if (data?.prayer) {
+                                      setResponseText(data.prayer);
+                                    }
+                                  } catch (err) {
+                                    toast({
+                                      title: "AI generation failed",
+                                      description: err instanceof Error ? err.message : "Try again",
+                                      variant: "destructive",
+                                    });
+                                  } finally {
+                                    setGenerating(false);
+                                  }
+                                }}
+                                disabled={generating}
+                                className="rounded-xl h-8 text-xs gap-1.5"
+                                style={{
+                                  background: generating ? "hsl(220 26% 15%)" : "hsl(220 26% 15%)",
+                                  color: "hsl(42 85% 58%)",
+                                  border: "1px solid hsl(42 85% 46% / 0.3)",
+                                }}
+                              >
+                                {generating ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    Grok is writing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    Generate Prayer
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+
+                            {/* Step B: Review & Edit */}
+                            <div className="space-y-2">
+                              <p className="text-xs font-medium" style={{ color: "hsl(42 85% 58%)" }}>
+                                Review & Edit Prayer
+                              </p>
+                              <Textarea
+                                value={responseText}
+                                onChange={e => setResponseText(e.target.value)}
+                                placeholder="Heavenly Father, we lift up this beloved child..."
+                                className="min-h-[140px] rounded-xl text-sm resize-none"
+                                style={{
+                                  background: "hsl(220 26% 7%)",
+                                  borderColor: "hsl(220 26% 18%)",
+                                  color: "hsl(38 28% 88%)",
+                                }}
+                              />
+                              <Button
+                                onClick={() => fulfillTeamRequest(req)}
+                                disabled={fulfilling || !responseText.trim()}
+                                className="rounded-xl h-9 text-xs gap-1.5"
+                                style={{ background: "linear-gradient(135deg, hsl(42 85% 46%), hsl(35 82% 54%))", color: "white" }}
+                              >
+                                {fulfilling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                Deliver to User's Board
+                              </Button>
+                            </div>
                           </div>
                         )}
 
