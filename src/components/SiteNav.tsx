@@ -209,7 +209,8 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
             )}
           </div>
 
-          {/* Hamburger */}
+          {/* Mobile: notification bell + hamburger */}
+          {session && <div className="md:hidden"><NotificationBell dark={dark} scrolled={scrolled} /></div>}
           <button
             onClick={() => setMobileOpen(v => !v)}
             className={cn("md:hidden p-2 rounded-xl transition-colors", hamburgerClass)}
