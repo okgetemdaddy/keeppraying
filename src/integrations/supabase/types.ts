@@ -368,6 +368,39 @@ export type Database = {
         }
         Relationships: []
       }
+      donations: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          donation_type: string
+          id: string
+          status: string
+          stripe_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          donation_type?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          donation_type?: string
+          id?: string
+          status?: string
+          stripe_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       family_room_members: {
         Row: {
           id: string
@@ -472,6 +505,33 @@ export type Database = {
           name?: string
           theme?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      feedback_submissions: {
+        Row: {
+          created_at: string
+          feedback_type: string
+          id: string
+          message: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          message?: string
+          title?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -843,8 +903,11 @@ export type Database = {
           created_at: string
           current_streak: number
           email: string | null
+          first_donated_at: string | null
           full_name: string | null
           id: string
+          is_donor: boolean
+          is_founder: boolean
           last_prayed_date: string | null
           longest_streak: number
           role: string
@@ -855,8 +918,11 @@ export type Database = {
           created_at?: string
           current_streak?: number
           email?: string | null
+          first_donated_at?: string | null
           full_name?: string | null
           id: string
+          is_donor?: boolean
+          is_founder?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
           role?: string
@@ -867,8 +933,11 @@ export type Database = {
           created_at?: string
           current_streak?: number
           email?: string | null
+          first_donated_at?: string | null
           full_name?: string | null
           id?: string
+          is_donor?: boolean
+          is_founder?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
           role?: string
@@ -1054,6 +1123,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      update_logs: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+        }
+        Relationships: []
       }
       user_saved_prayers: {
         Row: {
