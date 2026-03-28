@@ -21,14 +21,14 @@ export function useBreathPrayers() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("prayer_cards")
-      .select("id, prayer_text, labels, extended_prayer, meditation_essay, meditation_link, likes_count, prayed_count, created_at, created_by, status")
-      .eq("prayer_type" as any, "breath")
+      .select("id, prayer_text, labels, extended_prayer, likes_count, prayed_count, created_at, created_by, status")
+      .eq("prayer_type", "breath")
       .in("status", ["approved", "ai_generated"])
       .order("created_at", { ascending: false })
-      .limit(50);
-    setPrayers((data as unknown as BreathPrayer[]) || []);
+      .limit(50) as any);
+    setPrayers((data as BreathPrayer[]) || []);
     setLoading(false);
   }, []);
 
