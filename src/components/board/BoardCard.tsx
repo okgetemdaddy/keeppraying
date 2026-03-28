@@ -91,6 +91,7 @@ export function BoardCard({
   onRefresh,
   themeVars,
   onAddToPlaylist,
+  onOpenViewer,
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
