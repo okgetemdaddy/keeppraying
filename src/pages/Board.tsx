@@ -487,29 +487,29 @@ export default function Board() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-wrap items-center gap-2 mb-6"
+            className="flex flex-wrap items-center gap-3 mb-6"
           >
             {totalPrayed > 0 && (
               <button
                 onClick={() => openStatsDrawer("prayed")}
-                className="flex items-center gap-2 px-4 py-2 rounded-2xl transition-all hover:scale-105 active:scale-95"
-                style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer" }}
+                className="bg-white border border-slate-100 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <span className="text-base">🙏</span>
-                <span className="text-xs font-medium" style={{ color: textColor }}>
-                  You've prayed <strong>{totalPrayed.toLocaleString()}</strong> {totalPrayed === 1 ? "time" : "times"}
+                <span className="bg-slate-50 p-2 rounded-full text-base flex items-center justify-center">🙏</span>
+                <span className="text-sm font-medium text-slate-700">
+                  You've prayed <strong className="text-slate-900">{totalPrayed.toLocaleString()}</strong> {totalPrayed === 1 ? "time" : "times"}
                 </span>
               </button>
             )}
             {totalLiked > 0 && (
               <button
                 onClick={() => openStatsDrawer("liked")}
-                className="flex items-center gap-2 px-4 py-2 rounded-2xl transition-all hover:scale-105 active:scale-95"
-                style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer" }}
+                className="bg-white border border-slate-100 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Heart className="w-4 h-4 fill-red-400 text-red-400" />
-                <span className="text-xs font-medium" style={{ color: textColor }}>
-                  <strong>{totalLiked.toLocaleString()}</strong> {totalLiked === 1 ? "prayer" : "prayers"} hearted
+                <span className="bg-slate-50 p-2 rounded-full flex items-center justify-center">
+                  <Heart className="w-4 h-4 fill-red-400 text-red-400" />
+                </span>
+                <span className="text-sm font-medium text-slate-700">
+                  <strong className="text-slate-900">{totalLiked.toLocaleString()}</strong> {totalLiked === 1 ? "prayer" : "prayers"} hearted
                 </span>
               </button>
             )}
