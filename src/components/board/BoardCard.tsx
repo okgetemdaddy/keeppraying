@@ -102,6 +102,7 @@ export function BoardCard({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.48);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
