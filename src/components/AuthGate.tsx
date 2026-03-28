@@ -41,14 +41,7 @@ export default function AuthGate({
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-          <p className="verse-text text-sm">Be still, and know…</p>
-        </div>
-      </div>
-    );
+    return <SacredSpinner fullPage />;
   }
 
   if (user) return <>{children}</>;
