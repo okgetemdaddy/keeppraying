@@ -327,7 +327,7 @@ export default function PrayerRequestsInbox() {
                                 value={responseText}
                                 onChange={e => setResponseText(e.target.value)}
                                 placeholder="Heavenly Father, we lift up this beloved child..."
-                                className="min-h-[140px] rounded-xl text-sm resize-none"
+                                className="min-h-[320px] rounded-xl text-sm resize-y"
                                 style={{
                                   background: "hsl(220 26% 7%)",
                                   borderColor: "hsl(220 26% 18%)",
