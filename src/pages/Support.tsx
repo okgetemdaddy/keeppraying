@@ -174,8 +174,8 @@ export default function Support() {
               <blockquote className="text-foreground/85 text-sm md:text-base leading-relaxed space-y-4 border-l-4 border-primary/30 pl-5 italic">
                 <p>
                   All resources given are used solely to sustain the KeepPray.ing platform and add new features users request.
-                  A subscription service will be introduced at some point to cover technical user costs such as read prayer
-                  out loud feature…
+                  A subscription service will be introduced at some point to cover technical user costs such as the read prayer
+                  out loud feature and our Prayer Assistant…
                 </p>
                 <p>
                   Our pledge is to lower subscription costs as more users join.
@@ -197,7 +197,7 @@ export default function Support() {
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Sow Into the Kingdom</h2>
             <p className="text-muted-foreground text-sm md:text-base">
               Every gift, no matter the size, fuels this ministry. The first 100 donors receive
-              <span className="text-primary font-semibold"> Founder status</span> and a lifetime badge.
+              <span className="text-primary font-semibold"> Founder status</span> and a lifetime membership for all future updates, forever.
             </p>
           </div>
 
