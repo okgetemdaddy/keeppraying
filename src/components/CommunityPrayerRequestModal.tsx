@@ -24,6 +24,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const COMMUNITY_COOLDOWN_KEY = "kp_community_req_ts";
+const COMMUNITY_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
 export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
