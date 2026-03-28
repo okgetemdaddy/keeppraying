@@ -170,7 +170,7 @@ export function NotificationBell({ dark, scrolled }: NotificationBellProps) {
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               className={cn(
-                "absolute right-0 top-full mt-2 z-50 rounded-2xl border border-white/20 bg-white/90 backdrop-blur-2xl shadow-xl overflow-hidden",
+                "absolute right-0 top-full mt-2 z-50 rounded-2xl border border-white/20 bg-white/95 backdrop-blur-2xl shadow-xl overflow-hidden",
                 "w-[calc(100vw-2rem)] max-w-[380px]",
                 "md:w-[380px]"
               )}
