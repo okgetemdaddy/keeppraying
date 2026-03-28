@@ -114,14 +114,24 @@ export default function AuthGate({
           </div>
 
           {/* Verse */}
-          {verse && (
+          {verse && verseRef && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
               className="verse-text text-sm pt-4 text-muted-foreground italic"
             >
-              "{verse}" {verseRef && <span className="not-italic">— {verseRef}</span>}
+              "{verse}" <span className="not-italic">— <VerseLink reference={verseRef} text={verse} /></span>
+            </motion.p>
+          )}
+          {verse && !verseRef && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="verse-text text-sm pt-4 text-muted-foreground italic"
+            >
+              "{verse}"
             </motion.p>
           )}
         </motion.div>
