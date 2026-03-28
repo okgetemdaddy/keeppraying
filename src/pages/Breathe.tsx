@@ -150,9 +150,7 @@ export default function Breathe() {
       {/* Grid */}
       <section className="container mx-auto px-4 max-w-3xl pb-20">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
-          </div>
+          <SacredSpinner />
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 space-y-3">
             <Wind className="w-10 h-10 mx-auto text-muted-foreground opacity-40" />
