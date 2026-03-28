@@ -8,7 +8,7 @@ import FeatureCarousel from "@/components/FeatureCarousel";
 import DailyBreathSection from "@/components/breath/DailyBreathSection";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
-  Search, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
+  Search, Mail, Twitter, Facebook, Instagram, Cross
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
