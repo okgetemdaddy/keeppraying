@@ -147,6 +147,9 @@ export default function SermonSync() {
           <p className="text-muted-foreground max-w-md mx-auto">
             Paste your church's sermon link and let PrayerAssist extract prayer prompts and sermon notes — so the Word keeps working in your prayer life all week.
           </p>
+          <Link to="/support#ai-stance" className="inline-block text-xs text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors">
+            Our Stance on AI
+          </Link>
         </motion.div>
 
         {/* YouTube input */}

@@ -221,6 +221,9 @@ export default function PrayerAssist() {
               <div>
                 <h1 className="font-display text-3xl font-bold text-foreground mb-2">PrayerAssist.ing</h1>
               <p className="text-muted-foreground max-w-md mx-auto">Your compassionate AI prayer companion — ready to help you pray, craft prayers, seek Scripture, and grow in faith.</p>
+              <Link to="/support#ai-stance" className="inline-block text-xs text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors">
+                Our Stance on AI
+              </Link>
               </div>
 
               {/* Beta notice */}

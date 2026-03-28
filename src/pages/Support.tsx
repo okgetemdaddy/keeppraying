@@ -347,6 +347,52 @@ export default function Support() {
           </div>
         </motion.section>
 
+        {/* ── Our Stance on AI ── */}
+        <motion.section
+          id="ai-stance"
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          className="scroll-mt-24"
+        >
+          <Card className="border-primary/20 bg-card/80 backdrop-blur-sm overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+            <CardContent className="p-6 md:p-10">
+              <div className="flex items-start gap-3 mb-5">
+                <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+                <h2 className="text-xl md:text-2xl font-bold text-foreground">Our Stance on AI</h2>
+              </div>
+              <div className="text-foreground/85 text-sm md:text-base leading-relaxed space-y-4 border-l-4 border-primary/30 pl-5">
+                <p>
+                  At KeepPray.ing, we see Artificial Intelligence as a neutral tool — neither inherently good nor evil. Its value depends entirely on how it is used.
+                </p>
+                <p>
+                  We have chosen to incorporate carefully selected premium AI models as helpful companions in your prayer journey. Our strict boundaries ensure that:
+                </p>
+                <ul className="space-y-2 list-none">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <span>AI does not write prayers for you on its own. It only helps craft or refine a prayer after first listening to and understanding your personal intent, feelings, and the true issue on your heart.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <span>All assistance is grounded in Scripture and aligned with historic, Bible-believing Christian faith.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <span>Your private prayers, conversations, and personal data remain secure and protected.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <span>AI is used only to serve, never to replace, the intimate relationship between you and God.</span>
+                  </li>
+                </ul>
+                <p>
+                  We believe technology should support, not substitute, genuine faith. PrayerAssist.ing exists to help you pray more thoughtfully, understand Scripture more deeply, and stay consistent in your walk with Christ — always pointing you back to the living Word and the Holy Spirit as your true Guide.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.section>
+
         {/* ── Feedback Form ── */}
         <motion.section
           initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
