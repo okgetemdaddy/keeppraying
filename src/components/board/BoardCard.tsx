@@ -315,9 +315,9 @@ export function BoardCard({
                   : card.prayer_text}
               </p>
               {isTruncated && (
-                <button
+                  <button
                   onClick={e => { e.stopPropagation(); setViewerOpen(true); }}
-                  className={`mt-1.5 text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
+                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
                   See more…
                 </button>
