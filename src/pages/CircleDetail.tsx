@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import VerseLink from "@/components/VerseLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCircleDetail } from "@/hooks/useAccountabilityCircles";
