@@ -69,7 +69,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "grok-3-mini",
+            model: "grok-4.20-0309-reasoning",
             messages: [
               { role: "system", content: "You are a friendly Bible scholar for KeepPray.ing. Give brief, warm, plain-English summaries of Bible verses. Always 2-3 sentences max. No jargon." },
               { role: "user", content: summaryPrompt },
@@ -105,7 +105,7 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model: "grok-3-mini",
+              model: "grok-4.20-0309-reasoning",
               messages: [
                 { role: "system", content: "You are a biblical scholar for KeepPray.ing. Give thorough exegesis with historical context, original language insights, theological depth, and practical application." },
                 { role: "user", content: exegesisPrompt },
