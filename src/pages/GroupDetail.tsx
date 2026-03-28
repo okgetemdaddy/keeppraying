@@ -165,6 +165,7 @@ export default function GroupDetail() {
       <div className="min-h-screen bg-background">
         <SiteNav />
         <SacredSpinner />
+      </div>
     );
   }
 
