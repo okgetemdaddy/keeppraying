@@ -177,7 +177,7 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
                   key={href}
                   to={href}
                   onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-4 py-3 hover:bg-muted/60 transition-colors group"
+                  className="flex items-start gap-3 px-4 py-3 hover:bg-primary/10 transition-colors group"
                 >
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-primary/8 group-hover:bg-primary/14 transition-colors mt-0.5">
                     <Icon className="w-4 h-4 text-primary" />
