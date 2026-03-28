@@ -1002,6 +1002,11 @@ export default function Admin() {
                 </div>
               )}
 
+              {/* ── PRAYER REQUESTS INBOX ── */}
+              {activeTab === "prayer-requests" && (
+                <PrayerRequestsInbox />
+              )}
+
               {/* ── CONTACT ── */}
               {activeTab === "contacts" && (
                 <div className="space-y-5">
