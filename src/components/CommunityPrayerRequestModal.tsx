@@ -39,6 +39,11 @@ export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
+    const lastTs = parseInt(localStorage.getItem(COMMUNITY_COOLDOWN_KEY) || "0", 10);
+    if (Date.now() - lastTs < COMMUNITY_COOLDOWN_MS) {
+      toast({ title: "Please wait a few minutes before submitting another request.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       // Create the prayer request
