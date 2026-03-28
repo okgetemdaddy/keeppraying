@@ -685,6 +685,8 @@ export function BoardCard({
         onAddToPlaylist={onAddToPlaylist}
       />
     </div>
+  );
+}
 
 // ── Shared action buttons ────────────────────────────────────────────────────
 interface ActionButtonsProps {
