@@ -14,7 +14,9 @@ import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
+  SunDim,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub,
@@ -100,6 +102,7 @@ export function BoardCard({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const [overlayOpacity, setOverlayOpacity] = useState(0.48);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
@@ -275,7 +278,7 @@ export function BoardCard({
             className="w-full h-full object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.48)" }} />
+          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
         </div>
       )}
 
@@ -372,6 +375,9 @@ export function BoardCard({
                 onPickFont={pickFont} onPickRandomFont={pickRandomFont}
                 currentFont={pendingFont ?? card.text_style}
                 onAddToPlaylist={onAddToPlaylist}
+                hasBgImage={!!bgUrl}
+                overlayOpacity={overlayOpacity}
+                onOverlayOpacityChange={setOverlayOpacity}
               />
             </div>
           )}
@@ -578,6 +584,9 @@ export function BoardCard({
                 onPickFont={pickFont} onPickRandomFont={pickRandomFont}
                 currentFont={pendingFont ?? card.text_style}
                 onAddToPlaylist={onAddToPlaylist}
+                hasBgImage={!!bgUrl}
+                overlayOpacity={overlayOpacity}
+                onOverlayOpacityChange={setOverlayOpacity}
               />
             </div>
           </div>
@@ -689,12 +698,16 @@ interface ActionButtonsProps {
   onPickRandomFont: () => void;
   currentFont: string | null | undefined;
   onAddToPlaylist?: (prayerId: string) => void;
+  hasBgImage: boolean;
+  overlayOpacity: number;
+  onOverlayOpacityChange: (v: number) => void;
 }
 
 function ActionButtons({
   item, accentColor, textColor,
   onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
+  hasBgImage, overlayOpacity, onOverlayOpacityChange,
 }: ActionButtonsProps) {
   return (
     <>
@@ -797,6 +810,31 @@ function ActionButtons({
               <DropdownMenuItem className="text-xs gap-2" onClick={onEnrich}>
                 <Sparkles className="w-3.5 h-3.5" /> AI Enrich
               </DropdownMenuItem>
+            </>
+          )}
+          {/* Image transparency slider — only when bg image exists */}
+          {hasBgImage && (
+            <>
+              <DropdownMenuSeparator />
+              <div
+                className="px-3 py-2 space-y-1.5"
+                onClick={e => e.stopPropagation()}
+                onPointerDown={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <SunDim className="w-3.5 h-3.5" />
+                  <span>Image dimming</span>
+                  <span className="ml-auto tabular-nums text-[10px]">{Math.round(overlayOpacity * 100)}%</span>
+                </div>
+                <Slider
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={[Math.round(overlayOpacity * 100)]}
+                  onValueChange={([v]) => onOverlayOpacityChange(v / 100)}
+                  className="w-full"
+                />
+              </div>
             </>
           )}
 
