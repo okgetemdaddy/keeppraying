@@ -1005,6 +1005,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           current_streak: number
           email: string | null
@@ -1013,6 +1014,7 @@ export type Database = {
           id: string
           is_donor: boolean
           is_founder: boolean
+          is_public: boolean
           last_prayed_date: string | null
           longest_streak: number
           role: string
@@ -1020,6 +1022,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           current_streak?: number
           email?: string | null
@@ -1028,6 +1031,7 @@ export type Database = {
           id: string
           is_donor?: boolean
           is_founder?: boolean
+          is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
           role?: string
@@ -1035,6 +1039,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           current_streak?: number
           email?: string | null
@@ -1043,6 +1048,7 @@ export type Database = {
           id?: string
           is_donor?: boolean
           is_founder?: boolean
+          is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
           role?: string
