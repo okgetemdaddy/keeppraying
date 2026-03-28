@@ -127,6 +127,12 @@ export default function FamilyRooms() {
             </AnimatePresence>
           </div>
         )}
+
+        <div className="text-center pt-10">
+          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+            ← Back to My Board
+          </Link>
+        </div>
       </div>
 
       {/* Create Dialog */}

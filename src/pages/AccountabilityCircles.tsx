@@ -207,6 +207,12 @@ export default function AccountabilityCircles() {
         <p className="verse-text text-xs text-center pt-4">
           "As iron sharpens iron, so one person sharpens another." — <VerseLink reference="Proverbs 27:17" />
         </p>
+
+        <div className="text-center pt-10">
+          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors underline underline-offset-4">
+            ← Back to My Board
+          </Link>
+        </div>
       </div>
 
       {/* Create dialog */}
