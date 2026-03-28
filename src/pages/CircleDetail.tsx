@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import VerseLink from "@/components/VerseLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCircleDetail } from "@/hooks/useAccountabilityCircles";
@@ -258,7 +259,7 @@ export default function CircleDetail() {
         </div>
 
         <p className="verse-text text-xs text-center pt-2">
-          "Therefore encourage one another and build each other up." — 1 Thessalonians 5:11
+          "Therefore encourage one another and build each other up." — <VerseLink reference="1 Thessalonians 5:11" />
         </p>
       </div>
 

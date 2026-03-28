@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import VerseLink from "@/components/VerseLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccountabilityCircles } from "@/hooks/useAccountabilityCircles";
@@ -141,7 +142,7 @@ export default function AccountabilityCircles() {
               You're not in any circles yet. Create one or join with an invite code.
             </p>
             <p className="verse-text text-xs">
-              "As iron sharpens iron, so one person sharpens another." — Proverbs 27:17
+              "As iron sharpens iron, so one person sharpens another." — <VerseLink reference="Proverbs 27:17" />
             </p>
           </motion.div>
         ) : (
@@ -188,7 +189,7 @@ export default function AccountabilityCircles() {
         )}
 
         <p className="verse-text text-xs text-center pt-4">
-          "Carry each other's burdens, and in this way you will fulfill the law of Christ." — Galatians 6:2
+          "Carry each other's burdens, and in this way you will fulfill the law of Christ." — <VerseLink reference="Galatians 6:2" />
         </p>
       </div>
 

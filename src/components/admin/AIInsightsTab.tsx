@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -270,7 +271,7 @@ export default function AIInsightsTab() {
             <div>
               <p className="text-xs font-semibold text-muted-foreground mb-1">Latest Analysis</p>
               <p className="text-sm text-foreground/90">{latestSummary}</p>
-              {latestVerse && <p className="verse-text text-xs mt-2">{latestVerse}</p>}
+              {latestVerse && <p className="verse-text text-xs mt-2">{renderWithVerseLinks(latestVerse)}</p>}
             </div>
           </div>
         </motion.div>

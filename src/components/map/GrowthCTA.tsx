@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import VerseLink from "@/components/VerseLink";
 import { motion } from "framer-motion";
 import { Heart, Users, BookOpen, Shield, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -109,7 +110,7 @@ export default function GrowthCTA({ totalPrayers }: GrowthCTAProps) {
         <p className="text-white/40 text-sm italic font-display mb-3">
           "For where two or three gather in my name, there am I with them."
         </p>
-        <p className="text-white/25 text-xs">— Matthew 18:20</p>
+        <p className="text-xs">— <VerseLink reference="Matthew 18:20" className="[&_.verse-text]:text-white/40 [&>span]:bg-white/10 [&>span]:border-white/15" /></p>
       </div>
     </div>
   );

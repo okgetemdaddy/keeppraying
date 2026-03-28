@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import VerseLink from "@/components/VerseLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -351,7 +352,7 @@ export default function SermonSync() {
         {/* Empty state scripture */}
         {!loading && !result && (
           <p className="verse-text text-sm text-center pt-4">
-            "Your word is a lamp for my feet, a light on my path." — Psalm 119:105
+            "Your word is a lamp for my feet, a light on my path." — <VerseLink reference="Psalm 119:105" />
           </p>
         )}
       </div>
