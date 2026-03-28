@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { BoardMobileMenu } from "@/components/board/BoardMobileMenu";
+import { NotificationBell } from "@/components/NotificationBell";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
