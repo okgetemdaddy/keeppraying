@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
   Heart, HandHeart, X, Plus, Globe, Sparkles, Users, Home,
-  Swords, Radio, BookOpen, HeartHandshake
+  Swords, Radio, BookOpen, HeartHandshake, LayoutDashboard
 } from "lucide-react";
 
 interface FABItem {
@@ -50,6 +50,13 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       icon: <HandHeart className="w-4 h-4" />,
       onClick: authGuard(() => { onAskTeam(); setOpen(false); }),
       color: "hsl(25 55% 42%)",
+    },
+    {
+      id: "my-board",
+      label: "My Board",
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      onClick: authGuard(() => { navigate("/board"); setOpen(false); }),
+      color: "hsl(220 45% 42%)",
     },
     {
       id: "assistant",
