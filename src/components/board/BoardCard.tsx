@@ -698,6 +698,9 @@ interface ActionButtonsProps {
   onPickRandomFont: () => void;
   currentFont: string | null | undefined;
   onAddToPlaylist?: (prayerId: string) => void;
+  hasBgImage: boolean;
+  overlayOpacity: number;
+  onOverlayOpacityChange: (v: number) => void;
 }
 
 function ActionButtons({
