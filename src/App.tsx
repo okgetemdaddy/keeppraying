@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -53,6 +53,8 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  const location = useLocation();
+  const hidePrayerFab = location.pathname === "/assistant";
 
   return (
     <>
@@ -61,10 +63,12 @@ function AppShell() {
       <UrgentPrayerNotifier />
       
       <MobileTabBar />
-      <PrayerFAB
-        onAskCommunity={() => setCommunityOpen(true)}
-        onAskTeam={() => setTeamOpen(true)}
-      />
+      {!hidePrayerFab && (
+        <PrayerFAB
+          onAskCommunity={() => setCommunityOpen(true)}
+          onAskTeam={() => setTeamOpen(true)}
+        />
+      )}
       <CommunityPrayerRequestModal open={communityOpen} onOpenChange={setCommunityOpen} />
       <TeamPrayerRequestModal open={teamOpen} onOpenChange={setTeamOpen} />
       <Routes>
