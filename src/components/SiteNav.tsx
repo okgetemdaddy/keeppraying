@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -138,6 +138,18 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
 /* ── More Dropdown ── */
 function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
 
   const triggerClass = dark
     ? "text-white/70 hover:text-white hover:bg-white/10"
@@ -146,7 +158,7 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
     : "text-white/75 hover:text-white hover:bg-white/10";
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setOpen(v => !v)}
         className={cn(
@@ -162,34 +174,31 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
 
       <AnimatePresence>
         {open && (
-          <>
-            <div className="fixed inset-0 z-[45]" onClick={() => setOpen(false)} aria-hidden="true" />
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.96 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute right-0 top-full mt-2 w-72 z-50 rounded-2xl border border-white/20 bg-white/90 backdrop-blur-2xl overflow-hidden py-2 shadow-xl"
-              style={{ boxShadow: "var(--shadow-lift)" }}
-            >
-              {MORE_LINKS.map(({ label, href, icon: Icon, description }) => (
-                <Link
-                  key={href}
-                  to={href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-start gap-3 px-4 py-3 hover:bg-primary/10 transition-colors group"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-primary/8 group-hover:bg-primary/14 transition-colors mt-0.5">
-                    <Icon className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-                  </div>
-                </Link>
-              ))}
-            </motion.div>
-          </>
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute right-0 top-full mt-2 w-72 z-50 rounded-2xl border border-white/20 bg-white/90 backdrop-blur-2xl overflow-hidden py-2 shadow-xl"
+            style={{ boxShadow: "var(--shadow-lift)" }}
+          >
+            {MORE_LINKS.map(({ label, href, icon: Icon, description }) => (
+              <Link
+                key={href}
+                to={href}
+                onClick={() => setOpen(false)}
+                className="flex items-start gap-3 px-4 py-3 hover:bg-primary/10 transition-colors group"
+              >
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-primary/8 group-hover:bg-primary/14 transition-colors mt-0.5">
+                  <Icon className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+                </div>
+              </Link>
+            ))}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
