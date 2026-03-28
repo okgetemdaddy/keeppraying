@@ -35,6 +35,7 @@ import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
 import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
+import ScriptureEasterEgg from "@/components/ScriptureEasterEgg";
 
 import {
   LayoutGrid, Users, Heart, Home, Shield, BookOpen,
