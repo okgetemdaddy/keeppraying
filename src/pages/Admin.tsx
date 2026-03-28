@@ -79,6 +79,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "insights",         label: "Analytics",         icon: BarChart2 },
   { id: "testimonies",      label: "Moderation Log",    icon: Flag },
   { id: "prayers",          label: "Prayers",           icon: Scroll },
+  { id: "breath",           label: "Breath Prayers",    icon: Wind },
   { id: "blog",             label: "KeepGrow.ing",      icon: BookOpen },
   { id: "verses",           label: "Verses",            icon: BookMarked },
   { id: "faq",              label: "FAQ Report",        icon: FileText },
