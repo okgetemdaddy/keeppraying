@@ -233,7 +233,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
     <nav className={cn("sticky top-0 z-50 transition-all duration-500 border-b", navBg)}>
       <div className="container mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
         {/* Logo — periodically morphs into a KeepPray.ing saying */}
-        <Link to="/" className="flex-shrink-0 min-w-[120px] sm:min-w-[160px]">
+        <Link to="/" className="flex-shrink-0 min-w-0 max-w-[55%] sm:max-w-[340px]">
           <AnimatePresence mode="wait">
             {currentSaying ? (
               <motion.span
