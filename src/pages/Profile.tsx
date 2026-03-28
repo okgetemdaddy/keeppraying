@@ -592,9 +592,9 @@ export default function Profile() {
         </motion.section>
 
         {/* ── Verse ── */}
-        <div className="text-center pt-4">
-          <VerseLink reference="Hebrews 12:1" />
-        </div>
+        <p className="verse-text text-xs text-center pt-4">
+          "Therefore, since we are surrounded by such a great cloud of witnesses… let us run with perseverance the race marked out for us." — <VerseLink reference="Hebrews 12:1" />
+        </p>
       </div>
     </div>
   );
