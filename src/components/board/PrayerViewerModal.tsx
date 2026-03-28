@@ -85,6 +85,7 @@ export function PrayerViewerModal({
   useEffect(() => {
     setNotes(item.notes || "");
     setEditingNotes(false);
+    setTestifying(false);
   }, [item.notes, item.id]);
 
   // Body scroll lock
