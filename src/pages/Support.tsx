@@ -171,28 +171,35 @@ export default function Support() {
                 <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
                 <h2 className="text-xl md:text-2xl font-bold text-foreground">Our Pledge to You</h2>
               </div>
-                <blockquote className="text-foreground/85 text-sm md:text-base leading-relaxed space-y-4 border-l-4 border-primary/30 pl-5 italic">
-                  <p>
-                    All resources given are used solely to sustain the KeepPray.ing platform and add new features users request.
-                    A subscription service will be introduced at some point to cover technical user costs such as the read prayer
-                    out loud feature and our Prayer Assistant…
-                  </p>
-                  <p>
-                    Our pledge is to lower subscription costs as more users join.
-                  </p>
-                  <p className="font-semibold not-italic text-primary">
-                    Pray for free!! Copy, share and edit any prayer you like. Pray with us for the continued growth of a
-                    strong community seeking the Kingdom of God…
-                  </p>
-                </blockquote>
-...
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Sow Into the Kingdom</h2>
-                <p className="text-muted-foreground text-sm md:text-base">
-                  Every gift, no matter the size, fuels this ministry. The first 100 donors receive
-                  <span className="text-primary font-semibold"> Founder status</span> and a lifetime membership for all future updates, forever.
+              <blockquote className="text-foreground/85 text-sm md:text-base leading-relaxed space-y-4 border-l-4 border-primary/30 pl-5 italic">
+                <p>
+                  All resources given are used solely to sustain the KeepPray.ing platform and add new features users request.
+                  A subscription service will be introduced at some point to cover technical user costs such as the read prayer
+                  out loud feature and our Prayer Assistant…
                 </p>
-              </div>
+                <p>
+                  Our pledge is to lower subscription costs as more users join.
+                </p>
+                <p className="font-semibold not-italic text-primary">
+                  Pray for free!! Copy, share and edit any prayer you like. Pray with us for the continued growth of a
+                  strong community seeking the Kingdom of God…
+                </p>
+              </blockquote>
+            </CardContent>
+          </Card>
+        </motion.section>
+
+        {/* ── Donation Options ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+        >
+          <div className="text-center mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Sow Into the Kingdom</h2>
+            <p className="text-muted-foreground text-sm md:text-base">
+              Every gift, no matter the size, fuels this ministry. The first 100 donors receive
+              <span className="text-primary font-semibold"> Founder status</span> and a lifetime membership for all future updates, forever.
+            </p>
+          </div>
 
           {/* Tabs */}
           <div className="flex justify-center mb-8">
