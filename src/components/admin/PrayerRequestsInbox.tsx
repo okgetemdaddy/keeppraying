@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Send, Check, Clock, AlertTriangle, User, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Send, Check, Clock, AlertTriangle, User, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 
 interface PrayerRequest {
