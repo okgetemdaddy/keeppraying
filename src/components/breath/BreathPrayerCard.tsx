@@ -113,8 +113,8 @@ export default function BreathPrayerCard({
 
   return (
     <motion.div
-      variants={breatheVariants}
-      animate="breathe"
+      animate={breatheAnimation}
+      transition={breatheTransition}
       className="relative overflow-hidden"
       style={{
         borderRadius: "2rem",

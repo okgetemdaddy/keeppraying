@@ -59,30 +59,30 @@ export function useDailyBreath() {
   useEffect(() => {
     const load = async () => {
       const today = new Date().toISOString().split("T")[0];
-      const { data: daily } = await supabase
-        .from("daily_breath" as any)
+      const { data: daily } = await (supabase
+        .from("daily_breath")
         .select("prayer_id")
         .eq("active_date", today)
-        .maybeSingle();
+        .maybeSingle() as any);
 
       if (daily?.prayer_id) {
-        const { data: card } = await supabase
+        const { data: card } = await (supabase
           .from("prayer_cards")
-          .select("id, prayer_text, labels, extended_prayer, meditation_essay, meditation_link, likes_count, prayed_count, created_at, created_by, status")
+          .select("id, prayer_text, labels, extended_prayer, likes_count, prayed_count, created_at, created_by, status")
           .eq("id", daily.prayer_id)
-          .single();
-        setPrayer(card as unknown as BreathPrayer | null);
+          .single() as any);
+        setPrayer(card as BreathPrayer | null);
       } else {
         // Fallback: pick a random approved breath prayer
-        const { data: random } = await supabase
+        const { data: random } = await (supabase
           .from("prayer_cards")
-          .select("id, prayer_text, labels, extended_prayer, meditation_essay, meditation_link, likes_count, prayed_count, created_at, created_by, status")
-          .eq("prayer_type" as any, "breath")
+          .select("id, prayer_text, labels, extended_prayer, likes_count, prayed_count, created_at, created_by, status")
+          .eq("prayer_type", "breath")
           .in("status", ["approved", "ai_generated"])
-          .limit(10);
+          .limit(10) as any);
         if (random && random.length > 0) {
           const pick = random[Math.floor(Math.random() * random.length)];
-          setPrayer(pick as unknown as BreathPrayer);
+          setPrayer(pick as BreathPrayer);
         }
       }
       setLoading(false);
