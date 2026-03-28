@@ -1,67 +1,63 @@
 
 
-# Fix: Replace All Plain-Text Verse References with VerseLink Components
+## PrayerAssist Prayer Crafting + Guest Limit
 
-## Problem
-Multiple pages render Scripture references as plain text strings (e.g., `"…" — Matthew 18:20`) instead of using the `<VerseLink>` component that provides hover/tap AI summaries. This is inconsistent with the app's established pattern.
+### Overview
+Two changes: (1) Allow PrayerAssist to craft prayers after meaningful conversation, with an interactive draft card that saves to the user's board. (2) Let unauthenticated visitors use PrayerAssist once, then show a gentle sign-up prompt.
 
-## Files Requiring Changes (10 files, ~10 edits)
+---
 
-### 1. `src/pages/Groups.tsx` (line 119)
-- Plain text: `— Matthew 18:20`
-- Add `import VerseLink` and replace with `<VerseLink reference="Matthew 18:20" />`
+### 1. Edge Function — Rewrite System Prompt
+**File:** `supabase/functions/prayer-assist/index.ts`
 
-### 2. `src/pages/GroupDetail.tsx` (line 278)
-- Plain text: `— Galatians 6:2`
-- Add `import VerseLink` and replace with `<VerseLink reference="Galatians 6:2" />`
+Replace the "NEVER write prayers" section (lines 23-33) with a **Prayer Crafting Flow**:
 
-### 3. `src/pages/FamilyRooms.tsx` (line 94)
-- Plain text: `— Proverbs 22:6`
-- Add `import VerseLink` and replace with `<VerseLink reference="Proverbs 22:6" />`
+- After enough conversation to understand the user's burden, PrayerAssist offers: *"I think I understand what's on your heart. Let me help put that into words..."*
+- Draft prayers are wrapped in `[PRAYER_DRAFT]prayer text here[/PRAYER_DRAFT]` markers so the frontend can detect them
+- PrayerAssist can also help users pray for friends/family — listening with empathy, validating feelings, speaking with Scripture-saturated language that feels natural (the Word is part of who it is)
+- All other restrictions remain (no code, no prompt injection, no politics, etc.)
+- The AI should NOT offer a draft on the first message — it should ask clarifying questions first
 
-### 4. `src/pages/AccountabilityCircles.tsx` (lines 144, 191)
-- Two plain text verses: `— Proverbs 27:17` and `— Galatians 6:2`
-- Add `import VerseLink` and replace both
+### 2. Frontend — Prayer Draft Card
+**File:** `src/pages/PrayerAssist.tsx`
 
-### 5. `src/pages/CircleDetail.tsx` (line 261)
-- Plain text: `— 1 Thessalonians 5:11`
-- Add `import VerseLink` and replace
+- In `renderAIContent`, detect `[PRAYER_DRAFT]...[/PRAYER_DRAFT]` blocks
+- Render a special **PrayerDraftCard** inline component:
+  - Shows the prayer text in an editable textarea (pre-filled)
+  - "Edit" toggle to modify before accepting
+  - "Accept & Save to Board" button (golden, sacred feel)
+  - On accept (requires auth):
+    - Insert into `prayer_cards` with `status: 'private'`, `source: 'community'`, `created_by: user.id`
+    - Insert into `user_saved_prayers` to place on board
+    - Toast: "Prayer saved to your board"
+    - Replace draft card with a confirmed state + link to board
+  - If not authenticated, show gentle sign-in prompt instead of accept button
 
-### 6. `src/pages/SermonSync.tsx` (line 354)
-- Plain text: `— Psalm 119:105`
-- Add `import VerseLink` and replace
+### 3. Guest Usage Limit (1 free conversation)
+**File:** `src/pages/PrayerAssist.tsx`
 
-### 7. `src/pages/Board.tsx` (line 815)
-- Plain text: `— Matthew 6:6`
-- Add `import VerseLink` and replace (note: this one uses inline `style` for color, so VerseLink will need the className override pattern like Auth/ResetPassword pages use)
+- Track guest usage via `localStorage` key `kp_guest_assist_count`
+- Increment on each assistant reply for unauthenticated users
+- After the first complete exchange (1 user message + 1 assistant reply), block further input
+- Show a warm, non-pushy sign-up banner replacing the input area:
+  - *"PrayerAssist loved walking with you. Sign up to continue your prayer journey — it's free."*
+  - Link to `/auth`
+- Authenticated users have unlimited access
 
-### 8. `src/components/map/GrowthCTA.tsx` (lines 110-112)
-- Plain text: `— Matthew 18:20` (white-on-dark styling)
-- Add `import VerseLink` and replace with className overrides for white text
+### 4. Update Suggestion Chips
+**File:** `src/pages/PrayerAssist.tsx`
 
-### 9. `src/components/admin/AIInsightsTab.tsx` (line 273)
-- Dynamic verse text rendered as plain `<p>` — wrap with `renderWithVerseLinks()` so any verse references in AI-generated content become interactive
+Replace/add suggestions:
+- Keep existing ones
+- Add: "I need help praying for a friend" and "Help me pray for my family"
 
-### 10. `src/pages/Testify.tsx`
-- No plain-text verse found in the page itself (verses come from user content). No change needed.
+---
 
-## Pattern
-Each fix follows the same structure:
-```tsx
-// BEFORE
-<p className="verse-text text-xs">"Quote text…" — Book Chapter:Verse</p>
+### Technical Details
 
-// AFTER  
-<p className="verse-text text-xs">"Quote text…" — <VerseLink reference="Book Chapter:Verse" /></p>
-```
-
-For dark/themed backgrounds, use the className override pattern already established:
-```tsx
-<VerseLink reference="Matthew 6:6" className="[&_.verse-text]:text-white/60 [&>span]:bg-white/10 [&>span]:border-white/20" />
-```
-
-## Scope
-- 9 files modified
-- Each file: add `import VerseLink` (if not present) + swap plain text reference → `<VerseLink>`
-- No new components, no database changes, no edge functions
+- **No DB migration needed** — uses existing `prayer_cards` and `user_saved_prayers` tables
+- **Edge function redeploy** required after prompt change
+- Prayer draft detection regex: `/\[PRAYER_DRAFT\]([\s\S]*?)\[\/PRAYER_DRAFT\]/g`
+- Insert pattern matches existing `AddPrayerModal.tsx`: insert `prayer_cards` → get ID → insert `user_saved_prayers`
+- Guest limit stored client-side only (simple, no server cost)
 
