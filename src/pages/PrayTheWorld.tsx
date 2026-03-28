@@ -33,7 +33,7 @@ export default function PrayTheWorld() {
           className="font-display text-3xl sm:text-4xl font-bold mb-2"
           style={{ color: "hsl(42, 78%, 60%)" }}
         >
-          🌍 Pray the World
+          🌍 We Pray
         </motion.h1>
         <p className="text-white/50 text-sm mb-4">
           See prayers rise across the globe in real time
