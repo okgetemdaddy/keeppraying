@@ -68,7 +68,7 @@ function FlyerPreview({
     const lines = [
       "Pray together with believers worldwide.",
       "Create and share prayers from the heart.",
-      "AI-guided prayer companion — never writes prayers for you.",
+      "AI-guided prayer companion.",
       "Private family rooms & prayer groups.",
       "Track your prayer journey with streaks.",
       "Completely free to use.",
