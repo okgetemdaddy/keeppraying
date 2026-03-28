@@ -8,7 +8,7 @@ import FeatureCarousel from "@/components/FeatureCarousel";
 import DailyBreathSection from "@/components/breath/DailyBreathSection";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
-  Search, ChevronDown, Mail, Twitter, Facebook, Instagram, Cross
+  Search, Mail, Twitter, Facebook, Instagram, Cross
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -462,19 +462,10 @@ export default function Index() {
             </Link>
           </motion.div>
 
-          {/* Scroll indicator */}
-          <motion.div
-            variants={fadeUp}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/30"
-          >
-            <span className="text-xs tracking-widest uppercase">Scroll</span>
-            <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-            >
-              <ChevronDown className="w-4 h-4" />
-            </motion.div>
-          </motion.div>
+          {/* Beta notice */}
+          <motion.p variants={fadeUp} className="text-white/40 text-xs sm:text-sm font-body tracking-wide">
+            🕊️ Currently in beta — built with love for the Church
+          </motion.p>
         </motion.div>
       </section>
 
