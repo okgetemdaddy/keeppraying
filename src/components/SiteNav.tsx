@@ -196,7 +196,8 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
           {rightSlot}
 
           {/* Auth CTA — desktop only */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
+            {session && <NotificationBell dark={dark} scrolled={scrolled} />}
             {session ? (
               <UserMenu dark={dark} scrolled={scrolled} />
             ) : (
