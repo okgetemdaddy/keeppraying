@@ -160,7 +160,7 @@ export default function WorldMap({ totalPrayers, todayPrayers, regionData }: Wor
           "If my people, who are called by my name, will humble themselves and pray…
           I will heal their land."
         </p>
-        <p className="text-white/30 text-xs mt-1">— 2 Chronicles 7:14</p>
+        <p className="text-white/30 text-xs mt-1">— <VerseLink reference="2 Chronicles 7:14" className="[&_.verse-text]:text-white/30 [&>span]:bg-white/10 [&>span]:border-white/15" /></p>
       </div>
     </div>
   );
