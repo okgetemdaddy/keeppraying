@@ -101,7 +101,7 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
               >
-                <LayoutDashboard className="w-4 h-4" />
+                <User className="w-4 h-4" />
                 My Profile
               </Link>
               <Link
