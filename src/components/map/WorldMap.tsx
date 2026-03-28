@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import VerseLink from "@/components/VerseLink";
 import { motion } from "framer-motion";
 import { REGION_COORDS, type RegionData } from "@/hooks/usePrayerMapData";
 
