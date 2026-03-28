@@ -96,7 +96,6 @@ export function BoardCard({
   const { toast } = useToast();
   const card = item.prayer_cards;
   const [expanded, setExpanded] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(item.notes || "");
   const [togglingPublic, setTogglingPublic] = useState(false);
