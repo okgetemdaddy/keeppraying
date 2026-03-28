@@ -189,7 +189,7 @@ export default function AccountabilityCircles() {
         )}
 
         <p className="verse-text text-xs text-center pt-4">
-          "Carry each other's burdens, and in this way you will fulfill the law of Christ." — Galatians 6:2
+          "Carry each other's burdens, and in this way you will fulfill the law of Christ." — <VerseLink reference="Galatians 6:2" />
         </p>
       </div>
 

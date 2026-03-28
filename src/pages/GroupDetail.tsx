@@ -276,7 +276,7 @@ export default function GroupDetail() {
           >
             <p className="text-muted-foreground text-sm">No prayers shared yet.</p>
             <p className="verse-text text-xs">
-              "Bear one another's burdens, and so fulfill the law of Christ." — Galatians 6:2
+              "Bear one another's burdens, and so fulfill the law of Christ." — <VerseLink reference="Galatians 6:2" />
             </p>
           </motion.div>
         ) : (

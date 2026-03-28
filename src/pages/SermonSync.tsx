@@ -352,7 +352,7 @@ export default function SermonSync() {
         {/* Empty state scripture */}
         {!loading && !result && (
           <p className="verse-text text-sm text-center pt-4">
-            "Your word is a lamp for my feet, a light on my path." — Psalm 119:105
+            "Your word is a lamp for my feet, a light on my path." — <VerseLink reference="Psalm 119:105" />
           </p>
         )}
       </div>

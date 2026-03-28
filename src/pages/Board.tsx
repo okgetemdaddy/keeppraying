@@ -813,7 +813,7 @@ function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record
           Your sacred space awaits
         </h2>
         <p className="text-sm max-w-xs mx-auto leading-relaxed" style={{ color: `${textColor}70` }}>
-          "When you pray, go into your room…" — Matthew 6:6
+          "When you pray, go into your room…" — <VerseLink reference="Matthew 6:6" className="[&_.verse-text]:text-white/60 [&>span]:bg-white/10 [&>span]:border-white/20" />
         </p>
         <p className="text-xs max-w-sm mx-auto" style={{ color: `${textColor}50` }}>
           Write a prayer or save prayers from the collection to build your personal prayer board.

@@ -117,7 +117,7 @@ export default function Groups() {
               You haven't joined any groups yet.
             </p>
             <p className="verse-text text-xs">
-              "For where two or three gather in my name, there am I with them." — Matthew 18:20
+              "For where two or three gather in my name, there am I with them." — <VerseLink reference="Matthew 18:20" />
             </p>
           </motion.div>
         ) : (

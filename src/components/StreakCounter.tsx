@@ -111,7 +111,7 @@ export function StreakCounter({ textColor, compact }: StreakCounterProps) {
               </p>
 
               <p className="text-xs italic" style={{ color: "hsl(42 20% 55%)" }}>
-                "Pray without ceasing." — 1 Thessalonians 5:17
+                "Pray without ceasing." — <VerseLink reference="1 Thessalonians 5:17" />
               </p>
 
               <button
