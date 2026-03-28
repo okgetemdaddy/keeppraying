@@ -60,6 +60,7 @@ const THEATER_GLOW_STYLE = `
 }
 `;
 
+/** Theater-mode cinematic prayer reader */
 export function PrayerViewerModal({
   open,
   onClose,
