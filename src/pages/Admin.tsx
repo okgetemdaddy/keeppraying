@@ -768,6 +768,9 @@ export default function Admin() {
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
+              {/* ── BREATH PRAYERS ── */}
+              {activeTab === "breath" && <BreathAdminTab />}
+
               {/* ── BLOG ── */}
               {activeTab === "blog" && (
                 <div className="space-y-5">
