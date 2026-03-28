@@ -527,7 +527,7 @@ export default function Board() {
 
         {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
-          <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"}>
+          <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-44 rounded-2xl shimmer" />
             ))}
