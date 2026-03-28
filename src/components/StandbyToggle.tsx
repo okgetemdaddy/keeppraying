@@ -82,8 +82,6 @@ export function StandbyToggle({ compact = false, dark = false }: StandbyTogglePr
               <span className="hidden sm:inline">Standby</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-700" />
             </>
-          )}
-
           {/* Pulse ring when active */}
           {isOnStandby && (
             <motion.span
