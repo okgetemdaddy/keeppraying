@@ -1,98 +1,41 @@
 
 
-## Navigation Overhaul for Prayer Board Page
+## Plan: Dynamic "Back to" Link Based on Navigation Origin
 
-### Current State
-The Board page currently crams all controls (theme switcher, standby, circles, family, playlist, classical prayers, testify bird, voice recorder, add prayer, immersive mode) into SiteNav's `rightSlot`, making it cluttered. Mobile shows the same nav with no hamburger.
+### Approach
+Create a custom hook `useBackLink` that reads the browser's referrer path to determine if the user came from `/board` or `/profile`. If so, it returns the appropriate label and path; otherwise it returns `null` (hiding the link).
 
-### Changes
+### Implementation
 
-**1. Refactor Board.tsx — Desktop Second Static Bar**
+**1. Create `src/hooks/useBackLink.ts`**
+- Use `useLocation` from react-router to read `location.state?.from`
+- Return `{ to: string, label: string } | null`
+- `/board` → "Back to My Board"
+- `/profile` → "Back to My Profile"  
+- Anything else → `null`
 
-Remove the `rightSlot` prop from `SiteNav` on the Board page. Instead, render a dedicated `BoardControlBar` component directly below SiteNav (still inside the sticky header wrapper). This bar has:
+**2. Pass navigation state from source pages**
+- In `src/pages/Board.tsx`: update links to `/family` and `/circles` to pass `state={{ from: "board" }}`
+- In `src/pages/Profile.tsx`: update links to `/family` and `/circles` to pass `state={{ from: "profile" }}`
+- Also update any `navigate()` calls and `<Link>` components on those pages that point to `/family` or `/circles`
 
-- **Row 1** (flex, spread): Redesigned ThemeSelector (warm/elegant style), StandbyToggle, Circles link, Family link
-- **Row 2** (flex): "Add Prayer" button (gold), "Add Playlist" button (outline)
-- Styling: `bg-black/20 backdrop-blur-xl border-b border-white/10`, warm spacing, subtle row separator
-- Only visible on desktop (`hidden md:block`)
+**3. Update `src/pages/FamilyRooms.tsx` and `src/pages/AccountabilityCircles.tsx`**
+- Replace the hardcoded "Back to My Board" `<Link>` with the hook:
+  ```tsx
+  const backLink = useBackLink();
+  // ...
+  {backLink && (
+    <div className="text-center pt-10">
+      <Link to={backLink.to} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+        ← {backLink.label}
+      </Link>
+    </div>
+  )}
+  ```
 
-**2. Create `BoardMobileMenu` component** (`src/components/board/BoardMobileMenu.tsx`)
+**4. Also check nav sources in SiteNav, MobileTabBar, PrayerFAB**
+- Any navigation to `/circles` or `/family` from these global components won't carry state, so the link correctly hides.
 
-A full-screen overlay triggered by a hamburger icon in SiteNav's `rightSlot` (mobile only on Board page):
-
-- Hamburger button replaces all right-side controls on mobile
-- Opens a full-screen menu with `backdrop-blur-2xl` background
-- **Unrolled mat animation** using Framer Motion:
-  - Container: `scaleY` from 0 to 1 (origin top) with spring physics
-  - Each item staggers in with `y` offset + gentle bounce
-  - On "land", a subtle opacity ripple wave animates across the background
-- Menu items: Theme switcher, Standby, Circles, Family, Add Prayer, Add Playlist, Classical Prayers, Voice Recorder
-- Close button (X) in top-right
-
-**3. Update Board.tsx header section**
-
-Replace lines 321-407 with:
-
-```
-Desktop:
-  <SiteNav dark />   ← no rightSlot, clean nav
-  <BoardControlBar>  ← new component, desktop only
-    Row 1: ThemeSelector | StandbyToggle | Circles | Family
-    Row 2: Add Prayer | Add Playlist
-  </BoardControlBar>
-
-Mobile:
-  <SiteNav dark rightSlot={<HamburgerButton />} />  ← mobile only
-  <BoardMobileMenu ... />  ← full screen overlay
-```
-
-The immersive mode toggle wraps both SiteNav and BoardControlBar.
-
-**4. Remove items**
-- Remove `Bird` (Testify) icon button entirely from Board header
-- Remove `Classical` button from header (move to mobile menu only)
-- Remove `VoiceRecorder` from desktop header (keep in mobile menu)
-- Remove any collapsible arrows
-
-**5. Files to create/modify**
-
-| File | Action |
-|------|--------|
-| `src/components/board/BoardControlBar.tsx` | **Create** — desktop-only second bar |
-| `src/components/board/BoardMobileMenu.tsx` | **Create** — full-screen hamburger menu with mat animation |
-| `src/pages/Board.tsx` | **Modify** — restructure header, remove rightSlot clutter, integrate new components |
-| `src/components/SiteNav.tsx` | No changes needed — Board passes different rightSlot per breakpoint |
-
-**6. Animation Detail — Unrolled Mat**
-
-```text
-  ┌─────────────────────────┐
-  │  SiteNav (logo + ☰)     │  ← hamburger triggers menu
-  └─────────────────────────┘
-  ┌─────────────────────────┐  ← scaleY(0→1), originY: top
-  │  ░░░ blur background ░░░ │     spring: stiffness 180, damping 22
-  │                           │
-  │   🎨 Theme Switcher       │  ← stagger delay: 0.05 * index
-  │   ⏸ Standby Toggle       │     y: 30→0, opacity: 0→1
-  │   👥 Circles              │     bounce: type "spring"
-  │   🏠 Family               │
-  │   ➕ Add Prayer            │
-  │   🎵 Add Playlist         │
-  │                           │
-  │  ─── ripple opacity wave ─│  ← subtle radial gradient pulse
-  └─────────────────────────┘       on animation complete
-```
-
-**7. Desktop Second Bar Visual**
-
-```text
-  ┌──────────────────────────────────────────────────┐
-  │ KeepPray.ing    Prayers  Breathe  Testify  More  │  🔔 (👤)
-  ├──────────────────────────────────────────────────┤
-  │ 🎨 Theme    ⏸ Standby    👥 Circles   🏠 Family │  ← Row 1
-  │ ➕ Add Prayer              🎵 Add Playlist        │  ← Row 2
-  └──────────────────────────────────────────────────┘
-```
-
-Both rows use `bg-black/15 backdrop-blur-xl`, with a `border-b border-white/8` between rows. Buttons styled as ghost with `text-white/70 hover:text-white hover:bg-white/10`, matching the sacred board aesthetic.
+### Technical Detail
+Using `location.state` (react-router state) is the cleanest approach — it survives the navigation but doesn't persist on page refresh (which is desired: if a user refreshes, the back link disappears since we can't confirm origin).
 
