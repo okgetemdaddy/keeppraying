@@ -52,6 +52,7 @@ export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
       } as any);
       if (error) throw error;
 
+      localStorage.setItem(TEAM_COOLDOWN_KEY, Date.now().toString());
       setSubmitted(true);
     } catch (err) {
       toast({
