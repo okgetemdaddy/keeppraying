@@ -80,6 +80,7 @@ export function PrayerViewerModal({
   const [notes, setNotes] = useState(item.notes || "");
   const [togglingPublic, setTogglingPublic] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [testifying, setTestifying] = useState(false);
 
   useEffect(() => {
     setNotes(item.notes || "");
