@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import SacredSpinner from "@/components/SacredSpinner";
 import VerseLink from "@/components/VerseLink";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -163,9 +164,7 @@ export default function GroupDetail() {
     return (
       <div className="min-h-screen bg-background">
         <SiteNav />
-        <div className="flex justify-center py-24">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </div>
+        <SacredSpinner />
       </div>
     );
   }

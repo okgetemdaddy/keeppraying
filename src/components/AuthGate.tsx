@@ -3,9 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
-import { LogIn, Check } from "lucide-react";
+import { LogIn } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import SacredSpinner from "@/components/SacredSpinner";
 
 interface FeatureItem {
   icon: LucideIcon;
@@ -40,14 +41,7 @@ export default function AuthGate({
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-          <p className="verse-text text-sm">Be still, and know…</p>
-        </div>
-      </div>
-    );
+    return <SacredSpinner fullPage />;
   }
 
   if (user) return <>{children}</>;

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SacredSpinner from "@/components/SacredSpinner";
 import VerseLink from "@/components/VerseLink";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -88,7 +89,7 @@ export default function FamilyRooms() {
 
         {/* Rooms list */}
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+          <SacredSpinner />
         ) : rooms.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16 space-y-4">
             <p className="text-muted-foreground text-sm">No family rooms yet. Create one and invite your family!</p>

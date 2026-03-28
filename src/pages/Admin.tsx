@@ -26,6 +26,7 @@ import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import PrayerRequestsInbox from "@/components/admin/PrayerRequestsInbox";
+import SayingsTab from "@/components/admin/SayingsTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -68,7 +69,7 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback";
+type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "overview",         label: "Overview",          icon: LayoutDashboard },
@@ -85,6 +86,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "verses",           label: "Verses",            icon: BookMarked },
   { id: "faq",              label: "FAQ Report",        icon: FileText },
   { id: "contacts",         label: "Contact",           icon: Mail },
+  { id: "sayings",          label: "Sayings",            icon: Sparkles },
 ];
 
 export default function Admin() {
@@ -765,6 +767,9 @@ export default function Admin() {
 
               {/* ── FEEDBACK ── */}
               {activeTab === "feedback" && <FeedbackAdminTab />}
+
+              {/* ── SAYINGS ── */}
+              {activeTab === "sayings" && <SayingsTab />}
 
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
