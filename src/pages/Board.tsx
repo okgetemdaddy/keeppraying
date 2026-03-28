@@ -694,6 +694,7 @@ export default function Board() {
       </Dialog>
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
+      <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
 
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}
       <Sheet open={testifyOpen} onOpenChange={o => { setTestifyOpen(o); if (!o) { setTestifyBody(""); setTestifyReject(""); } }}>
