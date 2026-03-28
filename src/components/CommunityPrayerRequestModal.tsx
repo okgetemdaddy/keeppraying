@@ -24,6 +24,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const COMMUNITY_COOLDOWN_KEY = "kp_community_req_ts";
+const COMMUNITY_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
 export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -36,6 +39,11 @@ export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
+    const lastTs = parseInt(localStorage.getItem(COMMUNITY_COOLDOWN_KEY) || "0", 10);
+    if (Date.now() - lastTs < COMMUNITY_COOLDOWN_MS) {
+      toast({ title: "Please wait a few minutes before submitting another request.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       // Create the prayer request
@@ -61,6 +69,7 @@ export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
         title: "Your prayer request has been shared 🙏",
         description: "Prayer warriors are being notified. You'll see responses in your notifications.",
       });
+      localStorage.setItem(COMMUNITY_COOLDOWN_KEY, Date.now().toString());
       form.reset();
       onOpenChange(false);
     } catch (err) {

@@ -158,9 +158,13 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     }
   };
 
+  const prayedCooldownRef = useRef(false);
   const togglePrayed = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to track prayers" }); return; }
+    if (prayedCooldownRef.current) return;
+    prayedCooldownRef.current = true;
+    setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
     setPrayAnim(true);
     setTimeout(() => setPrayAnim(false), 400);
     if (prayed) {

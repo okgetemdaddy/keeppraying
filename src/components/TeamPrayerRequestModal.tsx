@@ -22,6 +22,9 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const TEAM_COOLDOWN_KEY = "kp_team_req_ts";
+const TEAM_COOLDOWN_MS = 5 * 60 * 1000;
+
 export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -35,6 +38,11 @@ export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
+    const lastTs = parseInt(localStorage.getItem(TEAM_COOLDOWN_KEY) || "0", 10);
+    if (Date.now() - lastTs < TEAM_COOLDOWN_MS) {
+      toast({ title: "Please wait a few minutes before submitting another request.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       const { error } = await supabase.from("prayer_requests" as any).insert({
@@ -44,6 +52,7 @@ export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
       } as any);
       if (error) throw error;
 
+      localStorage.setItem(TEAM_COOLDOWN_KEY, Date.now().toString());
       setSubmitted(true);
     } catch (err) {
       toast({

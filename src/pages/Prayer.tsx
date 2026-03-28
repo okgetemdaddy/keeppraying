@@ -178,8 +178,12 @@ export default function Prayer() {
     }
   };
 
+  const prayedCooldownRef = useRef(false);
   const togglePrayed = async () => {
     if (!user) { toast({ title: "Sign in to track prayers" }); return; }
+    if (prayedCooldownRef.current) return;
+    prayedCooldownRef.current = true;
+    setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
     setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
     if (prayed) {
       await supabase.from("prayed_actions").delete().eq("prayer_id", id!).eq("user_id", user.id);
