@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown, ShieldCheck } from "lucide-react";
+import { ArrowRight, Menu, X, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -96,6 +96,14 @@ function UserMenu({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }) {
                   Admin Dashboard
                 </Link>
               )}
+              <Link
+                to="/profile"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <User className="w-4 h-4" />
+                My Profile
+              </Link>
               <Link
                 to="/board"
                 onClick={() => setOpen(false)}
