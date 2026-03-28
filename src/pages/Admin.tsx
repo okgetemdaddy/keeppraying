@@ -761,6 +761,9 @@ export default function Admin() {
               {/* ── MODERATION LOG (Testimonies) ── */}
               {activeTab === "testimonies" && <TestimoniesAdminTab />}
 
+              {/* ── FEEDBACK ── */}
+              {activeTab === "feedback" && <FeedbackAdminTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
