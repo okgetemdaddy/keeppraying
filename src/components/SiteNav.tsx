@@ -163,7 +163,7 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
       <AnimatePresence>
         {open && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div className="fixed inset-0 z-[45]" onClick={() => setOpen(false)} aria-hidden="true" />
             <motion.div
               initial={{ opacity: 0, y: -8, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
