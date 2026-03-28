@@ -92,6 +92,7 @@ function AppShell() {
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/circles" element={<ProtectedRoute><AccountabilityCircles /></ProtectedRoute>} />
         <Route path="/circles/:id" element={<ProtectedRoute><CircleDetail /></ProtectedRoute>} />
+        <Route path="/support" element={<Support />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
