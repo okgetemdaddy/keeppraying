@@ -309,7 +309,7 @@ export function BoardCard({
                 style={{
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
-                onClick={() => setViewerOpen(true)}
+                onClick={() => onOpenViewer?.(item)}
               >
                 {isTruncated
                   ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
