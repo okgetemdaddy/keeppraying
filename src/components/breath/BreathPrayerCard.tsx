@@ -54,20 +54,18 @@ function ThoughtBubbleLink({ prayerId, meditationLink }: { prayerId: string; med
 }
 
 /** The breathing / pulsing animation for the card itself */
-const breatheVariants = {
-  breathe: {
-    boxShadow: [
-      "0 0 20px 0px hsl(42 85% 46% / 0.08), 0 4px 24px -4px hsl(42 85% 46% / 0.06)",
-      "0 0 32px 4px hsl(42 85% 46% / 0.16), 0 8px 40px -4px hsl(42 85% 46% / 0.12)",
-      "0 0 20px 0px hsl(42 85% 46% / 0.08), 0 4px 24px -4px hsl(42 85% 46% / 0.06)",
-    ],
-    scale: [1, 1.008, 1],
-    transition: {
-      repeat: Infinity,
-      duration: 5,
-      ease: "easeInOut",
-    },
-  },
+const breatheAnimation = {
+  boxShadow: [
+    "0 0 20px 0px hsl(42 85% 46% / 0.08), 0 4px 24px -4px hsl(42 85% 46% / 0.06)",
+    "0 0 32px 4px hsl(42 85% 46% / 0.16), 0 8px 40px -4px hsl(42 85% 46% / 0.12)",
+    "0 0 20px 0px hsl(42 85% 46% / 0.08), 0 4px 24px -4px hsl(42 85% 46% / 0.06)",
+  ],
+  scale: [1, 1.008, 1],
+};
+const breatheTransition = {
+  repeat: Infinity as const,
+  duration: 5,
+  ease: "easeInOut" as const,
 };
 
 export default function BreathPrayerCard({
