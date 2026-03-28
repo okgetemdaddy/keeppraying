@@ -768,6 +768,9 @@ export default function Admin() {
               {/* ── FEEDBACK ── */}
               {activeTab === "feedback" && <FeedbackAdminTab />}
 
+              {/* ── SAYINGS ── */}
+              {activeTab === "sayings" && <SayingsTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
