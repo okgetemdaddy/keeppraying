@@ -511,6 +511,9 @@ export default function Index() {
         </div>
       </section>
 
+      {/* ── Daily Breath Prayer ────────────────────────────────────────── */}
+      <DailyBreathSection />
+
       {/* ── Feature Carousel ──────────────────────────────────────────────── */}
       <div className="bg-background">
         <FeatureCarousel />
