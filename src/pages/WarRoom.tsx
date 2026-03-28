@@ -289,6 +289,7 @@ export default function WarRoom() {
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [touchEnabled,      setTouchEnabled]      = useState(true);
   const [fontId,            setFontId]            = useState<FontId>("display");
+  const [classicalOpen,     setClassicalOpen]     = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const theme    = THEMES.find(t => t.id === themeId) || THEMES[0];
