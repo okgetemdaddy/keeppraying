@@ -23,7 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home,
+  ArrowUpDown, Filter, Users, Home, Wind,
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { BoardMobileMenu } from "@/components/board/BoardMobileMenu";
@@ -383,6 +383,12 @@ export default function Board() {
                 <PlusCircle className="w-4 h-4" />
                 Add Prayer
               </button>
+              <Link to="/breathe">
+                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
+                  <Wind className="w-4 h-4 text-slate-500" />
+                  Add a Breath
+                </button>
+              </Link>
               {saved.length > 0 && (
                 <button
                   onClick={() => openPlaylist()}
