@@ -28,6 +28,7 @@ import SermonSync from "./pages/SermonSync";
 import AccountabilityCircles from "./pages/AccountabilityCircles";
 import CircleDetail from "./pages/CircleDetail";
 import Support from "./pages/Support";
+import Breathe from "./pages/Breathe";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
