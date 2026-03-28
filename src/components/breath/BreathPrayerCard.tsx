@@ -62,8 +62,9 @@ const breatheAnimation = {
   ],
   scale: [1, 1.008, 1],
 };
+const REPEAT_INF = Infinity;
 const breatheTransition = {
-  repeat: Infinity as const,
+  repeat: REPEAT_INF,
   duration: 5,
   ease: "easeInOut" as const,
 };
