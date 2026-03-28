@@ -512,6 +512,13 @@ export default function WarRoom() {
                 to use them here.
               </p>
             )}
+            <button
+              onClick={() => setClassicalOpen(true)}
+              className="px-4 py-2.5 rounded-xl text-sm border transition-all active:scale-95 touch-manipulation"
+              style={{ borderColor: `${theme.accent}60`, color: theme.accent }}
+            >
+              📜 Browse Classical Prayers
+            </button>
             {!user && (
               <p className="text-xs sm:text-sm" style={{ color: theme.muted, opacity: 0.5 }}>
                 <Link to="/auth" style={{ color: theme.accent }} className="underline">Sign in</Link>{" "}
