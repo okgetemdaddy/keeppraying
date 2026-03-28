@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame } from "lucide-react";
+import VerseLink from "@/components/VerseLink";
 import { useStreak } from "@/hooks/useStreak";
 
 interface StreakCounterProps {
