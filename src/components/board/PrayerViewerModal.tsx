@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft } from "lucide-react";
+import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -79,10 +80,12 @@ export function PrayerViewerModal({
   const [notes, setNotes] = useState(item.notes || "");
   const [togglingPublic, setTogglingPublic] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [testifying, setTestifying] = useState(false);
 
   useEffect(() => {
     setNotes(item.notes || "");
     setEditingNotes(false);
+    setTestifying(false);
   }, [item.notes, item.id]);
 
   // Body scroll lock
@@ -234,6 +237,26 @@ export function PrayerViewerModal({
 
               {/* ── Content ── */}
               <div className={`relative flex-1 p-8 md:p-12 ${hasImage ? "text-white" : ""}`}>
+                {testifying ? (
+                  <div className="min-h-[300px]">
+                    <button
+                      onClick={() => setTestifying(false)}
+                      className={`flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors ${hasImage ? "text-white/70 hover:text-white" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to prayer
+                    </button>
+                    <TestifyBack
+                      prayerId={card.id}
+                      prayerAuthorId={card.created_by}
+                      onFlipBack={() => setTestifying(false)}
+                      accentColor={accentColor}
+                      textColor={hasImage ? "white" : undefined}
+                      cardBg={hasImage ? "rgba(255,255,255,0.08)" : undefined}
+                    />
+                  </div>
+                ) : (
+                  <>
                 {/* Title */}
                 {card.title && (
                   <h2 className={`text-xl md:text-2xl font-semibold mb-6 leading-tight ${hasImage ? "text-white" : "text-slate-900"}`}
@@ -385,6 +408,8 @@ export function PrayerViewerModal({
                     )}
                   </div>
                 )}
+                  </>
+                )}
               </div>
 
               {/* ── Sticky action footer ── */}
@@ -435,6 +460,7 @@ export function PrayerViewerModal({
                   {/* Testify */}
                   {isPublic && (
                     <button
+                      onClick={() => setTestifying(true)}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 bg-amber-50 text-amber-700"
                       title="Share your testimony"
                     >
