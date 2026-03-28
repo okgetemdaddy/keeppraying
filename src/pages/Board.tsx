@@ -363,13 +363,13 @@ export default function Board() {
               />
               <StandbyToggle compact dark />
               <Link to="/circles" state={{ from: "board" }}>
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/80 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm" style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}>
                   <Users className="w-3.5 h-3.5" />
                   Circles
                 </button>
               </Link>
               <Link to="/family" state={{ from: "board" }}>
-                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/80 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm" style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}>
                   <Home className="w-3.5 h-3.5" />
                   Family
                 </button>
@@ -378,11 +378,11 @@ export default function Board() {
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setAddOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium transition-all border border-white/20 hover:border-white/30 backdrop-blur-xl"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium transition-all backdrop-blur-xl border border-black/10 shadow-sm"
                 style={{
-                  background: "linear-gradient(135deg, hsl(42 85% 46% / 0.35) 0%, hsl(38 80% 42% / 0.25) 100%)",
-                  color: "rgba(255,255,255,0.95)",
-                  boxShadow: "0 2px 12px hsl(42 85% 46% / 0.2)",
+                  background: "linear-gradient(135deg, hsl(42 85% 46% / 0.7) 0%, hsl(38 80% 42% / 0.6) 100%)",
+                  color: "white",
+                  boxShadow: "0 2px 12px hsl(42 85% 46% / 0.25)",
                 }}
               >
                 <PlusCircle className="w-3.5 h-3.5" />
@@ -391,8 +391,8 @@ export default function Board() {
               {saved.length > 0 && (
                 <button
                   onClick={() => openPlaylist()}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/80 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all"
-                  style={{ background: "rgba(255,255,255,0.08)" }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm"
+                  style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}
                 >
                   <ListMusic className="w-3.5 h-3.5" />
                   Playlist
@@ -400,8 +400,8 @@ export default function Board() {
               )}
               <button
                 onClick={() => setImmersive(i => !i)}
-                className="p-2 rounded-xl text-white/60 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all"
-                style={{ background: "rgba(255,255,255,0.08)" }}
+                className="p-2 rounded-xl backdrop-blur-xl border border-black/10 hover:border-black/20 transition-all shadow-sm"
+                style={{ background: "rgba(0,0,0,0.22)", color: "rgba(255,255,255,0.9)" }}
                 title="Immersive mode"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
