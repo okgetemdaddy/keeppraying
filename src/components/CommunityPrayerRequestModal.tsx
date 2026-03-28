@@ -69,6 +69,7 @@ export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
         title: "Your prayer request has been shared 🙏",
         description: "Prayer warriors are being notified. You'll see responses in your notifications.",
       });
+      localStorage.setItem(COMMUNITY_COOLDOWN_KEY, Date.now().toString());
       form.reset();
       onOpenChange(false);
     } catch (err) {
