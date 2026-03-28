@@ -308,18 +308,18 @@ export function BoardCard({
                 style={{
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
-                onClick={() => setCollapsed(v => !v)}
+                onClick={() => setViewerOpen(true)}
               >
-                {isTruncated && !expanded
+                {isTruncated
                   ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
                   : card.prayer_text}
               </p>
               {isTruncated && (
                 <button
-                  onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+                  onClick={e => { e.stopPropagation(); setViewerOpen(true); }}
                   className={`mt-1.5 text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
-                  {expanded ? "See less" : "See more…"}
+                  See more…
                 </button>
               )}
             </div>
