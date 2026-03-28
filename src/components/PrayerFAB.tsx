@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
   Heart, HandHeart, X, Plus, Globe, Sparkles, Users, Home,
-  Swords, Radio, BookOpen, HeartHandshake, LayoutDashboard
+  Swords, Radio, BookOpen, HeartHandshake, LayoutDashboard, Wind
 } from "lucide-react";
 
 interface FABItem {
