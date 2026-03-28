@@ -375,6 +375,9 @@ export function BoardCard({
                 onPickFont={pickFont} onPickRandomFont={pickRandomFont}
                 currentFont={pendingFont ?? card.text_style}
                 onAddToPlaylist={onAddToPlaylist}
+                hasBgImage={!!bgUrl}
+                overlayOpacity={overlayOpacity}
+                onOverlayOpacityChange={setOverlayOpacity}
               />
             </div>
           )}
