@@ -15,7 +15,7 @@ export default function PrayTheWorld() {
   const { totalPrayers, todayPrayers, warriorsOnline, regionData } = usePrayerMapData();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "world", label: "Pray the World", icon: <Globe className="w-4 h-4" /> },
+    { id: "world", label: "We Pray", icon: <Globe className="w-4 h-4" /> },
     { id: "radar", label: "Local Radar", icon: <Radio className="w-4 h-4" /> },
     { id: "grow", label: "Grow", icon: <Megaphone className="w-4 h-4" /> },
     { id: "flyers", label: "Flyers", icon: <FileText className="w-4 h-4" /> },
