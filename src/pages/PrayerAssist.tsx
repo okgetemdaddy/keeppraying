@@ -212,7 +212,7 @@ export default function PrayerAssist() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-4 py-6 max-w-3xl space-y-6">
+        <div className="container mx-auto px-4 py-6 pb-24 sm:pb-6 max-w-3xl space-y-6">
           {messages.length === 0 && (
             <div className="text-center py-12 space-y-6 animate-fade-up">
               <div className="w-16 h-16 rounded-full bg-gradient-gold flex items-center justify-center mx-auto shadow-gold">
@@ -286,9 +286,9 @@ export default function PrayerAssist() {
         </div>
       </div>
 
-      {/* Input or Guest Banner */}
-      <div className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 max-w-3xl">
+      {/* Input or Guest Banner — offset above mobile tab bar + safe area */}
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] sm:bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-4 pr-20 sm:pr-4 max-w-3xl">
           {showGuestBanner ? (
             <div className="text-center space-y-3 py-2">
               <p className="text-sm text-muted-foreground">
