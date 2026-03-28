@@ -20,12 +20,12 @@ const menuItems = [
   { id: "family", label: "Family", icon: Home, href: "/family" },
 ];
 
-const actionItems = [
+const actionItems: { id: string; label: string; icon: typeof PlusCircle; action: string; needsPrayers?: boolean }[] = [
   { id: "add", label: "Add Prayer", icon: PlusCircle, action: "addPrayer" },
   { id: "playlist", label: "Add Playlist", icon: ListMusic, action: "openPlaylist", needsPrayers: true },
   { id: "classical", label: "Classical Prayers", icon: BookOpen, action: "openClassical" },
   { id: "voice", label: "Voice Prayer", icon: Mic, action: "voiceRecord" },
-] as const;
+];
 
 export function BoardMobileMenu({
   prefs,
