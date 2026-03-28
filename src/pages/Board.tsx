@@ -30,6 +30,8 @@ import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Link } from "react-router-dom";
+import { PrayerCalendar } from "@/components/board/PrayerCalendar";
+import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -138,6 +140,7 @@ export default function Board() {
   const [savingPlaylist, setSavingPlaylist] = useState(false);
 
   const [immersive, setImmersive] = useState(false);
+  const [classicalOpen, setClassicalOpen] = useState(false);
 
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
   const themeVars = theme.vars;
@@ -368,6 +371,15 @@ export default function Board() {
                 size="sm"
                 variant="ghost"
                 className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => setClassicalOpen(true)}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Classical</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-xl gap-1.5 text-white/70 hover:text-white hover:bg-white/10"
                 onClick={() => setTestifyOpen(true)}
               >
                 <Bird className="w-4 h-4" />
@@ -505,6 +517,9 @@ export default function Board() {
             )}
           </motion.div>
         )}
+
+        {/* ── Interactive Calendar ─────────────────────────────────────── */}
+        <PrayerCalendar textColor={textColor} accentColor={themeVars["--board-accent"]} />
 
         {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
@@ -679,6 +694,7 @@ export default function Board() {
       </Dialog>
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
+      <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
 
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}
       <Sheet open={testifyOpen} onOpenChange={o => { setTestifyOpen(o); if (!o) { setTestifyBody(""); setTestifyReject(""); } }}>

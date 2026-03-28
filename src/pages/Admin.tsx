@@ -68,7 +68,7 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "breath" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback";
+type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "overview",         label: "Overview",          icon: LayoutDashboard },
@@ -80,6 +80,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "testimonies",      label: "Moderation Log",    icon: Flag },
   { id: "prayers",          label: "Prayers",           icon: Scroll },
   { id: "breath",           label: "Breath Prayers",    icon: Wind },
+  { id: "classical",        label: "Classical Prayers",  icon: Crown },
   { id: "blog",             label: "KeepGrow.ing",      icon: BookOpen },
   { id: "verses",           label: "Verses",            icon: BookMarked },
   { id: "faq",              label: "FAQ Report",        icon: FileText },
@@ -771,7 +772,9 @@ export default function Admin() {
               {/* ── BREATH PRAYERS ── */}
               {activeTab === "breath" && <BreathAdminTab />}
 
-              {/* ── BLOG ── */}
+              {/* ── CLASSICAL PRAYERS ── */}
+              {activeTab === "classical" && <ClassicalPrayersAdminTab />}
+
               {activeTab === "blog" && (
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
@@ -1573,6 +1576,208 @@ function FeedbackAdminTab() {
                   </div>
                   {fb.title && <p className="text-sm font-semibold mb-1" style={{ color: "hsl(38 28% 88%)" }}>{fb.title}</p>}
                   <p className="text-sm leading-relaxed" style={{ color: "hsl(38 20% 72%)" }}>{fb.message}</p>
+                </div>
+              </div>
+            </GuardianCard>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── CLASSICAL PRAYERS ADMIN TAB ──────────────────────────────────────────────
+function ClassicalPrayersAdminTab() {
+  interface ClassicalPrayer {
+    id: string; title: string; author: string; author_era: string | null;
+    prayer_text: string; extended_text: string | null; labels: string[] | null;
+    source_reference: string | null; created_at: string;
+  }
+
+  const [prayers, setPrayers] = useState<ClassicalPrayer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState({ title: "", author: "", author_era: "", prayer_text: "", extended_text: "", labels: "", source_reference: "" });
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("classical_prayers").select("*").order("created_at", { ascending: false });
+    setPrayers((data as ClassicalPrayer[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const resetForm = () => {
+    setForm({ title: "", author: "", author_era: "", prayer_text: "", extended_text: "", labels: "", source_reference: "" });
+    setEditId(null);
+    setShowForm(false);
+  };
+
+  const startEdit = (p: ClassicalPrayer) => {
+    setEditId(p.id);
+    setForm({
+      title: p.title, author: p.author, author_era: p.author_era || "",
+      prayer_text: p.prayer_text, extended_text: p.extended_text || "",
+      labels: (p.labels || []).join(", "), source_reference: p.source_reference || "",
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim() || !form.author.trim() || !form.prayer_text.trim()) {
+      toast({ title: "Title, author, and prayer text are required", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const labelsArr = form.labels ? form.labels.split(",").map(l => l.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
+    const payload = {
+      title: form.title.trim(),
+      author: form.author.trim(),
+      author_era: form.author_era.trim() || null,
+      prayer_text: form.prayer_text.trim(),
+      extended_text: form.extended_text.trim() || null,
+      labels: labelsArr.length ? labelsArr : null,
+      source_reference: form.source_reference.trim() || null,
+    };
+
+    if (editId) {
+      const { error } = await supabase.from("classical_prayers").update(payload).eq("id", editId);
+      if (error) { toast({ title: "Update failed", variant: "destructive" }); setSaving(false); return; }
+      toast({ title: "Classical prayer updated ✓" });
+    } else {
+      const { error } = await supabase.from("classical_prayers").insert({
+        ...payload,
+        created_by: (await supabase.auth.getUser()).data.user?.id,
+      });
+      if (error) { toast({ title: "Save failed", variant: "destructive" }); setSaving(false); return; }
+      toast({ title: "Classical prayer added 📜" });
+    }
+
+    setSaving(false);
+    resetForm();
+    load();
+  };
+
+  const deletePrayer = async (id: string) => {
+    if (!confirm("Delete this classical prayer?")) return;
+    await supabase.from("classical_prayers").delete().eq("id", id);
+    toast({ title: "Deleted" });
+    load();
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>Classical Prayers Library</h2>
+          <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>
+            Upload timeless prayers from church fathers — {prayers.length} in the collection
+          </p>
+        </div>
+        <GoldButton onClick={() => { resetForm(); setShowForm(true); }}>
+          <PlusCircle className="w-4 h-4" /> Add Classical Prayer
+        </GoldButton>
+      </div>
+
+      {/* Form */}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+            <GuardianCard>
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Title *</label>
+                    <DarkInput value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Prayer of St. Francis" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Author *</label>
+                    <DarkInput value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} placeholder="e.g. St. Francis of Assisi" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Era</label>
+                    <DarkInput value={form.author_era} onChange={e => setForm(f => ({ ...f, author_era: e.target.value }))} placeholder="e.g. 13th Century" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Source Reference</label>
+                    <DarkInput value={form.source_reference} onChange={e => setForm(f => ({ ...f, source_reference: e.target.value }))} placeholder="e.g. Book of Common Prayer" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Prayer Text *</label>
+                  <DarkTextarea value={form.prayer_text} onChange={e => setForm(f => ({ ...f, prayer_text: e.target.value }))} rows={5} placeholder="The full prayer text…" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Extended Text / Commentary</label>
+                  <DarkTextarea value={form.extended_text} onChange={e => setForm(f => ({ ...f, extended_text: e.target.value }))} rows={3} placeholder="Optional extended version or commentary…" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Labels (comma-separated)</label>
+                  <DarkInput value={form.labels} onChange={e => setForm(f => ({ ...f, labels: e.target.value }))} placeholder="e.g. peace, humility, devotion" />
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <GoldButton onClick={handleSave} disabled={saving}>
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {editId ? "Update Prayer" : "Add Prayer"}
+                  </GoldButton>
+                  <DarkOutlineButton onClick={resetForm}>
+                    <XCircle className="w-4 h-4" /> Cancel
+                  </DarkOutlineButton>
+                </div>
+              </div>
+            </GuardianCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* List */}
+      {loading ? (
+        <div className="flex items-center gap-2 py-6" style={{ color: "hsl(38 14% 50%)" }}>
+          <Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Loading…</span>
+        </div>
+      ) : prayers.length === 0 ? (
+        <GuardianCard>
+          <p className="text-sm italic text-center py-4" style={{ color: "hsl(38 14% 50%)" }}>
+            No classical prayers uploaded yet. Add timeless prayers from the saints 📜
+          </p>
+        </GuardianCard>
+      ) : (
+        <div className="space-y-3">
+          {prayers.map(p => (
+            <GuardianCard key={p.id}>
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold mb-0.5" style={{ color: "hsl(38 28% 90%)" }}>{p.title}</p>
+                  <p className="text-xs mb-2" style={{ color: "hsl(38 14% 55%)" }}>
+                    {p.author}{p.author_era && ` · ${p.author_era}`}
+                  </p>
+                  <p className="font-display italic text-sm leading-relaxed line-clamp-3" style={{ color: "hsl(38 20% 72%)" }}>
+                    "{p.prayer_text}"
+                  </p>
+                  {p.labels && p.labels.length > 0 && (
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      {p.labels.map(l => (
+                        <span key={l} className="text-[10px] px-2 py-0.5 rounded-full"
+                          style={{ background: "hsl(42 85% 46% / 0.12)", color: "hsl(42 85% 58%)" }}>{l}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button onClick={() => startEdit(p)} className="h-7 px-2.5 text-[10px] rounded-lg flex items-center gap-1"
+                    style={{ background: "hsl(42 85% 46% / 0.1)", color: "hsl(42 85% 58%)", border: "1px solid hsl(42 85% 46% / 0.2)" }}>
+                    <Pencil className="w-3 h-3" /> Edit
+                  </button>
+                  <button onClick={() => deletePrayer(p.id)} className="h-7 px-2.5 text-[10px] rounded-lg flex items-center gap-1"
+                    style={{ background: "hsl(0 72% 51% / 0.1)", color: "hsl(0 72% 60%)", border: "1px solid hsl(0 72% 51% / 0.2)" }}>
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </GuardianCard>

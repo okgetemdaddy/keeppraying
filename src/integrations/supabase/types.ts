@@ -336,6 +336,48 @@ export type Database = {
         }
         Relationships: []
       }
+      classical_prayers: {
+        Row: {
+          author: string
+          author_era: string | null
+          created_at: string
+          created_by: string | null
+          extended_text: string | null
+          id: string
+          labels: string[] | null
+          prayer_text: string
+          source_reference: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          author_era?: string | null
+          created_at?: string
+          created_by?: string | null
+          extended_text?: string | null
+          id?: string
+          labels?: string[] | null
+          prayer_text: string
+          source_reference?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          author_era?: string | null
+          created_at?: string
+          created_by?: string | null
+          extended_text?: string | null
+          id?: string
+          labels?: string[] | null
+          prayer_text?: string
+          source_reference?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           created_at: string

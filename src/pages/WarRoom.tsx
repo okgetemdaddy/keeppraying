@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -288,6 +289,7 @@ export default function WarRoom() {
   const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [touchEnabled,      setTouchEnabled]      = useState(true);
   const [fontId,            setFontId]            = useState<FontId>("display");
+  const [classicalOpen,     setClassicalOpen]     = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const theme    = THEMES.find(t => t.id === themeId) || THEMES[0];
@@ -510,6 +512,13 @@ export default function WarRoom() {
                 to use them here.
               </p>
             )}
+            <button
+              onClick={() => setClassicalOpen(true)}
+              className="px-4 py-2.5 rounded-xl text-sm border transition-all active:scale-95 touch-manipulation"
+              style={{ borderColor: `${theme.accent}60`, color: theme.accent }}
+            >
+              📜 Browse Classical Prayers
+            </button>
             {!user && (
               <p className="text-xs sm:text-sm" style={{ color: theme.muted, opacity: 0.5 }}>
                 <Link to="/auth" style={{ color: theme.accent }} className="underline">Sign in</Link>{" "}
@@ -581,6 +590,7 @@ export default function WarRoom() {
           </div>
         </div>
       </div>
+      <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
     </div>
   );
 }
