@@ -77,7 +77,7 @@ export function BoardMobileMenu({
     visible: {
       scale: 2.5,
       opacity: 0,
-      transition: { duration: 0.7, ease: "easeOut", delay: 0.25 },
+      transition: { duration: 0.7, ease: "easeOut" as const, delay: 0.25 },
     },
   };
 
