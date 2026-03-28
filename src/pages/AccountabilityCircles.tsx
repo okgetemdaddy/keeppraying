@@ -23,6 +23,7 @@ export default function AccountabilityCircles() {
   const { user } = useAuth();
   const { circles, loading, refetch } = useAccountabilityCircles();
   const { toast } = useToast();
+  const backLink = useBackLink();
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
