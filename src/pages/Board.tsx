@@ -13,7 +13,7 @@ import AddPrayerModal from "@/components/AddPrayerModal";
 import { BoardCard } from "@/components/board/BoardCard";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
 import { ThemeSelector } from "@/components/board/ThemeSelector";
-import { AmbientPlayer } from "@/components/board/AmbientPlayer";
+// import { AmbientPlayer } from "@/components/board/AmbientPlayer"; // Hidden for now
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
