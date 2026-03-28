@@ -673,18 +673,6 @@ export function BoardCard({
         </motion.div>
       </motion.div>{/* end layout motion.div */}
 
-      {/* Prayer Viewer Modal */}
-      <PrayerViewerModal
-        open={viewerOpen}
-        onClose={() => setViewerOpen(false)}
-        item={item}
-        userId={userId}
-        onUpdate={onUpdate}
-        onRemove={onRemove}
-        onRefresh={onRefresh}
-        themeVars={themeVars}
-        onAddToPlaylist={onAddToPlaylist}
-      />
     </div>
   );
 }
