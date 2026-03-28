@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSayingsCycle } from "@/hooks/useSayingsCycle";
 
 /* ── Core visible links (desktop top bar) ── */
 const CORE_LINKS = [
