@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Prayers from "./pages/Prayers";
@@ -35,21 +36,12 @@ import { PrayerFAB } from "@/components/PrayerFAB";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
 import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
 
-const queryClient = new QueryClient();
+import {
+  LayoutGrid, Users, Heart, Home, Shield, BookOpen,
+  Sparkles, UserCircle, Flame
+} from "lucide-react";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center space-y-3">
-        <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-        <p className="verse-text text-sm">Be still, and know…</p>
-      </div>
-    </div>
-  );
-  if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
-}
+const queryClient = new QueryClient();
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth();
@@ -79,26 +71,156 @@ function AppShell() {
         <Route path="/prayers" element={<Prayers />} />
         <Route path="/prayer/:id" element={<Prayer />} />
         <Route path="/assistant" element={<PrayerAssist />} />
-        <Route path="/board" element={<ProtectedRoute><Board /></ProtectedRoute>} />
+
+        {/* Prayer Board */}
+        <Route path="/board" element={
+          <AuthGate
+            title="Your Prayer Board"
+            subtitle="A sacred space to collect, organize, and revisit the prayers closest to your heart. Pin favorites, add notes, and watch God move."
+            heroIcon={LayoutGrid}
+            features={[
+              { icon: LayoutGrid, title: "Organize Your Prayers", description: "Pin, resize, and arrange prayer cards in a layout that's uniquely yours." },
+              { icon: Heart, title: "Track God's Faithfulness", description: "Mark prayers as answered, add personal notes, and build a living testimony." },
+              { icon: Sparkles, title: "AI-Crafted Prayers", description: "Let PrayerAssist help you put your heart into words, then save them here." },
+              { icon: BookOpen, title: "Private & Personal", description: "Your board is your prayer closet — visible only to you and God." },
+            ]}
+            verse="But when you pray, go into your room, close the door and pray to your Father, who is unseen."
+            verseRef="Matthew 6:6"
+          >
+            <Board />
+          </AuthGate>
+        } />
+
+        {/* Prayer Groups */}
+        <Route path="/groups" element={
+          <AuthGate
+            title="Prayer Groups"
+            subtitle="Join or create prayer groups with fellow believers. Share burdens, lift each other up, and experience the power of praying together."
+            heroIcon={Users}
+            features={[
+              { icon: Users, title: "Pray Together", description: "Create groups with friends, church members, or believers worldwide." },
+              { icon: BookOpen, title: "Share Prayer Cards", description: "Share your prayers with the group and pray for one another." },
+              { icon: Shield, title: "Private & Secure", description: "Groups are invite-only — a safe space to be vulnerable before God." },
+            ]}
+            verse="For where two or three gather in my name, there am I with them."
+            verseRef="Matthew 18:20"
+          >
+            <Groups />
+          </AuthGate>
+        } />
+        <Route path="/groups/:id" element={
+          <AuthGate
+            title="Prayer Group"
+            subtitle="Step into a circle of believers who are lifting each other up in prayer. Together, you are stronger."
+            heroIcon={Users}
+            features={[
+              { icon: Users, title: "Community Prayer", description: "See what others are praying and join in agreement." },
+              { icon: Heart, title: "Encourage One Another", description: "Leave words of encouragement on shared prayers." },
+            ]}
+            verse="Carry each other's burdens, and in this way you will fulfill the law of Christ."
+            verseRef="Galatians 6:2"
+          >
+            <GroupDetail />
+          </AuthGate>
+        } />
+
+        {/* Family Rooms */}
+        <Route path="/family" element={
+          <AuthGate
+            title="Family Rooms"
+            subtitle="Create a private prayer space for your family. Teach your children to pray, share requests, and grow in faith together."
+            heroIcon={Home}
+            features={[
+              { icon: Home, title: "Family Prayer Space", description: "A warm, safe environment designed for families to pray together." },
+              { icon: Heart, title: "Child-Friendly Mode", description: "Optional settings that make prayer approachable for young hearts." },
+              { icon: Users, title: "Invite Family Members", description: "Share an invite code so everyone can join your family room." },
+              { icon: BookOpen, title: "Shared Prayer Cards", description: "Family members can share and pray over each other's prayers." },
+            ]}
+            verse="Train up a child in the way he should go; even when he is old he will not depart from it."
+            verseRef="Proverbs 22:6"
+          >
+            <FamilyRooms />
+          </AuthGate>
+        } />
+        <Route path="/family/:id" element={
+          <AuthGate
+            title="Family Room"
+            subtitle="Your family's private prayer space — where hearts gather before God."
+            heroIcon={Home}
+            features={[
+              { icon: Home, title: "Pray Together", description: "Share prayers and lift your family up before God." },
+              { icon: Heart, title: "Stay Connected", description: "Even when apart, you're united in prayer." },
+            ]}
+            verse="As for me and my household, we will serve the Lord."
+            verseRef="Joshua 24:15"
+          >
+            <FamilyRoomDetail />
+          </AuthGate>
+        } />
+
+        {/* Accountability Circles */}
+        <Route path="/circles" element={
+          <AuthGate
+            title="Accountability Circles"
+            subtitle="Walk alongside a small group of believers committed to growing deeper in prayer and faithfulness. Iron sharpens iron."
+            heroIcon={Shield}
+            features={[
+              { icon: Shield, title: "Accountability Partners", description: "Small, intentional groups of up to 5 who keep each other steadfast." },
+              { icon: Sparkles, title: "AI Encouragement", description: "Receive uplifting, Scripture-based encouragements tailored to your circle." },
+              { icon: Flame, title: "Streak Tracking", description: "See how consistently your circle is showing up in prayer." },
+              { icon: Users, title: "Invite-Only", description: "Share a code to invite trusted brothers and sisters in Christ." },
+            ]}
+            verse="As iron sharpens iron, so one person sharpens another."
+            verseRef="Proverbs 27:17"
+          >
+            <AccountabilityCircles />
+          </AuthGate>
+        } />
+        <Route path="/circles/:id" element={
+          <AuthGate
+            title="Your Circle"
+            subtitle="This is where accountability meets grace — walking together in prayer and truth."
+            heroIcon={Shield}
+            features={[
+              { icon: Shield, title: "Shared Prayers", description: "Share what's on your heart with those who truly care." },
+              { icon: Sparkles, title: "Encouragement", description: "Receive and give words of life to one another." },
+            ]}
+            verse="Therefore encourage one another and build each other up."
+            verseRef="1 Thessalonians 5:11"
+          >
+            <CircleDetail />
+          </AuthGate>
+        } />
+
+        {/* Profile */}
+        <Route path="/profile" element={
+          <AuthGate
+            title="Your Faith Profile"
+            subtitle="Track your prayer journey, view your streak, and see how God has been moving in your life."
+            heroIcon={UserCircle}
+            features={[
+              { icon: Flame, title: "Prayer Streak", description: "See your daily prayer consistency and longest streak." },
+              { icon: Heart, title: "Prayer History", description: "Review every prayer you've written and every answer received." },
+              { icon: UserCircle, title: "Public or Private", description: "Choose whether to share your profile and encourage others." },
+            ]}
+            verse="Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up."
+            verseRef="Galatians 6:9"
+          >
+            <Profile />
+          </AuthGate>
+        } />
+        <Route path="/profile/:id" element={<Profile />} />
+
         <Route path="/war-room" element={<WarRoom />} />
         <Route path="/games" element={<Games />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/testify" element={<Testify />} />
-        <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
-        <Route path="/groups/:id" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
-        <Route path="/family" element={<ProtectedRoute><FamilyRooms /></ProtectedRoute>} />
-        <Route path="/family/:id" element={<ProtectedRoute><FamilyRoomDetail /></ProtectedRoute>} />
         <Route path="/pray-the-world" element={<PrayTheWorld />} />
         <Route path="/sermon-sync" element={<SermonSync />} />
-        <Route path="/circles" element={<ProtectedRoute><AccountabilityCircles /></ProtectedRoute>} />
-        <Route path="/circles/:id" element={<ProtectedRoute><CircleDetail /></ProtectedRoute>} />
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/profile/:id" element={<Profile />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
