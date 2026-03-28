@@ -278,7 +278,7 @@ export function BoardCard({
             className="w-full h-full object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.48)" }} />
+          <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${overlayOpacity})` }} />
         </div>
       )}
 
