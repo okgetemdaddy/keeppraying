@@ -57,19 +57,11 @@ export function StandbyToggle({ compact = false, dark = false }: StandbyTogglePr
           onClick={handleToggle}
           disabled={loading}
           whileTap={{ scale: 0.92 }}
-          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-          style={{
-            background: isOnStandby
-              ? dark ? "rgba(74, 222, 128, 0.2)" : "hsl(150 40% 92%)"
-              : dark ? "rgba(255,255,255,0.1)" : "hsl(38 60% 97%)",
-            color: isOnStandby
-              ? dark ? "rgb(134, 239, 172)" : "hsl(150 45% 30%)"
-              : dark ? "rgba(255,255,255,0.6)" : "hsl(25 18% 50%)",
-            border: `1px solid ${isOnStandby
-              ? dark ? "rgba(74, 222, 128, 0.3)" : "hsl(150 38% 70%)"
-              : "transparent"
-            }`,
-          }}
+          className={`relative flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all shadow-sm ${
+            isOnStandby
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-300"
+              : "bg-white/60 backdrop-blur-sm text-slate-700 border border-slate-300/80 hover:bg-white"
+          }`}
         >
           {isOnStandby ? (
             <>
@@ -77,7 +69,7 @@ export function StandbyToggle({ compact = false, dark = false }: StandbyTogglePr
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
               </motion.div>
               <span className="hidden sm:inline">On Standby</span>
               {timeLeft !== null && timeLeft > 0 && (
@@ -86,17 +78,16 @@ export function StandbyToggle({ compact = false, dark = false }: StandbyTogglePr
             </>
           ) : (
             <>
-              <Shield className="w-3.5 h-3.5" />
+              <Shield className="w-4 h-4 text-slate-700" />
               <span className="hidden sm:inline">Standby</span>
-              <ChevronDown className="w-3 h-3 opacity-50" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-700" />
             </>
           )}
 
           {/* Pulse ring when active */}
           {isOnStandby && (
             <motion.span
-              className="absolute inset-0 rounded-xl"
-              style={{ border: `1px solid ${dark ? "rgba(74, 222, 128, 0.4)" : "hsl(150 38% 55%)"}` }}
+              className="absolute inset-0 rounded-full border border-emerald-400"
               animate={{ opacity: [0.6, 0, 0.6] }}
               transition={{ duration: 2.5, repeat: Infinity }}
             />
