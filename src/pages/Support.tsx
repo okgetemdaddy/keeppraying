@@ -66,13 +66,27 @@ export default function Support() {
     }
   }, [donated, session]);
 
-  // Load update logs
+  // Load update logs + realtime subscription
   useEffect(() => {
-    supabase
-      .from("update_logs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setLogs((data as UpdateLog[]) || []));
+    const fetchLogs = () => {
+      supabase
+        .from("update_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .then(({ data }) => setLogs((data as UpdateLog[]) || []));
+    };
+    fetchLogs();
+
+    const channel = supabase
+      .channel("update_logs_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "update_logs" },
+        () => fetchLogs()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const handleDonate = async (priceId: string, mode: "payment" | "subscription") => {
