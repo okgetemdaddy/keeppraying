@@ -288,12 +288,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-background">
         <SiteNav />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-3">
-            <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-            <p className="verse-text text-sm text-muted-foreground">Be still, and know…</p>
-          </div>
-        </div>
+        <SacredSpinner />
       </div>
     );
   }
