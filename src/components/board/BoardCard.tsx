@@ -317,7 +317,7 @@ export function BoardCard({
               </p>
               {isTruncated && (
                   <button
-                  onClick={e => { e.stopPropagation(); setViewerOpen(true); }}
+                  onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
                   className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
                   See more…
