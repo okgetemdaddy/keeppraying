@@ -315,9 +315,9 @@ export function BoardCard({
                   : card.prayer_text}
               </p>
               {isTruncated && (
-                <button
+                  <button
                   onClick={e => { e.stopPropagation(); setViewerOpen(true); }}
-                  className={`mt-1.5 text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
+                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
                   See more…
                 </button>
@@ -418,18 +418,18 @@ export function BoardCard({
                   {card.extended_prayer ? (
                     <button
                       onClick={() => setScriptureOpen(v => !v)}
-                      className={`text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 flex items-center gap-1 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
+                      className={`text-xs font-semibold flex items-center gap-1 transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                     >
                       <motion.div animate={{ rotate: scriptureOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                         <ChevronDown className="w-3.5 h-3.5" />
                       </motion.div>
-                      {scriptureOpen ? "Hide scripture" : "Show scripture"}
+                      {scriptureOpen ? "Hide Scripture" : "Scripture"}
                     </button>
                   ) : <div />}
                   {card.labels && card.labels.length > 0 && (
                     <button
                       onClick={() => setLabelsOpen(v => !v)}
-                      className={`text-xs font-semibold underline decoration-amber-400 decoration-2 underline-offset-4 md:hover:decoration-amber-500 flex items-center gap-1 transition-colors ${bgUrl ? 'text-white' : 'text-slate-900'}`}
+                      className={`text-xs font-semibold flex items-center gap-1 transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                     >
                       <Tag className="w-3 h-3" />
                       {labelsOpen ? "Hide labels" : "Labels"}
