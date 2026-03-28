@@ -772,7 +772,9 @@ export default function Admin() {
               {/* ── BREATH PRAYERS ── */}
               {activeTab === "breath" && <BreathAdminTab />}
 
-              {/* ── BLOG ── */}
+              {/* ── CLASSICAL PRAYERS ── */}
+              {activeTab === "classical" && <ClassicalPrayersAdminTab />}
+
               {activeTab === "blog" && (
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
