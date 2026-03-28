@@ -1,37 +1,24 @@
 
-## Phase: Move Sayings into Logo Area
 
-### Concept
-Instead of a floating overlay at the bottom, the "KeepPray.ing" logo in the nav bar will periodically transform into a saying. The logo text fades/morphs out and the saying fades in (same position, same styling weight), holds for ~6 seconds, then gracefully transitions back to the logo. This creates a delightful "the app is whispering to you" effect.
+## Fix: Remove Truncation from KeepPray.ing Sayings
 
-### Animation Design
-- Logo text ("KeepPray.ing") cross-fades with a saying using `AnimatePresence` with `mode="wait"`
-- Logo exit: gentle scale-down + fade-out + slight upward drift
-- Saying enter: fade-in from below with a soft golden sparkle/glow pulse
-- Saying text styled in italic with a subtle ✨ prefix, slightly smaller, warm gold tint
-- After 6s the saying exits the same way and the logo fades back in
-- Spring easing for organic, peaceful feel
+### Problem
+The saying text has `max-w-[200px] sm:max-w-[280px] truncate` which cuts off words with "…".
+
+### Solution
+Remove the `max-w` constraints and `truncate` class. Instead, allow the saying to wrap naturally and use a smaller font size that fits comfortably. The logo area link should expand to accommodate the full text.
 
 ### Changes
 
-**1. `src/components/ScriptureEasterEgg.tsx` — Convert to a hook**
-- Export a custom hook `useSayingsCycle()` that returns `{ currentSaying: string | null }`
-- Keep the Supabase fetch + interval logic, remove the rendered overlay entirely
-- The component file becomes `src/hooks/useSayingsCycle.ts`
+**`src/components/SiteNav.tsx`** (lines 236 + 245-246)
 
-**2. `src/components/SiteNav.tsx` — Integrate sayings into logo**
-- Import `useSayingsCycle`
-- In the logo `<Link>`, wrap the logo text and saying in `AnimatePresence mode="wait"`
-- When `currentSaying` is null: show logo with a motion key
-- When `currentSaying` is set: show the saying text with a different motion key
-- Both use cross-fade + subtle vertical slide animations
-- The link still navigates to `/` on click regardless of which text is showing
+1. **Logo link container** (line 236): Change from `flex-shrink-0 min-w-[120px] sm:min-w-[160px]` to `flex-shrink-0 min-w-0 max-w-[55%] sm:max-w-[340px]` — allows the saying to use available space without pushing nav items off-screen.
 
-**3. `src/App.tsx` — Remove standalone `<ScriptureEasterEgg />`**
-- Delete the import and usage since sayings now live in the nav logo
+2. **Saying span** (line 246): Replace `"block font-display text-sm sm:text-base italic tracking-wide max-w-[200px] sm:max-w-[280px] truncate"` with `"block font-display text-xs sm:text-sm italic tracking-wide leading-snug"` — removes truncation entirely, uses slightly smaller text that wraps if needed, with tight line-height so a 2-line saying still looks elegant.
 
-### Technical Details
-- Hook extracts all state/effect logic from current `ScriptureEasterEgg.tsx`
-- `ScriptureEasterEgg.tsx` file will be deleted; new file `src/hooks/useSayingsCycle.ts` created
-- No database changes needed
-- No new dependencies
+### Result
+- Every saying displays in full — no truncation, no "…"
+- On mobile: `text-xs` with wrapping keeps it legible and contained
+- On desktop: `text-sm` with up to 340px width fits comfortably
+- Logo text remains unchanged at its current size
+
