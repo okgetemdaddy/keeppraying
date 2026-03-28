@@ -328,24 +328,6 @@ export default function FeatureCarousel() {
         )}
       </div>
 
-      {/* Beta notice banner */}
-      <div className="mx-auto max-w-5xl px-4 pb-10">
-        <div
-          className="rounded-2xl px-5 py-4 text-center text-sm leading-relaxed"
-          style={{
-            background: "hsl(42 65% 97%)",
-            border: "1px solid hsl(42 55% 85%)",
-            color: "hsl(38 50% 38%)",
-          }}
-        >
-          <span className="font-semibold">KeepPray.ing is currently in Beta ❤️</span>
-          {" "}Bugs or suggestions? Please use the{" "}
-          <a href="#contact" className="underline font-medium hover:text-primary transition-colors">
-            contact form below
-          </a>.
-          {" "}A beautiful iOS app is coming soon!
-        </div>
-      </div>
     </section>
   );
 }
