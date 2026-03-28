@@ -54,7 +54,7 @@ function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
   const location = useLocation();
-  const hidePrayerFab = location.pathname === "/assistant";
+  const isAssistantRoute = location.pathname === "/assistant";
 
   return (
     <>
@@ -62,13 +62,14 @@ function AppShell() {
       <Sonner />
       <UrgentPrayerNotifier />
       
-      <MobileTabBar />
-      {!hidePrayerFab && (
+      {!isAssistantRoute && <MobileTabBar />}
+      {!isAssistantRoute && (
         <PrayerFAB
           onAskCommunity={() => setCommunityOpen(true)}
           onAskTeam={() => setTeamOpen(true)}
         />
       )}
+
       <CommunityPrayerRequestModal open={communityOpen} onOpenChange={setCommunityOpen} />
       <TeamPrayerRequestModal open={teamOpen} onOpenChange={setTeamOpen} />
       <Routes>
