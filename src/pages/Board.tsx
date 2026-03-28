@@ -563,12 +563,12 @@ export default function Board() {
         </motion.button>
       )}
 
-      {/* Ambient sound player */}
-      <AmbientPlayer
+      {/* Ambient sound player — hidden for now */}
+      {/* <AmbientPlayer
         soundId={prefs.sound_id}
         volume={prefs.sound_volume}
         onChange={(updates) => savePrefs(updates as { sound_id?: string | null; sound_volume?: number })}
-      />
+      /> */}
 
       {/* ── Stats drawer (prayed / liked) ─────────────────────────────── */}
       <Sheet open={!!statsDrawer} onOpenChange={o => !o && setStatsDrawer(null)}>
