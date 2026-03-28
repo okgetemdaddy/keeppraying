@@ -532,20 +532,19 @@ export function BoardCard({
         {/* ── Footer row (small + medium) ───────────────────────────────── */}
         {actionsInFooter && (
           <div
-            className="flex items-center justify-between gap-2 pt-2 border-t"
-            style={{ borderColor: `${textColor}12` }}
+            className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-slate-400 text-xs md:text-sm"
           >
             {/* Visibility toggle */}
             {isOwner ? (
               <div className="flex items-center gap-1.5">
                 {togglingPublic ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
                 ) : isPrivate ? (
-                  <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
                 ) : (
-                  <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+                  <Globe className="w-3.5 h-3.5 text-slate-500" />
                 )}
-                <span className="text-xs" style={{ color: `${textColor}55` }}>
+                <span className="text-xs text-slate-500">
                   {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
                 </span>
                 <Switch
@@ -562,8 +561,7 @@ export function BoardCard({
               {isPublic && (
                 <button
                   onClick={() => setFlipped(true)}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/40"
-                  style={{ color: accentColor }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
                   title="Share your testimony"
                 >
                   <Bird className="w-3.5 h-3.5" />
