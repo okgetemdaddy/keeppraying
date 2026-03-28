@@ -29,6 +29,7 @@ import AccountabilityCircles from "./pages/AccountabilityCircles";
 import CircleDetail from "./pages/CircleDetail";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
+import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
