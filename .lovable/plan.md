@@ -1,24 +1,23 @@
 
 
-## Fix: Remove Truncation from KeepPray.ing Sayings
+## Plan: Restructure PrayerAssist.ing FAB Item
 
-### Problem
-The saying text has `max-w-[200px] sm:max-w-[280px] truncate` which cuts off words with "…".
+**Current behavior:** The "PrayerAssist.ing" FAB item calls `onAskTeam()` which opens a prayer request modal.
 
-### Solution
-Remove the `max-w` constraints and `truncate` class. Instead, allow the saying to wrap naturally and use a smaller font size that fits comfortably. The logo area link should expand to accommodate the full text.
+**Goal:** 
+1. Change "PrayerAssist.ing" to navigate to `/assistant`
+2. Add a new FAB item "Ask KeepPray.ing for a Prayer" that keeps the current `onAskTeam()` behavior
 
-### Changes
+### Changes in `src/components/PrayerFAB.tsx`
 
-**`src/components/SiteNav.tsx`** (lines 236 + 245-246)
+1. **Update the "team" item** — change label to "PrayerAssist.ing", change onClick to `go("/assistant")`, keep sparkles icon and gold color.
 
-1. **Logo link container** (line 236): Change from `flex-shrink-0 min-w-[120px] sm:min-w-[160px]` to `flex-shrink-0 min-w-0 max-w-[55%] sm:max-w-[340px]` — allows the saying to use available space without pushing nav items off-screen.
+2. **Add new item** — "Ask KeepPray.ing for a Prayer" using `HandHeart` icon (already imported), calling `authGuard(() => { onAskTeam(); setOpen(false); })`, placed right after the community item. Use a warm complementary color.
 
-2. **Saying span** (line 246): Replace `"block font-display text-sm sm:text-base italic tracking-wide max-w-[200px] sm:max-w-[280px] truncate"` with `"block font-display text-xs sm:text-sm italic tracking-wide leading-snug"` — removes truncation entirely, uses slightly smaller text that wraps if needed, with tight line-height so a 2-line saying still looks elegant.
-
-### Result
-- Every saying displays in full — no truncation, no "…"
-- On mobile: `text-xs` with wrapping keeps it legible and contained
-- On desktop: `text-sm` with up to 340px width fits comfortably
-- Logo text remains unchanged at its current size
+**Final FAB order:**
+1. Ask Community to Pray
+2. Ask KeepPray.ing for a Prayer *(new — takes over old onAskTeam behavior)*
+3. PrayerAssist.ing *(now navigates to /assistant)*
+4. We Pray
+5. ...rest unchanged
 
