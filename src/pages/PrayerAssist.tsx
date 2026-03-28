@@ -220,7 +220,24 @@ export default function PrayerAssist() {
               </div>
               <div>
                 <h1 className="font-display text-3xl font-bold text-foreground mb-2">PrayerAssist.ing</h1>
-                <p className="text-muted-foreground max-w-md mx-auto">Your compassionate AI prayer companion — ready to help you pray, craft prayers, seek Scripture, and grow in faith.</p>
+              <p className="text-muted-foreground max-w-md mx-auto">Your compassionate AI prayer companion — ready to help you pray, craft prayers, seek Scripture, and grow in faith.</p>
+              </div>
+
+              {/* Beta notice */}
+              <div
+                className="rounded-2xl px-5 py-4 text-center text-sm leading-relaxed max-w-xl mx-auto"
+                style={{
+                  background: "hsl(42 65% 97%)",
+                  border: "1px solid hsl(42 55% 85%)",
+                  color: "hsl(38 50% 38%)",
+                }}
+              >
+                <span className="font-semibold">KeepPray.ing is currently in Beta ❤️</span>
+                {" "}Bugs or suggestions? Please use the{" "}
+                <Link to="/support" className="underline font-medium hover:text-primary transition-colors">
+                  contact form
+                </Link>.
+                {" "}A beautiful iOS app is coming soon!
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                 {suggestions.map(s => (
