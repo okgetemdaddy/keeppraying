@@ -25,6 +25,7 @@ import {
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
+import PrayerRequestsInbox from "@/components/admin/PrayerRequestsInbox";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -67,19 +68,20 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies";
+type TabId = "overview" | "moderation" | "prayers" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: "overview",    label: "Overview",        icon: LayoutDashboard },
-  { id: "moderation",  label: "Review Queue",    icon: Shield },
-  { id: "users",       label: "User Management", icon: Users },
-  { id: "insights",    label: "Analytics",       icon: BarChart2 },
-  { id: "testimonies", label: "Moderation Log",  icon: Flag },
-  { id: "prayers",     label: "Prayers",         icon: Scroll },
-  { id: "blog",        label: "KeepGrow.ing",    icon: BookOpen },
-  { id: "verses",      label: "Verses",          icon: BookMarked },
-  { id: "faq",         label: "FAQ Report",      icon: FileText },
-  { id: "contacts",    label: "Contact",         icon: Mail },
+  { id: "overview",         label: "Overview",          icon: LayoutDashboard },
+  { id: "moderation",       label: "Review Queue",      icon: Shield },
+  { id: "prayer-requests",  label: "Prayer Requests",   icon: Heart },
+  { id: "users",            label: "User Management",   icon: Users },
+  { id: "insights",         label: "Analytics",         icon: BarChart2 },
+  { id: "testimonies",      label: "Moderation Log",    icon: Flag },
+  { id: "prayers",          label: "Prayers",           icon: Scroll },
+  { id: "blog",             label: "KeepGrow.ing",      icon: BookOpen },
+  { id: "verses",           label: "Verses",            icon: BookMarked },
+  { id: "faq",              label: "FAQ Report",        icon: FileText },
+  { id: "contacts",         label: "Contact",           icon: Mail },
 ];
 
 export default function Admin() {
@@ -998,6 +1000,11 @@ export default function Admin() {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* ── PRAYER REQUESTS INBOX ── */}
+              {activeTab === "prayer-requests" && (
+                <PrayerRequestsInbox />
               )}
 
               {/* ── CONTACT ── */}

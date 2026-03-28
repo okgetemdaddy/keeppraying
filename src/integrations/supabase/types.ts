@@ -757,6 +757,59 @@ export type Database = {
         }
         Relationships: []
       }
+      prayer_requests: {
+        Row: {
+          admin_response: string | null
+          assigned_prayer_id: string | null
+          created_at: string
+          escalation_batch: number
+          id: string
+          is_urgent: boolean
+          last_escalated_at: string | null
+          message: string
+          request_type: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          assigned_prayer_id?: string | null
+          created_at?: string
+          escalation_batch?: number
+          id?: string
+          is_urgent?: boolean
+          last_escalated_at?: string | null
+          message: string
+          request_type?: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          assigned_prayer_id?: string | null
+          created_at?: string
+          escalation_batch?: number
+          id?: string
+          is_urgent?: boolean
+          last_escalated_at?: string | null
+          message?: string
+          request_type?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_requests_assigned_prayer_id_fkey"
+            columns: ["assigned_prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prayer_standby: {
         Row: {
           expires_at: string | null
