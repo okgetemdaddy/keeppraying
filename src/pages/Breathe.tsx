@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SacredSpinner from "@/components/SacredSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SiteNav } from "@/components/SiteNav";
