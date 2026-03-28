@@ -164,10 +164,7 @@ export default function GroupDetail() {
     return (
       <div className="min-h-screen bg-background">
         <SiteNav />
-        <div className="flex justify-center py-24">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </div>
-      </div>
+        <SacredSpinner />
     );
   }
 

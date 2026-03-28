@@ -129,9 +129,7 @@ export default function AccountabilityCircles() {
 
         {/* Circles list */}
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
+          <SacredSpinner />
         ) : circles.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
