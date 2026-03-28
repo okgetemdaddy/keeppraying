@@ -850,6 +850,9 @@ function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record
           <PlusCircle className="w-4 h-4" /> Write a Prayer
         </Button>
       </div>
+      <Link to="/support#ai-stance" className="inline-block mt-6 text-xs hover:underline transition-colors" style={{ color: `${textColor}50` }}>
+        Our Stance on AI
+      </Link>
     </motion.div>
   );
 }
