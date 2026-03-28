@@ -30,6 +30,8 @@ import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Link } from "react-router-dom";
+import { PrayerCalendar } from "@/components/board/PrayerCalendar";
+import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
