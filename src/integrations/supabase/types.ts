@@ -93,8 +93,11 @@ export type Database = {
           description: string | null
           id: string
           invite_code: string
+          is_public: boolean
           max_members: number
           name: string
+          purpose: string | null
+          schedule: Json | null
           updated_at: string
         }
         Insert: {
@@ -104,8 +107,11 @@ export type Database = {
           description?: string | null
           id?: string
           invite_code?: string
+          is_public?: boolean
           max_members?: number
           name: string
+          purpose?: string | null
+          schedule?: Json | null
           updated_at?: string
         }
         Update: {
@@ -115,8 +121,11 @@ export type Database = {
           description?: string | null
           id?: string
           invite_code?: string
+          is_public?: boolean
           max_members?: number
           name?: string
+          purpose?: string | null
+          schedule?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -336,6 +345,92 @@ export type Database = {
         }
         Relationships: []
       }
+      circle_homework: {
+        Row: {
+          circle_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          homework_type: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          circle_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          homework_type?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          circle_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          homework_type?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_homework_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "accountability_circles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circle_homework_submissions: {
+        Row: {
+          content: string | null
+          homework_id: string
+          id: string
+          prayer_id: string | null
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          homework_id: string
+          id?: string
+          prayer_id?: string | null
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          homework_id?: string
+          id?: string
+          prayer_id?: string | null
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_homework_submissions_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "circle_homework"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_homework_submissions_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classical_prayers: {
         Row: {
           author: string
@@ -497,6 +592,92 @@ export type Database = {
         }
         Relationships: []
       }
+      family_homework: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          due_date: string | null
+          homework_type: string
+          id: string
+          room_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_date?: string | null
+          homework_type?: string
+          id?: string
+          room_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_date?: string | null
+          homework_type?: string
+          id?: string
+          room_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_homework_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "family_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      family_homework_submissions: {
+        Row: {
+          content: string | null
+          homework_id: string
+          id: string
+          prayer_id: string | null
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          homework_id: string
+          id?: string
+          prayer_id?: string | null
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          homework_id?: string
+          id?: string
+          prayer_id?: string | null
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "family_homework_submissions_homework_id_fkey"
+            columns: ["homework_id"]
+            isOneToOne: false
+            referencedRelation: "family_homework"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "family_homework_submissions_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       family_room_members: {
         Row: {
           id: string
@@ -577,6 +758,8 @@ export type Database = {
           id: string
           invite_code: string
           name: string
+          purpose: string | null
+          schedule: Json | null
           theme: string
           updated_at: string
         }
@@ -588,6 +771,8 @@ export type Database = {
           id?: string
           invite_code?: string
           name: string
+          purpose?: string | null
+          schedule?: Json | null
           theme?: string
           updated_at?: string
         }
@@ -599,6 +784,8 @@ export type Database = {
           id?: string
           invite_code?: string
           name?: string
+          purpose?: string | null
+          schedule?: Json | null
           theme?: string
           updated_at?: string
         }

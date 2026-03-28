@@ -20,8 +20,6 @@ import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
-import Groups from "./pages/Groups";
-import GroupDetail from "./pages/GroupDetail";
 import FamilyRooms from "./pages/FamilyRooms";
 import FamilyRoomDetail from "./pages/FamilyRoomDetail";
 import PrayTheWorld from "./pages/PrayTheWorld";
@@ -93,38 +91,43 @@ function AppShell() {
           </AuthGate>
         } />
 
-        {/* Prayer Groups */}
-        <Route path="/groups" element={
+        {/* Circles (unified prayer groups + accountability) */}
+        <Route path="/circles" element={
           <AuthGate
-            title="Prayer Groups"
-            subtitle="Join or create prayer groups with fellow believers. Share burdens, lift each other up, and experience the power of praying together."
+            title="Prayer Circles"
+            subtitle="Gather with friends, small groups, and accountability partners. Share prayers, assign growth homework, and walk together in faith."
             heroIcon={Users}
             features={[
-              { icon: Users, title: "Pray Together", description: "Create groups with friends, church members, or believers worldwide." },
-              { icon: BookOpen, title: "Share Prayer Cards", description: "Share your prayers with the group and pray for one another." },
-              { icon: Shield, title: "Private & Secure", description: "Groups are invite-only — a safe space to be vulnerable before God." },
+              { icon: Users, title: "Pray Together", description: "Create circles with friends, church members, or believers worldwide." },
+              { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, track engagement, and create shareable flyers." },
+              { icon: Shield, title: "Accountability & Growth", description: "Track streaks, share prayers, and encourage one another daily." },
+              { icon: Sparkles, title: "AI Encouragement", description: "Receive uplifting, Scripture-based encouragements for your circle." },
             ]}
             verse="For where two or three gather in my name, there am I with them."
             verseRef="Matthew 18:20"
           >
-            <Groups />
+            <AccountabilityCircles />
           </AuthGate>
         } />
-        <Route path="/groups/:id" element={
+        <Route path="/circles/:id" element={
           <AuthGate
-            title="Prayer Group"
-            subtitle="Step into a circle of believers who are lifting each other up in prayer. Together, you are stronger."
+            title="Your Circle"
+            subtitle="This is where community meets accountability — walking together in prayer and truth."
             heroIcon={Users}
             features={[
               { icon: Users, title: "Community Prayer", description: "See what others are praying and join in agreement." },
-              { icon: Heart, title: "Encourage One Another", description: "Leave words of encouragement on shared prayers." },
+              { icon: Heart, title: "Encourage One Another", description: "Leave words of encouragement and share your journey." },
             ]}
             verse="Carry each other's burdens, and in this way you will fulfill the law of Christ."
             verseRef="Galatians 6:2"
           >
-            <GroupDetail />
+            <CircleDetail />
           </AuthGate>
         } />
+
+        {/* Redirect old /groups to /circles */}
+        <Route path="/groups" element={<Navigate to="/circles" replace />} />
+        <Route path="/groups/:id" element={<Navigate to="/circles" replace />} />
 
         {/* Family Rooms */}
         <Route path="/family" element={
@@ -136,7 +139,7 @@ function AppShell() {
               { icon: Home, title: "Family Prayer Space", description: "A warm, safe environment designed for families to pray together." },
               { icon: Heart, title: "Child-Friendly Mode", description: "Optional settings that make prayer approachable for young hearts." },
               { icon: Users, title: "Invite Family Members", description: "Share an invite code so everyone can join your family room." },
-              { icon: BookOpen, title: "Shared Prayer Cards", description: "Family members can share and pray over each other's prayers." },
+              { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, and guide your family's prayer journey." },
             ]}
             verse="Train up a child in the way he should go; even when he is old he will not depart from it."
             verseRef="Proverbs 22:6"
@@ -157,40 +160,6 @@ function AppShell() {
             verseRef="Joshua 24:15"
           >
             <FamilyRoomDetail />
-          </AuthGate>
-        } />
-
-        {/* Accountability Circles */}
-        <Route path="/circles" element={
-          <AuthGate
-            title="Accountability Circles"
-            subtitle="Walk alongside a small group of believers committed to growing deeper in prayer and faithfulness. Iron sharpens iron."
-            heroIcon={Shield}
-            features={[
-              { icon: Shield, title: "Accountability Partners", description: "Small, intentional groups of up to 5 who keep each other steadfast." },
-              { icon: Sparkles, title: "AI Encouragement", description: "Receive uplifting, Scripture-based encouragements tailored to your circle." },
-              { icon: Flame, title: "Streak Tracking", description: "See how consistently your circle is showing up in prayer." },
-              { icon: Users, title: "Invite-Only", description: "Share a code to invite trusted brothers and sisters in Christ." },
-            ]}
-            verse="As iron sharpens iron, so one person sharpens another."
-            verseRef="Proverbs 27:17"
-          >
-            <AccountabilityCircles />
-          </AuthGate>
-        } />
-        <Route path="/circles/:id" element={
-          <AuthGate
-            title="Your Circle"
-            subtitle="This is where accountability meets grace — walking together in prayer and truth."
-            heroIcon={Shield}
-            features={[
-              { icon: Shield, title: "Shared Prayers", description: "Share what's on your heart with those who truly care." },
-              { icon: Sparkles, title: "Encouragement", description: "Receive and give words of life to one another." },
-            ]}
-            verse="Therefore encourage one another and build each other up."
-            verseRef="1 Thessalonians 5:11"
-          >
-            <CircleDetail />
           </AuthGate>
         } />
 

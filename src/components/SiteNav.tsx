@@ -10,9 +10,8 @@ import { NotificationBell } from "@/components/NotificationBell";
 const NAV_LINKS = [
   { label: "Prayers", href: "/prayers" },
   { label: "Breathe", href: "/breathe" },
-  { label: "Groups", href: "/groups" },
-  { label: "Family", href: "/family" },
   { label: "Circles", href: "/circles" },
+  { label: "Family", href: "/family" },
   { label: "Testify", href: "/testify" },
   { label: "PrayerAssist.ing", href: "/assistant" },
   { label: "Sermon Mode", href: "/sermon-sync" },
