@@ -1,4 +1,5 @@
 import { useState } from "react";
+import VerseLink from "@/components/VerseLink";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
