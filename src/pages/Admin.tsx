@@ -68,12 +68,13 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests";
+type TabId = "overview" | "moderation" | "prayers" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "overview",         label: "Overview",          icon: LayoutDashboard },
   { id: "moderation",       label: "Review Queue",      icon: Shield },
   { id: "prayer-requests",  label: "Prayer Requests",   icon: Heart },
+  { id: "feedback",         label: "Feedback",          icon: MessageSquare },
   { id: "users",            label: "User Management",   icon: Users },
   { id: "insights",         label: "Analytics",         icon: BarChart2 },
   { id: "testimonies",      label: "Moderation Log",    icon: Flag },
