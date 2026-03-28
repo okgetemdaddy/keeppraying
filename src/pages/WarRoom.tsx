@@ -590,6 +590,7 @@ export default function WarRoom() {
           </div>
         </div>
       </div>
+      <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
     </div>
   );
 }
