@@ -169,7 +169,7 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute right-0 top-full mt-2 w-72 z-50 rounded-2xl border border-border bg-card/98 backdrop-blur-xl overflow-hidden py-2"
+              className="absolute right-0 top-full mt-2 w-72 z-50 rounded-2xl border border-border bg-card backdrop-blur-xl overflow-hidden py-2 shadow-xl"
               style={{ boxShadow: "var(--shadow-lift)" }}
             >
               {MORE_LINKS.map(({ label, href, icon: Icon, description }) => (
