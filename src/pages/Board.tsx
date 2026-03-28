@@ -353,68 +353,59 @@ export default function Board() {
 
         {/* ── Desktop control row (below nav) ── */}
         {!isMobile && (
-          <div
-            className="border-b"
-            style={{
-              background: "rgba(0,0,0,0.18)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              borderColor: "rgba(255,255,255,0.08)",
-            }}
-          >
-            <div className="container mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <ThemeSelector
-                  currentTheme={prefs.theme}
-                  animationsEnabled={prefs.animations_enabled}
-                  onThemeChange={(id) => savePrefs({ theme: id })}
-                  onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
-                />
-                <StandbyToggle compact dark />
-                <div className="w-px h-5 bg-white/10 mx-1" />
-                <Link to="/circles" state={{ from: "board" }}>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors">
-                    <Users className="w-3.5 h-3.5" />
-                    Circles
-                  </button>
-                </Link>
-                <Link to="/family" state={{ from: "board" }}>
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors">
-                    <Home className="w-3.5 h-3.5" />
-                    Family
-                  </button>
-                </Link>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setAddOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(42 85% 46%) 0%, hsl(38 80% 42%) 100%)",
-                    color: "white",
-                    boxShadow: "0 2px 8px hsl(42 85% 46% / 0.3)",
-                  }}
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  Add Prayer
+          <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <ThemeSelector
+                currentTheme={prefs.theme}
+                animationsEnabled={prefs.animations_enabled}
+                onThemeChange={(id) => savePrefs({ theme: id })}
+                onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+              />
+              <StandbyToggle compact dark />
+              <Link to="/circles" state={{ from: "board" }}>
+                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/80 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <Users className="w-3.5 h-3.5" />
+                  Circles
                 </button>
-                {saved.length > 0 && (
-                  <button
-                    onClick={() => openPlaylist()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                  >
-                    <ListMusic className="w-3.5 h-3.5" />
-                    Playlist
-                  </button>
-                )}
-                <button
-                  onClick={() => setImmersive(i => !i)}
-                  className="p-2 rounded-xl text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors"
-                  title="Immersive mode"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
+              </Link>
+              <Link to="/family" state={{ from: "board" }}>
+                <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/80 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <Home className="w-3.5 h-3.5" />
+                  Family
                 </button>
-              </div>
+              </Link>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setAddOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium transition-all border border-white/20 hover:border-white/30 backdrop-blur-xl"
+                style={{
+                  background: "linear-gradient(135deg, hsl(42 85% 46% / 0.35) 0%, hsl(38 80% 42% / 0.25) 100%)",
+                  color: "rgba(255,255,255,0.95)",
+                  boxShadow: "0 2px 12px hsl(42 85% 46% / 0.2)",
+                }}
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Add Prayer
+              </button>
+              {saved.length > 0 && (
+                <button
+                  onClick={() => openPlaylist()}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-white/80 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all"
+                  style={{ background: "rgba(255,255,255,0.08)" }}
+                >
+                  <ListMusic className="w-3.5 h-3.5" />
+                  Playlist
+                </button>
+              )}
+              <button
+                onClick={() => setImmersive(i => !i)}
+                className="p-2 rounded-xl text-white/60 hover:text-white backdrop-blur-xl border border-white/15 hover:border-white/25 hover:bg-white/10 transition-all"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+                title="Immersive mode"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         )}
