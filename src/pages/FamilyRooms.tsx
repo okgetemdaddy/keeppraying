@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamilyRooms } from "@/hooks/useFamilyRooms";
+import { useBackLink } from "@/hooks/useBackLink";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default function FamilyRooms() {
   const { rooms, loading, createRoom, joinByCode } = useFamilyRooms();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const backLink = useBackLink();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -128,11 +130,13 @@ export default function FamilyRooms() {
           </div>
         )}
 
-        <div className="text-center pt-10">
-          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-            ← Back to My Board
-          </Link>
-        </div>
+        {backLink && (
+          <div className="text-center pt-10">
+            <Link to={backLink.to} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              ← {backLink.label}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Create Dialog */}

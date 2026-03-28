@@ -526,6 +526,7 @@ export default function Profile() {
                 <Link
                   key={link.href}
                   to={link.href}
+                  state={link.href === "/family" || link.href === "/circles" ? { from: "profile" } : undefined}
                   className="flex items-center gap-2.5 p-3 rounded-xl border border-border/50 bg-card/30 hover:bg-card/60 transition-colors text-sm text-foreground/80 hover:text-foreground"
                 >
                   <link.icon className="w-4 h-4 text-primary/70" />

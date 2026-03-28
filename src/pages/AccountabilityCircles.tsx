@@ -5,6 +5,7 @@ import VerseLink from "@/components/VerseLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccountabilityCircles } from "@/hooks/useAccountabilityCircles";
+import { useBackLink } from "@/hooks/useBackLink";
 import { useToast } from "@/hooks/use-toast";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ export default function AccountabilityCircles() {
   const { user } = useAuth();
   const { circles, loading, refetch } = useAccountabilityCircles();
   const { toast } = useToast();
+  const backLink = useBackLink();
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -208,11 +210,13 @@ export default function AccountabilityCircles() {
           "As iron sharpens iron, so one person sharpens another." — <VerseLink reference="Proverbs 27:17" />
         </p>
 
-        <div className="text-center pt-10">
-          <Link to="/board" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-            ← Back to My Board
-          </Link>
-        </div>
+        {backLink && (
+          <div className="text-center pt-10">
+            <Link to={backLink.to} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              ← {backLink.label}
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Create dialog */}
