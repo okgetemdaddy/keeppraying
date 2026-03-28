@@ -142,7 +142,7 @@ export default function AccountabilityCircles() {
               You're not in any circles yet. Create one or join with an invite code.
             </p>
             <p className="verse-text text-xs">
-              "As iron sharpens iron, so one person sharpens another." — Proverbs 27:17
+              "As iron sharpens iron, so one person sharpens another." — <VerseLink reference="Proverbs 27:17" />
             </p>
           </motion.div>
         ) : (
