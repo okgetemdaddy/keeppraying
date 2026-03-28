@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import Comments from "@/components/Comments";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
-import { TestifyBack } from "@/components/board/TestifyBack";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
