@@ -142,7 +142,7 @@ function AppShell() {
             features={[
               { icon: Home, title: "Family Prayer Space", description: "A warm, safe environment designed for families to pray together." },
               { icon: Heart, title: "Child-Friendly Mode", description: "Optional settings that make prayer approachable for young hearts." },
-              { icon: Users, title: "Invite Family Members", description: "Share an invite code so everyone can join your family room." },
+              { icon: Users, title: "Invite Family Members", description: "Share a magic invite link so everyone can join your family room." },
               { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, and guide your family's prayer journey." },
             ]}
             verse="Train up a child in the way he should go; even when he is old he will not depart from it."
