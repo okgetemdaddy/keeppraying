@@ -431,6 +431,18 @@ export default function Profile() {
 
       {/* ── MAIN CONTENT ── */}
       <div className="max-w-5xl mx-auto px-4 pb-20 space-y-8">
+        {/* ── Verse of the Day ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="overflow-hidden">
+            <CardContent className="p-5">
+              <VerseOfTheDay light />
+            </CardContent>
+          </Card>
+        </motion.section>
         {/* ── Stats Dashboard ── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
