@@ -425,6 +425,12 @@ export default function Board() {
         onClassical={() => setClassicalOpen(true)}
         hasPrayers={saved.length > 0}
         isMobile={isMobile}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        currentTheme={prefs.theme}
+        animationsEnabled={prefs.animations_enabled}
+        onThemeChange={(id) => savePrefs({ theme: id })}
+        onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
       />
 
       {/* Main content */}
