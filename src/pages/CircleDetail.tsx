@@ -21,7 +21,7 @@ import {
   ArrowLeft, Users, Heart, Flame, Sparkles, Loader2,
   Share2, LogOut, Trash2, Shield, BookOpen, Calendar, Plus,
   PlusCircle, Check, Crown, ClipboardList, Globe, Lock,
-  ArrowUpDown, UserMinus, CheckCircle2, Clock, FileText,
+  ArrowUpDown, UserMinus, CheckCircle2, Clock,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
