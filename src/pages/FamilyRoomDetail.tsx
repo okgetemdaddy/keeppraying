@@ -42,7 +42,7 @@ export default function FamilyRoomDetail() {
   const [sharePrayerId, setSharePrayerId] = useState("");
   const [sharing, setSharing] = useState(false);
   const [userPrayers, setUserPrayers] = useState<PrayerCard[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [membersOpen, setMembersOpen] = useState(false);
 
