@@ -1350,6 +1350,7 @@ export type Database = {
       }
       testimonies: {
         Row: {
+          answered_date: string | null
           body: string
           created_at: string
           flagged: boolean
@@ -1362,6 +1363,7 @@ export type Database = {
           verses: Json | null
         }
         Insert: {
+          answered_date?: string | null
           body: string
           created_at?: string
           flagged?: boolean
@@ -1374,6 +1376,7 @@ export type Database = {
           verses?: Json | null
         }
         Update: {
+          answered_date?: string | null
           body?: string
           created_at?: string
           flagged?: boolean
@@ -1510,6 +1513,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "testimony_praises_testimony_id_fkey"
+            columns: ["testimony_id"]
+            isOneToOne: false
+            referencedRelation: "testimonies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      testimony_updates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          testimony_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          testimony_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          testimony_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimony_updates_testimony_id_fkey"
             columns: ["testimony_id"]
             isOneToOne: false
             referencedRelation: "testimonies"
