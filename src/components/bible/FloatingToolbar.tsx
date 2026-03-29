@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 /* ── Colour swatches ── */
 const SWATCH_COLORS = [
@@ -64,6 +65,11 @@ export function FloatingToolbar({
   isAuthenticated,
 }: FloatingToolbarProps) {
   const [showNoteInput, setShowNoteInput] = useState(false);
+  const isMobile = useIsMobile();
+
+  const toolbarStyle = isMobile
+    ? { left: "50%", transform: "translateX(-50%)", top: position.y }
+    : { left: position.x, top: position.y, transform: "translateX(-50%)" };
 
   if (!isAuthenticated) {
     return (
@@ -72,8 +78,8 @@ export function FloatingToolbar({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="fixed z-50 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
-        style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
+        className="fixed z-50 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl max-w-[calc(100vw-2rem)]"
+        style={toolbarStyle}
       >
         <p className="text-sm text-muted-foreground">Sign in to highlight, bookmark & take notes</p>
       </motion.div>
@@ -91,8 +97,8 @@ export function FloatingToolbar({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 8 }}
       transition={{ duration: 0.15 }}
-      className="fixed z-50 rounded-xl border border-border bg-card shadow-2xl"
-      style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
+      className="fixed z-50 rounded-xl border border-border bg-card shadow-2xl max-w-[calc(100vw-2rem)]"
+      style={toolbarStyle}
     >
       <div className="flex items-center gap-1 px-2 py-1.5">
         {/* ── Colour swatches ── */}
