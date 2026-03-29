@@ -142,14 +142,6 @@ export function TestimonyCardFace({
         style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 50%, transparent 100%)" }}
       />
 
-      {/* Decorative quote */}
-      <div
-        className="absolute top-2 right-4 font-display font-bold leading-none select-none pointer-events-none"
-        style={{ fontSize: "5rem", lineHeight: 1, color: `${accentColor}15` }}
-        aria-hidden
-      >
-        🙌
-      </div>
 
       <div className="relative flex flex-col gap-3 flex-1">
         {/* Answered date — editable for owner */}
