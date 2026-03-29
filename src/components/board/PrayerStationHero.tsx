@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { StandbyToggle } from "@/components/StandbyToggle";
+import { VerseOfTheDay } from "@/components/board/VerseOfTheDay";
 import {
   PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp,
 } from "lucide-react";
