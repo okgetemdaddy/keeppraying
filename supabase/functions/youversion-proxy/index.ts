@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     const yvResponse = await fetch(`https://api.youversion.com/v1${endpoint}`, {
       headers: {
-        "X-YouVersion-Developer-Token": appKey,
+        "X-YVP-App-Key": appKey,
         Accept: "application/json",
       },
     });
