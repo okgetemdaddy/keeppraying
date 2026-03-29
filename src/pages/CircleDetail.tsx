@@ -38,7 +38,7 @@ export default function CircleDetail() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  const [shareOpen, setShareOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [encourageLoading, setEncourageLoading] = useState(false);
