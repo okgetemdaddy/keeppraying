@@ -14,6 +14,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Loader2, BookOpen, ArrowRight, Share2, Flag } from "lucide-react";
+import { FormattedText } from "@/lib/FormattedText";
 
 interface Profile {
   id: string;

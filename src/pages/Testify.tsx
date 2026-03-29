@@ -19,6 +19,7 @@ import {
   ChevronDown, Bird, ArrowRight, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FormattedText } from "@/lib/FormattedText";
 
 interface Profile {
   id: string;
