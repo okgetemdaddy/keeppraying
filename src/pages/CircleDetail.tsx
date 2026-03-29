@@ -259,7 +259,7 @@ export default function CircleDetail() {
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)} className="rounded-xl gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)} className="rounded-xl gap-1.5 text-xs">
                 <Share2 className="w-3.5 h-3.5" /> Invite
               </Button>
               {isLeader && (
