@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
-import { Globe, Radio, Megaphone, FileText } from "lucide-react";
+import { Globe, Radio, Megaphone } from "lucide-react";
 import WorldMap from "@/components/map/WorldMap";
 import LocalRadar from "@/components/map/LocalRadar";
 import GrowthCTA from "@/components/map/GrowthCTA";
