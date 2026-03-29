@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import Comments from "@/components/Comments";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
+import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -105,11 +106,30 @@ export function BoardCard({
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(0.48);
+  const [hasTestimony, setHasTestimony] = useState(false);
+  const [userTestimony, setUserTestimony] = useState<any>(null);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
   const [savingFont, setSavingFont] = useState(false);
   const [fontOpen, setFontOpen] = useState(false);
+
+  // Check if user has a testimony for this prayer
+  useEffect(() => {
+    if (!userId || !item.prayer_cards?.id) return;
+    supabase
+      .from("testimonies")
+      .select("id, body, title, verses, praise_count, created_at, user_id")
+      .eq("prayer_id", item.prayer_cards.id)
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setHasTestimony(true);
+          setUserTestimony(data);
+        }
+      });
+  }, [userId, item.prayer_cards?.id]);
 
   if (!card) return null;
 
@@ -564,10 +584,10 @@ export function BoardCard({
                 <button
                   onClick={() => setFlipped(true)}
                   className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
-                  title="Share your testimony"
+                  title={hasTestimony ? "See your testimony" : "Share your testimony"}
                 >
                   <Bird className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Testify</span>
+                  <span className="hidden sm:inline">{hasTestimony ? "See Testimony" : "Testify"}</span>
                 </button>
               )}
               <ActionButtons
@@ -615,10 +635,10 @@ export function BoardCard({
                 onClick={() => setFlipped(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105"
                 style={{ background: `${accentColor}15`, color: accentColor }}
-                title="Share your testimony"
+                title={hasTestimony ? "See your testimony" : "Share your testimony"}
               >
                 <Bird className="w-3.5 h-3.5" />
-                Testify 🕊️
+                {hasTestimony ? "See Testimony ✨" : "Testify 🕊️"}
               </button>
             )}
           </div>
@@ -659,7 +679,15 @@ export function BoardCard({
             minHeight: size === "large" ? 320 : size === "medium" ? 220 : 140,
           }}
         >
-          {flipped && (
+          {flipped && hasTestimony && userTestimony ? (
+            <TestimonyCardFace
+              testimony={userTestimony}
+              onFlipBack={() => setFlipped(false)}
+              accentColor={accentColor}
+              textColor={textColor}
+              cardBg={cardBg}
+            />
+          ) : flipped ? (
             <TestifyBack
               prayerId={card.id}
               prayerAuthorId={card.created_by}
@@ -668,7 +696,7 @@ export function BoardCard({
               textColor={textColor}
               cardBg={cardBg}
             />
-          )}
+          ) : null}
         </motion.div>
       </motion.div>{/* end layout motion.div */}
 

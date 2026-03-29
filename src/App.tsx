@@ -20,6 +20,7 @@ import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
+import TestimonyDetail from "./pages/TestimonyDetail";
 import FamilyRooms from "./pages/FamilyRooms";
 import FamilyRoomDetail from "./pages/FamilyRoomDetail";
 import PrayTheWorld from "./pages/PrayTheWorld";
@@ -190,6 +191,7 @@ function AppShell() {
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/testify" element={<Testify />} />
+        <Route path="/testimony/:id" element={<TestimonyDetail />} />
         <Route path="/we-pray" element={<PrayTheWorld />} />
         <Route path="/pray-the-world" element={<Navigate to="/we-pray" replace />} />
         <Route path="/sermon-sync" element={<SermonSync />} />

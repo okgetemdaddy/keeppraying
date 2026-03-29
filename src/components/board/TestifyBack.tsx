@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
-  Heart, Share2, Bookmark, Flag, MessageCircle,
-  ChevronDown, ChevronUp, Loader2, SendHorizontal, Sparkles,
+  Share2, Flag, MessageCircle,
+  ChevronDown, Loader2, Sparkles, SendHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { TestimonyEnrichModal } from "./TestimonyEnrichModal";
 
 interface Profile {
   id: string;
@@ -25,11 +24,13 @@ interface Testimony {
   prayer_id: string;
   user_id: string;
   body: string;
+  title: string | null;
+  verses: any[];
+  praise_count: number;
   flagged: boolean;
   created_at: string;
   profiles?: Profile | null;
-  likes_count?: number;
-  user_liked?: boolean;
+  user_praised?: boolean;
   user_flagged?: boolean;
   comments?: TestimonyComment[];
   comments_count?: number;
@@ -81,11 +82,11 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
   const [loadingTestimonies, setLoadingTestimonies] = useState(true);
   const [body, setBody] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
+  const [enrichModalOpen, setEnrichModalOpen] = useState(false);
 
   const MAX_CHARS = 4000;
   const subtleText = `${textColor}70`;
@@ -101,38 +102,38 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
 
       if (!testimonyData) { setLoadingTestimonies(false); return; }
 
-      // Fetch likes counts + user's likes
       const ids = testimonyData.map(t => t.id);
-      const [{ data: likesData }, { data: flagsData }, { data: commentsCountData }] = await Promise.all([
-        ids.length ? supabase.from("testimony_likes").select("testimony_id, user_id").in("testimony_id", ids) : { data: [] },
+      const [{ data: praisesData }, { data: flagsData }, { data: commentsCountData }] = await Promise.all([
+        ids.length ? supabase.from("testimony_praises").select("testimony_id, user_id").in("testimony_id", ids) : { data: [] },
         user && ids.length ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
         ids.length ? supabase.from("testimony_comments").select("testimony_id").in("testimony_id", ids) : { data: [] },
       ]);
 
-      const likesMap: Record<string, number> = {};
-      const userLikedSet = new Set<string>();
-      (likesData || []).forEach((l: { testimony_id: string; user_id: string }) => {
-        likesMap[l.testimony_id] = (likesMap[l.testimony_id] || 0) + 1;
-        if (l.user_id === user?.id) userLikedSet.add(l.testimony_id);
+      const praiseMap: Record<string, number> = {};
+      const userPraisedSet = new Set<string>();
+      (praisesData || []).forEach((p: any) => {
+        praiseMap[p.testimony_id] = (praiseMap[p.testimony_id] || 0) + 1;
+        if (p.user_id === user?.id) userPraisedSet.add(p.testimony_id);
       });
 
-      const userFlaggedSet = new Set((flagsData || []).map((f: { testimony_id: string }) => f.testimony_id));
+      const userFlaggedSet = new Set((flagsData || []).map((f: any) => f.testimony_id));
 
       const commentsCountMap: Record<string, number> = {};
-      (commentsCountData || []).forEach((c: { testimony_id: string }) => {
+      (commentsCountData || []).forEach((c: any) => {
         commentsCountMap[c.testimony_id] = (commentsCountMap[c.testimony_id] || 0) + 1;
       });
 
       const enriched: Testimony[] = testimonyData.map(t => ({
         ...t,
+        title: (t as any).title || null,
+        verses: Array.isArray((t as any).verses) ? (t as any).verses : [],
+        praise_count: (t as any).praise_count || praiseMap[t.id] || 0,
         profiles: Array.isArray(t.profiles) ? t.profiles[0] : t.profiles,
-        likes_count: likesMap[t.id] || 0,
-        user_liked: userLikedSet.has(t.id),
+        user_praised: userPraisedSet.has(t.id),
         user_flagged: userFlaggedSet.has(t.id),
         comments_count: commentsCountMap[t.id] || 0,
       }));
 
-      // Author's testimony always first
       enriched.sort((a, b) => {
         const aIsAuthor = a.user_id === prayerAuthorId ? -1 : 0;
         const bIsAuthor = b.user_id === prayerAuthorId ? -1 : 0;
@@ -148,69 +149,22 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
 
   useEffect(() => { fetchTestimonies(); }, [prayerId, user?.id]);
 
-  const handleSubmit = async () => {
-    if (!user) { toast({ title: "Sign in to testify 🙏" }); return; }
-    if (body.trim().length < 10) { toast({ title: "Please write a bit more about your testimony." }); return; }
-    setSubmitting(true);
-    try {
-      // Moderate first
-      let approved = true;
-      let shouldFlag = false;
-      try {
-        const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-testimony`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ testimony_body: body.trim() }),
-        });
-        if (modResp.ok) {
-          const modResult = await modResp.json();
-          approved = modResult.approved;
-          shouldFlag = modResult.flagged || false;
-          if (!approved) {
-            toast({ title: "Testimony not accepted", description: modResult.reason || "Please revise your testimony.", variant: "destructive" });
-            setSubmitting(false);
-            return;
-          }
-        }
-      } catch { /* fail open */ }
-
-      const { error } = await supabase.from("testimonies").insert({
-        prayer_id: prayerId,
-        user_id: user.id,
-        body: body.trim(),
-        flagged: shouldFlag,
-      });
-
-      if (error) throw error;
-      toast({ title: "Testimony shared! 🙌 Glory to God!" });
-      setBody("");
-      fetchTestimonies();
-    } catch (err) {
-      toast({ title: "Failed to share testimony", description: err instanceof Error ? err.message : "Try again", variant: "destructive" });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const toggleLike = async (testimony: Testimony) => {
-    if (!user) { toast({ title: "Sign in to like 🙏" }); return; }
-    if (testimony.user_liked) {
-      await supabase.from("testimony_likes").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
+  const togglePraise = async (testimony: Testimony) => {
+    if (!user) { toast({ title: "Sign in to praise 🙏" }); return; }
+    if (testimony.user_praised) {
+      await supabase.from("testimony_praises").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
     } else {
-      await supabase.from("testimony_likes").insert({ testimony_id: testimony.id, user_id: user.id });
+      await supabase.from("testimony_praises").insert({ testimony_id: testimony.id, user_id: user.id } as any);
     }
     setTestimonies(prev => prev.map(t => t.id === testimony.id ? {
       ...t,
-      user_liked: !t.user_liked,
-      likes_count: (t.likes_count || 0) + (t.user_liked ? -1 : 1),
+      user_praised: !t.user_praised,
+      praise_count: (t.praise_count || 0) + (t.user_praised ? -1 : 1),
     } : t));
   };
 
   const handleShare = (testimony: Testimony) => {
-    const url = `${window.location.origin}/testify?t=${testimony.id}`;
+    const url = `${window.location.origin}/testimony/${testimony.id}`;
     navigator.clipboard.writeText(url).then(() => toast({ title: "Testimony link copied! 🔗" }));
   };
 
@@ -229,19 +183,12 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
       .eq("testimony_id", testimonyId)
       .order("created_at", { ascending: true });
     if (!commentsData) return;
-
-    // Fetch profiles separately
     const userIds = [...new Set(commentsData.map(c => c.user_id))];
     const { data: profilesData } = userIds.length
       ? await supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds)
       : { data: [] };
     const profilesMap = Object.fromEntries((profilesData || []).map(p => [p.id, p]));
-
-    const comments: TestimonyComment[] = commentsData.map(c => ({
-      ...c,
-      profiles: profilesMap[c.user_id] || null,
-    }));
-
+    const comments: TestimonyComment[] = commentsData.map(c => ({ ...c, profiles: profilesMap[c.user_id] || null }));
     setTestimonies(prev => prev.map(t => t.id === testimonyId ? { ...t, comments } : t));
   };
 
@@ -266,6 +213,12 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
   };
 
   const alreadyTestified = user && testimonies.some(t => t.user_id === user.id);
+
+  const handleShareClick = () => {
+    if (!user) { toast({ title: "Sign in to testify 🙏" }); return; }
+    if (body.trim().length < 10) { toast({ title: "Please write a bit more about your testimony." }); return; }
+    setEnrichModalOpen(true);
+  };
 
   return (
     <div
@@ -301,13 +254,13 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                 {body.length}/{MAX_CHARS}
               </span>
               <Button
-                onClick={handleSubmit}
-                disabled={submitting || body.trim().length < 10}
+                onClick={handleShareClick}
+                disabled={body.trim().length < 10}
                 size="sm"
                 className="rounded-xl gap-1.5 h-8 text-xs font-semibold"
                 style={{ background: accentColor, color: "white" }}
               >
-                {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                <Sparkles className="w-3.5 h-3.5" />
                 Share Testimony
               </Button>
             </div>
@@ -355,7 +308,6 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                 <div key={testimony.id} className="rounded-xl border overflow-hidden"
                   style={{ borderColor: isAuthor ? `${accentColor}40` : `${textColor}12`, background: isAuthor ? `${accentColor}08` : `${textColor}04` }}>
 
-                  {/* Chip header — always visible */}
                   <button
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:opacity-80 transition-opacity"
                     onClick={() => setExpandedId(isExpanded ? null : testimony.id)}
@@ -372,16 +324,9 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                             Author
                           </span>
                         )}
-                        {testimony.flagged && (
-                          <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
-                            style={{ background: "hsl(0 72% 51% / 0.15)", color: "hsl(0 72% 51%)" }}>
-                            In review
-                          </span>
-                        )}
                       </div>
                       <p className="text-[10px] truncate" style={{ color: subtleText }}>
-                        {new Date(testimony.created_at).toLocaleDateString()} ·{" "}
-                        {testimony.body.slice(0, 60)}{testimony.body.length > 60 ? "…" : ""}
+                        {testimony.title || (testimony.body.slice(0, 60) + (testimony.body.length > 60 ? "…" : ""))}
                       </p>
                     </div>
                     <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
@@ -389,7 +334,6 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                     </motion.div>
                   </button>
 
-                  {/* Expanded testimony */}
                   <AnimatePresence initial={false}>
                     {isExpanded && (
                       <motion.div
@@ -400,21 +344,21 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                         className="overflow-hidden"
                       >
                         <div className="px-3 pb-3 space-y-3 border-t" style={{ borderColor: `${textColor}10` }}>
-                          {/* Full testimony body */}
                           <p className="text-sm leading-relaxed pt-2 whitespace-pre-wrap" style={{ color: `${textColor}dd` }}>
                             {testimony.body}
                           </p>
 
-                          {/* Social actions */}
+                          {/* Social actions — Praise Hands replaces Heart */}
                           <div className="flex items-center gap-0.5 flex-wrap">
-                            <button
-                              onClick={() => toggleLike(testimony)}
+                            <motion.button
+                              onClick={() => togglePraise(testimony)}
+                              whileTap={{ scale: 1.3 }}
                               className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors hover:bg-accent/40"
-                              style={{ color: testimony.user_liked ? "hsl(0 72% 51%)" : subtleText }}
+                              style={{ color: testimony.user_praised ? accentColor : subtleText }}
                             >
-                              <Heart className={cn("w-3 h-3", testimony.user_liked && "fill-current")} />
-                              <span>{testimony.likes_count || 0}</span>
-                            </button>
+                              <span className="text-sm">🙌</span>
+                              <span>{testimony.praise_count || 0}</span>
+                            </motion.button>
 
                             <button
                               onClick={() => handleShare(testimony)}
@@ -446,14 +390,9 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                                 <Flag className="w-3 h-3" />
                               </button>
                             )}
-                            {testimony.user_flagged && (
-                              <span className="flex items-center gap-1 px-2 py-1 text-xs" style={{ color: "hsl(0 72% 51% / 0.6)" }}>
-                                <Flag className="w-3 h-3 fill-current" /> Flagged
-                              </span>
-                            )}
                           </div>
 
-                          {/* Comments section */}
+                          {/* Comments */}
                           <AnimatePresence>
                             {showComments[testimony.id] && (
                               <motion.div
@@ -525,6 +464,18 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
           Back to Prayer
         </button>
       </div>
+
+      {/* AI Enrichment Modal */}
+      <TestimonyEnrichModal
+        open={enrichModalOpen}
+        onOpenChange={setEnrichModalOpen}
+        testimonyBody={body.trim()}
+        prayerId={prayerId}
+        onSuccess={() => {
+          setBody("");
+          fetchTestimonies();
+        }}
+      />
     </div>
   );
 }

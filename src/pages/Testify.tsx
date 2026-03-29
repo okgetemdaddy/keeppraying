@@ -12,7 +12,10 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import {
-  Search, X, Loader2, Heart, Share2, Flag, MessageCircle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Search, X, Loader2, Share2, Flag, MessageCircle,
   ChevronDown, Bird, ArrowRight, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -71,11 +74,13 @@ function StandaloneTestimonyCard({
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userLiked, setUserLiked] = useState(testimony.user_liked || false);
-  const [likesCount, setLikesCount] = useState(testimony.likes_count || 0);
+  const [userPraised, setUserPraised] = useState(testimony.user_liked || false);
+  const [praiseCount, setPraiseCount] = useState(testimony.likes_count || 0);
   const [userFlagged, setUserFlagged] = useState(testimony.user_flagged || false);
   const [expanded, setExpanded] = useState(false);
   const [prayerOpen, setPrayerOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [praiseAnimating, setPraiseAnimating] = useState(false);
 
   const TRUNCATE_AT = 480;
   const isLong = testimony.body.length > TRUNCATE_AT;
@@ -87,21 +92,35 @@ function StandaloneTestimonyCard({
     month: "short", day: "numeric", year: "numeric",
   });
 
-  const toggleLike = async (e: React.MouseEvent) => {
+  const handlePraise = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!user) { toast({ title: "Sign in to like 🙏" }); return; }
-    if (userLiked) {
-      await supabase.from("testimony_likes").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
-      setUserLiked(false); setLikesCount(c => Math.max(0, c - 1));
+    if (!user) { toast({ title: "Sign in to praise 🙏" }); return; }
+    setPraiseAnimating(true);
+    setTimeout(() => setPraiseAnimating(false), 400);
+    if (userPraised) {
+      setUserPraised(false); setPraiseCount(c => Math.max(0, c - 1));
+      await supabase.from("testimony_praises").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
+      await supabase.from("user_saved_testimonies").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
     } else {
-      await supabase.from("testimony_likes").insert({ testimony_id: testimony.id, user_id: user.id });
-      setUserLiked(true); setLikesCount(c => c + 1);
+      // Show save dialog
+      setSaveDialogOpen(true);
+    }
+  };
+
+  const handleSaveDecision = async (save: boolean) => {
+    if (!user) return;
+    setSaveDialogOpen(false);
+    setUserPraised(true); setPraiseCount(c => c + 1);
+    await supabase.from("testimony_praises").insert({ testimony_id: testimony.id, user_id: user.id } as any);
+    if (save) {
+      await supabase.from("user_saved_testimonies").insert({ testimony_id: testimony.id, user_id: user.id } as any);
+      toast({ title: "Testimony saved to your board! 🙌" });
     }
   };
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/testify?t=${testimony.id}`;
+    const url = `${window.location.origin}/testimony/${testimony.id}`;
     navigator.clipboard.writeText(url).then(() => toast({ title: "Testimony link copied! 🔗" }));
   };
 
@@ -225,14 +244,16 @@ function StandaloneTestimonyCard({
 
             {/* Actions */}
             <div className="flex items-center gap-0.5">
-              <button
-                onClick={toggleLike}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-red-50 active:scale-95"
-                style={{ color: userLiked ? "hsl(0 72% 51%)" : "hsl(25 18% 58%)" }}
+              <motion.button
+                onClick={handlePraise}
+                animate={praiseAnimating ? { scale: [1, 1.35, 1] } : {}}
+                transition={{ duration: 0.35, type: "spring" }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40 active:scale-95"
+                style={{ color: userPraised ? "hsl(42 75% 40%)" : "hsl(25 18% 58%)" }}
               >
-                <Heart className={cn("w-3.5 h-3.5 transition-all", userLiked && "fill-current scale-110")} />
-                <span className="font-medium">{likesCount > 0 ? likesCount : ""}</span>
-              </button>
+                <span className="text-base">🙌</span>
+                <span className="font-medium">{praiseCount > 0 ? praiseCount : ""}</span>
+              </motion.button>
 
               <button
                 onClick={handleShare}
@@ -312,6 +333,26 @@ function StandaloneTestimonyCard({
           </SheetContent>
         </Sheet>
       )}
+
+      {/* Save dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Save this testimony?</DialogTitle>
+            <DialogDescription>
+              Would you like to save this testimony to your prayer board?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-2">
+            <Button onClick={() => handleSaveDecision(true)} className="flex-1 btn-gold rounded-xl gap-1.5">
+              🙌 Yes, save it
+            </Button>
+            <Button onClick={() => handleSaveDecision(false)} variant="outline" className="flex-1 rounded-xl">
+              Just praise
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -498,21 +539,21 @@ export default function Testify() {
   const enrichTestimonies = useCallback(async (data: TestimonyResult[]) => {
     const ids = data.map(t => t.id);
     if (!ids.length) return data;
-    const [{ data: likesData }, { data: flagsData }] = await Promise.all([
-      supabase.from("testimony_likes").select("testimony_id, user_id").in("testimony_id", ids),
+    const [{ data: praisesData }, { data: flagsData }] = await Promise.all([
+      supabase.from("testimony_praises").select("testimony_id, user_id").in("testimony_id", ids),
       user ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
     ]);
-    const likesMap: Record<string, number> = {};
-    const userLikedSet = new Set<string>();
-    (likesData || []).forEach((l: { testimony_id: string; user_id: string }) => {
-      likesMap[l.testimony_id] = (likesMap[l.testimony_id] || 0) + 1;
-      if (l.user_id === user?.id) userLikedSet.add(l.testimony_id);
+    const praiseMap: Record<string, number> = {};
+    const userPraisedSet = new Set<string>();
+    (praisesData || []).forEach((p: any) => {
+      praiseMap[p.testimony_id] = (praiseMap[p.testimony_id] || 0) + 1;
+      if (p.user_id === user?.id) userPraisedSet.add(p.testimony_id);
     });
-    const userFlaggedSet = new Set((flagsData || []).map((f: { testimony_id: string }) => f.testimony_id));
+    const userFlaggedSet = new Set((flagsData || []).map((f: any) => f.testimony_id));
     return data.map(t => ({
       ...t,
-      likes_count: likesMap[t.id] || 0,
-      user_liked: userLikedSet.has(t.id),
+      likes_count: praiseMap[t.id] || 0,
+      user_liked: userPraisedSet.has(t.id),
       user_flagged: userFlaggedSet.has(t.id),
     }));
   }, [user?.id]);
