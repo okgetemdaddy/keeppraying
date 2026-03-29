@@ -120,7 +120,7 @@ function StandaloneTestimonyCard({
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/testify?t=${testimony.id}`;
+    const url = `${window.location.origin}/testimony/${testimony.id}`;
     navigator.clipboard.writeText(url).then(() => toast({ title: "Testimony link copied! 🔗" }));
   };
 
