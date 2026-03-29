@@ -425,38 +425,6 @@ export default function Board() {
       {/* Main content */}
       <div className={`relative container mx-auto px-4 ${isMobile ? "py-4" : "py-8"} pb-32 max-w-5xl`}>
 
-        {/* ── Search bar ──────────────────────────────────────────────── */}
-        {!loading && saved.length > 0 && (
-          <div className="mb-4">
-            <div
-              className="relative flex items-center rounded-2xl overflow-hidden"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <Search className="w-4 h-4 ml-4 shrink-0" style={{ color: `${textColor}50` }} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search your prayers, groups, events..."
-                className="flex-1 bg-transparent border-0 outline-none px-3 py-3 text-sm placeholder:text-white/40"
-                style={{ color: textColor }}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="p-2 mr-1 rounded-full transition-colors hover:bg-white/10"
-                >
-                  <X className="w-4 h-4" style={{ color: `${textColor}60` }} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* ── Sort / Filter / Layout controls ──────────────────────── */}
         {!loading && saved.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-5">
