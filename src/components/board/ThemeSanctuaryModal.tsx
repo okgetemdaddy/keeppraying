@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lamp, Check, ChevronDown, Palette, Undo2 } from "lucide-react";
+import { Lamp, Check, ChevronDown, Palette, Undo2, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { ATMOSPHERES, AtmosphereThumbnail } from "@/components/board/AtmosphereCanvas";
+import type { Atmosphere } from "@/components/board/AtmosphereCanvas";
 
 /* ── Preset definitions ───────────────────────────────────────────────────── */
 export interface ThemePreset {
