@@ -35,6 +35,7 @@ import { PrayerCalendar } from "@/components/board/PrayerCalendar";
 import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 import { PrayerStationHero } from "@/components/board/PrayerStationHero";
 import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
+import { AtmosphereCanvas } from "@/components/board/AtmosphereCanvas";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
