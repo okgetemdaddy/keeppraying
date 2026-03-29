@@ -126,7 +126,10 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
   ];
 
   return (
-    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col-reverse items-end gap-2.5">
+    <div
+      className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col-reverse items-end gap-2.5"
+      style={{ "--fab-bottom": "5rem", "--fab-right": "1rem" } as React.CSSProperties}
+    >
       {/* Menu items */}
       <AnimatePresence>
         {open && items.map((item, i) => (
