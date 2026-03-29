@@ -1106,6 +1106,8 @@ export function BibleReader() {
             chapterNumber={currentChapter.id}
             isAuthenticated={!!user}
             onConfirm={handleBunchConfirm}
+            onAddToExisting={handleAddToExistingBunch}
+            existingBunches={bunches ?? []}
             onDismiss={handleBunchDismiss}
             initialStep={bunchAwareState ? "form" : "awareness"}
           />
