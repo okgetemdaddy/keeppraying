@@ -731,6 +731,22 @@ export function BibleReader() {
     [crossSelections, mutations.createBunch],
   );
 
+  const handleAddToExistingBunch = useCallback(
+    (bunchId: string, bunchName: string) => {
+      const items: CrossBunchItem[] = crossSelections.map((s) => ({
+        versionId: s.versionId,
+        bookUsfm: s.bookUsfm,
+        chapterNumber: parseInt(s.chapterNumber, 10),
+        verseNumber: s.verseNumber,
+      }));
+      mutations.addToBunch.mutate({ bunchId, bunchName, items });
+      setShowBunchDialog(false);
+      setCrossSelections([]);
+      setToolbarPos(null);
+    },
+    [crossSelections, mutations.addToBunch],
+  );
+
   // ── Pending bunch recovery after sign-in ──
   useEffect(() => {
     if (!user) return;
@@ -805,6 +821,18 @@ export function BibleReader() {
   const selectedArr = useMemo(() => [...selectedVerses].sort((a, b) => a - b), [selectedVerses]);
   const primaryVerse = selectedArr[0];
   const primaryBookmark = primaryVerse ? bookmarkMap.get(primaryVerse) : undefined;
+
+  // Derive existing highlight color/id for primary verse (for unhighlight X)
+  const primaryHighlights = primaryVerse ? highlightMap.get(primaryVerse) ?? [] : [];
+  const existingHighlightColor = primaryHighlights.length === 1 ? primaryHighlights[0].color : undefined;
+  const existingHighlightId = primaryHighlights.length === 1 ? primaryHighlights[0].id : undefined;
+
+  const handleRemoveHighlight = useCallback(
+    (highlightId: string) => {
+      mutations.removeHighlight.mutate(highlightId);
+    },
+    [mutations.removeHighlight],
+  );
 
   return (
     <article className="min-h-screen bg-background">
@@ -1053,7 +1081,10 @@ export function BibleReader() {
             partialSelectionRange={partialSelection ? { start: partialSelection.start, end: partialSelection.end } : undefined}
             isBookmarked={!!primaryBookmark}
             bookmarkId={primaryBookmark?.id}
+            existingHighlightColor={existingHighlightColor}
+            existingHighlightId={existingHighlightId}
             onHighlight={handleHighlight}
+            onRemoveHighlight={handleRemoveHighlight}
             onToggleBookmark={handleToggleBookmark}
             onAddNote={handleAddNote}
             onCreateBunch={handleCreateBunchRequest}
@@ -1075,6 +1106,8 @@ export function BibleReader() {
             chapterNumber={currentChapter.id}
             isAuthenticated={!!user}
             onConfirm={handleBunchConfirm}
+            onAddToExisting={handleAddToExistingBunch}
+            existingBunches={bunches ?? []}
             onDismiss={handleBunchDismiss}
             initialStep={bunchAwareState ? "form" : "awareness"}
           />

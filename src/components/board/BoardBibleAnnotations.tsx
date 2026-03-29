@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
   BookmarkCheck,
@@ -10,8 +10,15 @@ import {
   StickyNote,
   ChevronRight,
   BookOpen,
+  X,
+  Pencil,
+  Trash2,
+  Check,
 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /* ── Types ── */
 interface HighlightRow {
@@ -137,8 +144,54 @@ function useBibleAnnotations() {
 export function BoardBibleAnnotations({ textColor }: { textColor: string }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { highlights, bookmarks, notes } = useBibleAnnotations();
   const [expandedSection, setExpandedSection] = useState<"highlights" | "bookmarks" | "notes" | null>(null);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editNoteContent, setEditNoteContent] = useState("");
+
+  // ── Delete highlight mutation ──
+  const deleteHighlight = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("user_highlights").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["board", "highlights"] });
+      toast.success("Highlight removed");
+    },
+    onError: () => toast.error("Failed to remove highlight"),
+  });
+
+  // ── Delete note mutation ──
+  const deleteNote = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("user_notes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["board", "notes"] });
+      toast.success("Note deleted");
+    },
+    onError: () => toast.error("Failed to delete note"),
+  });
+
+  // ── Update note mutation ──
+  const updateNote = useMutation({
+    mutationFn: async ({ id, content }: { id: string; content: string }) => {
+      const { error } = await supabase
+        .from("user_notes")
+        .update({ note_content: content } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["board", "notes"] });
+      setEditingNoteId(null);
+      toast.success("Note updated");
+    },
+    onError: () => toast.error("Failed to update note"),
+  });
 
   if (!user) return null;
 
@@ -228,18 +281,34 @@ export function BoardBibleAnnotations({ textColor }: { textColor: string }) {
             <ScrollArea className="w-full">
               <div className="flex gap-2 pb-2">
                 {highlights.map((h) => (
-                  <button
+                  <div
                     key={h.id}
-                    onClick={() => goToVerse(h.version_id, h.book_usfm, h.chapter_number, h.verse_number)}
-                    className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:scale-105"
+                    className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all group relative"
                     style={{ background: "rgba(255,255,255,0.1)" }}
                   >
-                    <span className={`h-2.5 w-2.5 rounded-full ${HL_DOT[h.color] ?? "bg-yellow-400"}`} />
-                    <span className="text-xs font-medium whitespace-nowrap" style={{ color: textColor }}>
-                      {bookAbbr(h.book_usfm)} {h.chapter_number}:{h.verse_number}
-                    </span>
-                    <ChevronRight className="h-3 w-3 opacity-40" style={{ color: textColor }} />
-                  </button>
+                    <button
+                      onClick={() => goToVerse(h.version_id, h.book_usfm, h.chapter_number, h.verse_number)}
+                      className="flex items-center gap-2 hover:scale-105 transition-all"
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full ${HL_DOT[h.color] ?? "bg-yellow-400"}`} />
+                      <span className="text-xs font-medium whitespace-nowrap" style={{ color: textColor }}>
+                        {bookAbbr(h.book_usfm)} {h.chapter_number}:{h.verse_number}
+                      </span>
+                      <ChevronRight className="h-3 w-3 opacity-40" style={{ color: textColor }} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Remove this highlight on ${bookAbbr(h.book_usfm)} ${h.chapter_number}:${h.verse_number}?`)) {
+                          deleteHighlight.mutate(h.id);
+                        }
+                      }}
+                      className="h-5 w-5 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20"
+                      title="Remove highlight"
+                    >
+                      <X className="h-3 w-3" style={{ color: textColor }} />
+                    </button>
+                  </div>
                 ))}
               </div>
               <ScrollBar orientation="horizontal" />
@@ -287,25 +356,100 @@ export function BoardBibleAnnotations({ textColor }: { textColor: string }) {
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {notes.slice(0, 8).map((n) => (
-                <button
+                <div
                   key={n.id}
-                  onClick={() => goToVerse(n.version_id, n.book_usfm, n.chapter_number, n.verse_number)}
-                  className="text-left rounded-xl px-4 py-3 transition-all hover:scale-[1.02]"
+                  className="relative rounded-xl px-4 py-3 transition-all group"
                   style={{ background: "rgba(255,255,255,0.1)" }}
                 >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <StickyNote className="h-3 w-3 text-amber-400" />
-                    <span className="text-[0.65rem] font-semibold" style={{ color: `${textColor}90` }}>
-                      {bookAbbr(n.book_usfm)} {n.chapter_number}:{n.verse_number}
-                    </span>
-                  </div>
-                  <p
-                    className="text-xs leading-relaxed line-clamp-2"
-                    style={{ color: `${textColor}80` }}
-                  >
-                    {n.note_content}
-                  </p>
-                </button>
+                  {editingNoteId === n.id ? (
+                    /* ── Inline edit mode ── */
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <StickyNote className="h-3 w-3 text-amber-400" />
+                        <span className="text-[0.65rem] font-semibold" style={{ color: `${textColor}90` }}>
+                          {bookAbbr(n.book_usfm)} {n.chapter_number}:{n.verse_number}
+                        </span>
+                      </div>
+                      <Textarea
+                        value={editNoteContent}
+                        onChange={(e) => setEditNoteContent(e.target.value)}
+                        className="min-h-[60px] resize-none text-sm bg-background/50"
+                        maxLength={2000}
+                        autoFocus
+                      />
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => setEditingNoteId(null)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          disabled={!editNoteContent.trim()}
+                          onClick={() => {
+                            if (editNoteContent.trim()) {
+                              updateNote.mutate({ id: n.id, content: editNoteContent.trim() });
+                            }
+                          }}
+                        >
+                          <Check className="h-3 w-3" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ── Display mode ── */
+                    <>
+                      <button
+                        onClick={() => goToVerse(n.version_id, n.book_usfm, n.chapter_number, n.verse_number)}
+                        className="text-left w-full hover:scale-[1.02] transition-all"
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <StickyNote className="h-3 w-3 text-amber-400" />
+                          <span className="text-[0.65rem] font-semibold" style={{ color: `${textColor}90` }}>
+                            {bookAbbr(n.book_usfm)} {n.chapter_number}:{n.verse_number}
+                          </span>
+                        </div>
+                        <p
+                          className="text-xs leading-relaxed line-clamp-2"
+                          style={{ color: `${textColor}80` }}
+                        >
+                          {n.note_content}
+                        </p>
+                      </button>
+                      {/* Action buttons */}
+                      <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingNoteId(n.id);
+                            setEditNoteContent(n.note_content);
+                          }}
+                          className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-muted/30 transition-colors"
+                          title="Edit note"
+                        >
+                          <Pencil className="h-3 w-3" style={{ color: textColor }} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm("Delete this note?")) {
+                              deleteNote.mutate(n.id);
+                            }
+                          }}
+                          className="h-6 w-6 flex items-center justify-center rounded-md hover:bg-destructive/20 transition-colors"
+                          title="Delete note"
+                        >
+                          <Trash2 className="h-3 w-3" style={{ color: textColor }} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           </motion.div>

@@ -39,8 +39,12 @@ export interface FloatingToolbarProps {
   /** Whether the selected verse(s) are already bookmarked */
   isBookmarked: boolean;
   bookmarkId?: string;
+  /** Existing highlight info for unhighlight X overlay */
+  existingHighlightColor?: string;
+  existingHighlightId?: string;
   /** Callbacks */
   onHighlight: (color: string, verseNumber: number, start?: number, end?: number) => void;
+  onRemoveHighlight?: (highlightId: string) => void;
   onToggleBookmark: (verseNumber: number, existingId?: string) => void;
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
@@ -57,7 +61,10 @@ export function FloatingToolbar({
   partialSelectionRange,
   isBookmarked,
   bookmarkId,
+  existingHighlightColor,
+  existingHighlightId,
   onHighlight,
+  onRemoveHighlight,
   onToggleBookmark,
   onAddNote,
   onCreateBunch,
@@ -102,27 +109,40 @@ export function FloatingToolbar({
     >
       <div className="flex items-center gap-1 px-2 py-1.5">
         {/* ── Colour swatches ── */}
-        {SWATCH_COLORS.map((swatch) => (
-          <button
-            key={swatch.key}
-            className={`h-6 w-6 rounded-full ${swatch.bg} hover:ring-2 ${swatch.ring} ring-offset-1 ring-offset-card transition-all`}
-            title={`Highlight ${swatch.key}`}
-            onClick={() => {
-              if (isPartialSelection && partialSelectionVerse && partialSelectionRange) {
-                onHighlight(
-                  swatch.key,
-                  partialSelectionVerse,
-                  partialSelectionRange.start,
-                  partialSelectionRange.end,
-                );
-              } else {
-                // Highlight each selected whole verse
-                selectedVerses.forEach((vn) => onHighlight(swatch.key, vn));
-              }
-              onDismiss();
-            }}
-          />
-        ))}
+        {SWATCH_COLORS.map((swatch) => {
+          const isActiveColor = swatch.key === existingHighlightColor;
+          return (
+            <button
+              key={swatch.key}
+              className={`relative h-6 w-6 rounded-full ${swatch.bg} hover:ring-2 ${swatch.ring} ring-offset-1 ring-offset-card transition-all ${isActiveColor ? "ring-2 " + swatch.ring : ""}`}
+              title={isActiveColor ? `Remove ${swatch.key} highlight` : `Highlight ${swatch.key}`}
+              onClick={() => {
+                if (isActiveColor && existingHighlightId && onRemoveHighlight) {
+                  onRemoveHighlight(existingHighlightId);
+                  onDismiss();
+                  return;
+                }
+                if (isPartialSelection && partialSelectionVerse && partialSelectionRange) {
+                  onHighlight(
+                    swatch.key,
+                    partialSelectionVerse,
+                    partialSelectionRange.start,
+                    partialSelectionRange.end,
+                  );
+                } else {
+                  selectedVerses.forEach((vn) => onHighlight(swatch.key, vn));
+                }
+                onDismiss();
+              }}
+            >
+              {isActiveColor && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <X className="h-3.5 w-3.5 text-white drop-shadow-sm" />
+                </span>
+              )}
+            </button>
+          );
+        })}
 
         <div className="mx-1 h-6 w-px bg-border" />
 
