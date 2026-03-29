@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
-  ArrowLeft, Heart, Share2, Bookmark, Flag, MessageCircle,
+  Heart, Share2, Bookmark, Flag, MessageCircle,
   ChevronDown, ChevronUp, Loader2, SendHorizontal, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -273,22 +273,11 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
       style={{ background: cardBg, color: textColor }}
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b"
+      <div className="sticky top-0 z-10 px-4 py-3 border-b text-center"
         style={{ background: `${cardBg}f5`, borderColor: `${textColor}12`, backdropFilter: "blur(8px)" }}>
-        <button
-          onClick={onFlipBack}
-          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40 flex-shrink-0"
-          style={{ color: subtleText }}
-          aria-label="Flip back to prayer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div className="flex-1 text-center">
-          <p className="font-display font-bold text-sm" style={{ color: accentColor }}>
-            Did God answer your prayer? Testify! 🕊️
-          </p>
-        </div>
-        <div className="w-8" /> {/* spacer */}
+        <p className="font-display font-bold text-sm" style={{ color: accentColor }}>
+          Did God answer your prayer? Testify! 🕊️
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 p-4">
@@ -298,14 +287,14 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
             <Textarea
               value={body}
               onChange={e => setBody(e.target.value.slice(0, MAX_CHARS))}
-              placeholder="Share how God answered this prayer… Your story matters and will encourage others! 🙏"
-              className="w-full text-sm resize-none rounded-xl border-2 min-h-[100px] focus-visible:ring-0"
+              placeholder="Share how God answered this prayer… Your story matters and will encourage others!"
+              className="w-full text-sm resize-none rounded-xl border-2 min-h-[180px] focus-visible:ring-0 flex-1"
               style={{
                 borderColor: body.length > 0 ? accentColor : `${textColor}20`,
                 background: `${textColor}05`,
                 color: textColor,
               }}
-              rows={4}
+              rows={7}
             />
             <div className="flex items-center justify-between">
               <span className="text-[10px]" style={{ color: subtleText }}>
@@ -523,6 +512,18 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
             })}
           </div>
         )}
+      </div>
+
+      {/* Back to Prayer link */}
+      <div className="sticky bottom-0 z-10 px-4 py-3 border-t text-center"
+        style={{ background: `${cardBg}f5`, borderColor: `${textColor}12`, backdropFilter: "blur(8px)" }}>
+        <button
+          onClick={onFlipBack}
+          className="text-xs font-medium transition-opacity hover:opacity-70"
+          style={{ color: accentColor }}
+        >
+          Back to Prayer
+        </button>
       </div>
     </div>
   );
