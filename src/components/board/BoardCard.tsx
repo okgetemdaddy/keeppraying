@@ -241,7 +241,7 @@ export function BoardCard({
       <motion.div
         layout
         initial={{ opacity: 0, scale: 0.96, y: 8 }}
-        animate={{ opacity: flipped ? undefined : 1, scale: flipped ? undefined : 1, y: flipped ? undefined : 0 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 4 }}
         transition={{ layout: { type: "spring", stiffness: 300, damping: 28 }, default: { duration: 0.25 } }}
         style={{
