@@ -106,11 +106,7 @@ export function BoardMobileMenu({
           >
             {/* Blurred + dimmed backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/60"
-              style={{
-                backdropFilter: "blur(16px)",
-                WebkitBackdropFilter: "blur(16px)",
-              }}
+              className="absolute inset-0 bg-black/80"
               onClick={() => setOpen(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
