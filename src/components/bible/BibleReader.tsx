@@ -360,6 +360,8 @@ function getHideBunches(): boolean {
    ═══════════════════════════════════════════════════ */
 export function BibleReader() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const { size: textSize, setTextSize, MIN_SIZE, MAX_SIZE } = useBibleTextSize();
   const [versionId, setVersionId] = useState<number | undefined>(undefined);
   const [bookUsfm, setBookUsfm] = useState<string | undefined>(undefined);
   const [chapterIdx, setChapterIdx] = useState<number>(0);
