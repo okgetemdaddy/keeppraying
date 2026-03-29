@@ -38,7 +38,9 @@ interface PrayerCalendarProps {
   accentColor?: string;
 }
 
-export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: PrayerCalendarProps) {
+export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85% 58%)" }: PrayerCalendarProps) {
+  // Calendar uses Pure Sand bg, so override text to match
+  const textColor = "#2C2418";
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isFullMonth, setIsFullMonth] = useState(false);
@@ -220,7 +222,7 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
         animate={{ opacity: 1 }}
         onClick={() => setIsCollapsed(false)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mb-5 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+        style={{ background: "#F5F0E8", border: "1px solid rgba(44,36,24,0.12)" }}
       >
         <CalendarIcon className="w-4 h-4" style={{ color: accentColor }} />
         <span className="text-xs font-medium" style={{ color: textColor }}>
@@ -246,8 +248,8 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
         onClick={() => setSelectedDay(isSelected ? null : day)}
         className="flex flex-col items-center gap-1 rounded-xl py-2 px-1 transition-all relative"
         style={{
-          background: isSelected ? `${accentColor}22` : today ? "rgba(255,255,255,0.06)" : "transparent",
-          border: isSelected ? `1.5px solid ${accentColor}55` : today ? "1.5px solid rgba(255,255,255,0.12)" : "1.5px solid transparent",
+          background: isSelected ? `${accentColor}22` : today ? "rgba(44,36,24,0.06)" : "transparent",
+          border: isSelected ? `1.5px solid ${accentColor}55` : today ? "1.5px solid rgba(44,36,24,0.12)" : "1.5px solid transparent",
           minWidth: compact ? 36 : 44,
           flex: 1,
         }}
@@ -291,8 +293,8 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
       transition={{ duration: 0.4 }}
       className="rounded-2xl mb-5 overflow-hidden"
       style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
+        background: "#F5F0E8",
+        border: "1px solid rgba(44,36,24,0.12)",
         backdropFilter: "blur(8px)",
       }}
     >
@@ -379,7 +381,7 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
                           onClick={() => setSelectedDay(isSelected ? null : day)}
                           className="flex flex-col items-center gap-0.5 rounded-lg py-1.5 transition-all"
                           style={{
-                            background: isSelected ? `${accentColor}22` : today ? "rgba(255,255,255,0.06)" : "transparent",
+                            background: isSelected ? `${accentColor}22` : today ? "rgba(44,36,24,0.06)" : "transparent",
                             border: isSelected ? `1px solid ${accentColor}44` : "1px solid transparent",
                             opacity: inMonth ? 1 : 0.3,
                           }}
