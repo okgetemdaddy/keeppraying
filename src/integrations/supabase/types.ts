@@ -532,6 +532,144 @@ export type Database = {
           },
         ]
       }
+      companion_checkins: {
+        Row: {
+          created_at: string
+          group_id: string
+          group_type: string
+          id: string
+          is_shared: boolean
+          mood: string
+          share_text: string | null
+          user_id: string
+          week_of: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          group_type: string
+          id?: string
+          is_shared?: boolean
+          mood: string
+          share_text?: string | null
+          user_id: string
+          week_of: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          group_type?: string
+          id?: string
+          is_shared?: boolean
+          mood?: string
+          share_text?: string | null
+          user_id?: string
+          week_of?: string
+        }
+        Relationships: []
+      }
+      companion_encouragements: {
+        Row: {
+          created_at: string
+          emoji: string | null
+          from_user_id: string
+          group_id: string
+          group_type: string
+          id: string
+          message: string
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji?: string | null
+          from_user_id: string
+          group_id: string
+          group_type: string
+          id?: string
+          message?: string
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string | null
+          from_user_id?: string
+          group_id?: string
+          group_type?: string
+          id?: string
+          message?: string
+          to_user_id?: string
+        }
+        Relationships: []
+      }
+      companion_goals: {
+        Row: {
+          created_at: string
+          current_count: number
+          group_id: string
+          group_type: string
+          id: string
+          target_count: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_count?: number
+          group_id: string
+          group_type: string
+          id?: string
+          target_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_count?: number
+          group_id?: string
+          group_type?: string
+          id?: string
+          target_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      companion_settings: {
+        Row: {
+          checkin_day: string
+          created_at: string
+          created_by: string
+          enabled: boolean
+          group_id: string
+          group_type: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          checkin_day?: string
+          created_at?: string
+          created_by: string
+          enabled?: boolean
+          group_id: string
+          group_type: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          checkin_day?: string
+          created_at?: string
+          created_by?: string
+          enabled?: boolean
+          group_id?: string
+          group_type?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           ai_reply: string | null
@@ -1196,6 +1334,33 @@ export type Database = {
           name?: string
           theme?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prayer_partners: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          status: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          user1_id?: string
+          user2_id?: string
         }
         Relationships: []
       }
