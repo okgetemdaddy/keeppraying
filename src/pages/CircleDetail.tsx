@@ -521,25 +521,14 @@ export default function CircleDetail() {
         </p>
       </div>
 
-      {/* Share invite dialog */}
-      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display">Invite to Circle</DialogTitle>
-            <DialogDescription>Share this code with someone you'd like to invite.</DialogDescription>
-          </DialogHeader>
-          <div className="text-center space-y-4 pt-2">
-            <div className="bg-muted rounded-xl p-4">
-              <p className="font-mono text-2xl tracking-[0.3em] text-foreground font-bold select-all">
-                {(circle as any)?.invite_code}
-              </p>
-            </div>
-            <Button onClick={copyInvite} className="btn-gold rounded-xl gap-2 w-full">
-              <Copy className="w-4 h-4" /> Copy Code
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Invite Share Modal */}
+      <InviteShareModal
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        type="circle"
+        targetId={circle.id}
+        targetName={circle.name}
+      />
 
       {/* Share prayer dialog */}
       <Dialog open={sharePrayerOpen} onOpenChange={setSharePrayerOpen}>
