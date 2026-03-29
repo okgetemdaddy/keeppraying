@@ -220,7 +220,7 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
         animate={{ opacity: 1 }}
         onClick={() => setIsCollapsed(false)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mb-5 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+        style={{ background: "#F5F0E8", border: "1px solid rgba(44,36,24,0.12)" }}
       >
         <CalendarIcon className="w-4 h-4" style={{ color: accentColor }} />
         <span className="text-xs font-medium" style={{ color: textColor }}>
