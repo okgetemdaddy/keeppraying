@@ -27,6 +27,9 @@ const DEFAULTS: BoardPrefs = {
   theme_text: null,
   theme_accent: null,
   theme_scope: "board",
+  calendar_bg: "#F5F0E8",
+  calendar_text: "#2C2418",
+  calendar_accent: "#B85C38",
 };
 
 export function useBoardPreferences() {
