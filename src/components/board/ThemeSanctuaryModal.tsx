@@ -189,6 +189,14 @@ export function ThemeSanctuaryModal({
   const [customAccent, setCustomAccent] = useState(currentAccent || ACCENT_SWATCHES[0]);
   const [scope, setScope] = useState<Scope>((currentScope as Scope) || "board");
   const [previewExpanded, setPreviewExpanded] = useState(!isMobile);
+  const [previousSnapshot, setPreviousSnapshot] = useState<ThemeSnapshot | null>(null);
+
+  // Load any existing snapshot on mount
+  useEffect(() => {
+    if (isOpen) {
+      setPreviousSnapshot(loadSnapshot());
+    }
+  }, [isOpen]);
 
   // Determine if dark mode is active
   const isDark = useMemo(() => {
