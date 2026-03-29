@@ -280,7 +280,7 @@ export function useCompanions(groupType: GroupType, groupId: string | undefined)
 export function usePrayerPartners() {
   const { user } = useAuth();
   const [partners, setPartners] = useState<(PrayerPartner & { partnerProfile?: any })[]>([]);
-  const [pending, setPending] = useState<(PrayerPartner & { requesterProfile?: any })[]>([]);
+  const [pending, setPending] = useState<(PrayerPartner & { requesterProfile?: any; partnerProfile?: any })[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPartners = useCallback(async () => {
