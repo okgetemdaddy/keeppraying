@@ -120,7 +120,7 @@ export function VerseBunchTooltip({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
         transition={{ duration: 0.25 }}
-        className="fixed bottom-6 left-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card p-5 shadow-2xl"
+        className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl sm:left-1/2 sm:right-auto sm:w-[92vw] sm:-translate-x-1/2 sm:bottom-6 sm:inset-x-auto"
       >
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300">
