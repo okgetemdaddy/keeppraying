@@ -13,7 +13,7 @@ import AddPrayerModal from "@/components/AddPrayerModal";
 import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
-import { ThemeCanvas } from "@/components/board/ThemeCanvas";
+
 
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
@@ -379,8 +379,6 @@ export default function Board() {
         atmosphereId={prefs.atmosphere_id || "warm-parchment"}
         enabled={prefs.animations_enabled}
       />
-      <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
-      <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 
       {/* Header — auto-hides on scroll down */}
       <motion.div

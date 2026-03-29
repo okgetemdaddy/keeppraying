@@ -16,7 +16,7 @@ import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
-  SunDim,
+  SunDim, ImagePlus, ImageOff,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -462,6 +462,8 @@ export function BoardCard({
                 onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
                 onCardBgPresetChange={handleCardBgPresetChange}
+                userId={userId}
+                onRefresh={onRefresh}
               />
             </div>
           )}
@@ -667,6 +669,8 @@ export function BoardCard({
                 onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
                 onCardBgPresetChange={handleCardBgPresetChange}
+                userId={userId}
+                onRefresh={onRefresh}
               />
             </div>
           </div>
@@ -792,6 +796,8 @@ interface ActionButtonsProps {
   onOverlayOpacityChange: (v: number) => void;
   cardBgPreset: { bg: string; text: string } | null;
   onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
+  userId?: string;
+  onRefresh: () => void;
 }
 
 function ActionButtons({
@@ -800,7 +806,56 @@ function ActionButtons({
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
+  userId, onRefresh,
 }: ActionButtonsProps) {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId || !item.prayer_cards) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("prayer-backgrounds")
+        .upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage
+        .from("prayer-backgrounds")
+        .getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      const { error: updateErr } = await supabase
+        .from("prayer_cards")
+        .update({ background_url: publicUrl })
+        .eq("id", item.prayer_cards.id);
+      if (updateErr) throw updateErr;
+      onRefresh();
+      toast({ title: "Background image added ✨" });
+    } catch {
+      toast({ title: "Failed to upload image", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!item.prayer_cards) return;
+    try {
+      await supabase
+        .from("prayer_cards")
+        .update({ background_url: null })
+        .eq("id", item.prayer_cards.id);
+      onRefresh();
+      toast({ title: "Background image removed" });
+    } catch {
+      toast({ title: "Failed to remove image", variant: "destructive" });
+    }
+  };
+
   return (
     <>
       <button
@@ -978,6 +1033,25 @@ function ActionButtons({
             </>
           )}
 
+          {/* Upload / Remove Image */}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-xs gap-2"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+            {uploading ? "Uploading…" : hasBgImage ? "Replace Image" : "Upload Image"}
+          </DropdownMenuItem>
+          {hasBgImage && (
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={handleRemoveImage}
+            >
+              <ImageOff className="w-3.5 h-3.5" /> Remove Image
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-xs gap-2 text-destructive focus:text-destructive"
@@ -987,6 +1061,15 @@ function ActionButtons({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleUploadImage}
+      />
     </>
   );
 }
