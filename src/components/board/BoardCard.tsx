@@ -635,10 +635,10 @@ export function BoardCard({
                 onClick={() => setFlipped(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105"
                 style={{ background: `${accentColor}15`, color: accentColor }}
-                title="Share your testimony"
+                title={hasTestimony ? "See your testimony" : "Share your testimony"}
               >
                 <Bird className="w-3.5 h-3.5" />
-                Testify 🕊️
+                {hasTestimony ? "See Testimony ✨" : "Testify 🕊️"}
               </button>
             )}
           </div>
