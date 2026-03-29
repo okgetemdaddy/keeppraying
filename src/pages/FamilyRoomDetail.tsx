@@ -67,8 +67,6 @@ export default function FamilyRoomDetail() {
   const [schedDesc, setSchedDesc] = useState("");
   const [schedSaving, setSchedSaving] = useState(false);
 
-  // Flyer
-  const [flyerOpen, setFlyerOpen] = useState(false);
 
   const fetchRoom = useCallback(async () => {
     if (!id || !user) return;
