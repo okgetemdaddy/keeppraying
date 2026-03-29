@@ -293,9 +293,9 @@ export function BoardCard({
           style={{
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            background: bgUrl ? undefined : cardBg,
+            background: bgUrl ? undefined : cardBgPreset ? cardBgPreset.bg : cardBg,
             borderColor: cardBorder,
-            color: bgUrl ? "rgba(255,255,255,0.92)" : textColor,
+            color: bgUrl ? "rgba(255,255,255,0.92)" : cardBgPreset ? cardBgPreset.text : textColor,
             backdropFilter: "blur(16px) saturate(1.6)",
             WebkitBackdropFilter: "blur(16px) saturate(1.6)",
             boxShadow: item.pinned
