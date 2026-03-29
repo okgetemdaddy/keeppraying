@@ -1,94 +1,60 @@
 
 
-# Phase 1: Bible Interaction Schema, RLS & Preference State
+# Redesign Verse Bunch Discovery Flow
 
 ## Overview
 
-Create five new database tables to power highlights, notes, bookmarks, and the "Verse Bunch" grouping system. All tables are user-scoped with strict RLS. A user preference for suppressing the Verse Bunch dialog will be stored in the existing `board_preferences` pattern (localStorage for simplicity, upgradeable later).
+Replace the current `VerseBunchDialog` (two-step prompt/form) with a new tooltip-style awareness flow. When 2+ verses are selected, a floating tooltip educates the user about Verse Bunches. Two CTAs: "Nice." (acknowledge) and "Try Creating a Verse Bunch Now" (proceeds to creation). Unauthenticated users get a gentle sign-in nudge that remembers their pending bunch through the auth flow. Created bunches appear on `/board` and above the Bible nav bar.
 
-## Database Migration
+## Changes
 
-A single migration creating all five tables, compound indexes, and RLS policies.
+### 1. Rewrite `VerseBunchDialog` → `VerseBunchTooltip`
+**File: `src/components/bible/VerseBunchDialog.tsx`**
 
-### Tables
+Replace entirely with a new component that has three possible states:
 
-**1. `user_highlights`**
-- `id` (uuid PK, default gen_random_uuid())
-- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
-- `version_id` (integer, NOT NULL) — Bible version ID
-- `book_usfm` (text, NOT NULL) — e.g. "GEN"
-- `chapter_number` (integer, NOT NULL) — e.g. 1
-- `verse_number` (integer, NOT NULL)
-- `color` (text, NOT NULL, default 'yellow')
-- `reference_normalized` (jsonb, NOT NULL) — stores partial-verse char ranges: `{ "start": 0, "end": 42 }` for substring highlighting; `null`/omitted means whole verse
-- `created_at` (timestamptz, default now())
+- **`awareness`** (default, first time): Floating tooltip explaining Verse Bunches — "Bundle verses from anywhere in the Bible for use in Circles, Family Rooms, or personal study." Two buttons: **"Nice."** (dismisses, sets localStorage `bible_bunch_aware = true`) and **"Try Creating a Verse Bunch Now"** (proceeds to `form` step if signed in, or `signin` step if not).
 
-**2. `user_notes`**
-- `id` (uuid PK)
-- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
-- `version_id` (integer, NOT NULL)
-- `book_usfm` (text, NOT NULL)
-- `chapter_number` (integer, NOT NULL)
-- `verse_number` (integer, NOT NULL)
-- `note_content` (text, NOT NULL)
-- `created_at` / `updated_at` (timestamptz)
+- **`signin`**: Gentle sign-in prompt — "Sign in to save your Verse Bunch and unlock highlights, notes, prayer boards, and more." CTA links to `/auth` with a `returnTo` query param. Pending bunch data (verses, book, chapter, version) is saved to `sessionStorage` under `pending_verse_bunch` so it survives the auth redirect.
 
-**3. `user_bookmarks`**
-- `id` (uuid PK)
-- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
-- `version_id` (integer, NOT NULL)
-- `book_usfm` (text, NOT NULL)
-- `chapter_number` (integer, NOT NULL)
-- `verse_number` (integer, NOT NULL)
-- `created_at` (timestamptz)
-- UNIQUE constraint on `(user_id, version_id, book_usfm, chapter_number, verse_number)`
+- **`form`**: The existing name/description form (kept as-is from current implementation).
 
-**4. `verse_bunches`**
-- `id` (uuid PK)
-- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
-- `bunch_name` (text, NOT NULL)
-- `description` (text, nullable)
-- `created_at` (timestamptz)
-- `updated_at` (timestamptz)
+The `awareness` step only shows once per device (localStorage). After acknowledgment, future 2+ verse selections skip straight to the Bunch button in the FloatingToolbar (existing behavior) without re-showing the tooltip.
 
-**5. `verse_bunch_items`**
-- `id` (uuid PK)
-- `bunch_id` (uuid, NOT NULL, references verse_bunches(id) ON DELETE CASCADE)
-- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE) — denormalized for RLS
-- `version_id` (integer, NOT NULL)
-- `book_usfm` (text, NOT NULL)
-- `chapter_number` (integer, NOT NULL)
-- `verse_number` (integer, NOT NULL)
-- `created_at` (timestamptz)
-- UNIQUE on `(bunch_id, version_id, book_usfm, chapter_number, verse_number)`
+### 2. Update `BibleReader.tsx` bunch flow
+**File: `src/components/bible/BibleReader.tsx`**
 
-### Compound Indexes
+- Replace `VerseBunchDialog` import with new `VerseBunchTooltip`.
+- When `showBunchDialog` is true and user hasn't acknowledged yet (`bible_bunch_aware` not set), show `awareness` state.
+- After awareness is acknowledged, the "Bunch" button in `FloatingToolbar` works as before (direct to form).
+- On mount, check `sessionStorage` for `pending_verse_bunch`. If found and user is now authenticated, auto-trigger bunch creation, then clear sessionStorage. This completes the "remember through sign-in" flow.
+- Remove old `bunchDialogDismissed` / `isBunchDialogDismissed` state — replace with `bible_bunch_aware` check.
 
-On `user_highlights`, `user_notes`, `user_bookmarks`, and `verse_bunch_items`:
-```
-CREATE INDEX idx_{table}_chapter_lookup
-ON {table} (user_id, version_id, book_usfm, chapter_number);
-```
+### 3. Add Verse Bunches strip above Bible nav
+**File: `src/components/bible/BibleReader.tsx`**
 
-### RLS Policies
+- Above the sticky toolbar, render a horizontal scrollable strip of the user's Verse Bunches (fetched from `verse_bunches` table).
+- Each chip shows bunch name + verse count. Tapping navigates to the first verse reference in that bunch (setting version/book/chapter and scrolling to verse anchor).
+- Only shown when user is signed in and has at least one bunch.
+- Clean, compact design: small pills with violet accent, horizontally scrollable.
 
-All five tables get RLS enabled with four identical policy patterns:
-- **SELECT**: `auth.uid() = user_id`
-- **INSERT**: `auth.uid() = user_id` (WITH CHECK)
-- **UPDATE**: `auth.uid() = user_id`
-- **DELETE**: `auth.uid() = user_id`
+### 4. Add Verse Bunches section to `/board`
+**File: `src/pages/Board.tsx`**
 
-### "Don't Show Again" Preference
+- Add a new "Verse Bunches" section (collapsible) showing the user's bunches as cards.
+- Each card displays: bunch name, description (if any), verse count, verse references preview (e.g. "Genesis 1:1-3, Psalm 23:1-6").
+- Tapping a bunch card navigates to `/bible` with query params to load the first verse reference.
+- Position this section after the Prayer Station Hero and before the main prayer cards grid.
+- Fetch from `verse_bunches` joined with `verse_bunch_items` to get verse details.
 
-Use **localStorage** key `bible_bunch_dialog_dismissed` (boolean). This avoids an extra DB column, is instant, and aligns with this being a UI preference. Can be migrated to a DB column later if cross-device sync is needed.
+### 5. Site-wide "remember intent through sign-in" pattern note
+The `sessionStorage` pattern used here (`pending_verse_bunch`) establishes the convention for other features (add prayer, prayer assist, breath, testimonies). Each feature stores its pending action in sessionStorage before redirecting to `/auth`, then checks on mount after auth completes. This plan only implements it for Verse Bunches — the same pattern will be applied to other features in a future phase.
 
-## Files Changed
+## Technical Details
 
-1. **New migration** — Single SQL migration via the migration tool containing all CREATE TABLE, INDEX, ALTER TABLE ENABLE RLS, and CREATE POLICY statements.
-
-No code files change in Phase 1. The migration is the deliverable.
-
-## What Happens Next
-
-After you confirm the migration ran successfully, Phase 2 will create the `useBibleChapterData` hook with concurrent fetching.
+- **localStorage key**: `bible_bunch_aware` — tracks whether user has seen the awareness tooltip (replaces `bible_bunch_dialog_dismissed`)
+- **sessionStorage key**: `pending_verse_bunch` — JSON object `{ versionId, bookUsfm, chapterNumber, verseNumbers, returnPath }` stored before auth redirect
+- **Auth redirect**: Navigate to `/auth?returnTo=/bible` so after sign-in the user returns to the Bible reader
+- **Board fetch**: New query in Board.tsx using `supabase.from('verse_bunches').select('*, verse_bunch_items(*)').eq('user_id', user.id)` 
+- **Bible nav strip fetch**: Reuse data from `useBibleChapterData` for current chapter bunches, plus a separate lightweight query for all user bunches
 
