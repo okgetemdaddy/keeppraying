@@ -773,6 +773,9 @@ export default function Admin() {
               {/* ── SAYINGS ── */}
               {activeTab === "sayings" && <SayingsTab />}
 
+              {/* ── WELCOME MESSAGES ── */}
+              {activeTab === "welcome" && <WelcomeMessagesTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
