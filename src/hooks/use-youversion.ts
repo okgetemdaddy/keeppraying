@@ -98,9 +98,7 @@ export function useVerseOfTheDay(versionId = DEFAULT_VERSION_ID) {
         const votdResponse = await apiClient.get<{
           verse: { usfm: string[]; human_reference: string };
           image: { url: string } | null;
-        }>(`/v1/verse_of_the_day/${dayOfYear}`, {
-          params: { version_id: String(versionId) },
-        });
+        }>(`/v1/verse_of_the_day/${dayOfYear}?version_id=${versionId}`);
 
         if (cancelled) return;
 
