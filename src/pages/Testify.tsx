@@ -333,6 +333,26 @@ function StandaloneTestimonyCard({
           </SheetContent>
         </Sheet>
       )}
+
+      {/* Save dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Save this testimony?</DialogTitle>
+            <DialogDescription>
+              Would you like to save this testimony to your prayer board?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-2">
+            <Button onClick={() => handleSaveDecision(true)} className="flex-1 btn-gold rounded-xl gap-1.5">
+              🙌 Yes, save it
+            </Button>
+            <Button onClick={() => handleSaveDecision(false)} variant="outline" className="flex-1 rounded-xl">
+              Just praise
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
