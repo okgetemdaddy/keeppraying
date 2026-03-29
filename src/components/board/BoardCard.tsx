@@ -130,6 +130,21 @@ export function BoardCard({
   const [savingFont, setSavingFont] = useState(false);
   const [fontOpen, setFontOpen] = useState(false);
 
+  // Debounced save for overlay opacity
+  const opacitySaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleOverlayOpacityChange = useCallback((v: number) => {
+    setOverlayOpacity(v);
+    if (!userId) return;
+    if (opacitySaveRef.current) clearTimeout(opacitySaveRef.current);
+    opacitySaveRef.current = setTimeout(() => {
+      supabase
+        .from("user_saved_prayers")
+        .update({ overlay_opacity: v } as any)
+        .eq("id", item.id)
+        .then();
+    }, 600);
+  }, [userId, item.id]);
+
   // Check if user has a testimony for this prayer
   useEffect(() => {
     if (!userId || !item.prayer_cards?.id) return;
