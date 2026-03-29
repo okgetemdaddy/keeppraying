@@ -539,8 +539,8 @@ export default function Testify() {
   const enrichTestimonies = useCallback(async (data: TestimonyResult[]) => {
     const ids = data.map(t => t.id);
     if (!ids.length) return data;
-    const [{ data: likesData }, { data: flagsData }] = await Promise.all([
-      supabase.from("testimony_likes").select("testimony_id, user_id").in("testimony_id", ids),
+    const [{ data: praisesData }, { data: flagsData }] = await Promise.all([
+      supabase.from("testimony_praises").select("testimony_id, user_id").in("testimony_id", ids),
       user ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
     ]);
     const likesMap: Record<string, number> = {};
