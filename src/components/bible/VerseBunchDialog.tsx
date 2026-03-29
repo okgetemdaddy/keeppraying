@@ -60,6 +60,10 @@ export interface VerseBunchTooltipProps {
   isAuthenticated: boolean;
   /** Called when user creates a bunch (name, description) */
   onConfirm: (bunchName: string, description?: string) => void;
+  /** Called when user adds to existing bunch */
+  onAddToExisting?: (bunchId: string, bunchName: string) => void;
+  /** Existing bunches */
+  existingBunches?: BunchWithCount[];
   /** Called to close/dismiss */
   onDismiss: () => void;
   /** Initial step override — if user already acknowledged, start at form */
