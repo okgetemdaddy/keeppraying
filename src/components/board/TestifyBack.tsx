@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TestimonyEnrichModal } from "./TestimonyEnrichModal";
+import { FormattedText } from "@/lib/FormattedText";
 
 interface Profile {
   id: string;
