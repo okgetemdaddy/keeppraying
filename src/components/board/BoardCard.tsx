@@ -121,7 +121,13 @@ export function BoardCard({
   const [overlayOpacity, setOverlayOpacity] = useState(
     (item as any).overlay_opacity != null ? (item as any).overlay_opacity : 0.48
   );
-  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
+  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(() => {
+    const saved = (item as any).card_color;
+    if (saved && typeof saved === 'object' && saved.bg && saved.text) {
+      return { bg: saved.bg, text: saved.text };
+    }
+    return null;
+  });
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
 
@@ -143,6 +149,16 @@ export function BoardCard({
         .eq("id", item.id)
         .then();
     }, 600);
+  }, [userId, item.id]);
+
+  const handleCardBgPresetChange = useCallback((preset: { bg: string; text: string } | null) => {
+    setCardBgPreset(preset);
+    if (!userId) return;
+    supabase
+      .from("user_saved_prayers")
+      .update({ card_color: preset } as any)
+      .eq("id", item.id)
+      .then();
   }, [userId, item.id]);
 
   // Check if user has a testimony for this prayer
@@ -430,7 +446,7 @@ export function BoardCard({
                 overlayOpacity={overlayOpacity}
                 onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
-                onCardBgPresetChange={setCardBgPreset}
+                onCardBgPresetChange={handleCardBgPresetChange}
               />
             </div>
           )}
@@ -635,7 +651,7 @@ export function BoardCard({
                 overlayOpacity={overlayOpacity}
                 onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
-                onCardBgPresetChange={setCardBgPreset}
+                onCardBgPresetChange={handleCardBgPresetChange}
               />
             </div>
           </div>
