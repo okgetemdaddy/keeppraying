@@ -225,7 +225,7 @@ export function AtmosphereCanvas({ atmosphereId, enabled, paused = false, classN
       // ── Gentle Sage: floating leaves/petals ───────────────────────
       if (id === "gentle-sage") {
         for (const lf of leaves) {
-          lf.x += lf.vx + Math.sin(time * 0.5 + lf.phase) * 0.08;
+          lf.x += lf.vx + Math.sin(time * 0.5 + lf.rotation) * 0.08;
           lf.y += lf.vy;
           lf.rotation += lf.rotSpeed;
           if (lf.y > h + 20) { lf.y = -15; lf.x = Math.random() * w; }
