@@ -14,13 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import InviteShareModal from "@/components/InviteShareModal";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  Home, Copy, Check, ArrowLeft, PlusCircle, Loader2,
+  Home, ArrowLeft, PlusCircle, Loader2,
   Crown, LogOut, ArrowUpDown, UserMinus, Baby, Users, Shield,
-  Calendar, ClipboardList, Plus, Trash2, CheckCircle2, Clock, FileText,
-} from "lucide-react";
+  Calendar, ClipboardList, Plus, Trash2, CheckCircle2, Clock, FileText, Share2, Check,
+}from "lucide-react";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SortMode = "newest" | "oldest" | "most-prayed";
