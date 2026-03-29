@@ -1513,6 +1513,7 @@ export type Database = {
       }
       user_saved_prayers: {
         Row: {
+          card_color: Json | null
           card_size: string
           created_at: string
           favorite: boolean | null
@@ -1526,6 +1527,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          card_color?: Json | null
           card_size?: string
           created_at?: string
           favorite?: boolean | null
@@ -1539,6 +1541,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          card_color?: Json | null
           card_size?: string
           created_at?: string
           favorite?: boolean | null

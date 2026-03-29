@@ -1,0 +1,1 @@
+ALTER TABLE public.user_saved_prayers ADD COLUMN card_color jsonb DEFAULT NULL;
