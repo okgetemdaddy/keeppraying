@@ -22,6 +22,7 @@ const CORE_LINKS = [
 
 /* ── "More" dropdown items ── */
 const MORE_LINKS = [
+  { label: "God's Word", href: "/bible", icon: BookMarked, description: "The full Bible with highlights, notes, and bookmarks." },
   { label: "We Pray", href: "/we-pray", icon: Globe, description: "Pray for the world together" },
   { label: "PrayerAssist.ing", href: "/assistant", icon: Sparkles, description: "AI-guided prayer crafting" },
   { label: "Circles", href: "/circles", icon: Users, description: "Prayer groups & accountability" },
