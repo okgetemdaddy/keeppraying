@@ -204,6 +204,25 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
               God's Word
             </motion.button>
 
+            {/* Add a Prayer */}
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ delay: 0.24 }}
+              onClick={() => { navigate("/prayer"); setOpen(false); }}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 shadow-lg font-medium text-xs transition-transform hover:scale-105"
+              style={{
+                background: "hsl(150 38% 30%)",
+                color: "white",
+                boxShadow: "0 4px 14px -4px hsl(150 38% 30% / 0.5)",
+              }}
+            >
+              <PenLine className="w-3.5 h-3.5" />
+              Add a Prayer
+            </motion.button>
+
+            {/* Report Issue */}
             <motion.button
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
