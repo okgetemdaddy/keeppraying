@@ -711,14 +711,11 @@ export default function CircleDetail() {
                   <Calendar className="w-3 h-3" /> {schedule.day}{schedule.time ? ` at ${schedule.time}` : ""}
                 </p>
               )}
-              <div className="bg-background rounded-xl p-3 mt-2">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Invite Code</p>
-                <p className="font-mono text-lg tracking-[0.25em] text-foreground font-bold">{(circle as any).invite_code}</p>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Join at KeepPray.ing/circles</p>
+              <p className="text-[10px] text-muted-foreground mt-2">Ask a member for an invite link to join!</p>
+              <p className="text-[10px] text-muted-foreground">KeepPray.ing</p>
             </div>
-            <Button onClick={copyInvite} className="btn-gold rounded-xl gap-2 w-full">
-              <Copy className="w-4 h-4" /> Copy Invite Code
+            <Button onClick={() => setInviteOpen(true)} className="btn-gold rounded-xl gap-2 w-full">
+              <Share2 className="w-4 h-4" /> Generate Invite Link
             </Button>
           </div>
         </DialogContent>
