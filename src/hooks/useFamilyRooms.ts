@@ -90,5 +90,5 @@ export function useFamilyRooms() {
     await fetchRooms();
   }, [user, fetchRooms]);
 
-  return { rooms, loading, createRoom, joinByCode, leaveRoom, refetch: fetchRooms };
+  return { rooms, loading, createRoom, leaveRoom, refetch: fetchRooms };
 }
