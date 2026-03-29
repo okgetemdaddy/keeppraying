@@ -362,6 +362,10 @@ export function BibleReader() {
   // ── Cross-book selection state ──
   const [crossSelections, setCrossSelections] = useState<SelectedVerse[]>([]);
 
+  // ── Multi-select instruction tooltip ──
+  const [showMultiSelectTip, setShowMultiSelectTip] = useState(false);
+  const multiSelectTipShown = useRef(false);
+
   // ── Toolbar state ──
   const [toolbarPos, setToolbarPos] = useState<ToolbarPosition | null>(null);
   const [partialSelection, setPartialSelection] = useState<{
@@ -553,6 +557,23 @@ export function BibleReader() {
           const exists = prev.find(matchKey);
           if (exists && crossSelections.length === 1) return [];
           if (exists) return prev.filter((s) => !matchKey(s));
+
+          // Show multi-select tip on first selection if not previously shown
+          if (!multiSelectTipShown.current) {
+            try {
+              const alreadySeen = localStorage.getItem("bible_multiselect_tip") === "true";
+              if (!alreadySeen) {
+                setShowMultiSelectTip(true);
+                multiSelectTipShown.current = true;
+                setTimeout(() => setShowMultiSelectTip(false), 5000);
+              } else {
+                multiSelectTipShown.current = true;
+              }
+            } catch {
+              multiSelectTipShown.current = true;
+            }
+          }
+
           return [...prev, newVerse];
         });
       }
@@ -1017,6 +1038,40 @@ export function BibleReader() {
             onDismiss={handleBunchDismiss}
             initialStep={bunchAwareState ? "form" : "awareness"}
           />
+        )}
+      </AnimatePresence>
+
+      {/* ── Multi-select instruction tooltip ── */}
+      <AnimatePresence>
+        {showMultiSelectTip && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 shadow-xl max-w-sm"
+          >
+            <p className="text-xs text-muted-foreground leading-relaxed text-center">
+              <strong className="text-foreground">Tip:</strong> Hold{" "}
+              <kbd className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[0.65rem] font-mono font-medium text-foreground">
+                {navigator.platform?.includes("Mac") ? "⌘ Cmd" : "Ctrl"}
+              </kbd>{" "}
+              and click to select multiple verses, or hold{" "}
+              <kbd className="inline-flex items-center rounded border border-border bg-muted px-1.5 py-0.5 text-[0.65rem] font-mono font-medium text-foreground">
+                Shift
+              </kbd>{" "}
+              to select a range.
+            </p>
+            <button
+              onClick={() => {
+                setShowMultiSelectTip(false);
+                try { localStorage.setItem("bible_multiselect_tip", "true"); } catch {}
+              }}
+              className="mt-2 w-full text-center text-[0.65rem] font-medium text-primary hover:underline"
+            >
+              Got it
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </article>
