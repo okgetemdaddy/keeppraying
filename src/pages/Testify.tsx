@@ -19,6 +19,7 @@ import {
   ChevronDown, Bird, ArrowRight, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FormattedText } from "@/lib/FormattedText";
 
 interface Profile {
   id: string;
@@ -181,35 +182,14 @@ function StandaloneTestimonyCard({
 
             {/* Testimony body — hero text */}
             <div className="flex-1">
-              <AnimatePresence initial={false}>
-                <motion.p
-                  key={expanded ? "expanded" : "collapsed"}
-                  initial={false}
-                  animate={{ opacity: 1 }}
-                  className="font-display leading-[1.75] text-[0.95rem]"
-                  style={{ color: "hsl(25 30% 22%)" }}
-                >
-                  {displayBody}
-                  {!expanded && isLong && (
-                    <button
-                      onClick={() => setExpanded(true)}
-                      className="ml-1.5 text-sm font-medium hover:underline underline-offset-2 transition-colors"
-                      style={{ color: "hsl(42 75% 42%)" }}
-                    >
-                      read more…
-                    </button>
-                  )}
-                  {expanded && isLong && (
-                    <button
-                      onClick={() => setExpanded(false)}
-                      className="ml-1.5 text-sm font-medium hover:underline underline-offset-2 transition-colors"
-                      style={{ color: "hsl(42 75% 42%)" }}
-                    >
-                      show less
-                    </button>
-                  )}
-                </motion.p>
-              </AnimatePresence>
+              <FormattedText
+                text={testimony.body}
+                truncateAt={TRUNCATE_AT}
+                expanded={expanded}
+                onExpand={() => setExpanded(!expanded)}
+                className="font-display leading-[1.75] text-[0.95rem]"
+                style={{ color: "hsl(25 30% 22%)" }}
+              />
             </div>
 
             {/* Prayer reference pill */}
@@ -566,7 +546,7 @@ export default function Testify() {
         ? supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds)
         : { data: [] },
       prayerIds.length
-        ? supabase.from("prayer_cards").select("id, title, prayer_text, tags, extended_prayer").in("id", prayerIds)
+        ? supabase.from("prayer_cards").select("id, title, prayer_text, labels, extended_prayer").in("id", prayerIds)
         : { data: [] },
     ]);
     const profilesMap = Object.fromEntries((profilesData || []).map(p => [p.id, p]));

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Share2 } from "lucide-react";
+import { FormattedText } from "@/lib/FormattedText";
 
 interface Verse {
   ref: string;
@@ -95,11 +96,12 @@ export function TestimonyCardFace({
         )}
 
         {/* Body */}
-        <p className="text-sm leading-relaxed whitespace-pre-wrap flex-1" style={{ color: `${textColor}dd` }}>
-          {testimony.body.length > 300
-            ? testimony.body.slice(0, 300).trimEnd() + "…"
-            : testimony.body}
-        </p>
+        <FormattedText
+          text={testimony.body}
+          truncateAt={300}
+          className="text-sm leading-relaxed flex-1"
+          style={{ color: `${textColor}dd` }}
+        />
 
         {/* Verses */}
         {verses.length > 0 && (
