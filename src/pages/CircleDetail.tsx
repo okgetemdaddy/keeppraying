@@ -76,11 +76,7 @@ export default function CircleDetail() {
   const isOwner = circle?.created_by === user?.id;
   const isLeader = isOwner || members.find(m => m.user_id === user?.id)?.role === "leader";
 
-  const copyInvite = () => {
-    if (!circle) return;
-    navigator.clipboard.writeText((circle as any).invite_code);
-    toast({ title: "Invite code copied! 📋", description: `Share "${(circle as any).invite_code}" with your circle.` });
-  };
+  // (old copyInvite removed — replaced by InviteShareModal)
 
   const handleLeave = async () => {
     if (!user || !id) return;
