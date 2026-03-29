@@ -1,104 +1,94 @@
 
 
-# Bible Reader: 4-Phase Build Plan
+# Phase 1: Bible Interaction Schema, RLS & Preference State
 
 ## Overview
-Build a custom Bible reader powered by the YouVersion REST API, routed through a caching edge function to avoid CORS and rate limits. Executed in 4 sequential phases with verification gates.
 
----
+Create five new database tables to power highlights, notes, bookmarks, and the "Verse Bunch" grouping system. All tables are user-scoped with strict RLS. A user preference for suppressing the Verse Bunch dialog will be stored in the existing `board_preferences` pattern (localStorage for simplicity, upgradeable later).
 
-## Phase 1: Database Caching Infrastructure
+## Database Migration
 
-**Create `bible_cache` table via migration:**
+A single migration creating all five tables, compound indexes, and RLS policies.
 
-```sql
-CREATE TABLE public.bible_cache (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  request_path text UNIQUE NOT NULL,
-  payload jsonb NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+### Tables
 
-CREATE INDEX idx_bible_cache_request_path ON public.bible_cache (request_path);
+**1. `user_highlights`**
+- `id` (uuid PK, default gen_random_uuid())
+- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
+- `version_id` (integer, NOT NULL) — Bible version ID
+- `book_usfm` (text, NOT NULL) — e.g. "GEN"
+- `chapter_number` (integer, NOT NULL) — e.g. 1
+- `verse_number` (integer, NOT NULL)
+- `color` (text, NOT NULL, default 'yellow')
+- `reference_normalized` (jsonb, NOT NULL) — stores partial-verse char ranges: `{ "start": 0, "end": 42 }` for substring highlighting; `null`/omitted means whole verse
+- `created_at` (timestamptz, default now())
 
-ALTER TABLE public.bible_cache ENABLE ROW LEVEL SECURITY;
+**2. `user_notes`**
+- `id` (uuid PK)
+- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
+- `version_id` (integer, NOT NULL)
+- `book_usfm` (text, NOT NULL)
+- `chapter_number` (integer, NOT NULL)
+- `verse_number` (integer, NOT NULL)
+- `note_content` (text, NOT NULL)
+- `created_at` / `updated_at` (timestamptz)
 
--- Allow edge function (service role) full access; no client access needed
-CREATE POLICY "Service role manages bible cache"
-  ON public.bible_cache FOR ALL
-  USING (auth.role() = 'service_role'::text);
+**3. `user_bookmarks`**
+- `id` (uuid PK)
+- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
+- `version_id` (integer, NOT NULL)
+- `book_usfm` (text, NOT NULL)
+- `chapter_number` (integer, NOT NULL)
+- `verse_number` (integer, NOT NULL)
+- `created_at` (timestamptz)
+- UNIQUE constraint on `(user_id, version_id, book_usfm, chapter_number, verse_number)`
+
+**4. `verse_bunches`**
+- `id` (uuid PK)
+- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE)
+- `bunch_name` (text, NOT NULL)
+- `description` (text, nullable)
+- `created_at` (timestamptz)
+- `updated_at` (timestamptz)
+
+**5. `verse_bunch_items`**
+- `id` (uuid PK)
+- `bunch_id` (uuid, NOT NULL, references verse_bunches(id) ON DELETE CASCADE)
+- `user_id` (uuid, NOT NULL, references auth.users ON DELETE CASCADE) — denormalized for RLS
+- `version_id` (integer, NOT NULL)
+- `book_usfm` (text, NOT NULL)
+- `chapter_number` (integer, NOT NULL)
+- `verse_number` (integer, NOT NULL)
+- `created_at` (timestamptz)
+- UNIQUE on `(bunch_id, version_id, book_usfm, chapter_number, verse_number)`
+
+### Compound Indexes
+
+On `user_highlights`, `user_notes`, `user_bookmarks`, and `verse_bunch_items`:
+```
+CREATE INDEX idx_{table}_chapter_lookup
+ON {table} (user_id, version_id, book_usfm, chapter_number);
 ```
 
-This will be executed using the database migration tool. No dashboard access needed — Lovable Cloud handles it.
+### RLS Policies
 
-**Stop point:** Confirm migration deployed before Phase 2.
+All five tables get RLS enabled with four identical policy patterns:
+- **SELECT**: `auth.uid() = user_id`
+- **INSERT**: `auth.uid() = user_id` (WITH CHECK)
+- **UPDATE**: `auth.uid() = user_id`
+- **DELETE**: `auth.uid() = user_id`
 
----
+### "Don't Show Again" Preference
 
-## Phase 2: Edge Function — `youversion-proxy`
+Use **localStorage** key `bible_bunch_dialog_dismissed` (boolean). This avoids an extra DB column, is instant, and aligns with this being a UI preference. Can be migrated to a DB column later if cross-device sync is needed.
 
-**File:** `supabase/functions/youversion-proxy/index.ts`
+## Files Changed
 
-- Accepts `{ endpoint: string }` in POST body
-- Validates input (must start with `/`)
-- Initializes Supabase client with `SUPABASE_SERVICE_ROLE_KEY`
-- DaaC logic:
-  1. Query `bible_cache` WHERE `request_path = endpoint`
-  2. **HIT** → return `payload` with `X-Cache: HIT` header
-  3. **MISS** → fetch `https://api.youversion.com/v1${endpoint}` with `X-YVP-App-Key` header
-  4. Insert response into `bible_cache`
-  5. Return with `X-Cache: MISS` header
-- Full CORS support
-- Input validation with path whitelist pattern (only `/bible/` paths)
+1. **New migration** — Single SQL migration via the migration tool containing all CREATE TABLE, INDEX, ALTER TABLE ENABLE RLS, and CREATE POLICY statements.
 
-**Secret needed:** `YVP_APP_KEY` — the YouVersion API key. The `VITE_YOUVERSION_APP_KEY` secret already exists but is a build-time secret. We'll need a runtime secret named `YVP_APP_KEY` for the edge function (or reuse the existing one if it's also set as a runtime secret).
+No code files change in Phase 1. The migration is the deliverable.
 
-**Stop point:** Confirm function deployed and secret set before Phase 3.
+## What Happens Next
 
----
-
-## Phase 3: Client-Side Fetching & State
-
-**File:** `src/hooks/useBibleReader.ts`
-
-- Create a `fetchBible(endpoint: string)` utility using `supabase.functions.invoke('youversion-proxy', { body: { endpoint } })`
-- Build a `useBibleChapter(versionId, bookUsfm, chapterNumber)` hook using `@tanstack/react-query` (already installed):
-  - Constructs endpoint: `/bible/chapter/${versionId}/${bookUsfm}.${chapterNumber}`
-  - Returns `{ data, isLoading, error }` with proper cache keys
-  - `staleTime: Infinity` since Bible content is immutable
-- AbortController support comes free via React Query
-
-**Stop point:** Confirm hook works before Phase 4.
-
----
-
-## Phase 4: UI — `<BibleReader />`
-
-**File:** `src/components/bible/BibleReader.tsx`
-
-- Consumes `useBibleChapter` hook
-- Semantic HTML: `<article>` container, `<section>` for blocks, `<sup>` for verse numbers
-- Tailwind typography with `max-w-prose`, responsive font sizing
-- Toggle between two modes:
-  - **Verse-by-Verse:** each verse as a `<p>` on its own line
-  - **Paragraph:** inline `<span>` elements within paragraph blocks
-- Loading skeleton and error states
-- Selectors for version, book, and chapter (basic `<Select>` dropdowns)
-
-**File:** `src/pages/Bible.tsx` — page wrapper with route `/bible`
-
-**Route addition** in `src/App.tsx`
-
----
-
-## Technical Details
-
-| Concern | Approach |
-|---|---|
-| CORS | Edge function with standard CORS headers |
-| API key security | `YVP_APP_KEY` stored as runtime secret, never sent to client |
-| Rate limiting | Postgres cache with UNIQUE constraint on `request_path` — each path fetched once |
-| Cache invalidation | Not needed for immutable Bible content; optional TTL can be added later |
-| RLS | Service-role-only policy on `bible_cache` |
-| State management | React Query with `staleTime: Infinity` |
+After you confirm the migration ran successfully, Phase 2 will create the `useBibleChapterData` hook with concurrent fetching.
 
