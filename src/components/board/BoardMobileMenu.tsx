@@ -2,10 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
-  Menu, X, Palette, Shield, Users, Home,
-  PlusCircle, ListMusic, BookOpen, Mic,
+  Menu, X, Users, Home,
+  PlusCircle, ListMusic, BookOpen,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface BoardMobileMenuProps {
   onAddPrayer: () => void;
@@ -27,63 +26,49 @@ export function BoardMobileMenu({
 }: BoardMobileMenuProps) {
   const [open, setOpen] = useState(false);
 
-  // Unrolled mat animation — items cascade in with a gentle bounce
   const containerVariants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0, y: 16 },
     visible: {
       opacity: 1,
+      y: 0,
       transition: {
         when: "beforeChildren",
-        staggerChildren: 0.06,
-        delayChildren: 0.12,
+        staggerChildren: 0.05,
+        delayChildren: 0.05,
+        duration: 0.2,
       },
     },
     exit: {
       opacity: 0,
+      y: 12,
       transition: {
         when: "afterChildren",
-        staggerChildren: 0.03,
+        staggerChildren: 0.02,
         staggerDirection: -1,
-        duration: 0.2,
+        duration: 0.16,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: -24, scaleY: 0.7, rotateX: -15 },
+    hidden: { opacity: 0, y: 10 },
     visible: {
       opacity: 1,
       y: 0,
-      scaleY: 1,
-      rotateX: 0,
       transition: {
-        type: "spring" as const,
-        stiffness: 320,
-        damping: 22,
-        mass: 0.8,
+        duration: 0.18,
+        ease: "easeOut" as const,
       },
     },
     exit: {
       opacity: 0,
-      y: -16,
-      scaleY: 0.85,
-      transition: { duration: 0.15 },
-    },
-  };
-
-  // Ripple "landing" effect
-  const rippleVariants = {
-    hidden: { scale: 0, opacity: 0.5 },
-    visible: {
-      scale: 2.5,
-      opacity: 0,
-      transition: { duration: 0.7, ease: "easeOut" as const, delay: 0.25 },
+      y: 8,
+      transition: { duration: 0.12 },
     },
   };
 
   return (
     <>
-      {/* Hamburger button */}
       <motion.button
         whileTap={{ scale: 0.88 }}
         onClick={() => setOpen(true)}
@@ -94,38 +79,36 @@ export function BoardMobileMenu({
         <Menu className="w-6 h-6" strokeWidth={2.5} />
       </motion.button>
 
-      {/* Full-screen overlay menu */}
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-[100] flex flex-col"
+            className="fixed inset-0 z-[9999] flex flex-col"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.18 }}
           >
-            {/* Blurred + dimmed backdrop */}
             <motion.div
-              className="absolute inset-0 bg-black/80"
+              className="absolute inset-0 z-0"
               onClick={() => setOpen(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.18 }}
+              style={{
+                backgroundColor: "hsl(215 28% 17% / 0.75)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+              }}
             />
 
-            {/* Landing ripple */}
             <motion.div
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full pointer-events-none"
-              style={{ background: "radial-gradient(circle, hsl(42 85% 46% / 0.15) 0%, transparent 70%)" }}
-              variants={rippleVariants}
+              className="relative z-10 flex h-full flex-col"
+              variants={containerVariants}
               initial="hidden"
               animate="visible"
-            />
-
-            {/* Menu content */}
-            <div className="relative z-10 flex flex-col h-full">
-              {/* Top bar — close button */}
+              exit="exit"
+            >
               <div className="flex items-center justify-between px-5 h-14">
                 <span className="font-display text-xl font-bold">
                   <span className="text-white">Keep</span>
@@ -142,15 +125,9 @@ export function BoardMobileMenu({
                 </motion.button>
               </div>
 
-              {/* Menu items */}
               <motion.div
                 className="flex-1 flex flex-col items-center justify-center gap-2 px-8"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
               >
-                {/* Add Prayer */}
                 <motion.button
                   variants={itemVariants}
                   whileTap={{ scale: 0.96 }}
@@ -167,7 +144,6 @@ export function BoardMobileMenu({
                   <span className="text-base font-medium text-white">Add Prayer</span>
                 </motion.button>
 
-                {/* Playlist */}
                 {hasPrayers && (
                   <motion.button
                     variants={itemVariants}
@@ -183,7 +159,6 @@ export function BoardMobileMenu({
                   </motion.button>
                 )}
 
-                {/* Classical Prayers */}
                 <motion.button
                   variants={itemVariants}
                   whileTap={{ scale: 0.96 }}
@@ -197,10 +172,8 @@ export function BoardMobileMenu({
                   <span className="text-base font-medium text-white/85">Classical Prayers</span>
                 </motion.button>
 
-                {/* Divider */}
                 <motion.div variants={itemVariants} className="w-full h-px my-1" style={{ background: "rgba(255,255,255,0.08)" }} />
 
-                {/* Circles */}
                 {MENU_ITEMS.map((item) => (
                   <motion.div key={item.id} variants={itemVariants} className="w-full">
                     <Link
@@ -219,9 +192,8 @@ export function BoardMobileMenu({
                 ))}
               </motion.div>
 
-              {/* Bottom safe area */}
               <div className="pb-8" />
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
