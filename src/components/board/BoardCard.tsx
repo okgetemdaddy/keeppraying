@@ -412,6 +412,8 @@ export function BoardCard({
                 hasBgImage={!!bgUrl}
                 overlayOpacity={overlayOpacity}
                 onOverlayOpacityChange={setOverlayOpacity}
+                cardBgPreset={cardBgPreset}
+                onCardBgPresetChange={setCardBgPreset}
               />
             </div>
           )}
