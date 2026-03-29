@@ -557,6 +557,23 @@ export function BibleReader() {
           const exists = prev.find(matchKey);
           if (exists && crossSelections.length === 1) return [];
           if (exists) return prev.filter((s) => !matchKey(s));
+
+          // Show multi-select tip on first selection if not previously shown
+          if (!multiSelectTipShown.current) {
+            try {
+              const alreadySeen = localStorage.getItem("bible_multiselect_tip") === "true";
+              if (!alreadySeen) {
+                setShowMultiSelectTip(true);
+                multiSelectTipShown.current = true;
+                setTimeout(() => setShowMultiSelectTip(false), 5000);
+              } else {
+                multiSelectTipShown.current = true;
+              }
+            } catch {
+              multiSelectTipShown.current = true;
+            }
+          }
+
           return [...prev, newVerse];
         });
       }
