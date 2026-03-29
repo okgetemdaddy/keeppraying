@@ -34,6 +34,7 @@ import { Link } from "react-router-dom";
 import { PrayerCalendar } from "@/components/board/PrayerCalendar";
 import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 import { PrayerStationHero } from "@/components/board/PrayerStationHero";
+import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -147,6 +148,7 @@ export default function Board() {
   const [immersive, setImmersive] = useState(false);
   const [classicalOpen, setClassicalOpen] = useState(false);
   const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
+  const [themeSanctuaryOpen, setThemeSanctuaryOpen] = useState(false);
 
   // Auto-hide nav on scroll
   const [navVisible, setNavVisible] = useState(true);
@@ -420,10 +422,7 @@ export default function Board() {
         isMobile={isMobile}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        currentTheme={prefs.theme}
-        animationsEnabled={prefs.animations_enabled}
-        onThemeChange={(id) => savePrefs({ theme: id })}
-        onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+        onOpenThemeSanctuary={() => setThemeSanctuaryOpen(true)}
       />
 
       {/* Main content */}
@@ -775,6 +774,18 @@ export default function Board() {
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
       <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
+
+      {/* ── Theme Sanctuary Modal ──────────────────────────────────── */}
+      <ThemeSanctuaryModal
+        isOpen={themeSanctuaryOpen}
+        onOpenChange={setThemeSanctuaryOpen}
+        currentPreset={prefs.theme_preset}
+        currentBg={prefs.theme_bg}
+        currentText={prefs.theme_text}
+        currentAccent={prefs.theme_accent}
+        currentScope={prefs.theme_scope}
+        onApply={(data) => savePrefs(data)}
+      />
 
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}
       <Sheet open={testifyOpen} onOpenChange={o => { setTestifyOpen(o); if (!o) { setTestifyBody(""); setTestifyReject(""); } }}>

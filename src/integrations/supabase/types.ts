@@ -290,6 +290,11 @@ export type Database = {
           sound_id: string | null
           sound_volume: number
           theme: string
+          theme_accent: string | null
+          theme_bg: string | null
+          theme_preset: string | null
+          theme_scope: string | null
+          theme_text: string | null
           updated_at: string
           user_id: string
         }
@@ -300,6 +305,11 @@ export type Database = {
           sound_id?: string | null
           sound_volume?: number
           theme?: string
+          theme_accent?: string | null
+          theme_bg?: string | null
+          theme_preset?: string | null
+          theme_scope?: string | null
+          theme_text?: string | null
           updated_at?: string
           user_id: string
         }
@@ -310,6 +320,11 @@ export type Database = {
           sound_id?: string | null
           sound_volume?: number
           theme?: string
+          theme_accent?: string | null
+          theme_bg?: string | null
+          theme_preset?: string | null
+          theme_scope?: string | null
+          theme_text?: string | null
           updated_at?: string
           user_id?: string
         }
