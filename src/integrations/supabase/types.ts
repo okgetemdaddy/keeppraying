@@ -1519,6 +1519,7 @@ export type Database = {
           grid_position: number
           id: string
           notes: string | null
+          overlay_opacity: number
           pinned: boolean | null
           position: number | null
           prayer_id: string
@@ -1531,6 +1532,7 @@ export type Database = {
           grid_position?: number
           id?: string
           notes?: string | null
+          overlay_opacity?: number
           pinned?: boolean | null
           position?: number | null
           prayer_id: string
@@ -1543,6 +1545,7 @@ export type Database = {
           grid_position?: number
           id?: string
           notes?: string | null
+          overlay_opacity?: number
           pinned?: boolean | null
           position?: number | null
           prayer_id?: string

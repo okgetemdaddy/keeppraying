@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -118,7 +118,9 @@ export function BoardCard({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
-  const [overlayOpacity, setOverlayOpacity] = useState(0.48);
+  const [overlayOpacity, setOverlayOpacity] = useState(
+    (item as any).overlay_opacity != null ? (item as any).overlay_opacity : 0.48
+  );
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
@@ -127,6 +129,21 @@ export function BoardCard({
   const [pendingFont, setPendingFont] = useState<string | null>(null);
   const [savingFont, setSavingFont] = useState(false);
   const [fontOpen, setFontOpen] = useState(false);
+
+  // Debounced save for overlay opacity
+  const opacitySaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleOverlayOpacityChange = useCallback((v: number) => {
+    setOverlayOpacity(v);
+    if (!userId) return;
+    if (opacitySaveRef.current) clearTimeout(opacitySaveRef.current);
+    opacitySaveRef.current = setTimeout(() => {
+      supabase
+        .from("user_saved_prayers")
+        .update({ overlay_opacity: v } as any)
+        .eq("id", item.id)
+        .then();
+    }, 600);
+  }, [userId, item.id]);
 
   // Check if user has a testimony for this prayer
   useEffect(() => {
@@ -411,7 +428,7 @@ export function BoardCard({
                 onAddToPlaylist={onAddToPlaylist}
                 hasBgImage={!!bgUrl}
                 overlayOpacity={overlayOpacity}
-                onOverlayOpacityChange={setOverlayOpacity}
+                onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
                 onCardBgPresetChange={setCardBgPreset}
               />
@@ -616,7 +633,7 @@ export function BoardCard({
                 onAddToPlaylist={onAddToPlaylist}
                 hasBgImage={!!bgUrl}
                 overlayOpacity={overlayOpacity}
-                onOverlayOpacityChange={setOverlayOpacity}
+                onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
                 onCardBgPresetChange={setCardBgPreset}
               />
