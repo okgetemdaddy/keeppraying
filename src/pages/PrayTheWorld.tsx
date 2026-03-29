@@ -8,7 +8,7 @@ import GrowthCTA from "@/components/map/GrowthCTA";
 
 import { usePrayerMapData } from "@/hooks/usePrayerMapData";
 
-type Tab = "world" | "radar" | "grow" | "flyers";
+type Tab = "world" | "radar" | "grow";
 
 export default function PrayTheWorld() {
   const [tab, setTab] = useState<Tab>("world");
