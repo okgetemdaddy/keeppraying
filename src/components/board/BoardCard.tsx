@@ -792,6 +792,8 @@ interface ActionButtonsProps {
   onOverlayOpacityChange: (v: number) => void;
   cardBgPreset: { bg: string; text: string } | null;
   onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
+  userId?: string;
+  onRefresh: () => void;
 }
 
 function ActionButtons({
