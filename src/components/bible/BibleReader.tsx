@@ -565,13 +565,8 @@ export function BibleReader() {
 
   const handleCreateBunchRequest = useCallback(() => {
     if (selectedVerses.size < 2) return;
-    if (!bunchDialogDismissed) {
-      setShowBunchDialog(true);
-    } else {
-      // If dismissed, go straight to form (skip prompt)
-      setShowBunchDialog(true);
-    }
-  }, [selectedVerses, bunchDialogDismissed]);
+    setShowBunchDialog(true);
+  }, [selectedVerses]);
 
   const handleBunchConfirm = useCallback(
     (bunchName: string, description?: string) => {
@@ -584,6 +579,41 @@ export function BibleReader() {
       dismissToolbar();
     },
     [selectedVerses, mutations.createBunch, dismissToolbar],
+  );
+
+  // ── Pending bunch recovery after sign-in ──
+  useEffect(() => {
+    if (!user) return;
+    const pending = loadPendingBunch();
+    if (!pending) return;
+    clearPendingBunch();
+    // Auto-create the bunch
+    if (scriptureRef) {
+      mutations.createBunch.mutate({
+        bunchName: `${pending.bookUsfm} ${pending.chapterNumber}:${pending.verseNumbers[0]}–${pending.verseNumbers[pending.verseNumbers.length - 1]}`,
+        verseNumbers: pending.verseNumbers,
+      });
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Navigate to a bunch ──
+  const handleNavigateToBunch = useCallback(
+    (bunch: BunchWithCount) => {
+      if (!bunch.first_version_id || !bunch.first_book_usfm || bunch.first_chapter === null) return;
+      setVersionId(bunch.first_version_id);
+      setBookUsfm(bunch.first_book_usfm);
+      // Find chapter index
+      const book = index?.books?.find((b) => b.id === bunch.first_book_usfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(bunch.first_chapter)) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      // Scroll to verse after render
+      if (bunch.first_verse) {
+        setTimeout(() => {
+          document.getElementById(`verse-${bunch.first_verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 500);
+      }
+    },
+    [index],
   );
 
   // ── Determine toolbar context ──
