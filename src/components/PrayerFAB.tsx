@@ -161,13 +161,23 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
             </motion.span>
             {/* Circle icon */}
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-110"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 overflow-hidden"
               style={{
                 background: item.color,
                 color: "white",
                 boxShadow: `0 3px 12px -3px ${item.color}80`,
               }}
             >
+              {(item as any).shimmer && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 70%)",
+                    backgroundSize: "200% 100%",
+                    animation: "fab-shimmer 2.4s ease-in-out infinite",
+                  }}
+                />
+              )}
               {item.icon}
             </div>
           </motion.button>
