@@ -244,14 +244,16 @@ function StandaloneTestimonyCard({
 
             {/* Actions */}
             <div className="flex items-center gap-0.5">
-              <button
-                onClick={toggleLike}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-red-50 active:scale-95"
-                style={{ color: userLiked ? "hsl(0 72% 51%)" : "hsl(25 18% 58%)" }}
+              <motion.button
+                onClick={handlePraise}
+                animate={praiseAnimating ? { scale: [1, 1.35, 1] } : {}}
+                transition={{ duration: 0.35, type: "spring" }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40 active:scale-95"
+                style={{ color: userPraised ? "hsl(42 75% 40%)" : "hsl(25 18% 58%)" }}
               >
-                <Heart className={cn("w-3.5 h-3.5 transition-all", userLiked && "fill-current scale-110")} />
-                <span className="font-medium">{likesCount > 0 ? likesCount : ""}</span>
-              </button>
+                <span className="text-base">🙌</span>
+                <span className="font-medium">{praiseCount > 0 ? praiseCount : ""}</span>
+              </motion.button>
 
               <button
                 onClick={handleShare}
