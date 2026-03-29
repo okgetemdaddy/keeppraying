@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import VerseLink from "@/components/VerseLink";
+import PrayerPartnerCard from "@/components/companions/PrayerPartnerCard";
 import {
   Flame, Heart, BookOpen, Users, Home, Swords, Music,
   Calendar, Eye, EyeOff, Edit2, Check, X, Award, Star,
@@ -501,6 +502,17 @@ export default function Profile() {
                 </motion.div>
               ))}
             </div>
+          </motion.section>
+        )}
+
+        {/* ── Prayer Partners (own profile only) ── */}
+        {isOwnProfile && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.28 }}
+          >
+            <PrayerPartnerCard />
           </motion.section>
         )}
 

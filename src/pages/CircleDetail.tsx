@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import PrayerCompanions from "@/components/companions/PrayerCompanions";
 import InviteShareModal from "@/components/InviteShareModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
@@ -501,6 +502,15 @@ export default function CircleDetail() {
             )}
           </motion.div>
         )}
+
+        {/* Prayer Companions */}
+        <PrayerCompanions
+          groupType="circle"
+          groupId={id!}
+          members={members}
+          isLeader={isLeader}
+          userId={user?.id}
+        />
 
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t border-border">
