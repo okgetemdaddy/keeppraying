@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import {
-  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp,
+  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp, BookMarked,
 } from "lucide-react";
 
 /* ── Incense smoke keyframes (pure CSS) ────────────────────────────────────── */
@@ -85,6 +85,7 @@ export function PrayerStationHero({
       { id: "family", label: "Family", icon: Home, href: "/family", state: { from: "board" } },
       { id: "breathe", label: "Breathe", icon: Wind, href: "/breathe" },
       { id: "classical", label: "Classical", icon: BookOpen, onClick: onClassical },
+      { id: "bible", label: "God's Word", icon: BookMarked, href: "/bible" },
     ];
     if (hasPrayers) {
       items.splice(1, 0, { id: "playlist", label: "Playlist", icon: ListMusic, onClick: onPlaylist, highlight: false } as any);
