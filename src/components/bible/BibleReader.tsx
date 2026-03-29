@@ -9,6 +9,8 @@ import {
   BookmarkCheck,
   StickyNote,
   Package,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Select,
@@ -33,7 +35,7 @@ import {
   type UserBookmark,
   type VerseBunchItemWithName,
 } from "@/hooks/useBibleChapterData";
-import { useBibleMutations, type ScriptureRef } from "@/hooks/useBibleMutations";
+import { useBibleMutations, type ScriptureRef, type CrossBunchItem } from "@/hooks/useBibleMutations";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   FloatingToolbar,
@@ -43,10 +45,13 @@ import {
 import {
   VerseBunchTooltip,
   isBunchAware,
+  setBunchAware,
   loadPendingBunch,
   clearPendingBunch,
 } from "@/components/bible/VerseBunchDialog";
-import { VerseBunchStrip, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
+import { VerseBunchStrip, useUserVerseBunches, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
+import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
+import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -192,13 +197,18 @@ function BookmarkRibbon({ isBookmarked }: { isBookmarked: boolean }) {
   );
 }
 
-/* ── Bunch indicator ── */
-function BunchIndicator({ bunchItems }: { bunchItems: VerseBunchItemWithName[] }) {
+/* ── Bunch indicator with color ── */
+function BunchIndicator({ bunchItems, bunchColorMap }: { bunchItems: VerseBunchItemWithName[]; bunchColorMap: Map<string, number> }) {
   if (!bunchItems.length) return null;
   const names = [...new Set(bunchItems.map((b) => b.bunch_name))];
+  // Use color of the first bunch
+  const firstBunchId = bunchItems[0]?.bunch_id;
+  const colorIdx = bunchColorMap.get(firstBunchId) ?? 0;
+  const color = getBunchColor(colorIdx);
+  const classes = BUNCH_COLOR_CLASSES[color];
   return (
     <span className="inline-flex items-center ml-1 align-middle" title={`In: ${names.join(", ")}`}>
-      <span className="inline-flex h-5 items-center gap-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 px-1.5 text-[0.6rem] font-medium text-violet-700 dark:text-violet-300">
+      <span className={`inline-flex h-5 items-center gap-0.5 rounded-full ${classes.bg} px-1.5 text-[0.6rem] font-medium ${classes.text}`}>
         <Package className="h-3 w-3" />
         {names.length === 1 ? names[0] : `${names.length} bunches`}
       </span>
@@ -213,9 +223,11 @@ interface EnrichedVerseProps {
   notes: UserNote[];
   isBookmarked: boolean;
   bunchItems: VerseBunchItemWithName[];
+  bunchColorMap: Map<string, number>;
   bunchGroupPosition: "first" | "middle" | "last" | "single" | null;
   mode: ReadingMode;
   isSelected: boolean;
+  hideBunches: boolean;
   onTapSelect: (verseNumber: number, e: React.MouseEvent) => void;
 }
 
@@ -225,14 +237,20 @@ function EnrichedVerse({
   notes,
   isBookmarked,
   bunchItems,
+  bunchColorMap,
   bunchGroupPosition,
   mode,
   isSelected,
+  hideBunches,
   onTapSelect,
 }: EnrichedVerseProps) {
   const bunchBorderClass = useMemo(() => {
-    if (!bunchGroupPosition) return "";
-    const base = "border-l-2 border-violet-300 dark:border-violet-600 pl-3";
+    if (!bunchGroupPosition || hideBunches) return "";
+    const firstBunchId = bunchItems[0]?.bunch_id;
+    const colorIdx = bunchColorMap.get(firstBunchId) ?? 0;
+    const color = getBunchColor(colorIdx);
+    const classes = BUNCH_COLOR_CLASSES[color];
+    const base = `border-l-2 ${classes.border} pl-3`;
     switch (bunchGroupPosition) {
       case "first": return `${base} rounded-tl-md pt-2`;
       case "last": return `${base} rounded-bl-md pb-2`;
@@ -240,7 +258,15 @@ function EnrichedVerse({
       case "single": return `${base} rounded-l-md py-1`;
       default: return "";
     }
-  }, [bunchGroupPosition]);
+  }, [bunchGroupPosition, hideBunches, bunchItems, bunchColorMap]);
+
+  const bunchBgClass = useMemo(() => {
+    if (!bunchGroupPosition || hideBunches) return "";
+    const firstBunchId = bunchItems[0]?.bunch_id;
+    const colorIdx = bunchColorMap.get(firstBunchId) ?? 0;
+    const color = getBunchColor(colorIdx);
+    return BUNCH_COLOR_CLASSES[color].bgSubtle;
+  }, [bunchGroupPosition, hideBunches, bunchItems, bunchColorMap]);
 
   const selectedClass = isSelected
     ? "bg-primary/10 dark:bg-primary/15 ring-1 ring-primary/30 rounded-md"
@@ -251,7 +277,7 @@ function EnrichedVerse({
       <span
         id={`verse-${verse.number}`}
         data-verse={verse.number}
-        className={`${bunchGroupPosition ? "bg-violet-50/40 dark:bg-violet-950/20" : ""} ${selectedClass} cursor-pointer`}
+        className={`${bunchBgClass} ${selectedClass} cursor-pointer`}
         onClick={(e) => onTapSelect(verse.number, e)}
       >
         <sup className="mx-0.5 text-[0.65rem] font-semibold text-primary/60 select-none align-super">
@@ -260,7 +286,7 @@ function EnrichedVerse({
         </sup>
         <HighlightedText text={verse.text} highlights={highlights} />
         <NoteMarginalia notes={notes} />
-        <BunchIndicator bunchItems={bunchItems} />{" "}
+        {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}{" "}
       </span>
     );
   }
@@ -279,7 +305,7 @@ function EnrichedVerse({
         </sup>
         <HighlightedText text={verse.text} highlights={highlights} />
         <NoteMarginalia notes={notes} />
-        <BunchIndicator bunchItems={bunchItems} />
+        {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
     </div>
   );
@@ -318,6 +344,11 @@ function getVerseFromNode(node: Node | null): number | null {
   return null;
 }
 
+/* ── localStorage helper for hide bunches ── */
+function getHideBunches(): boolean {
+  try { return localStorage.getItem("bible_hide_bunch_refs") === "true"; } catch { return false; }
+}
+
 /* ═══════════════════════════════════════════════════
    MAIN BIBLE READER
    ═══════════════════════════════════════════════════ */
@@ -328,8 +359,10 @@ export function BibleReader() {
   const [chapterIdx, setChapterIdx] = useState<number>(0);
   const [mode, setMode] = useState<ReadingMode>("verse");
 
-  // ── Selection state ──
-  const [selectedVerses, setSelectedVerses] = useState<Set<number>>(new Set());
+  // ── Cross-book selection state ──
+  const [crossSelections, setCrossSelections] = useState<SelectedVerse[]>([]);
+
+  // ── Toolbar state ──
   const [toolbarPos, setToolbarPos] = useState<ToolbarPosition | null>(null);
   const [partialSelection, setPartialSelection] = useState<{
     verseNumber: number;
@@ -342,14 +375,17 @@ export function BibleReader() {
 
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
-  const [bunchAware, setBunchAwareState] = useState(isBunchAware);
-  const [bunchDialogVerses, setBunchDialogVerses] = useState<number[]>([]);
+  const [bunchAwareState, setBunchAwareStateReact] = useState(isBunchAware);
+
+  // ── Hide bunches toggle ──
+  const [hideBunchRefs, setHideBunchRefs] = useState(getHideBunches);
 
   const readingAreaRef = useRef<HTMLDivElement>(null);
 
   // Data hooks
   const { data: versions, isLoading: versionsLoading } = useBibleVersions();
   const { data: index, isLoading: indexLoading } = useBibleIndex(versionId);
+  const { data: bunches } = useUserVerseBunches();
 
   const currentBook: BibleBookMeta | undefined = useMemo(
     () => index?.books?.find((b) => b.id === bookUsfm),
@@ -382,6 +418,13 @@ export function BibleReader() {
 
   const mutations = useBibleMutations(scriptureRef);
 
+  // ── Bunch color map: bunch_id → index for stable coloring ──
+  const bunchColorMap = useMemo(() => {
+    const map = new Map<string, number>();
+    (bunches ?? []).forEach((b, i) => map.set(b.id, i));
+    return map;
+  }, [bunches]);
+
   // Lookup maps
   const highlightMap = useMemo(() => groupByVerse(chapterData?.highlights ?? []), [chapterData?.highlights]);
   const noteMap = useMemo(() => groupByVerse(chapterData?.notes ?? []), [chapterData?.notes]);
@@ -392,6 +435,21 @@ export function BibleReader() {
   }, [chapterData?.bookmarks]);
   const bunchMap = useMemo(() => groupByVerse(chapterData?.bunchItems ?? []), [chapterData?.bunchItems]);
   const bunchPositions = useMemo(() => computeBunchPositions(verses, bunchMap), [verses, bunchMap]);
+
+  // ── Derive current-chapter selection set from crossSelections ──
+  const selectedVerses = useMemo(() => {
+    const set = new Set<number>();
+    for (const s of crossSelections) {
+      if (
+        s.bookUsfm === bookUsfm &&
+        s.chapterNumber === currentChapter?.id &&
+        s.versionId === versionId
+      ) {
+        set.add(s.verseNumber);
+      }
+    }
+    return set;
+  }, [crossSelections, bookUsfm, currentChapter?.id, versionId]);
 
   // Navigation
   const totalChapters = currentBook?.chapters?.length ?? 0;
@@ -413,9 +471,8 @@ export function BibleReader() {
     }
   }, [index, bookUsfm]);
 
-  // Clear selection on chapter change
+  // Clear transient UI on chapter change (NOT selections)
   useEffect(() => {
-    setSelectedVerses(new Set());
     setToolbarPos(null);
     setPartialSelection(null);
     setNoteInputVerse(null);
@@ -426,56 +483,87 @@ export function BibleReader() {
   const dismissToolbar = useCallback(() => {
     setToolbarPos(null);
     setPartialSelection(null);
-    setSelectedVerses(new Set());
+    // Clear current-chapter selections from crossSelections
+    setCrossSelections((prev) =>
+      prev.filter(
+        (s) =>
+          !(s.bookUsfm === bookUsfm && s.chapterNumber === currentChapter?.id && s.versionId === versionId),
+      ),
+    );
     window.getSelection()?.removeAllRanges();
-  }, []);
+  }, [bookUsfm, currentChapter?.id, versionId]);
 
-  // ── Tap-select handler ──
+  // ── Tap-select handler (cross-book aware) ──
   const handleTapSelect = useCallback(
     (verseNumber: number, e: React.MouseEvent) => {
-      // Don't interfere with note/toolbar button clicks
       if ((e.target as HTMLElement).closest("button, a, input, textarea")) return;
 
-      // Check for text selection first
       const sel = window.getSelection();
-      if (sel && sel.toString().trim().length > 0) {
-        // This is a partial text selection — handle in mouseup
-        return;
-      }
+      if (sel && sel.toString().trim().length > 0) return;
 
-      // Multi-select with Ctrl/Meta or Shift
+      if (!versionId || !bookUsfm || !currentChapter || !currentBook) return;
+
+      const newVerse: SelectedVerse = {
+        versionId,
+        bookUsfm,
+        bookTitle: currentBook.title,
+        chapterNumber: currentChapter.id,
+        verseNumber,
+      };
+
+      const matchKey = (s: SelectedVerse) =>
+        s.bookUsfm === bookUsfm &&
+        s.chapterNumber === currentChapter.id &&
+        s.verseNumber === verseNumber &&
+        s.versionId === versionId;
+
       if (e.ctrlKey || e.metaKey) {
-        setSelectedVerses((prev) => {
-          const next = new Set(prev);
-          if (next.has(verseNumber)) next.delete(verseNumber);
-          else next.add(verseNumber);
-          return next;
+        setCrossSelections((prev) => {
+          const exists = prev.find(matchKey);
+          if (exists) return prev.filter((s) => !matchKey(s));
+          return [...prev, newVerse];
         });
       } else if (e.shiftKey && selectedVerses.size > 0) {
-        // Range select
+        // Range select within current chapter
         const sorted = [...selectedVerses].sort((a, b) => a - b);
         const anchor = sorted[0];
         const start = Math.min(anchor, verseNumber);
         const end = Math.max(anchor, verseNumber);
-        const range = new Set<number>();
-        for (let i = start; i <= end; i++) range.add(i);
-        setSelectedVerses(range);
+        // Remove existing current-chapter selections, add range
+        setCrossSelections((prev) => {
+          const otherChapter = prev.filter(
+            (s) =>
+              !(s.bookUsfm === bookUsfm && s.chapterNumber === currentChapter.id && s.versionId === versionId),
+          );
+          const rangeVerses: SelectedVerse[] = [];
+          for (let i = start; i <= end; i++) {
+            rangeVerses.push({
+              versionId,
+              bookUsfm,
+              bookTitle: currentBook.title,
+              chapterNumber: currentChapter.id,
+              verseNumber: i,
+            });
+          }
+          return [...otherChapter, ...rangeVerses];
+        });
       } else {
         // Single tap toggle
-        setSelectedVerses((prev) => {
-          if (prev.has(verseNumber) && prev.size === 1) return new Set();
-          return new Set([verseNumber]);
+        setCrossSelections((prev) => {
+          const exists = prev.find(matchKey);
+          if (exists && crossSelections.length === 1) return [];
+          if (exists) return prev.filter((s) => !matchKey(s));
+          return [...prev, newVerse];
         });
       }
 
-      // Position toolbar near click
       setToolbarPos({
         x: Math.min(e.clientX, window.innerWidth - 200),
         y: Math.max(e.clientY - 60, 10),
       });
       setPartialSelection(null);
     },
-    [selectedVerses],
+    [versionId, bookUsfm, currentChapter, currentBook, selectedVerses, crossSelections.length],
   );
 
   // ── Text selection handler (mouseup on reading area) ──
@@ -500,10 +588,8 @@ export function BibleReader() {
       };
 
       if (startVerse === endVerse) {
-        // Single-verse partial selection
         const verseEl = area.querySelector(`[data-verse="${startVerse}"]`);
         const textContent = verseEl?.textContent ?? "";
-        // Approximate character offsets
         const selectedText = sel.toString();
         const textStart = textContent.indexOf(selectedText);
         setPartialSelection({
@@ -511,14 +597,31 @@ export function BibleReader() {
           start: Math.max(textStart, 0),
           end: Math.max(textStart, 0) + selectedText.length,
         });
-        setSelectedVerses(new Set([startVerse]));
+        // Add to crossSelections if not already
+        if (versionId && bookUsfm && currentChapter && currentBook) {
+          setCrossSelections((prev) => {
+            const exists = prev.find(
+              (s) => s.bookUsfm === bookUsfm && s.chapterNumber === currentChapter.id && s.verseNumber === startVerse && s.versionId === versionId,
+            );
+            if (exists) return prev;
+            return [...prev, { versionId, bookUsfm, bookTitle: currentBook.title, chapterNumber: currentChapter.id, verseNumber: startVerse }];
+          });
+        }
       } else if (endVerse !== null) {
-        // Multi-verse selection
         const start = Math.min(startVerse, endVerse);
         const end = Math.max(startVerse, endVerse);
-        const range = new Set<number>();
-        for (let i = start; i <= end; i++) range.add(i);
-        setSelectedVerses(range);
+        if (versionId && bookUsfm && currentChapter && currentBook) {
+          setCrossSelections((prev) => {
+            const otherChapter = prev.filter(
+              (s) => !(s.bookUsfm === bookUsfm && s.chapterNumber === currentChapter.id && s.versionId === versionId),
+            );
+            const rangeVerses: SelectedVerse[] = [];
+            for (let i = start; i <= end; i++) {
+              rangeVerses.push({ versionId, bookUsfm, bookTitle: currentBook.title, chapterNumber: currentChapter.id, verseNumber: i });
+            }
+            return [...otherChapter, ...rangeVerses];
+          });
+        }
         setPartialSelection(null);
       }
 
@@ -527,7 +630,7 @@ export function BibleReader() {
 
     area.addEventListener("mouseup", handleMouseUp);
     return () => area.removeEventListener("mouseup", handleMouseUp);
-  }, []);
+  }, [versionId, bookUsfm, currentChapter, currentBook]);
 
   // ── Toolbar action handlers ──
   const handleHighlight = useCallback(
@@ -564,31 +667,39 @@ export function BibleReader() {
     [noteInputVerse, mutations.saveNote],
   );
 
-  // ── Auto-show tooltip when 2+ verses selected and user hasn't acknowledged ──
+  // ── Auto-show tooltip when 2+ cross-selections and user hasn't acknowledged ──
   useEffect(() => {
-    if (selectedVerses.size >= 2 && !bunchAware && !showBunchDialog) {
-      setBunchDialogVerses([...selectedVerses].sort((a, b) => a - b));
+    if (crossSelections.length >= 2 && !bunchAwareState && !showBunchDialog) {
       setShowBunchDialog(true);
     }
-  }, [selectedVerses.size, bunchAware, showBunchDialog]);
+  }, [crossSelections.length, bunchAwareState, showBunchDialog]);
+
+  // ── Dismiss handler (sets both localStorage and React state) ──
+  const handleBunchDismiss = useCallback(() => {
+    setShowBunchDialog(false);
+    setBunchAware(); // localStorage
+    setBunchAwareStateReact(true); // React state — prevents auto-show
+  }, []);
 
   const handleCreateBunchRequest = useCallback(() => {
-    if (selectedVerses.size < 2) return;
-    setBunchDialogVerses([...selectedVerses].sort((a, b) => a - b));
+    if (crossSelections.length < 2) return;
     setShowBunchDialog(true);
-  }, [selectedVerses]);
+  }, [crossSelections.length]);
 
   const handleBunchConfirm = useCallback(
     (bunchName: string, description?: string) => {
-      mutations.createBunch.mutate({
-        bunchName,
-        verseNumbers: bunchDialogVerses,
-        description,
-      });
+      const items: CrossBunchItem[] = crossSelections.map((s) => ({
+        versionId: s.versionId,
+        bookUsfm: s.bookUsfm,
+        chapterNumber: parseInt(s.chapterNumber, 10),
+        verseNumber: s.verseNumber,
+      }));
+      mutations.createBunch.mutate({ bunchName, items, description });
       setShowBunchDialog(false);
-      dismissToolbar();
+      setCrossSelections([]);
+      setToolbarPos(null);
     },
-    [bunchDialogVerses, mutations.createBunch, dismissToolbar],
+    [crossSelections, mutations.createBunch],
   );
 
   // ── Pending bunch recovery after sign-in ──
@@ -597,13 +708,16 @@ export function BibleReader() {
     const pending = loadPendingBunch();
     if (!pending) return;
     clearPendingBunch();
-    // Auto-create the bunch
-    if (scriptureRef) {
-      mutations.createBunch.mutate({
-        bunchName: `${pending.bookUsfm} ${pending.chapterNumber}:${pending.verseNumbers[0]}–${pending.verseNumbers[pending.verseNumbers.length - 1]}`,
-        verseNumbers: pending.verseNumbers,
-      });
-    }
+    const items: CrossBunchItem[] = pending.verseNumbers.map((vn) => ({
+      versionId: pending.versionId,
+      bookUsfm: pending.bookUsfm,
+      chapterNumber: parseInt(pending.chapterNumber, 10),
+      verseNumber: vn,
+    }));
+    mutations.createBunch.mutate({
+      bunchName: `${pending.bookUsfm} ${pending.chapterNumber}:${pending.verseNumbers[0]}–${pending.verseNumbers[pending.verseNumbers.length - 1]}`,
+      items,
+    });
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Navigate to a bunch ──
@@ -612,11 +726,9 @@ export function BibleReader() {
       if (!bunch.first_version_id || !bunch.first_book_usfm || bunch.first_chapter === null) return;
       setVersionId(bunch.first_version_id);
       setBookUsfm(bunch.first_book_usfm);
-      // Find chapter index
       const book = index?.books?.find((b) => b.id === bunch.first_book_usfm);
       const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(bunch.first_chapter)) ?? 0;
       setChapterIdx(Math.max(chIdx, 0));
-      // Scroll to verse after render
       if (bunch.first_verse) {
         setTimeout(() => {
           document.getElementById(`verse-${bunch.first_verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -626,6 +738,40 @@ export function BibleReader() {
     [index],
   );
 
+  // ── Navigate to a selected verse from strip ──
+  const handleNavigateToSelection = useCallback(
+    (v: SelectedVerse) => {
+      if (v.versionId !== versionId) setVersionId(v.versionId);
+      if (v.bookUsfm !== bookUsfm) setBookUsfm(v.bookUsfm);
+      const book = index?.books?.find((b) => b.id === v.bookUsfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === v.chapterNumber) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      setTimeout(() => {
+        document.getElementById(`verse-${v.verseNumber}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 400);
+    },
+    [index, versionId, bookUsfm],
+  );
+
+  // ── Remove a selection from the strip ──
+  const handleRemoveSelection = useCallback((v: SelectedVerse) => {
+    setCrossSelections((prev) =>
+      prev.filter(
+        (s) =>
+          !(s.bookUsfm === v.bookUsfm && s.chapterNumber === v.chapterNumber && s.verseNumber === v.verseNumber && s.versionId === v.versionId),
+      ),
+    );
+  }, []);
+
+  // ── Toggle hide bunches ──
+  const toggleHideBunches = useCallback(() => {
+    setHideBunchRefs((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("bible_hide_bunch_refs", String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   // ── Determine toolbar context ──
   const selectedArr = useMemo(() => [...selectedVerses].sort((a, b) => a - b), [selectedVerses]);
   const primaryVerse = selectedArr[0];
@@ -633,8 +779,17 @@ export function BibleReader() {
 
   return (
     <article className="min-h-screen bg-background">
-      {/* ── Verse Bunch strip ── */}
-      <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />
+      {/* ── Verse Bunch strip (saved bunches) ── */}
+      {!hideBunchRefs && <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />}
+
+      {/* ── Selected verses strip (active selections) ── */}
+      <SelectedVersesStrip
+        selections={crossSelections}
+        onRemove={handleRemoveSelection}
+        onNavigate={handleNavigateToSelection}
+        onCreateBunch={handleCreateBunchRequest}
+      />
+
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-3">
@@ -691,11 +846,22 @@ export function BibleReader() {
           <div className="flex-1" />
 
           {/* Selection indicator */}
-          {selectedVerses.size > 0 && (
+          {crossSelections.length > 0 && (
             <span className="text-xs text-muted-foreground">
-              {selectedVerses.size} verse{selectedVerses.size > 1 ? "s" : ""} selected
+              {crossSelections.length} verse{crossSelections.length > 1 ? "s" : ""} selected
             </span>
           )}
+
+          {/* Hide bunches toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleHideBunches}
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title={hideBunchRefs ? "Show Bunches" : "Hide Bunches"}
+          >
+            {hideBunchRefs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          </Button>
 
           <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
             <Toggle
@@ -755,12 +921,13 @@ export function BibleReader() {
                         notes={vNotes}
                         isBookmarked={bookmarkMap.has(v.number)}
                         bunchItems={bunchMap.get(v.number) ?? []}
+                        bunchColorMap={bunchColorMap}
                         bunchGroupPosition={bunchPositions.get(v.number) ?? null}
                         mode={mode}
                         isSelected={selectedVerses.has(v.number)}
+                        hideBunches={hideBunchRefs}
                         onTapSelect={handleTapSelect}
                       />
-                      {/* Inline note input */}
                       <AnimatePresence>
                         {noteInputVerse === v.number && (
                           <NoteInputPanel
@@ -839,7 +1006,7 @@ export function BibleReader() {
       <AnimatePresence>
         {showBunchDialog && currentBook && currentChapter && versionId && bookUsfm && (
           <VerseBunchTooltip
-            selectedVerses={bunchDialogVerses}
+            selectedVerses={crossSelections.map((s) => s.verseNumber)}
             bookTitle={currentBook.title}
             chapterTitle={currentChapter.title}
             versionId={versionId}
@@ -847,8 +1014,8 @@ export function BibleReader() {
             chapterNumber={currentChapter.id}
             isAuthenticated={!!user}
             onConfirm={handleBunchConfirm}
-            onDismiss={() => setShowBunchDialog(false)}
-            initialStep={bunchAware ? "form" : "awareness"}
+            onDismiss={handleBunchDismiss}
+            initialStep={bunchAwareState ? "form" : "awareness"}
           />
         )}
       </AnimatePresence>
