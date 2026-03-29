@@ -343,6 +343,7 @@ export function BibleReader() {
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
   const [bunchAware, setBunchAwareState] = useState(isBunchAware);
+  const [bunchDialogVerses, setBunchDialogVerses] = useState<number[]>([]);
 
   const readingAreaRef = useRef<HTMLDivElement>(null);
 
@@ -563,8 +564,17 @@ export function BibleReader() {
     [noteInputVerse, mutations.saveNote],
   );
 
+  // ── Auto-show tooltip when 2+ verses selected and user hasn't acknowledged ──
+  useEffect(() => {
+    if (selectedVerses.size >= 2 && !bunchAware && !showBunchDialog) {
+      setBunchDialogVerses([...selectedVerses].sort((a, b) => a - b));
+      setShowBunchDialog(true);
+    }
+  }, [selectedVerses.size, bunchAware, showBunchDialog]);
+
   const handleCreateBunchRequest = useCallback(() => {
     if (selectedVerses.size < 2) return;
+    setBunchDialogVerses([...selectedVerses].sort((a, b) => a - b));
     setShowBunchDialog(true);
   }, [selectedVerses]);
 
@@ -572,13 +582,13 @@ export function BibleReader() {
     (bunchName: string, description?: string) => {
       mutations.createBunch.mutate({
         bunchName,
-        verseNumbers: [...selectedVerses].sort((a, b) => a - b),
+        verseNumbers: bunchDialogVerses,
         description,
       });
       setShowBunchDialog(false);
       dismissToolbar();
     },
-    [selectedVerses, mutations.createBunch, dismissToolbar],
+    [bunchDialogVerses, mutations.createBunch, dismissToolbar],
   );
 
   // ── Pending bunch recovery after sign-in ──
@@ -829,7 +839,7 @@ export function BibleReader() {
       <AnimatePresence>
         {showBunchDialog && currentBook && currentChapter && versionId && bookUsfm && (
           <VerseBunchTooltip
-            selectedVerses={selectedArr}
+            selectedVerses={bunchDialogVerses}
             bookTitle={currentBook.title}
             chapterTitle={currentChapter.title}
             versionId={versionId}
