@@ -344,9 +344,11 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
                         className="overflow-hidden"
                       >
                         <div className="px-3 pb-3 space-y-3 border-t" style={{ borderColor: `${textColor}10` }}>
-                          <p className="text-sm leading-relaxed pt-2 whitespace-pre-wrap" style={{ color: `${textColor}dd` }}>
-                            {testimony.body}
-                          </p>
+                          <FormattedText
+                            text={testimony.body}
+                            className="text-sm leading-relaxed pt-2"
+                            style={{ color: `${textColor}dd` }}
+                          />
 
                           {/* Social actions — Praise Hands replaces Heart */}
                           <div className="flex items-center gap-0.5 flex-wrap">
