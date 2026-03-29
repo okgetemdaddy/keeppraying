@@ -1,87 +1,100 @@
 
 
-## Theme Sanctuary — Build Plan
+## Calendar Color Picker + Meeting Key + 3-Day Advance Notifications
 
 ### Overview
-Replace the existing small ThemeSelector dropdown in the hero with a new full "Theme Sanctuary" modal. A lantern icon in the hero triggers a reverent, full-featured theme picker with 8 preset themes, custom colors, scope control, and live preview.
+Three additions to the Prayer Calendar:
+1. A color picker button in the legend row (lower right) letting users change calendar background/text/accent — using the same 8 Theme Sanctuary presets
+2. A new calendar key for circle and family room scheduled meetings, displayed as calendar events
+3. A database trigger + notification that alerts users 3 days before any circle or family room meeting
 
-### Architecture Decision
-The request says to save theme data to `profiles` with new columns (`theme_preset`, `theme_bg`, `theme_text`, `theme_accent`, `theme_scope`). However, the project already uses a dedicated `board_preferences` table with a `theme` column. To stay consistent with the existing architecture, I will:
-- Add the new columns (`theme_preset`, `theme_bg`, `theme_text`, `theme_accent`, `theme_scope`) to the **`board_preferences`** table instead of `profiles`
-- Keep the existing `theme` column for board background themes (Golden Sunrise, Candlelit Chapel, etc.)
-- The new Theme Sanctuary columns control **prayer card** color styling (the 8 card-color presets + custom)
+---
 
-### Files to Create/Modify
+### 1. Calendar Color Picker
 
-**1. DB Migration** — Add columns to `board_preferences`:
+**Where**: Bottom-right of the existing legend row (line 476-488 of `PrayerCalendar.tsx`)
+
+**Implementation**:
+- Add a small `Palette` icon button at the end of the legend row
+- On click, open a popover (using shadcn `Popover`) showing the 8 `THEME_SANCTUARY_PRESETS` as circular swatches
+- Selecting a preset saves the calendar color to `board_preferences` via a new column `calendar_bg`, `calendar_text`, `calendar_accent`
+- The calendar currently hardcodes `#F5F0E8` / `#2C2418` — replace those with state driven by the saved preference, falling back to Pure Sand defaults
+
+**DB Migration**: Add 3 columns to `board_preferences`:
 ```sql
 ALTER TABLE public.board_preferences
-  ADD COLUMN theme_preset text DEFAULT 'golden-sunrise',
-  ADD COLUMN theme_bg text DEFAULT NULL,
-  ADD COLUMN theme_text text DEFAULT NULL,
-  ADD COLUMN theme_accent text DEFAULT NULL,
-  ADD COLUMN theme_scope text DEFAULT 'board';
+  ADD COLUMN calendar_bg text DEFAULT '#F5F0E8',
+  ADD COLUMN calendar_text text DEFAULT '#2C2418',
+  ADD COLUMN calendar_accent text DEFAULT '#B85C38';
 ```
 
-**2. `src/components/board/ThemeSanctuaryModal.tsx`** (NEW — ~400 lines)
-- Brand-new standalone component, no reuse of ThemeSelector
-- Props: `isOpen`, `onOpenChange`, preset data, current selection, `onApply`
-- Uses `Dialog` from shadcn (full-screen on mobile via className overrides, max-w-[920px] on desktop)
-- Layout:
-  - Header with serif text: "Choose the Atmosphere of Your Prayer Closet"
-  - **Section 1**: 8 preset theme cards in 2×4 grid (desktop) / 2-col scroll (mobile), each with live mini prayer card previews, hover lift animation, glow ring when selected
-  - **Section 2**: "Create Your Own" custom color section with circular swatches for bg, auto-suggested text color, 6 accent options
-  - **Section 3**: Scope toggle (segmented control): "This Board Only" | "All My Prayer Cards" | "All Future Cards"
-  - **Live Preview Panel**: Right column on desktop / collapsible on mobile showing 3 sample mini prayer cards that update in real-time
-- Framer Motion: spring entrance, card hover scale, gentle exit fade
-- Dark mode: auto-computed darker variants of the 8 presets
+**Files changed**:
+- `src/components/board/PrayerCalendar.tsx` — add Popover color picker, accept/use saved colors
+- `src/hooks/useBoardPreferences.ts` — extend interface and fetch/save for calendar colors
 
-**3. `src/hooks/useBoardPreferences.ts`** — Extend to include new theme fields:
-- Add `theme_preset`, `theme_bg`, `theme_text`, `theme_accent`, `theme_scope` to `BoardPrefs` interface
-- Fetch and save these alongside existing fields
+### 2. Circle & Family Room Meeting Events on Calendar
 
-**4. `src/components/board/PrayerStationHero.tsx`** — Replace ThemeSelector:
-- Remove the `ThemeSelector` import and usage from top-right
-- Add a Lantern icon button (`Lamp` from lucide) in the same position
-- On click, set state to open `ThemeSanctuaryModal`
-- Pass through theme change callbacks
+**Where**: Inside `fetchEvents` in `PrayerCalendar.tsx`
 
-**5. `src/pages/Board.tsx`** — Wire up:
-- Pass new theme sanctuary props through to hero
-- Apply the selected card-level theme colors to `BoardCard` rendering (pass as CSS variables or props)
+**Implementation**:
+- After fetching existing events, also fetch:
+  - All circles the user is a member of (via `accountability_circle_members`) → join to `accountability_circles` to get `schedule` jsonb
+  - All family rooms the user is a member of (via `family_room_members`) → join to `family_rooms` to get `schedule` jsonb
+- The `schedule` jsonb has shape `{ day: string, time: string, description: string }` where `day` is a weekday name
+- For each scheduled circle/family room, compute which dates in the current calendar range fall on that weekday and add them as `CalendarEvent` entries with types `circle_meeting` and `family_meeting`
+- Add two new entries to `EVENT_CONFIG`:
+  - `circle_meeting`: icon `Users`, distinct blue-purple color
+  - `family_meeting`: icon `Home`, distinct warm color
+- Add these to the legend
 
-### Component Structure
-
-```text
-PrayerStationHero
-  └─ [top-right] Lantern icon button → opens ThemeSanctuaryModal
-
-ThemeSanctuaryModal (Dialog)
-  ├─ Header (serif title + subtitle)
-  ├─ Body (flex: left content + right preview on desktop)
-  │   ├─ Left/Main Column
-  │   │   ├─ Section 1: Preset Grid (2×4)
-  │   │   │   └─ PresetCard × 8 (mini prayer card previews inside)
-  │   │   ├─ Section 2: Custom Color Creator
-  │   │   │   ├─ BG swatches (circular)
-  │   │   │   ├─ Text color (auto + editable)
-  │   │   │   └─ Accent swatches (6 options)
-  │   │   └─ Section 3: Scope Toggle (segmented)
-  │   └─ Right Column (desktop) / Bottom (mobile)
-  │       └─ MiniPrayerBoardPreview (3 sample cards)
-  └─ Footer: "Apply" button
+**New event types added to `CalendarEvent["type"]`**:
+```ts
+"circle_meeting" | "family_meeting"
 ```
 
-### Preset Data (built into component)
-8 presets as specified: Warm Parchment, Gentle Sage, Heavenly Sky, Golden Sunrise, Graceful Lavender, Soft Peach, Light Olive, Pure Sand — each with bg, text, accent colors.
+### 3. Three-Day Advance Meeting Notifications
 
-### Animations
-- Modal entrance: spring scale + fade from `{ opacity: 0, scale: 0.95, y: 20 }`
-- Preset cards: `hover:scale-105` with elevated shadow
-- Selected preset: `ring-2 ring-offset-4` with accent color glow
-- Exit: gentle fade out
+**Implementation**: A Supabase Edge Function (`meeting-reminders`) that runs daily via `pg_cron`:
+- Queries all circles and family rooms that have a `schedule` with a `day` value
+- For each, checks if the next occurrence of that weekday is exactly 3 days from now
+- If so, finds all members and inserts a notification:
+  - Type: `meeting_reminder`
+  - Title: "📅 [Circle/Family Room name] meets in 3 days"
+  - Body: "[Day] at [Time] — [description]"
+  - Link: `/circles/[id]` or `/family/[id]`
 
-### What Gets Removed
-- `src/components/board/ThemeSelector.tsx` — no longer imported in the hero (file can remain but won't be used)
-- The small palette dropdown in PrayerStationHero top-right replaced with lantern icon
+**Files created**:
+- `supabase/functions/meeting-reminders/index.ts`
+
+**Cron job** (via insert tool, not migration):
+```sql
+SELECT cron.schedule(
+  'daily-meeting-reminders',
+  '0 9 * * *',
+  $$ SELECT net.http_post(...) $$
+);
+```
+
+### Technical Details
+
+**PrayerCalendar.tsx changes summary**:
+- Import `Popover`, `PopoverTrigger`, `PopoverContent`, `Palette` icon, and `THEME_SANCTUARY_PRESETS`
+- Add props for `boardPrefs` and `onUpdateCalendarColor` callback
+- Replace hardcoded `#F5F0E8`/`#2C2418` with preference-driven state
+- Add color picker popover in legend row (right-aligned)
+- Add circle/family meeting schedule fetching in `fetchEvents`
+- Add `circle_meeting` and `family_meeting` to `EVENT_CONFIG` and legend
+
+**useBoardPreferences.ts changes**:
+- Add `calendar_bg`, `calendar_text`, `calendar_accent` to `BoardPrefs`
+- Include in upsert/fetch
+
+**Board.tsx changes**:
+- Pass board preferences and update handler to `PrayerCalendar`
+
+**Edge function** (`meeting-reminders`):
+- Uses service role key to query all circles/family rooms with schedules
+- Computes 3-day-ahead check using day-of-week math
+- Inserts notifications for all relevant members
+- Deduplication: checks if a reminder notification already exists for this meeting this week
 
