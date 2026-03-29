@@ -1,154 +1,71 @@
 
 
-# Revised Testify Cards — Two-in-One Flip Card System
+## Prayer Station Overhaul Plan
 
-**Change from previous plan**: Remove the heart/like button entirely from testimony cards. The Praise Hands 🙌 button becomes the sole social action. When a user clicks Praise Hands on a public testimony on `/testify`, show a dialog asking "Save this testimony to your prayer board?" — combining the praise action with the optional save.
-
----
-
-## 1. Database Migration
-
-Add columns to `testimonies`:
-```sql
-ALTER TABLE public.testimonies
-  ADD COLUMN IF NOT EXISTS title text,
-  ADD COLUMN IF NOT EXISTS verses jsonb DEFAULT '[]'::jsonb,
-  ADD COLUMN IF NOT EXISTS is_public boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS praise_count integer NOT NULL DEFAULT 0;
-```
-
-Create `testimony_praises` table (replaces the role of `testimony_likes`):
-```sql
-CREATE TABLE public.testimony_praises (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  testimony_id uuid NOT NULL REFERENCES testimonies(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(testimony_id, user_id)
-);
-ALTER TABLE public.testimony_praises ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can view praises" ON public.testimony_praises FOR SELECT USING (true);
-CREATE POLICY "Auth users insert own praises" ON public.testimony_praises FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Auth users delete own praises" ON public.testimony_praises FOR DELETE USING (auth.uid() = user_id);
-```
-
-Auto-increment trigger for `praise_count` on insert/delete.
-
-Create `user_saved_testimonies` table:
-```sql
-CREATE TABLE public.user_saved_testimonies (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  testimony_id uuid NOT NULL REFERENCES testimonies(id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(user_id, testimony_id)
-);
-ALTER TABLE public.user_saved_testimonies ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own saved testimonies" ON public.user_saved_testimonies
-  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
+This is a significant refactor of the `/board` page with 5 interconnected changes. Here is the full plan:
 
 ---
 
-## 2. Edge Function: `enrich-testimony`
+### 1. Hero Section with Personalized Title + Incense Animation
 
-New `supabase/functions/enrich-testimony/index.ts` — calls Lovable AI (`google/gemini-3-flash-preview`) to generate a title and suggest 3-5 Bible verses for a testimony body. Returns structured JSON.
+**What**: A dark-toned hero section at the top of the board content area displaying "{First Name}'s Prayer Station" with a daily AI-generated welcome message and rising incense smoke animation.
 
----
+- Extract user's first name from `user.user_metadata.full_name` (split on space, take first element, fallback to "Your")
+- Title: `"{firstName}'s Prayer Station"` in large display font, white text
+- Daily welcome message: Call Gemini Flash via an edge function (`daily-welcome`) that generates a short, edifying greeting (cached per user per day in a new `daily_welcome_messages` table)
+- Background: Dark gradient (`hsl(215 28% 12%)` to `hsl(220 25% 8%)`) with CSS/canvas-based rising incense animation — thin, wispy smoke tendrils rising slowly using layered animated SVG paths or CSS pseudo-elements with blur + opacity keyframes
+- Move the hamburger menu links (Circles, Family Rooms, Add Prayer, Playlist, Classical Prayers) into this hero section as compact icon+label pill buttons in a horizontally scrollable row
 
-## 3. AI Enrichment Modal
+**DB migration**: Create `daily_welcome_messages` table with columns: `id uuid`, `user_id uuid`, `message text`, `active_date date`, `created_at timestamptz`. RLS: users can read/insert own rows.
 
-New `src/components/board/TestimonyEnrichModal.tsx`:
-- Opens after user writes testimony and clicks "Share Testimony"
-- Shows AI-generated title (editable) + suggested verses (individually removable)
-- Private/Public toggle
-- On confirm: inserts testimony with title, verses, is_public
+**Edge function**: `daily-welcome/index.ts` — calls Gemini 2.5 Flash Lite to generate a 1-2 sentence edifying welcome. Checks if today's message exists first; if so, returns cached.
 
----
+### 2. Delete Hamburger Menu + Cleanup
 
-## 4. Refactor TestifyBack
+- Delete `src/components/board/BoardMobileMenu.tsx` entirely
+- Remove all imports and references from `Board.tsx`
+- The mobile nav bar simplifies to just logo + notification bell (no hamburger)
+- All navigation actions formerly in the hamburger are now in the hero section's action pills
 
-Modify `src/components/board/TestifyBack.tsx`:
-- After writing testimony body and clicking share, open `TestimonyEnrichModal` instead of direct insert
-- **Remove all `testimony_likes` references** — no more heart button
-- Replace heart with Praise Hands 🙌 on the testimony list within the card
+### 3. Search Bar (Above Sort/Filter Row)
 
----
+**What**: A search bar styled similarly to `/prayers` but tailored for the user's own content — searches across saved prayers (title, text, labels), breath prayers, circles, family rooms.
 
-## 5. Two-in-One Flip Card on Board
+- Placed immediately above the All/Pinned/Favorites filter row
+- Glassmorphic style matching the board theme (semi-transparent background, rounded-2xl)
+- Client-side filtering: filters `displayedItems` by matching search query against `prayer_cards.title`, `prayer_cards.prayer_text`, and `prayer_cards.labels`
+- Search icon left, clear X button right when active
+- Placeholder: "Search your prayers, groups, events..."
 
-Modify `src/components/board/BoardCard.tsx`:
-- Query if a testimony exists for the prayer card (for current user)
-- If yes, card becomes two-sided: Front = prayer, Back = testimony
-- Existing "Testify" button becomes "See Testimony" to flip
-- Back side has "See Prayer" to flip back
+### 4. Tighten Single-Column Card Spacing
 
----
+**What**: Reduce the gap between prayer cards in single-column mobile layout for a tighter, journal-like scroll feel.
 
-## 6. Testimony Card Face Component
+- Change single-column grid gap from `gap-4` to `gap-2` on mobile (keep `md:gap-6` for desktop)
+- Reduce container `py-8` to `py-4` on mobile
+- This applies to the `one-col` layout path in the grid className
 
-New `src/components/board/TestimonyCardFace.tsx`:
-- Renders title, body, verses, Praise Hands 🙌 with count
-- "See Prayer" flip button
-- Same 2.5D glassmorphism depth as prayer front
+### 5. Auto-Hide Top Nav on Interaction
 
----
+**What**: The sticky top nav bar hides when the user scrolls down or interacts with content, and reappears when scrolling up.
 
-## 7. Praise Hands 🙌 (Replaces Hearts Everywhere)
-
-- **On board**: 🙌 button with count, gentle scale animation, insert/delete from `testimony_praises`
-- **On `/testify` page**: When user clicks 🙌 on a public testimony:
-  - If not yet praised → show dialog: "Save this testimony to your prayer board?"
-  - Yes → insert into `testimony_praises` + `user_saved_testimonies`, toast
-  - No → insert into `testimony_praises` only, praise count increments
-  - If already praised → un-praise (delete from `testimony_praises`, also remove from `user_saved_testimonies` if saved)
-- **Remove all heart/like buttons and `testimony_likes` usage** from `Testify.tsx` and `TestifyBack.tsx`
+- Add scroll direction detection (`useRef` for last scroll position)
+- When scrolling down past ~60px, animate nav `y: -100%` with opacity fade
+- When scrolling up, animate nav back into view
+- Use Framer Motion's `animate` prop on the existing `motion.div` wrapping the header
 
 ---
 
-## 8. Flip Cards on `/testify` Page
+### Technical Summary
 
-Modify `src/pages/Testify.tsx`:
-- Remove all `testimony_likes` queries and heart UI
-- Replace with Praise Hands 🙌 + save dialog flow
-- If testimony has a linked prayer, render as two-sided flip card (testimony front by default, "See Prayer" to flip)
+| Change | Files Modified/Created |
+|---|---|
+| Hero section + incense animation | `Board.tsx`, new `daily-welcome` edge function, DB migration |
+| Delete hamburger menu | Delete `BoardMobileMenu.tsx`, edit `Board.tsx` |
+| Search bar | `Board.tsx` |
+| Tighter card spacing | `Board.tsx` (grid className) |
+| Auto-hide nav | `Board.tsx` (scroll listener + motion) |
 
----
-
-## 9. Testimony Detail Page
-
-New `src/pages/TestimonyDetail.tsx` at `/testimony/:id`:
-- Full testimony with title, body, verses, praise button, comments
-- Dynamic page title: `{title} | KeepPray.ing`
-- Link to original prayer if exists
-
-Add route in `src/App.tsx`.
-
----
-
-## 10. Enrich Existing Testimonies
-
-One-time: call `enrich-testimony` for the 2 existing testimonies, update their `title` and `verses`.
-
----
-
-## 11. Update Share Links
-
-Change testimony share URLs from `/testify?t=ID` to `/testimony/ID`.
-
----
-
-## File Changes Summary
-
-| File | Action |
-|------|--------|
-| Database migration | Add columns + 2 new tables + trigger |
-| `supabase/functions/enrich-testimony/index.ts` | Create |
-| `src/components/board/TestimonyEnrichModal.tsx` | Create |
-| `src/components/board/TestimonyCardFace.tsx` | Create |
-| `src/pages/TestimonyDetail.tsx` | Create |
-| `src/App.tsx` | Add `/testimony/:id` route |
-| `src/components/board/TestifyBack.tsx` | Refactor: use enrich modal, remove hearts, add praise hands |
-| `src/components/board/BoardCard.tsx` | Two-sided flip when testimony exists |
-| `src/pages/Testify.tsx` | Remove hearts, add praise hands + save dialog, flip cards |
+### Rename
+All UI references to "Board" become "Prayer Station" (page title, empty state, etc.).
 
