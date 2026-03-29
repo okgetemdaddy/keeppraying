@@ -237,9 +237,11 @@ export default function TestimonyDetail() {
             )}
 
             {/* Body */}
-            <p className="text-base leading-[1.85] whitespace-pre-wrap font-display" style={{ color: "hsl(25 30% 22%)" }}>
-              {testimony.body}
-            </p>
+            <FormattedText
+              text={testimony.body}
+              className="text-base leading-[1.85] font-display"
+              style={{ color: "hsl(25 30% 22%)" }}
+            />
 
             {/* Verses */}
             {testimony.verses.length > 0 && (
