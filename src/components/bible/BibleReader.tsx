@@ -731,6 +731,22 @@ export function BibleReader() {
     [crossSelections, mutations.createBunch],
   );
 
+  const handleAddToExistingBunch = useCallback(
+    (bunchId: string, bunchName: string) => {
+      const items: CrossBunchItem[] = crossSelections.map((s) => ({
+        versionId: s.versionId,
+        bookUsfm: s.bookUsfm,
+        chapterNumber: parseInt(s.chapterNumber, 10),
+        verseNumber: s.verseNumber,
+      }));
+      mutations.addToBunch.mutate({ bunchId, bunchName, items });
+      setShowBunchDialog(false);
+      setCrossSelections([]);
+      setToolbarPos(null);
+    },
+    [crossSelections, mutations.addToBunch],
+  );
+
   // ── Pending bunch recovery after sign-in ──
   useEffect(() => {
     if (!user) return;
