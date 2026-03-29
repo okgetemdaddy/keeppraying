@@ -169,6 +169,59 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
         ))}
       </AnimatePresence>
 
+      {/* Side buttons — God's Word & Report Issue */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, x: 20, scale: 0.85 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 16, scale: 0.88 }}
+            transition={{ delay: 0.18, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed z-[59] flex flex-col gap-2.5"
+            style={{
+              bottom: "calc(var(--fab-bottom, 5rem) + 16.5rem)",
+              right: "calc(var(--fab-right, 1rem) + 13rem)",
+            }}
+          >
+            {/* God's Word */}
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ delay: 0.22 }}
+              onClick={() => { navigate("/bible"); setOpen(false); }}
+              className="flex items-center gap-2 rounded-xl px-4 py-2.5 shadow-lg font-medium text-sm transition-transform hover:scale-105"
+              style={{
+                background: "hsl(220 45% 42%)",
+                color: "white",
+                boxShadow: "0 4px 14px -4px hsl(220 45% 42% / 0.5)",
+              }}
+            >
+              <BookOpenCheck className="w-4 h-4" />
+              God's Word
+            </motion.button>
+
+            {/* Report Issue — slightly bigger for beta */}
+            <motion.button
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ delay: 0.26 }}
+              onClick={() => { navigate("/support"); setOpen(false); }}
+              className="flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg font-semibold text-sm transition-transform hover:scale-105"
+              style={{
+                background: "hsl(0 45% 42%)",
+                color: "white",
+                boxShadow: "0 4px 14px -4px hsl(0 45% 42% / 0.5)",
+              }}
+            >
+              <Bug className="w-5 h-5" />
+              Report Issue
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main FAB button — 2.5D */}
       <motion.button
         onClick={() => setOpen(v => !v)}
