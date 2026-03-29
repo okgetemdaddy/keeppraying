@@ -92,15 +92,29 @@ function StandaloneTestimonyCard({
     month: "short", day: "numeric", year: "numeric",
   });
 
-  const toggleLike = async (e: React.MouseEvent) => {
+  const handlePraise = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!user) { toast({ title: "Sign in to like 🙏" }); return; }
-    if (userLiked) {
-      await supabase.from("testimony_likes").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
-      setUserLiked(false); setLikesCount(c => Math.max(0, c - 1));
+    if (!user) { toast({ title: "Sign in to praise 🙏" }); return; }
+    setPraiseAnimating(true);
+    setTimeout(() => setPraiseAnimating(false), 400);
+    if (userPraised) {
+      setUserPraised(false); setPraiseCount(c => Math.max(0, c - 1));
+      await supabase.from("testimony_praises").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
+      await supabase.from("user_saved_testimonies").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
     } else {
-      await supabase.from("testimony_likes").insert({ testimony_id: testimony.id, user_id: user.id });
-      setUserLiked(true); setLikesCount(c => c + 1);
+      // Show save dialog
+      setSaveDialogOpen(true);
+    }
+  };
+
+  const handleSaveDecision = async (save: boolean) => {
+    if (!user) return;
+    setSaveDialogOpen(false);
+    setUserPraised(true); setPraiseCount(c => c + 1);
+    await supabase.from("testimony_praises").insert({ testimony_id: testimony.id, user_id: user.id } as any);
+    if (save) {
+      await supabase.from("user_saved_testimonies").insert({ testimony_id: testimony.id, user_id: user.id } as any);
+      toast({ title: "Testimony saved to your board! 🙌" });
     }
   };
 
