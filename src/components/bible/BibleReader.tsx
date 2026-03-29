@@ -11,7 +11,13 @@ import {
   Package,
   Eye,
   EyeOff,
+  AArrowDown,
+  AArrowUp,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useBibleTextSize } from "@/hooks/useBibleTextSize";
 import {
   Select,
   SelectContent,
