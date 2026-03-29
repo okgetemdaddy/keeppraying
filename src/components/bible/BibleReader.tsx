@@ -566,8 +566,8 @@ export function BibleReader() {
           if (exists && crossSelections.length === 1) return [];
           if (exists) return prev.filter((s) => !matchKey(s));
 
-          // Show multi-select tip on first selection if not previously shown
-          if (!multiSelectTipShown.current) {
+          // Show multi-select tip on first selection (desktop only)
+          if (!isMobile && !multiSelectTipShown.current) {
             try {
               const alreadySeen = localStorage.getItem("bible_multiselect_tip") === "true";
               if (!alreadySeen) {
