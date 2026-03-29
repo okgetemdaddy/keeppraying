@@ -629,19 +629,23 @@ export default function Board() {
         </motion.button>
       )}
 
-      {/* ── Stats drawer (prayed / liked) ─────────────────────────────── */}
+      {/* ── Stats drawer (prayed / liked / testified) ────────────────── */}
       <Sheet open={!!statsDrawer} onOpenChange={o => !o && setStatsDrawer(null)}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader className="mb-5">
             <SheetTitle className="font-display flex items-center gap-2">
               {statsDrawer === "prayed"
                 ? <><span className="text-xl">🙏</span> Prayers I've Prayed</>
-                : <><Heart className="w-5 h-5 fill-red-400 text-red-400" /> Hearted Prayers</>}
+                : statsDrawer === "liked"
+                ? <><Heart className="w-5 h-5 fill-red-400 text-red-400" /> Hearted Prayers</>
+                : <><Sparkles className="w-5 h-5 text-violet-500" /> My Testimonies</>}
             </SheetTitle>
             <SheetDescription>
               {statsDrawer === "prayed"
                 ? "Every prayer you've marked as prayed."
-                : "Prayers you've liked from the community."}
+                : statsDrawer === "liked"
+                ? "Prayers you've liked from the community."
+                : "Your testimonies of God's faithfulness."}
             </SheetDescription>
           </SheetHeader>
 
@@ -649,6 +653,51 @@ export default function Board() {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-7 h-7 animate-spin text-primary" />
             </div>
+          ) : statsDrawer === "testified" ? (
+            drawerTestimonies.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-12">No testimonies yet. Flip a prayer card to testify!</p>
+            ) : (
+              <div className="space-y-3">
+                {drawerTestimonies.map((testi: any) => (
+                  <div key={testi.id} className="prayer-card p-4 space-y-2">
+                    {testi.title && <h4 className="font-display font-semibold text-sm leading-snug">{testi.title}</h4>}
+                    {testi.answered_date && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Answered: {new Date(testi.answered_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">{testi.body}</p>
+                    {testi.testimony_updates && testi.testimony_updates.length > 0 && (
+                      <div className="border-t border-border/50 pt-2 mt-2 space-y-1.5">
+                        <p className="text-[10px] font-semibold text-foreground/60 uppercase tracking-wider">Faith Journey Updates</p>
+                        {testi.testimony_updates
+                          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .slice(0, 3)
+                          .map((upd: any) => (
+                          <div key={upd.id} className="text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground/70">
+                              {new Date(upd.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                            {" — "}
+                            <span className="line-clamp-2">{upd.body}</span>
+                          </div>
+                        ))}
+                        {testi.testimony_updates.length > 3 && (
+                          <p className="text-[10px] text-primary">+{testi.testimony_updates.length - 3} more updates</p>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-1">
+                      <Link to={`/testimony/${testi.id}`}>
+                        <Button size="sm" className="btn-gold rounded-xl h-7 text-xs gap-1.5">
+                          View Testimony →
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : drawerCards.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-12">Nothing here yet.</p>
           ) : (
