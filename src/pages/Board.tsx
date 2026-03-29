@@ -516,7 +516,7 @@ export default function Board() {
         </div>
 
         {/* ── Stats strip ───────────────────────────────────────────────── */}
-        {!loading && (totalPrayed > 0 || totalLiked > 0) && (
+        {!loading && (totalPrayed > 0 || totalLiked > 0 || totalTestimonies > 0) && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -544,6 +544,19 @@ export default function Board() {
                 </span>
                 <span className="text-sm font-medium text-slate-700">
                   <strong className="text-slate-900">{totalLiked.toLocaleString()}</strong> {totalLiked === 1 ? "prayer" : "prayers"} hearted
+                </span>
+              </button>
+            )}
+            {totalTestimonies > 0 && (
+              <button
+                onClick={() => openStatsDrawer("testified")}
+                className="bg-white border border-slate-100 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span className="bg-slate-50 p-2 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                </span>
+                <span className="text-sm font-medium text-slate-700">
+                  Testified <strong className="text-slate-900">{totalTestimonies.toLocaleString()}</strong> {totalTestimonies === 1 ? "time" : "times"}
                 </span>
               </button>
             )}
