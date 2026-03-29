@@ -98,7 +98,7 @@ export function BibleReader() {
 
   // Derive current book & chapter
   const currentBook: BibleBookMeta | undefined = useMemo(
-    () => index?.books?.find((b) => b.usfm === bookUsfm),
+    () => index?.books?.find((b) => b.id === bookUsfm),
     [index, bookUsfm],
   );
 
@@ -145,7 +145,7 @@ export function BibleReader() {
 
   React.useEffect(() => {
     if (index?.books?.length && !bookUsfm) {
-      setBookUsfm(index.books[0].usfm);
+      setBookUsfm(index.books[0].id);
       setChapterIdx(0);
     }
   }, [index, bookUsfm]);
@@ -190,8 +190,8 @@ export function BibleReader() {
             </SelectTrigger>
             <SelectContent>
               {index?.books?.map((b) => (
-                <SelectItem key={b.usfm} value={b.usfm}>
-                  {b.abbreviation || b.usfm}
+                <SelectItem key={b.id} value={b.id}>
+                  {b.title}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -248,7 +248,7 @@ export function BibleReader() {
         {currentBook && currentChapter && (
           <motion.header {...fadeIn} className="mb-8 text-center">
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              {currentBook.abbreviation || currentBook.usfm}{" "}
+              {currentBook.title}{" "}
               {currentChapter.title}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
