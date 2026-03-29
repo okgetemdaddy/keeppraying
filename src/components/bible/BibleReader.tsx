@@ -825,19 +825,20 @@ export function BibleReader() {
         )}
       </AnimatePresence>
 
-      {/* ── Verse Bunch Dialog ── */}
+      {/* ── Verse Bunch Tooltip ── */}
       <AnimatePresence>
-        {showBunchDialog && currentBook && currentChapter && (
-          <VerseBunchDialog
+        {showBunchDialog && currentBook && currentChapter && versionId && bookUsfm && (
+          <VerseBunchTooltip
             selectedVerses={selectedArr}
             bookTitle={currentBook.title}
             chapterTitle={currentChapter.title}
+            versionId={versionId}
+            bookUsfm={bookUsfm}
+            chapterNumber={currentChapter.id}
+            isAuthenticated={!!user}
             onConfirm={handleBunchConfirm}
             onDismiss={() => setShowBunchDialog(false)}
-            onDontShowAgain={() => {
-              setBunchDialogDismissed(true);
-              setShowBunchDialog(false);
-            }}
+            initialStep={bunchAware ? "form" : "awareness"}
           />
         )}
       </AnimatePresence>
