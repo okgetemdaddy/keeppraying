@@ -5,14 +5,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon,
   Maximize2, Minimize2, Flame, Heart, BookOpen,
-  Bird, MessageSquare, Wind, Users, Home, Radio, Loader2,
+  Bird, MessageSquare, Wind, Users, Home, Radio, Loader2, Palette,
 } from "lucide-react";
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, eachWeekOfInterval, isToday } from "date-fns";
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, eachWeekOfInterval, isToday, addDays, getDay } from "date-fns";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { THEME_SANCTUARY_PRESETS } from "@/components/board/ThemeSanctuaryModal";
+import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 
 interface CalendarEvent {
   id: string;
   date: Date;
-  type: "prayer_created" | "prayed" | "liked" | "testimony" | "comment" | "breath" | "standby" | "streak_milestone" | "group_activity" | "family_activity";
+  type: "prayer_created" | "prayed" | "liked" | "testimony" | "comment" | "breath" | "standby" | "streak_milestone" | "group_activity" | "family_activity" | "circle_meeting" | "family_meeting";
   label: string;
   detail?: string;
   link?: string;
@@ -29,18 +32,27 @@ const EVENT_CONFIG: Record<CalendarEvent["type"], { icon: React.ComponentType<{ 
   streak_milestone: { icon: Flame, color: "hsl(42 95% 55%)", bg: "hsl(42 95% 46% / 0.2)" },
   group_activity: { icon: Users, color: "hsl(220 55% 65%)", bg: "hsl(220 55% 50% / 0.15)" },
   family_activity: { icon: Home, color: "hsl(25 70% 60%)", bg: "hsl(25 70% 50% / 0.15)" },
+  circle_meeting: { icon: Users, color: "hsl(260 55% 65%)", bg: "hsl(260 55% 50% / 0.15)" },
+  family_meeting: { icon: Home, color: "hsl(30 75% 55%)", bg: "hsl(30 75% 45% / 0.15)" },
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_MAP: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
+};
 
 interface PrayerCalendarProps {
   textColor: string;
   accentColor?: string;
+  boardPrefs?: BoardPrefs;
+  onUpdateCalendarColor?: (updates: Partial<BoardPrefs>) => void;
 }
 
-export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85% 58%)" }: PrayerCalendarProps) {
-  // Calendar uses Pure Sand bg, so override text to match
-  const textColor = "#2C2418";
+export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColor = "hsl(42 85% 58%)", boardPrefs, onUpdateCalendarColor }: PrayerCalendarProps) {
+  const calBg = boardPrefs?.calendar_bg || "#F5F0E8";
+  const textColor = boardPrefs?.calendar_text || "#2C2418";
+  const accentColor = boardPrefs?.calendar_accent || "#B85C38";
+
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isFullMonth, setIsFullMonth] = useState(false);
@@ -48,6 +60,7 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
   // Calculate date ranges
   const weekStart = startOfWeek(currentDate);
@@ -70,6 +83,9 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
       ? endOfWeek(monthEnd).toISOString()
       : weekEnd.toISOString();
 
+    const rangeStartDate = new Date(rangeStart);
+    const rangeEndDate = new Date(rangeEnd);
+
     try {
       const [
         { data: prayerCards },
@@ -80,6 +96,8 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
         { data: standbyData },
         { data: groupPrayers },
         { data: familyPrayers },
+        { data: circleMemberships },
+        { data: familyMemberships },
       ] = await Promise.all([
         supabase.from("prayer_cards").select("id, title, prayer_text, created_at")
           .eq("created_by", user.id)
@@ -106,12 +124,17 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
         supabase.from("family_room_prayers").select("id, created_at, room_id")
           .eq("shared_by", user.id)
           .gte("created_at", rangeStart).lte("created_at", rangeEnd),
+        // Fetch circle memberships + circle schedule
+        supabase.from("accountability_circle_members").select("circle_id, accountability_circles(id, name, schedule)")
+          .eq("user_id", user.id),
+        // Fetch family memberships + family room schedule
+        supabase.from("family_room_members").select("room_id, family_rooms(id, name, schedule)")
+          .eq("user_id", user.id),
       ]);
 
       const mapped: CalendarEvent[] = [];
 
       (prayerCards || []).forEach(p => {
-        const isBreath = false; // We'd need prayer_type but it's fine
         mapped.push({
           id: `pc-${p.id}`,
           date: new Date(p.created_at),
@@ -192,6 +215,61 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
         });
       });
 
+      // Generate circle meeting events from schedules
+      (circleMemberships || []).forEach((m: any) => {
+        const circle = m.accountability_circles;
+        if (!circle?.schedule) return;
+        const sched = circle.schedule as any;
+        const dayStr = (sched.day || "").toLowerCase();
+        const dayNum = WEEKDAY_MAP[dayStr];
+        if (dayNum === undefined) return;
+        const time = sched.time || "";
+        const desc = sched.description || "";
+
+        // Find all dates in the range that fall on this weekday
+        let d = new Date(rangeStartDate);
+        while (d <= rangeEndDate) {
+          if (getDay(d) === dayNum) {
+            mapped.push({
+              id: `cm-${circle.id}-${d.toISOString()}`,
+              date: new Date(d),
+              type: "circle_meeting",
+              label: `${circle.name} meets`,
+              detail: time ? `${time}${desc ? " — " + desc : ""}` : desc || undefined,
+              link: `/circles/${circle.id}`,
+            });
+          }
+          d = addDays(d, 1);
+        }
+      });
+
+      // Generate family meeting events from schedules
+      (familyMemberships || []).forEach((m: any) => {
+        const room = m.family_rooms;
+        if (!room?.schedule) return;
+        const sched = room.schedule as any;
+        const dayStr = (sched.day || "").toLowerCase();
+        const dayNum = WEEKDAY_MAP[dayStr];
+        if (dayNum === undefined) return;
+        const time = sched.time || "";
+        const desc = sched.description || "";
+
+        let d = new Date(rangeStartDate);
+        while (d <= rangeEndDate) {
+          if (getDay(d) === dayNum) {
+            mapped.push({
+              id: `fm-${room.id}-${d.toISOString()}`,
+              date: new Date(d),
+              type: "family_meeting",
+              label: `${room.name} meets`,
+              detail: time ? `${time}${desc ? " — " + desc : ""}` : desc || undefined,
+              link: `/family/${room.id}`,
+            });
+          }
+          d = addDays(d, 1);
+        }
+      });
+
       setEvents(mapped);
     } catch (err) {
       console.error("Calendar fetch error:", err);
@@ -215,6 +293,15 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
   const navNext = () => setCurrentDate(d => isFullMonth ? new Date(d.getFullYear(), d.getMonth() + 1, 1) : addWeeks(d, 1));
   const goToToday = () => { setCurrentDate(new Date()); setSelectedDay(new Date()); };
 
+  const handlePresetSelect = (preset: typeof THEME_SANCTUARY_PRESETS[number]) => {
+    onUpdateCalendarColor?.({
+      calendar_bg: preset.bg,
+      calendar_text: preset.text,
+      calendar_accent: preset.accent,
+    });
+    setColorPickerOpen(false);
+  };
+
   if (isCollapsed) {
     return (
       <motion.button
@@ -222,7 +309,7 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
         animate={{ opacity: 1 }}
         onClick={() => setIsCollapsed(false)}
         className="flex items-center gap-2 px-4 py-2.5 rounded-2xl mb-5 transition-all hover:scale-[1.02] active:scale-[0.98]"
-        style={{ background: "#F5F0E8", border: "1px solid rgba(44,36,24,0.12)" }}
+        style={{ background: calBg, border: `1px solid ${textColor}18` }}
       >
         <CalendarIcon className="w-4 h-4" style={{ color: accentColor }} />
         <span className="text-xs font-medium" style={{ color: textColor }}>
@@ -248,8 +335,8 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
         onClick={() => setSelectedDay(isSelected ? null : day)}
         className="flex flex-col items-center gap-1 rounded-xl py-2 px-1 transition-all relative"
         style={{
-          background: isSelected ? `${accentColor}22` : today ? "rgba(44,36,24,0.06)" : "transparent",
-          border: isSelected ? `1.5px solid ${accentColor}55` : today ? "1.5px solid rgba(44,36,24,0.12)" : "1.5px solid transparent",
+          background: isSelected ? `${accentColor}22` : today ? `${textColor}0A` : "transparent",
+          border: isSelected ? `1.5px solid ${accentColor}55` : today ? `1.5px solid ${textColor}18` : "1.5px solid transparent",
           minWidth: compact ? 36 : 44,
           flex: 1,
         }}
@@ -293,8 +380,8 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
       transition={{ duration: 0.4 }}
       className="rounded-2xl mb-5 overflow-hidden"
       style={{
-        background: "#F5F0E8",
-        border: "1px solid rgba(44,36,24,0.12)",
+        background: calBg,
+        border: `1px solid ${textColor}18`,
         backdropFilter: "blur(8px)",
       }}
     >
@@ -381,7 +468,7 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
                           onClick={() => setSelectedDay(isSelected ? null : day)}
                           className="flex flex-col items-center gap-0.5 rounded-lg py-1.5 transition-all"
                           style={{
-                            background: isSelected ? `${accentColor}22` : today ? "rgba(44,36,24,0.06)" : "transparent",
+                            background: isSelected ? `${accentColor}22` : today ? `${textColor}0A` : "transparent",
                             border: isSelected ? `1px solid ${accentColor}44` : "1px solid transparent",
                             opacity: inMonth ? 1 : 0.3,
                           }}
@@ -421,7 +508,7 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
             className="border-t overflow-hidden"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
+            style={{ borderColor: `${textColor}10` }}
           >
             <div className="px-4 py-3">
               <p className="text-xs font-semibold mb-2" style={{ color: accentColor }}>
@@ -473,10 +560,10 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
         )}
       </AnimatePresence>
 
-      {/* Legend */}
+      {/* Legend + Color Picker */}
       {!isCollapsed && (
-        <div className="px-4 pb-3 flex flex-wrap gap-x-3 gap-y-1">
-          {Object.entries(EVENT_CONFIG).slice(0, 6).map(([type, config]) => (
+        <div className="px-4 pb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {Object.entries(EVENT_CONFIG).map(([type, config]) => (
             <div key={type} className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: config.color }} />
               <span className="text-[9px] capitalize" style={{ color: `${textColor}40` }}>
@@ -484,6 +571,53 @@ export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85
               </span>
             </div>
           ))}
+
+          {/* Color picker button — pushed to the right */}
+          <div className="ml-auto">
+            <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="p-1.5 rounded-lg transition-all hover:scale-110"
+                  style={{ color: accentColor, background: `${accentColor}15` }}
+                  title="Calendar color theme"
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 p-3" style={{ background: calBg, borderColor: `${textColor}20` }}>
+                <p className="text-[11px] font-semibold mb-2.5" style={{ color: textColor }}>Calendar Theme</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {THEME_SANCTUARY_PRESETS.map(preset => {
+                    const isActive = boardPrefs?.calendar_bg === preset.bg;
+                    return (
+                      <button
+                        key={preset.name}
+                        onClick={() => handlePresetSelect(preset)}
+                        className="flex flex-col items-center gap-1 group"
+                        title={preset.name}
+                      >
+                        <div
+                          className="w-10 h-10 rounded-full border-2 transition-all group-hover:scale-110"
+                          style={{
+                            background: preset.bg,
+                            borderColor: isActive ? preset.accent : `${preset.text}20`,
+                            boxShadow: isActive ? `0 0 0 2px ${preset.accent}40` : "none",
+                          }}
+                        >
+                          <div className="w-full h-full rounded-full flex items-center justify-center">
+                            <span className="text-[8px] font-bold" style={{ color: preset.accent }}>✦</span>
+                          </div>
+                        </div>
+                        <span className="text-[8px] leading-tight text-center" style={{ color: `${textColor}60` }}>
+                          {preset.name.split(" ")[0]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       )}
     </motion.div>
