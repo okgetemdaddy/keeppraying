@@ -101,7 +101,11 @@ export function VerseBunchTooltip({
   const handleTryCreating = () => {
     setBunchAware();
     if (isAuthenticated) {
-      setStep("form");
+      if (existingBunches && existingBunches.length > 0) {
+        setStep("choose");
+      } else {
+        setStep("form");
+      }
     } else {
       setStep("signin");
     }
