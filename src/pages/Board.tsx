@@ -25,7 +25,7 @@ import {
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
   ArrowUpDown, Filter, Users, Home, Wind,
 } from "lucide-react";
-import { StandbyToggle } from "@/components/StandbyToggle";
+
 import { NotificationBell } from "@/components/NotificationBell";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
