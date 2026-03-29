@@ -1816,6 +1816,108 @@ export type Database = {
         }
         Relationships: []
       }
+      user_bookmarks: {
+        Row: {
+          book_usfm: string
+          chapter_number: number
+          created_at: string
+          id: string
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          chapter_number: number
+          created_at?: string
+          id?: string
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          chapter_number?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+          verse_number?: number
+          version_id?: number
+        }
+        Relationships: []
+      }
+      user_highlights: {
+        Row: {
+          book_usfm: string
+          chapter_number: number
+          color: string
+          created_at: string
+          id: string
+          reference_normalized: Json
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          chapter_number: number
+          color?: string
+          created_at?: string
+          id?: string
+          reference_normalized?: Json
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          chapter_number?: number
+          color?: string
+          created_at?: string
+          id?: string
+          reference_normalized?: Json
+          user_id?: string
+          verse_number?: number
+          version_id?: number
+        }
+        Relationships: []
+      }
+      user_notes: {
+        Row: {
+          book_usfm: string
+          chapter_number: number
+          created_at: string
+          id: string
+          note_content: string
+          updated_at: string
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          chapter_number: number
+          created_at?: string
+          id?: string
+          note_content: string
+          updated_at?: string
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          chapter_number?: number
+          created_at?: string
+          id?: string
+          note_content?: string
+          updated_at?: string
+          user_id?: string
+          verse_number?: number
+          version_id?: number
+        }
+        Relationships: []
+      }
       user_saved_prayers: {
         Row: {
           card_color: Json | null
@@ -1897,6 +1999,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      verse_bunch_items: {
+        Row: {
+          book_usfm: string
+          bunch_id: string
+          chapter_number: number
+          created_at: string
+          id: string
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          bunch_id: string
+          chapter_number: number
+          created_at?: string
+          id?: string
+          user_id: string
+          verse_number: number
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          bunch_id?: string
+          chapter_number?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+          verse_number?: number
+          version_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verse_bunch_items_bunch_id_fkey"
+            columns: ["bunch_id"]
+            isOneToOne: false
+            referencedRelation: "verse_bunches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verse_bunches: {
+        Row: {
+          bunch_name: string
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bunch_name: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bunch_name?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       verse_summaries: {
         Row: {
