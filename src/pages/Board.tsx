@@ -130,10 +130,12 @@ export default function Board() {
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
   const [totalLiked, setTotalLiked] = useState(0);
+  const [totalTestimonies, setTotalTestimonies] = useState(0);
 
   // Stats drawer
-  const [statsDrawer, setStatsDrawer] = useState<"prayed" | "liked" | null>(null);
+  const [statsDrawer, setStatsDrawer] = useState<"prayed" | "liked" | "testified" | null>(null);
   const [drawerCards, setDrawerCards] = useState<PrayerCard[]>([]);
+  const [drawerTestimonies, setDrawerTestimonies] = useState<any[]>([]);
   const [drawerLoading, setDrawerLoading] = useState(false);
 
   // Playlist builder
