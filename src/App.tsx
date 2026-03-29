@@ -103,7 +103,7 @@ function AppShell() {
             heroIcon={Users}
             features={[
               { icon: Users, title: "Pray Together", description: "Create circles with friends, church members, or believers worldwide." },
-              { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, track engagement, and create shareable flyers." },
+              { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, track engagement, and share invite links." },
               { icon: Shield, title: "Accountability & Growth", description: "Track streaks, share prayers, and encourage one another daily." },
               { icon: Sparkles, title: "AI Encouragement", description: "Receive uplifting, Scripture-based encouragements for your circle." },
             ]}

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SiteNav } from "@/components/SiteNav";
-import { Globe, Radio, Megaphone, FileText } from "lucide-react";
+import { Globe, Radio, Megaphone } from "lucide-react";
 import WorldMap from "@/components/map/WorldMap";
 import LocalRadar from "@/components/map/LocalRadar";
 import GrowthCTA from "@/components/map/GrowthCTA";
-import PrintableFlyers from "@/components/map/PrintableFlyers";
+
 import { usePrayerMapData } from "@/hooks/usePrayerMapData";
 
-type Tab = "world" | "radar" | "grow" | "flyers";
+type Tab = "world" | "radar" | "grow";
 
 export default function PrayTheWorld() {
   const [tab, setTab] = useState<Tab>("world");
@@ -18,7 +18,7 @@ export default function PrayTheWorld() {
     { id: "world", label: "We Pray", icon: <Globe className="w-4 h-4" /> },
     { id: "radar", label: "Local Radar", icon: <Radio className="w-4 h-4" /> },
     { id: "grow", label: "Grow", icon: <Megaphone className="w-4 h-4" /> },
-    { id: "flyers", label: "Flyers", icon: <FileText className="w-4 h-4" /> },
+    
   ];
 
   return (
@@ -94,11 +94,6 @@ export default function PrayTheWorld() {
           {tab === "grow" && (
             <motion.div key="grow" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <GrowthCTA totalPrayers={totalPrayers} />
-            </motion.div>
-          )}
-          {tab === "flyers" && (
-            <motion.div key="flyers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <PrintableFlyers />
             </motion.div>
           )}
         </AnimatePresence>
