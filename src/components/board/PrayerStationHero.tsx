@@ -120,14 +120,20 @@ export function PrayerStationHero({
           ))}
         </div>
 
-        {/* Theme picker — top right */}
+        {/* Theme Sanctuary trigger — top right */}
         <div className="absolute top-3 right-3 z-20">
-          <ThemeSelector
-            currentTheme={currentTheme}
-            animationsEnabled={animationsEnabled}
-            onThemeChange={onThemeChange}
-            onAnimationsToggle={onAnimationsToggle}
-          />
+          <button
+            onClick={onOpenThemeSanctuary}
+            className="p-2.5 rounded-full transition-all hover:scale-110 active:scale-95"
+            style={{
+              background: "rgba(255,255,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              backdropFilter: "blur(8px)",
+            }}
+            title="Theme Sanctuary"
+          >
+            <Lamp className="w-4.5 h-4.5" style={{ color: "rgba(255,215,100,0.85)" }} />
+          </button>
         </div>
 
         <div className={`relative z-10 ${isMobile ? "px-5 pt-5 pb-4" : "container mx-auto px-6 pt-8 pb-6"}`}>
