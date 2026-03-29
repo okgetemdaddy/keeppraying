@@ -1,0 +1,1 @@
+ALTER TABLE public.user_saved_prayers ADD COLUMN overlay_opacity real NOT NULL DEFAULT 0.48;
