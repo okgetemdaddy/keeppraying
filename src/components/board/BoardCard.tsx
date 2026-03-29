@@ -633,7 +633,7 @@ export function BoardCard({
                 onAddToPlaylist={onAddToPlaylist}
                 hasBgImage={!!bgUrl}
                 overlayOpacity={overlayOpacity}
-                onOverlayOpacityChange={setOverlayOpacity}
+                onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
                 onCardBgPresetChange={setCardBgPreset}
               />
