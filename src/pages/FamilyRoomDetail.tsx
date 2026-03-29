@@ -550,24 +550,6 @@ export default function FamilyRoomDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Flyer dialog */}
-      <Dialog open={flyerOpen} onOpenChange={setFlyerOpen}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader><DialogTitle className="font-display">Family Room Flyer</DialogTitle></DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="rounded-2xl p-6 text-center space-y-3" style={{ background: "linear-gradient(135deg, hsl(42 80% 50% / 0.1), hsl(42 80% 50% / 0.02))", border: "1px solid hsl(42 80% 50% / 0.2)" }}>
-              <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center mx-auto shadow-gold"><Home className="w-6 h-6 text-white" /></div>
-              <h3 className="font-display text-xl font-bold text-foreground">{room.name}</h3>
-              {room.purpose && <p className="text-sm text-primary/80 font-medium">{room.purpose}</p>}
-              {room.description && <p className="text-xs text-muted-foreground">{room.description}</p>}
-              {schedule?.day && <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center"><Calendar className="w-3 h-3" /> {schedule.day}{schedule.time ? ` at ${schedule.time}` : ""}</p>}
-              <p className="text-[10px] text-muted-foreground mt-2">Ask a member for an invite link to join!</p>
-              <p className="text-[10px] text-muted-foreground">KeepPray.ing</p>
-            </div>
-            <Button onClick={() => setInviteOpen(true)} className="btn-gold rounded-xl gap-2 w-full"><Share2 className="w-4 h-4" /> Generate Invite Link</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Invite Share Modal */}
       <InviteShareModal

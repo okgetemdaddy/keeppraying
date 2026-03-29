@@ -96,11 +96,6 @@ export default function PrayTheWorld() {
               <GrowthCTA totalPrayers={totalPrayers} />
             </motion.div>
           )}
-          {tab === "flyers" && (
-            <motion.div key="flyers" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <PrintableFlyers />
-            </motion.div>
-          )}
         </AnimatePresence>
       </div>
     </div>
