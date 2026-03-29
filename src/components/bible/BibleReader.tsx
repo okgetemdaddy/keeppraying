@@ -1065,7 +1065,10 @@ export function BibleReader() {
             partialSelectionRange={partialSelection ? { start: partialSelection.start, end: partialSelection.end } : undefined}
             isBookmarked={!!primaryBookmark}
             bookmarkId={primaryBookmark?.id}
+            existingHighlightColor={existingHighlightColor}
+            existingHighlightId={existingHighlightId}
             onHighlight={handleHighlight}
+            onRemoveHighlight={handleRemoveHighlight}
             onToggleBookmark={handleToggleBookmark}
             onAddNote={handleAddNote}
             onCreateBunch={handleCreateBunchRequest}
