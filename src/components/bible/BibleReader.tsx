@@ -11,7 +11,13 @@ import {
   Package,
   Eye,
   EyeOff,
+  AArrowDown,
+  AArrowUp,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useBibleTextSize } from "@/hooks/useBibleTextSize";
 import {
   Select,
   SelectContent,
@@ -354,6 +360,8 @@ function getHideBunches(): boolean {
    ═══════════════════════════════════════════════════ */
 export function BibleReader() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const { size: textSize, setTextSize, MIN_SIZE, MAX_SIZE } = useBibleTextSize();
   const [versionId, setVersionId] = useState<number | undefined>(undefined);
   const [bookUsfm, setBookUsfm] = useState<string | undefined>(undefined);
   const [chapterIdx, setChapterIdx] = useState<number>(0);
@@ -558,8 +566,8 @@ export function BibleReader() {
           if (exists && crossSelections.length === 1) return [];
           if (exists) return prev.filter((s) => !matchKey(s));
 
-          // Show multi-select tip on first selection if not previously shown
-          if (!multiSelectTipShown.current) {
+          // Show multi-select tip on first selection (desktop only)
+          if (!isMobile && !multiSelectTipShown.current) {
             try {
               const alreadySeen = localStorage.getItem("bible_multiselect_tip") === "true";
               if (!alreadySeen) {
@@ -873,6 +881,37 @@ export function BibleReader() {
             </span>
           )}
 
+          {/* Text size control */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                title="Text size"
+              >
+                <AArrowUp className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-3" align="end">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <AArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-foreground">{textSize}px</span>
+                  <AArrowUp className="h-4.5 w-4.5 text-muted-foreground" />
+                </div>
+                <Slider
+                  value={[textSize]}
+                  min={MIN_SIZE}
+                  max={MAX_SIZE}
+                  step={1}
+                  onValueChange={([v]) => setTextSize(v)}
+                  className="w-full"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {/* Hide bunches toggle */}
           <Button
             variant="ghost"
@@ -929,7 +968,8 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
-              className="font-body text-base sm:text-lg"
+              style={{ fontSize: `${textSize}px` }}
+              className="font-body"
             >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                 {verses.map((v) => {
