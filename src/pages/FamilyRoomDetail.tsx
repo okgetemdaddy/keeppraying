@@ -255,9 +255,8 @@ export default function FamilyRoomDetail() {
                   <Switch checked={room.child_friendly} onCheckedChange={toggleChildFriendly} className="scale-90" />
                 </div>
               )}
-              <Button variant="outline" size="sm" onClick={copyCode} className="rounded-xl gap-1.5 text-xs">
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "Copied!" : "Family Code"}
+              <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)} className="rounded-xl gap-1.5 text-xs">
+                <Share2 className="w-3.5 h-3.5" /> Invite
               </Button>
               {isLeader && (
                 <Button variant="outline" size="sm" onClick={() => setFlyerOpen(true)} className="rounded-xl gap-1.5 text-xs">
