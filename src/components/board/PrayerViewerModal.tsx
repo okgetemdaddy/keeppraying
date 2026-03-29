@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft } from "lucide-react";
+import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -267,14 +268,14 @@ export function PrayerViewerModal({
                 )}
 
                 {/* Prayer text — optimized for reading */}
-                <p
+                <FormattedText
+                  text={card.prayer_text}
                   className={`text-base md:text-lg leading-[1.85] font-medium mb-8 selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white" : "text-slate-800"}`}
                   style={{
                     fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : '"Lora", serif',
                   }}
-                >
-                  {card.prayer_text}
-                </p>
+                  indent
+                />
 
                 {/* See less… — closes modal */}
                 <button

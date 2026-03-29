@@ -67,6 +67,18 @@ const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
 };
 const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
+/** 8 background-color presets from the design palette */
+export const CARD_BG_PRESETS = [
+  { name: "Warm Parchment",    bg: "#F8F1E3", text: "#2C2418" },
+  { name: "Gentle Sage",       bg: "#E8F0E8", text: "#1F2C22" },
+  { name: "Heavenly Sky",      bg: "#E0F0FA", text: "#132A4A" },
+  { name: "Golden Sunrise",    bg: "#FAF0D8", text: "#3D2A0F" },
+  { name: "Graceful Lavender", bg: "#F0E8FA", text: "#2C1F3D" },
+  { name: "Soft Peach",        bg: "#FAE8E0", text: "#3D2A1F" },
+  { name: "Light Olive",       bg: "#F0F5E8", text: "#263D26" },
+  { name: "Pure Sand",         bg: "#F5F0E8", text: "#2C2418" },
+];
+
 type CardSize = "small" | "medium" | "large";
 
 interface BoardCardProps {
@@ -107,6 +119,7 @@ export function BoardCard({
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(0.48);
+  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
 
@@ -280,9 +293,9 @@ export function BoardCard({
           style={{
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            background: bgUrl ? undefined : cardBg,
+            background: bgUrl ? undefined : cardBgPreset ? cardBgPreset.bg : cardBg,
             borderColor: cardBorder,
-            color: bgUrl ? "rgba(255,255,255,0.92)" : textColor,
+            color: bgUrl ? "rgba(255,255,255,0.92)" : cardBgPreset ? cardBgPreset.text : textColor,
             backdropFilter: "blur(16px) saturate(1.6)",
             WebkitBackdropFilter: "blur(16px) saturate(1.6)",
             boxShadow: item.pinned
@@ -301,7 +314,7 @@ export function BoardCard({
             className="w-full h-full object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${0.9 * overlayOpacity}), rgba(0,0,0,${0.6 * overlayOpacity}), rgba(0,0,0,${0.4 * overlayOpacity}))` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${1.0 * overlayOpacity}), rgba(0,0,0,${0.85 * overlayOpacity}), rgba(0,0,0,${0.7 * overlayOpacity}))` }} />
         </div>
       )}
 
@@ -317,7 +330,8 @@ export function BoardCard({
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : 'text-slate-900'}`}>
+              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
+                style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : undefined}>
                 {card.title}
               </h3>
             )}
@@ -327,15 +341,17 @@ export function BoardCard({
               <FormattedText
                 text={card.prayer_text}
                 truncateAt={PRAYER_CHAR_LIMIT}
-                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : 'text-slate-700'}`}
+                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-700'}`}
                 style={{
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
+                  ...(cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : {}),
                 }}
               />
               {isTruncated && (
                 <button
                   onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
-                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
+                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
+                  style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text, opacity: 0.7 } : undefined}
                 >
                   See more…
                 </button>
@@ -396,6 +412,8 @@ export function BoardCard({
                 hasBgImage={!!bgUrl}
                 overlayOpacity={overlayOpacity}
                 onOverlayOpacityChange={setOverlayOpacity}
+                cardBgPreset={cardBgPreset}
+                onCardBgPresetChange={setCardBgPreset}
               />
             </div>
           )}
@@ -599,6 +617,8 @@ export function BoardCard({
                 hasBgImage={!!bgUrl}
                 overlayOpacity={overlayOpacity}
                 onOverlayOpacityChange={setOverlayOpacity}
+                cardBgPreset={cardBgPreset}
+                onCardBgPresetChange={setCardBgPreset}
               />
             </div>
           </div>
@@ -722,6 +742,8 @@ interface ActionButtonsProps {
   hasBgImage: boolean;
   overlayOpacity: number;
   onOverlayOpacityChange: (v: number) => void;
+  cardBgPreset: { bg: string; text: string } | null;
+  onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
 }
 
 function ActionButtons({
@@ -729,6 +751,7 @@ function ActionButtons({
   onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
+  cardBgPreset, onCardBgPresetChange,
 }: ActionButtonsProps) {
   return (
     <>
@@ -855,6 +878,54 @@ function ActionButtons({
                   onValueChange={([v]) => onOverlayOpacityChange(v / 100)}
                   className="w-full"
                 />
+              </div>
+            </>
+          )}
+
+          {/* Background color presets — only when NO bg image */}
+          {!hasBgImage && (
+            <>
+              <DropdownMenuSeparator />
+              <div
+                className="px-3 py-2 space-y-1.5"
+                onClick={e => e.stopPropagation()}
+                onPointerDown={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                  <span className="w-3.5 h-3.5 flex items-center justify-center">🎨</span>
+                  <span>Card color</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Default / clear button */}
+                  <button
+                    onClick={() => onCardBgPresetChange(null)}
+                    className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
+                    style={{
+                      borderColor: !cardBgPreset ? 'hsl(42 75% 40%)' : 'hsl(215 14% 80%)',
+                      background: 'white',
+                    }}
+                    title="Default"
+                  >
+                    {!cardBgPreset && <Check className="w-3 h-3 text-amber-600" />}
+                  </button>
+                  {CARD_BG_PRESETS.map(preset => {
+                    const isActive = cardBgPreset?.bg === preset.bg;
+                    return (
+                      <button
+                        key={preset.name}
+                        onClick={() => onCardBgPresetChange(preset)}
+                        className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
+                        style={{
+                          background: preset.bg,
+                          borderColor: isActive ? preset.text : `${preset.text}30`,
+                        }}
+                        title={preset.name}
+                      >
+                        {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </>
           )}
