@@ -417,6 +417,15 @@ export default function FamilyRoomDetail() {
             </AnimatePresence>
           </motion.div>
         )}
+
+        {/* Prayer Companions */}
+        <PrayerCompanions
+          groupType="family"
+          groupId={id!}
+          members={members}
+          isLeader={isLeader}
+          userId={user?.id}
+        />
       </div>
 
       {/* Members dialog */}
