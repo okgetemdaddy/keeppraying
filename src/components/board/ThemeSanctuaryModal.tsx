@@ -179,9 +179,12 @@ export function ThemeSanctuaryModal({
   currentText,
   currentAccent,
   currentScope,
+  currentAtmosphereId,
   onApply,
+  onAtmosphereChange,
 }: ThemeSanctuaryModalProps) {
   const isMobile = useIsMobile();
+  const [selectedAtmosphere, setSelectedAtmosphere] = useState(currentAtmosphereId || "warm-parchment");
 
   // Local state
   const [selectedPresetName, setSelectedPresetName] = useState<string | null>(
