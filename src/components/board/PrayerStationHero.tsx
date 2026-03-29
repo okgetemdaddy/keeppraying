@@ -40,11 +40,8 @@ interface PrayerStationHeroProps {
   /* Search */
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  /* Theme */
-  currentTheme: string;
-  animationsEnabled: boolean;
-  onThemeChange: (id: string) => void;
-  onAnimationsToggle: (v: boolean) => void;
+  /* Theme Sanctuary */
+  onOpenThemeSanctuary: () => void;
 }
 
 export function PrayerStationHero({
