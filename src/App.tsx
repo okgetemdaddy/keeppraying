@@ -199,6 +199,7 @@ function AppShell() {
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/youversion/callback" element={<YouVersionCallback />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

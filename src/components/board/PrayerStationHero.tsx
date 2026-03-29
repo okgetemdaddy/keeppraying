@@ -171,6 +171,9 @@ export function PrayerStationHero({
             {welcomeMsg || "The Lord is near to all who call on Him…"}
           </motion.p>
 
+          {/* Verse of the Day — after daily welcome */}
+          <VerseOfTheDay />
+
           {/* Action buttons — 2 rows × 3 columns */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
