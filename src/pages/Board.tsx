@@ -130,10 +130,12 @@ export default function Board() {
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
   const [totalLiked, setTotalLiked] = useState(0);
+  const [totalTestimonies, setTotalTestimonies] = useState(0);
 
   // Stats drawer
-  const [statsDrawer, setStatsDrawer] = useState<"prayed" | "liked" | null>(null);
+  const [statsDrawer, setStatsDrawer] = useState<"prayed" | "liked" | "testified" | null>(null);
   const [drawerCards, setDrawerCards] = useState<PrayerCard[]>([]);
+  const [drawerTestimonies, setDrawerTestimonies] = useState<any[]>([]);
   const [drawerLoading, setDrawerLoading] = useState(false);
 
   // Playlist builder
@@ -178,7 +180,7 @@ export default function Board() {
   const fetchSaved = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data }, { count: prayedCount }, { count: likedCount }] = await Promise.all([
+    const [{ data }, { count: prayedCount }, { count: likedCount }, { count: testiCount }] = await Promise.all([
       supabase
         .from("user_saved_prayers")
         .select("*, prayer_cards(*)")
@@ -192,11 +194,16 @@ export default function Board() {
         .from("likes")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id),
+      supabase
+        .from("testimonies")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
     ]);
 
     setSaved((data || []) as SavedPrayer[]);
     setTotalPrayed(prayedCount || 0);
     setTotalLiked(likedCount || 0);
+    setTotalTestimonies(testiCount || 0);
     setLoading(false);
   }, [user]);
 
@@ -255,11 +262,12 @@ export default function Board() {
   }, [saved, sortMode, filterMode, searchQuery]);
 
   // Open stats drawer and load the relevant prayers
-  const openStatsDrawer = async (type: "prayed" | "liked") => {
+  const openStatsDrawer = async (type: "prayed" | "liked" | "testified") => {
     if (!user) return;
     setStatsDrawer(type);
     setDrawerLoading(true);
     setDrawerCards([]);
+    setDrawerTestimonies([]);
     try {
       if (type === "prayed") {
         const { data } = await supabase
@@ -277,7 +285,7 @@ export default function Board() {
           const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
           setDrawerCards(ids.map(id => map[id]).filter(Boolean));
         }
-      } else {
+      } else if (type === "liked") {
         const { data } = await supabase
           .from("likes")
           .select("prayer_id")
@@ -293,6 +301,14 @@ export default function Board() {
           const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
           setDrawerCards(ids.map(id => map[id]).filter(Boolean));
         }
+      } else if (type === "testified") {
+        const { data: testis } = await supabase
+          .from("testimonies")
+          .select("*, testimony_updates(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        setDrawerTestimonies(testis || []);
       }
     } finally {
       setDrawerLoading(false);
@@ -500,7 +516,7 @@ export default function Board() {
         </div>
 
         {/* ── Stats strip ───────────────────────────────────────────────── */}
-        {!loading && (totalPrayed > 0 || totalLiked > 0) && (
+        {!loading && (totalPrayed > 0 || totalLiked > 0 || totalTestimonies > 0) && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -528,6 +544,19 @@ export default function Board() {
                 </span>
                 <span className="text-sm font-medium text-slate-700">
                   <strong className="text-slate-900">{totalLiked.toLocaleString()}</strong> {totalLiked === 1 ? "prayer" : "prayers"} hearted
+                </span>
+              </button>
+            )}
+            {totalTestimonies > 0 && (
+              <button
+                onClick={() => openStatsDrawer("testified")}
+                className="bg-white border border-slate-100 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span className="bg-slate-50 p-2 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                </span>
+                <span className="text-sm font-medium text-slate-700">
+                  Testified <strong className="text-slate-900">{totalTestimonies.toLocaleString()}</strong> {totalTestimonies === 1 ? "time" : "times"}
                 </span>
               </button>
             )}
@@ -600,19 +629,23 @@ export default function Board() {
         </motion.button>
       )}
 
-      {/* ── Stats drawer (prayed / liked) ─────────────────────────────── */}
+      {/* ── Stats drawer (prayed / liked / testified) ────────────────── */}
       <Sheet open={!!statsDrawer} onOpenChange={o => !o && setStatsDrawer(null)}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader className="mb-5">
             <SheetTitle className="font-display flex items-center gap-2">
               {statsDrawer === "prayed"
                 ? <><span className="text-xl">🙏</span> Prayers I've Prayed</>
-                : <><Heart className="w-5 h-5 fill-red-400 text-red-400" /> Hearted Prayers</>}
+                : statsDrawer === "liked"
+                ? <><Heart className="w-5 h-5 fill-red-400 text-red-400" /> Hearted Prayers</>
+                : <><Sparkles className="w-5 h-5 text-violet-500" /> My Testimonies</>}
             </SheetTitle>
             <SheetDescription>
               {statsDrawer === "prayed"
                 ? "Every prayer you've marked as prayed."
-                : "Prayers you've liked from the community."}
+                : statsDrawer === "liked"
+                ? "Prayers you've liked from the community."
+                : "Your testimonies of God's faithfulness."}
             </SheetDescription>
           </SheetHeader>
 
@@ -620,6 +653,51 @@ export default function Board() {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-7 h-7 animate-spin text-primary" />
             </div>
+          ) : statsDrawer === "testified" ? (
+            drawerTestimonies.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-12">No testimonies yet. Flip a prayer card to testify!</p>
+            ) : (
+              <div className="space-y-3">
+                {drawerTestimonies.map((testi: any) => (
+                  <div key={testi.id} className="prayer-card p-4 space-y-2">
+                    {testi.title && <h4 className="font-display font-semibold text-sm leading-snug">{testi.title}</h4>}
+                    {testi.answered_date && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Answered: {new Date(testi.answered_date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">{testi.body}</p>
+                    {testi.testimony_updates && testi.testimony_updates.length > 0 && (
+                      <div className="border-t border-border/50 pt-2 mt-2 space-y-1.5">
+                        <p className="text-[10px] font-semibold text-foreground/60 uppercase tracking-wider">Faith Journey Updates</p>
+                        {testi.testimony_updates
+                          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .slice(0, 3)
+                          .map((upd: any) => (
+                          <div key={upd.id} className="text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground/70">
+                              {new Date(upd.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                            {" — "}
+                            <span className="line-clamp-2">{upd.body}</span>
+                          </div>
+                        ))}
+                        {testi.testimony_updates.length > 3 && (
+                          <p className="text-[10px] text-primary">+{testi.testimony_updates.length - 3} more updates</p>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex gap-2 pt-1">
+                      <Link to={`/testimony/${testi.id}`}>
+                        <Button size="sm" className="btn-gold rounded-xl h-7 text-xs gap-1.5">
+                          View Testimony →
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           ) : drawerCards.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-12">Nothing here yet.</p>
           ) : (
