@@ -268,7 +268,7 @@ export function VerseBunchTooltip({
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{b.bunch_name}</p>
                       <p className="text-[0.65rem] text-muted-foreground">
-                        {b.verse_count} verse{b.verse_count !== 1 ? "s" : ""}
+                        {b.item_count} verse{b.item_count !== 1 ? "s" : ""}
                       </p>
                     </div>
                     <Plus className="h-3.5 w-3.5 text-muted-foreground" />
