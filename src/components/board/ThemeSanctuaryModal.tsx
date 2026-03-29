@@ -123,6 +123,32 @@ function autoTextColor(bg: string): string {
   return isLightColor(bg) ? "#1a1a2e" : "#f0f0f0";
 }
 
+/* ── Snapshot type for revert ────────────────────────────────────────── */
+interface ThemeSnapshot {
+  theme_preset: string;
+  theme_bg: string;
+  theme_text: string;
+  theme_accent: string;
+  theme_scope: string;
+}
+
+const SNAPSHOT_KEY = "kp_theme_sanctuary_snapshot";
+
+function saveSnapshot(snapshot: ThemeSnapshot) {
+  try {
+    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {}
+}
+
+function loadSnapshot(): ThemeSnapshot | null {
+  try {
+    const raw = localStorage.getItem(SNAPSHOT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ── Main modal ────────────────────────────────────────────────────── */
 interface ThemeSanctuaryModalProps {
   isOpen: boolean;
