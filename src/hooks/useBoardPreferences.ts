@@ -31,6 +31,7 @@ const DEFAULTS: BoardPrefs = {
   calendar_bg: "#F5F0E8",
   calendar_text: "#2C2418",
   calendar_accent: "#B85C38",
+  atmosphere_id: "warm-parchment",
 };
 
 export function useBoardPreferences() {
