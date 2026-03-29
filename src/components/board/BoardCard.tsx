@@ -1033,6 +1033,25 @@ function ActionButtons({
             </>
           )}
 
+          {/* Upload / Remove Image */}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-xs gap-2"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+            {uploading ? "Uploading…" : hasBgImage ? "Replace Image" : "Upload Image"}
+          </DropdownMenuItem>
+          {hasBgImage && (
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={handleRemoveImage}
+            >
+              <ImageOff className="w-3.5 h-3.5" /> Remove Image
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-xs gap-2 text-destructive focus:text-destructive"
@@ -1042,6 +1061,15 @@ function ActionButtons({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleUploadImage}
+      />
     </>
   );
 }
