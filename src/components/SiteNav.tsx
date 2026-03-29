@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User,
   MoreHorizontal, Globe, Sparkles, BookOpen, Users, Home, Swords,
-  Radio, Heart, HandHeart, Wind, HeartHandshake
+  Radio, Heart, HandHeart, Wind, HeartHandshake, BookMarked
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const CORE_LINKS = [
 
 /* ── "More" dropdown items ── */
 const MORE_LINKS = [
+  { label: "God's Word", href: "/bible", icon: BookMarked, description: "The full Bible with highlights, notes, and bookmarks." },
   { label: "We Pray", href: "/we-pray", icon: Globe, description: "Pray for the world together" },
   { label: "PrayerAssist.ing", href: "/assistant", icon: Sparkles, description: "AI-guided prayer crafting" },
   { label: "Circles", href: "/circles", icon: Users, description: "Prayer groups & accountability" },
