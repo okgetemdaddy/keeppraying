@@ -262,11 +262,12 @@ export default function Board() {
   }, [saved, sortMode, filterMode, searchQuery]);
 
   // Open stats drawer and load the relevant prayers
-  const openStatsDrawer = async (type: "prayed" | "liked") => {
+  const openStatsDrawer = async (type: "prayed" | "liked" | "testified") => {
     if (!user) return;
     setStatsDrawer(type);
     setDrawerLoading(true);
     setDrawerCards([]);
+    setDrawerTestimonies([]);
     try {
       if (type === "prayed") {
         const { data } = await supabase
@@ -284,7 +285,7 @@ export default function Board() {
           const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
           setDrawerCards(ids.map(id => map[id]).filter(Boolean));
         }
-      } else {
+      } else if (type === "liked") {
         const { data } = await supabase
           .from("likes")
           .select("prayer_id")
@@ -300,6 +301,14 @@ export default function Board() {
           const map = Object.fromEntries((cards || []).map(c => [c.id, c]));
           setDrawerCards(ids.map(id => map[id]).filter(Boolean));
         }
+      } else if (type === "testified") {
+        const { data: testis } = await supabase
+          .from("testimonies")
+          .select("*, testimony_updates(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        setDrawerTestimonies(testis || []);
       }
     } finally {
       setDrawerLoading(false);
