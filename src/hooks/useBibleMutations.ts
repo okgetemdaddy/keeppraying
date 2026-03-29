@@ -360,6 +360,40 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 
+  /* ── VERSE BUNCH: Add items to existing bunch ── */
+  const addToBunch = useMutation({
+    mutationFn: async (params: {
+      bunchId: string;
+      bunchName: string;
+      items: CrossBunchItem[];
+    }) => {
+      if (!user) throw new Error("Not authenticated");
+      const rows = params.items.map((item) => ({
+        bunch_id: params.bunchId,
+        user_id: user.id,
+        version_id: item.versionId,
+        book_usfm: item.bookUsfm,
+        chapter_number: item.chapterNumber,
+        verse_number: item.verseNumber,
+      }));
+      const { error } = await supabase
+        .from("verse_bunch_items")
+        .insert(rows as any);
+      if (error) throw error;
+      return { bunchId: params.bunchId, bunchName: params.bunchName };
+    },
+    onSuccess: (result) => {
+      toast.success(`Added to "${result.bunchName}" 📦`);
+      qc.invalidateQueries({ queryKey: ["verse_bunches"] });
+    },
+    onError: () => {
+      toast.error("Failed to add verses to bunch");
+    },
+    onSettled: () => {
+      if (key.length) qc.invalidateQueries({ queryKey: key });
+    },
+  });
+
   return {
     addHighlight,
     removeHighlight,
@@ -367,5 +401,6 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     saveNote,
     deleteNote,
     createBunch,
+    addToBunch,
   };
 }
