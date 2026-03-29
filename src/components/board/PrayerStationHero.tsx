@@ -3,8 +3,10 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { StandbyToggle } from "@/components/StandbyToggle";
+import { ThemeSelector } from "@/components/board/ThemeSelector";
 import {
-  PlusCircle, Users, Home, ListMusic, BookOpen, Wind,
+  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X,
 } from "lucide-react";
 
 /* ── Incense smoke keyframes (pure CSS) ────────────────────────────────────── */
@@ -36,6 +38,14 @@ interface PrayerStationHeroProps {
   onClassical: () => void;
   hasPrayers: boolean;
   isMobile: boolean;
+  /* Search */
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
+  /* Theme */
+  currentTheme: string;
+  animationsEnabled: boolean;
+  onThemeChange: (id: string) => void;
+  onAnimationsToggle: (v: boolean) => void;
 }
 
 export function PrayerStationHero({
@@ -45,6 +55,12 @@ export function PrayerStationHero({
   onClassical,
   hasPrayers,
   isMobile,
+  searchQuery,
+  onSearchChange,
+  currentTheme,
+  animationsEnabled,
+  onThemeChange,
+  onAnimationsToggle,
 }: PrayerStationHeroProps) {
   const { user } = useAuth();
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
@@ -55,7 +71,7 @@ export function PrayerStationHero({
 
     (async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("daily-welcome", {
+        const { data } = await supabase.functions.invoke("daily-welcome", {
           body: {},
         });
         if (!cancelled && data?.message) {
@@ -111,29 +127,52 @@ export function PrayerStationHero({
           ))}
         </div>
 
+        {/* Theme picker — top right */}
+        <div className="absolute top-3 right-3 z-20">
+          <ThemeSelector
+            currentTheme={currentTheme}
+            animationsEnabled={animationsEnabled}
+            onThemeChange={onThemeChange}
+            onAnimationsToggle={onAnimationsToggle}
+          />
+        </div>
+
         <div className={`relative z-10 ${isMobile ? "px-5 pt-5 pb-4" : "container mx-auto px-6 pt-8 pb-6"}`}>
           {/* Title */}
           <motion.h1
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className={`font-display font-bold text-white ${isMobile ? "text-2xl" : "text-3xl"}`}
+            className={`font-display font-bold text-white ${isMobile ? "text-2xl pr-12" : "text-3xl"}`}
           >
             {firstName}'s Prayer Station
           </motion.h1>
+
+          {/* Standby toggle with label */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
+            className="mt-3 flex items-center gap-3"
+          >
+            <StandbyToggle compact dark />
+            <span className="text-xs leading-tight" style={{ color: "rgba(255,255,255,0.50)", maxWidth: 260 }}>
+              Are you available to pray for live prayer requests today?
+            </span>
+          </motion.div>
 
           {/* Daily welcome message */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: welcomeMsg ? 1 : 0.4 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className={`mt-2 leading-relaxed ${isMobile ? "text-sm" : "text-base"}`}
+            className={`mt-3 leading-relaxed ${isMobile ? "text-sm" : "text-base"}`}
             style={{ color: "rgba(255,255,255,0.65)", maxWidth: 520 }}
           >
             {welcomeMsg || "The Lord is near to all who call on Him…"}
           </motion.p>
 
-          {/* Action buttons — 2 rows × 3 columns, stretching to full width */}
+          {/* Action buttons — 2 rows × 3 columns */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -170,6 +209,41 @@ export function PrayerStationHero({
                 </button>
               );
             })}
+          </motion.div>
+
+          {/* Search bar — bottom of hero */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.45 }}
+            className="mt-4"
+          >
+            <div
+              className="relative flex items-center rounded-2xl overflow-hidden"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <Search className="w-4 h-4 ml-4 shrink-0" style={{ color: "rgba(255,255,255,0.35)" }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => onSearchChange(e.target.value)}
+                placeholder="Search your prayers, groups, events..."
+                className="flex-1 bg-transparent border-0 outline-none px-3 py-3 text-sm placeholder:text-white/40"
+                style={{ color: "rgba(255,255,255,0.85)" }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => onSearchChange("")}
+                  className="p-2 mr-1 rounded-full transition-colors hover:bg-white/10"
+                >
+                  <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.45)" }} />
+                </button>
+              )}
+            </div>
           </motion.div>
         </div>
       </div>
