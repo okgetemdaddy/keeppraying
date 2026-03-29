@@ -198,6 +198,7 @@ function AppShell() {
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
+        <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
