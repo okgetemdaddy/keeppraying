@@ -10,6 +10,7 @@ import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
 import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
+import { FormattedText } from "@/lib/FormattedText";
 import type { Database } from "@/integrations/supabase/types";
 import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
