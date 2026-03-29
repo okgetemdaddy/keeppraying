@@ -18,7 +18,7 @@ export default function PrayTheWorld() {
     { id: "world", label: "We Pray", icon: <Globe className="w-4 h-4" /> },
     { id: "radar", label: "Local Radar", icon: <Radio className="w-4 h-4" /> },
     { id: "grow", label: "Grow", icon: <Megaphone className="w-4 h-4" /> },
-    { id: "flyers", label: "Flyers", icon: <FileText className="w-4 h-4" /> },
+    
   ];
 
   return (
