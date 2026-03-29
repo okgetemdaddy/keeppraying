@@ -145,7 +145,7 @@ export function BibleReader() {
 
   React.useEffect(() => {
     if (index?.books?.length && !bookUsfm) {
-      setBookUsfm(index.books[0].usfm);
+      setBookUsfm(index.books[0].id);
       setChapterIdx(0);
     }
   }, [index, bookUsfm]);
