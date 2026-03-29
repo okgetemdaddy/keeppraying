@@ -292,7 +292,7 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
       className="rounded-2xl mb-5 overflow-hidden"
       style={{
         background: "#F5F0E8",
-        border: "1px solid rgba(255,255,255,0.10)",
+        border: "1px solid rgba(44,36,24,0.12)",
         backdropFilter: "blur(8px)",
       }}
     >
