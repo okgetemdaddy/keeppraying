@@ -222,6 +222,17 @@ export function ThemeSanctuaryModal({
   }, []);
 
   const handleApply = useCallback(() => {
+    // Save current theme as a snapshot before applying new one
+    const currentSnapshot: ThemeSnapshot = {
+      theme_preset: currentPreset || "Golden Sunrise",
+      theme_bg: currentBg || PRESETS[3].bg,
+      theme_text: currentText || PRESETS[3].text,
+      theme_accent: currentAccent || PRESETS[3].accent,
+      theme_scope: currentScope,
+    };
+    saveSnapshot(currentSnapshot);
+    setPreviousSnapshot(currentSnapshot);
+
     const colors = customMode
       ? { bg: customBg, text: customText, accent: customAccent }
       : (() => {
@@ -238,8 +249,23 @@ export function ThemeSanctuaryModal({
       theme_accent: colors.accent,
       theme_scope: scope,
     });
+    toast.success("Theme applied — you can revert anytime");
     onOpenChange(false);
-  }, [customMode, customBg, customText, customAccent, selectedPresetName, scope, isDark, onApply, onOpenChange]);
+  }, [customMode, customBg, customText, customAccent, selectedPresetName, scope, isDark, onApply, onOpenChange, currentPreset, currentBg, currentText, currentAccent, currentScope]);
+
+  const handleRevert = useCallback(() => {
+    const snap = previousSnapshot || loadSnapshot();
+    if (!snap) {
+      toast.info("No previous theme to revert to");
+      return;
+    }
+    onApply(snap);
+    // After reverting, clear the snapshot
+    try { localStorage.removeItem(SNAPSHOT_KEY); } catch {}
+    setPreviousSnapshot(null);
+    toast.success("Reverted to your previous theme");
+    onOpenChange(false);
+  }, [previousSnapshot, onApply, onOpenChange]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
