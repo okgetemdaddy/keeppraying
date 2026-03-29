@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import {
-  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp,
+  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp, BookMarked,
 } from "lucide-react";
 
 /* ── Incense smoke keyframes (pure CSS) ────────────────────────────────────── */
