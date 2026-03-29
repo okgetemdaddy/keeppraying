@@ -23,7 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind, Search, X,
+  ArrowUpDown, Filter, Users, Home, Wind,
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import { NotificationBell } from "@/components/NotificationBell";
