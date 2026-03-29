@@ -58,6 +58,7 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       icon: <LayoutDashboard className="w-4 h-4" />,
       onClick: authGuard(() => { navigate("/board"); setOpen(false); }),
       color: "hsl(220 45% 42%)",
+      shimmer: true,
     },
     {
       id: "add-breath",
