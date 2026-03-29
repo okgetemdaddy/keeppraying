@@ -13,7 +13,7 @@ import AddPrayerModal from "@/components/AddPrayerModal";
 import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
-import { ThemeCanvas } from "@/components/board/ThemeCanvas";
+
 
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
