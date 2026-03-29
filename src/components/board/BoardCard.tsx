@@ -341,8 +341,11 @@ export function BoardCard({
               <FormattedText
                 text={card.prayer_text}
                 truncateAt={PRAYER_CHAR_LIMIT}
-                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : 'text-slate-700'}`}
+                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-700'}`}
                 style={{
+                  fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
+                  ...(cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : {}),
+                }}
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
               />
