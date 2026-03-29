@@ -27,6 +27,7 @@ import UserMonitorTab from "@/components/admin/UserMonitorTab";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import PrayerRequestsInbox from "@/components/admin/PrayerRequestsInbox";
 import SayingsTab from "@/components/admin/SayingsTab";
+import WelcomeMessagesTab from "@/components/admin/WelcomeMessagesTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
