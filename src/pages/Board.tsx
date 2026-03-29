@@ -34,6 +34,7 @@ import { Link } from "react-router-dom";
 import { PrayerCalendar } from "@/components/board/PrayerCalendar";
 import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 import { PrayerStationHero } from "@/components/board/PrayerStationHero";
+import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
