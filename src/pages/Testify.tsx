@@ -543,17 +543,17 @@ export default function Testify() {
       supabase.from("testimony_praises").select("testimony_id, user_id").in("testimony_id", ids),
       user ? supabase.from("testimony_flags").select("testimony_id").in("testimony_id", ids).eq("user_id", user.id) : { data: [] },
     ]);
-    const likesMap: Record<string, number> = {};
-    const userLikedSet = new Set<string>();
-    (likesData || []).forEach((l: { testimony_id: string; user_id: string }) => {
-      likesMap[l.testimony_id] = (likesMap[l.testimony_id] || 0) + 1;
-      if (l.user_id === user?.id) userLikedSet.add(l.testimony_id);
+    const praiseMap: Record<string, number> = {};
+    const userPraisedSet = new Set<string>();
+    (praisesData || []).forEach((p: any) => {
+      praiseMap[p.testimony_id] = (praiseMap[p.testimony_id] || 0) + 1;
+      if (p.user_id === user?.id) userPraisedSet.add(p.testimony_id);
     });
-    const userFlaggedSet = new Set((flagsData || []).map((f: { testimony_id: string }) => f.testimony_id));
+    const userFlaggedSet = new Set((flagsData || []).map((f: any) => f.testimony_id));
     return data.map(t => ({
       ...t,
-      likes_count: likesMap[t.id] || 0,
-      user_liked: userLikedSet.has(t.id),
+      likes_count: praiseMap[t.id] || 0,
+      user_liked: userPraisedSet.has(t.id),
       user_flagged: userFlaggedSet.has(t.id),
     }));
   }, [user?.id]);
