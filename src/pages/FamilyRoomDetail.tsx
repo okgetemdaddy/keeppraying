@@ -21,7 +21,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   Home, ArrowLeft, PlusCircle, Loader2,
   Crown, LogOut, ArrowUpDown, UserMinus, Baby, Users, Shield,
-  Calendar, ClipboardList, Plus, Trash2, CheckCircle2, Clock, FileText, Share2, Check,
+  Calendar, ClipboardList, Plus, Trash2, CheckCircle2, Clock, Share2, Check,
 }from "lucide-react";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
