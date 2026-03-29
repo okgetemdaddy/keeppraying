@@ -379,7 +379,7 @@ export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: P
                           onClick={() => setSelectedDay(isSelected ? null : day)}
                           className="flex flex-col items-center gap-0.5 rounded-lg py-1.5 transition-all"
                           style={{
-                            background: isSelected ? `${accentColor}22` : today ? "rgba(255,255,255,0.06)" : "transparent",
+                            background: isSelected ? `${accentColor}22` : today ? "rgba(44,36,24,0.06)" : "transparent",
                             border: isSelected ? `1px solid ${accentColor}44` : "1px solid transparent",
                             opacity: inMonth ? 1 : 0.3,
                           }}
