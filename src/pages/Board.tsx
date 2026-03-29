@@ -794,7 +794,9 @@ export default function Board() {
         currentText={prefs.theme_text}
         currentAccent={prefs.theme_accent}
         currentScope={prefs.theme_scope}
+        currentAtmosphereId={prefs.atmosphere_id}
         onApply={(data) => savePrefs(data)}
+        onAtmosphereChange={(id) => savePrefs({ atmosphere_id: id })}
       />
 
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}
