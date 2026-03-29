@@ -84,31 +84,6 @@ export function useFamilyRooms() {
     return data as FamilyRoom;
   }, [user, fetchRooms]);
 
-  const joinByCode = useCallback(async (code: string) => {
-    if (!user) return { error: "Not signed in" };
-    const { data: room } = await supabase
-      .from("family_rooms")
-      .select("id")
-      .eq("invite_code", code.trim().toLowerCase())
-      .maybeSingle();
-
-    if (!room) return { error: "Invalid family code" };
-
-    const { error } = await supabase.from("family_room_members").insert({
-      room_id: (room as any).id,
-      user_id: user.id,
-      role: "member",
-    });
-
-    if (error) {
-      if (error.code === "23505") return { error: "Already a member" };
-      return { error: error.message };
-    }
-
-    await fetchRooms();
-    return { error: null };
-  }, [user, fetchRooms]);
-
   const leaveRoom = useCallback(async (roomId: string) => {
     if (!user) return;
     await supabase.from("family_room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
