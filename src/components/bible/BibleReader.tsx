@@ -41,10 +41,12 @@ import {
   type ToolbarPosition,
 } from "@/components/bible/FloatingToolbar";
 import {
-  VerseBunchDialog,
-  isBunchDialogDismissed,
-  dismissBunchDialog,
+  VerseBunchTooltip,
+  isBunchAware,
+  loadPendingBunch,
+  clearPendingBunch,
 } from "@/components/bible/VerseBunchDialog";
+import { VerseBunchStrip, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -340,7 +342,7 @@ export function BibleReader() {
 
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
-  const [bunchDialogDismissed, setBunchDialogDismissed] = useState(isBunchDialogDismissed);
+  const [bunchAware, setBunchAwareState] = useState(isBunchAware);
 
   const readingAreaRef = useRef<HTMLDivElement>(null);
 
@@ -563,13 +565,8 @@ export function BibleReader() {
 
   const handleCreateBunchRequest = useCallback(() => {
     if (selectedVerses.size < 2) return;
-    if (!bunchDialogDismissed) {
-      setShowBunchDialog(true);
-    } else {
-      // If dismissed, go straight to form (skip prompt)
-      setShowBunchDialog(true);
-    }
-  }, [selectedVerses, bunchDialogDismissed]);
+    setShowBunchDialog(true);
+  }, [selectedVerses]);
 
   const handleBunchConfirm = useCallback(
     (bunchName: string, description?: string) => {
@@ -584,6 +581,41 @@ export function BibleReader() {
     [selectedVerses, mutations.createBunch, dismissToolbar],
   );
 
+  // ── Pending bunch recovery after sign-in ──
+  useEffect(() => {
+    if (!user) return;
+    const pending = loadPendingBunch();
+    if (!pending) return;
+    clearPendingBunch();
+    // Auto-create the bunch
+    if (scriptureRef) {
+      mutations.createBunch.mutate({
+        bunchName: `${pending.bookUsfm} ${pending.chapterNumber}:${pending.verseNumbers[0]}–${pending.verseNumbers[pending.verseNumbers.length - 1]}`,
+        verseNumbers: pending.verseNumbers,
+      });
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Navigate to a bunch ──
+  const handleNavigateToBunch = useCallback(
+    (bunch: BunchWithCount) => {
+      if (!bunch.first_version_id || !bunch.first_book_usfm || bunch.first_chapter === null) return;
+      setVersionId(bunch.first_version_id);
+      setBookUsfm(bunch.first_book_usfm);
+      // Find chapter index
+      const book = index?.books?.find((b) => b.id === bunch.first_book_usfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(bunch.first_chapter)) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      // Scroll to verse after render
+      if (bunch.first_verse) {
+        setTimeout(() => {
+          document.getElementById(`verse-${bunch.first_verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 500);
+      }
+    },
+    [index],
+  );
+
   // ── Determine toolbar context ──
   const selectedArr = useMemo(() => [...selectedVerses].sort((a, b) => a - b), [selectedVerses]);
   const primaryVerse = selectedArr[0];
@@ -591,6 +623,8 @@ export function BibleReader() {
 
   return (
     <article className="min-h-screen bg-background">
+      {/* ── Verse Bunch strip ── */}
+      <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-3">
@@ -791,19 +825,20 @@ export function BibleReader() {
         )}
       </AnimatePresence>
 
-      {/* ── Verse Bunch Dialog ── */}
+      {/* ── Verse Bunch Tooltip ── */}
       <AnimatePresence>
-        {showBunchDialog && currentBook && currentChapter && (
-          <VerseBunchDialog
+        {showBunchDialog && currentBook && currentChapter && versionId && bookUsfm && (
+          <VerseBunchTooltip
             selectedVerses={selectedArr}
             bookTitle={currentBook.title}
             chapterTitle={currentChapter.title}
+            versionId={versionId}
+            bookUsfm={bookUsfm}
+            chapterNumber={currentChapter.id}
+            isAuthenticated={!!user}
             onConfirm={handleBunchConfirm}
             onDismiss={() => setShowBunchDialog(false)}
-            onDontShowAgain={() => {
-              setBunchDialogDismissed(true);
-              setShowBunchDialog(false);
-            }}
+            initialStep={bunchAware ? "form" : "awareness"}
           />
         )}
       </AnimatePresence>

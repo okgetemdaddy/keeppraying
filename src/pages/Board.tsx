@@ -36,6 +36,7 @@ import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 import { PrayerStationHero } from "@/components/board/PrayerStationHero";
 import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
 import { AtmosphereCanvas } from "@/components/board/AtmosphereCanvas";
+import { BoardVerseBunchesSection } from "@/components/board/BoardVerseBunchesSection";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -552,6 +553,9 @@ export default function Board() {
             )}
           </motion.div>
         )}
+
+        {/* ── Verse Bunches ─────────────────────────────────────────── */}
+        <BoardVerseBunchesSection textColor={textColor} />
 
         {/* ── Interactive Calendar ─────────────────────────────────────── */}
         <PrayerCalendar
