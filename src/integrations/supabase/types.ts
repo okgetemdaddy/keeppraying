@@ -243,6 +243,27 @@ export type Database = {
         }
         Relationships: []
       }
+      bible_cache: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          request_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload: Json
+          request_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          request_path?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null
