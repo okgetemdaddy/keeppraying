@@ -30,6 +30,7 @@ import CircleDetail from "./pages/CircleDetail";
 import InviteLanding from "./pages/InviteLanding";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
+import Bible from "./pages/Bible";
 import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
