@@ -330,7 +330,8 @@ export function BoardCard({
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             {card.title && (
-              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : 'text-slate-900'}`}>
+              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
+                style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : undefined}>
                 {card.title}
               </h3>
             )}
