@@ -180,7 +180,7 @@ export default function Board() {
   const fetchSaved = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [{ data }, { count: prayedCount }, { count: likedCount }] = await Promise.all([
+    const [{ data }, { count: prayedCount }, { count: likedCount }, { count: testiCount }] = await Promise.all([
       supabase
         .from("user_saved_prayers")
         .select("*, prayer_cards(*)")
@@ -194,11 +194,16 @@ export default function Board() {
         .from("likes")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id),
+      supabase
+        .from("testimonies")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id),
     ]);
 
     setSaved((data || []) as SavedPrayer[]);
     setTotalPrayed(prayedCount || 0);
     setTotalLiked(likedCount || 0);
+    setTotalTestimonies(testiCount || 0);
     setLoading(false);
   }, [user]);
 
