@@ -775,6 +775,18 @@ export default function Board() {
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
       <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
 
+      {/* ── Theme Sanctuary Modal ──────────────────────────────────── */}
+      <ThemeSanctuaryModal
+        isOpen={themeSanctuaryOpen}
+        onOpenChange={setThemeSanctuaryOpen}
+        currentPreset={prefs.theme_preset}
+        currentBg={prefs.theme_bg}
+        currentText={prefs.theme_text}
+        currentAccent={prefs.theme_accent}
+        currentScope={prefs.theme_scope}
+        onApply={(data) => savePrefs(data)}
+      />
+
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}
       <Sheet open={testifyOpen} onOpenChange={o => { setTestifyOpen(o); if (!o) { setTestifyBody(""); setTestifyReject(""); } }}>
         <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto flex flex-col gap-0 p-0">
