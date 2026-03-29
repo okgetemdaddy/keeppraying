@@ -740,6 +740,8 @@ interface ActionButtonsProps {
   hasBgImage: boolean;
   overlayOpacity: number;
   onOverlayOpacityChange: (v: number) => void;
+  cardBgPreset: { bg: string; text: string } | null;
+  onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
 }
 
 function ActionButtons({
