@@ -273,22 +273,11 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
       style={{ background: cardBg, color: textColor }}
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b"
+      <div className="sticky top-0 z-10 px-4 py-3 border-b text-center"
         style={{ background: `${cardBg}f5`, borderColor: `${textColor}12`, backdropFilter: "blur(8px)" }}>
-        <button
-          onClick={onFlipBack}
-          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40 flex-shrink-0"
-          style={{ color: subtleText }}
-          aria-label="Flip back to prayer"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div className="flex-1 text-center">
-          <p className="font-display font-bold text-sm" style={{ color: accentColor }}>
-            Did God answer your prayer? Testify! 🕊️
-          </p>
-        </div>
-        <div className="w-8" /> {/* spacer */}
+        <p className="font-display font-bold text-sm" style={{ color: accentColor }}>
+          Did God answer your prayer? Testify! 🕊️
+        </p>
       </div>
 
       <div className="flex flex-col gap-4 p-4">
