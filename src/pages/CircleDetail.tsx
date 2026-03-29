@@ -726,7 +726,7 @@ export default function CircleDetail() {
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle>Leave this circle?</DialogTitle>
-            <DialogDescription>You can rejoin later with the invite code.</DialogDescription>
+            <DialogDescription>You can rejoin later with a new invite link.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={() => setLeaveOpen(false)} className="rounded-xl flex-1">Cancel</Button>
