@@ -1,60 +1,126 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, X, Check } from "lucide-react";
+import { Package, X, Check, LogIn, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
 
-const LS_KEY = "bible_bunch_dialog_dismissed";
+/* ── localStorage / sessionStorage keys ── */
+const LS_AWARE_KEY = "bible_bunch_aware";
+const SS_PENDING_KEY = "pending_verse_bunch";
 
-export function isBunchDialogDismissed(): boolean {
-  try {
-    return localStorage.getItem(LS_KEY) === "true";
-  } catch {
-    return false;
-  }
+export function isBunchAware(): boolean {
+  try { return localStorage.getItem(LS_AWARE_KEY) === "true"; } catch { return false; }
 }
 
-export function dismissBunchDialog(): void {
-  try {
-    localStorage.setItem(LS_KEY, "true");
-  } catch {}
+export function setBunchAware(): void {
+  try { localStorage.setItem(LS_AWARE_KEY, "true"); } catch {}
 }
 
-export interface VerseBunchDialogProps {
+export interface PendingVerseBunch {
+  versionId: number;
+  bookUsfm: string;
+  chapterNumber: string;
+  verseNumbers: number[];
+  returnPath: string;
+}
+
+export function savePendingBunch(data: PendingVerseBunch): void {
+  try { sessionStorage.setItem(SS_PENDING_KEY, JSON.stringify(data)); } catch {}
+}
+
+export function loadPendingBunch(): PendingVerseBunch | null {
+  try {
+    const raw = sessionStorage.getItem(SS_PENDING_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PendingVerseBunch;
+  } catch { return null; }
+}
+
+export function clearPendingBunch(): void {
+  try { sessionStorage.removeItem(SS_PENDING_KEY); } catch {}
+}
+
+/* ── Tooltip component ── */
+
+type TooltipStep = "awareness" | "signin" | "form";
+
+export interface VerseBunchTooltipProps {
   selectedVerses: number[];
   bookTitle: string;
   chapterTitle: string;
+  /** Full scripture ref info needed for pending bunch */
+  versionId: number;
+  bookUsfm: string;
+  chapterNumber: string;
+  /** Whether user is signed in */
+  isAuthenticated: boolean;
+  /** Called when user creates a bunch (name, description) */
   onConfirm: (bunchName: string, description?: string) => void;
+  /** Called to close/dismiss */
   onDismiss: () => void;
-  onDontShowAgain: () => void;
+  /** Initial step override — if user already acknowledged, start at form */
+  initialStep?: TooltipStep;
 }
 
-export function VerseBunchDialog({
+export function VerseBunchTooltip({
   selectedVerses,
   bookTitle,
   chapterTitle,
+  versionId,
+  bookUsfm,
+  chapterNumber,
+  isAuthenticated,
   onConfirm,
   onDismiss,
-  onDontShowAgain,
-}: VerseBunchDialogProps) {
-  const [step, setStep] = useState<"prompt" | "form">("prompt");
+  initialStep = "awareness",
+}: VerseBunchTooltipProps) {
+  const [step, setStep] = useState<TooltipStep>(initialStep);
   const [bunchName, setBunchName] = useState("");
   const [description, setDescription] = useState("");
+  const navigate = useNavigate();
 
   const verseRange =
     selectedVerses.length === 1
       ? `verse ${selectedVerses[0]}`
       : `verses ${selectedVerses[0]}–${selectedVerses[selectedVerses.length - 1]}`;
 
-  if (step === "prompt") {
+  const handleTryCreating = () => {
+    setBunchAware();
+    if (isAuthenticated) {
+      setStep("form");
+    } else {
+      setStep("signin");
+    }
+  };
+
+  const handleNice = () => {
+    setBunchAware();
+    onDismiss();
+  };
+
+  const handleSignIn = () => {
+    // Save pending bunch to sessionStorage
+    savePendingBunch({
+      versionId,
+      bookUsfm,
+      chapterNumber,
+      verseNumbers: selectedVerses,
+      returnPath: "/bible",
+    });
+    navigate("/auth?returnTo=/bible");
+  };
+
+  /* ── AWARENESS step ── */
+  if (step === "awareness") {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
-        className="fixed bottom-6 left-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card p-5 shadow-2xl"
+        transition={{ duration: 0.25 }}
+        className="fixed bottom-6 left-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card p-5 shadow-2xl"
       >
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300">
@@ -62,12 +128,13 @@ export function VerseBunchDialog({
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-foreground">
-              Create a Verse Bunch?
+              ✨ Verse Bunches
             </h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              You've selected {selectedVerses.length} verses ({bookTitle} {chapterTitle}:{verseRange}).
-              Would you like to bundle them into a "Verse Bunch" you can
-              reference in prayer later?
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              You've selected {selectedVerses.length} verses! Did you know you can
+              bundle verses from <strong>anywhere in the Bible</strong> into a
+              "Verse Bunch"? Use them in Circles, Family Rooms, or for personal
+              study and prayer.
             </p>
           </div>
           <button
@@ -78,37 +145,77 @@ export function VerseBunchDialog({
           </button>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
-          <button
-            onClick={() => {
-              dismissBunchDialog();
-              onDontShowAgain();
-            }}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleNice}
+            className="text-muted-foreground"
           >
-            Don't show again
-          </button>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={onDismiss}>
-              No thanks
-            </Button>
-            <Button size="sm" onClick={() => setStep("form")}>
-              Yes, create
-            </Button>
-          </div>
+            Nice.
+          </Button>
+          <Button size="sm" onClick={handleTryCreating} className="gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" />
+            Try Creating a Verse Bunch Now
+          </Button>
         </div>
       </motion.div>
     );
   }
 
-  // Form step
+  /* ── SIGNIN step ── */
+  if (step === "signin") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+        transition={{ duration: 0.25 }}
+        className="fixed bottom-6 left-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card p-5 shadow-2xl"
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <LogIn className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-foreground">
+              Sign in to save your Verse Bunch
+            </h3>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+              Your {selectedVerses.length} selected verses ({bookTitle} {chapterTitle}:{verseRange}) will
+              be waiting for you. Plus, unlock highlights, notes, prayer boards,
+              streak tracking, and so much more.
+            </p>
+          </div>
+          <button
+            onClick={onDismiss}
+            className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onDismiss}>
+            Maybe later
+          </Button>
+          <Button size="sm" onClick={handleSignIn} className="gap-1.5">
+            <LogIn className="h-3.5 w-3.5" />
+            Sign in
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  /* ── FORM step ── */
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       transition={{ duration: 0.2 }}
-      className="fixed bottom-6 left-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card p-5 shadow-2xl"
+      className="fixed bottom-6 left-1/2 z-50 w-[92vw] max-w-md -translate-x-1/2 rounded-2xl border border-border bg-card p-5 shadow-2xl"
     >
       <div className="flex items-center gap-2 mb-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300">
