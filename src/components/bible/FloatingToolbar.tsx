@@ -91,8 +91,8 @@ export function FloatingToolbar({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: 8 }}
       transition={{ duration: 0.15 }}
-      className="fixed z-50 rounded-xl border border-border bg-card shadow-2xl"
-      style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
+      className="fixed z-50 rounded-xl border border-border bg-card shadow-2xl max-w-[calc(100vw-2rem)]"
+      style={{ ...(window.innerWidth >= 640 ? { left: position.x, transform: "translateX(-50%)" } : { left: "50%", transform: "translateX(-50%)" }), top: position.y }}
     >
       <div className="flex items-center gap-1 px-2 py-1.5">
         {/* ── Colour swatches ── */}
