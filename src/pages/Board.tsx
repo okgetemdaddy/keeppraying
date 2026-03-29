@@ -555,6 +555,9 @@ export default function Board() {
           </motion.div>
         )}
 
+        {/* ── Bible Annotations (highlights, notes, bookmarks) ───── */}
+        <BoardBibleAnnotations textColor={textColor} />
+
         {/* ── Verse Bunches ─────────────────────────────────────────── */}
         <BoardVerseBunchesSection textColor={textColor} />
 

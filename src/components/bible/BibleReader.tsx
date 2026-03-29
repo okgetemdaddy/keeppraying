@@ -362,6 +362,10 @@ export function BibleReader() {
   // ── Cross-book selection state ──
   const [crossSelections, setCrossSelections] = useState<SelectedVerse[]>([]);
 
+  // ── Multi-select instruction tooltip ──
+  const [showMultiSelectTip, setShowMultiSelectTip] = useState(false);
+  const multiSelectTipShown = useRef(false);
+
   // ── Toolbar state ──
   const [toolbarPos, setToolbarPos] = useState<ToolbarPosition | null>(null);
   const [partialSelection, setPartialSelection] = useState<{
