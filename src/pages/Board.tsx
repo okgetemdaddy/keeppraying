@@ -14,7 +14,7 @@ import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
-import { ThemeSelector } from "@/components/board/ThemeSelector";
+
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
@@ -23,9 +23,9 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind, Search, X,
+  ArrowUpDown, Filter, Users, Home, Wind,
 } from "lucide-react";
-import { StandbyToggle } from "@/components/StandbyToggle";
+
 import { NotificationBell } from "@/components/NotificationBell";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
@@ -394,25 +394,14 @@ export default function Board() {
 
         {/* Desktop control row */}
         {!isMobile && (
-          <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <ThemeSelector
-                currentTheme={prefs.theme}
-                animationsEnabled={prefs.animations_enabled}
-                onThemeChange={(id) => savePrefs({ theme: id })}
-                onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
-              />
-              <StandbyToggle compact dark />
-            </div>
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => setImmersive(i => !i)}
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
-                title="Immersive mode"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-end gap-3">
+            <button
+              onClick={() => setImmersive(i => !i)}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
+              title="Immersive mode"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
         )}
       </motion.div>
@@ -425,42 +414,16 @@ export default function Board() {
         onClassical={() => setClassicalOpen(true)}
         hasPrayers={saved.length > 0}
         isMobile={isMobile}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        currentTheme={prefs.theme}
+        animationsEnabled={prefs.animations_enabled}
+        onThemeChange={(id) => savePrefs({ theme: id })}
+        onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
       />
 
       {/* Main content */}
       <div className={`relative container mx-auto px-4 ${isMobile ? "py-4" : "py-8"} pb-32 max-w-5xl`}>
-
-        {/* ── Search bar ──────────────────────────────────────────────── */}
-        {!loading && saved.length > 0 && (
-          <div className="mb-4">
-            <div
-              className="relative flex items-center rounded-2xl overflow-hidden"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <Search className="w-4 h-4 ml-4 shrink-0" style={{ color: `${textColor}50` }} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search your prayers, groups, events..."
-                className="flex-1 bg-transparent border-0 outline-none px-3 py-3 text-sm placeholder:text-white/40"
-                style={{ color: textColor }}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="p-2 mr-1 rounded-full transition-colors hover:bg-white/10"
-                >
-                  <X className="w-4 h-4" style={{ color: `${textColor}60` }} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ── Sort / Filter / Layout controls ──────────────────────── */}
         {!loading && saved.length > 0 && (

@@ -118,6 +118,7 @@ export function BoardCard({
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
+  const lastTapRef = useRef(0);
   const [overlayOpacity, setOverlayOpacity] = useState(
     (item as any).overlay_opacity != null ? (item as any).overlay_opacity : 0.48
   );
@@ -166,7 +167,7 @@ export function BoardCard({
     if (!userId || !item.prayer_cards?.id) return;
     supabase
       .from("testimonies")
-      .select("id, body, title, verses, praise_count, created_at, user_id")
+      .select("id, body, title, verses, praise_count, created_at, user_id, answered_date")
       .eq("prayer_id", item.prayer_cards.id)
       .eq("user_id", userId)
       .maybeSingle()
@@ -370,7 +371,21 @@ export function BoardCard({
             )}
 
             {/* Prayer text — with optional custom font */}
-            <div className="select-none" onClick={() => onOpenViewer?.(item)}>
+            <div className="select-none" onClick={(e) => {
+              const now = Date.now();
+              if (now - lastTapRef.current < 350) {
+                e.stopPropagation();
+                lastTapRef.current = 0;
+                setFlipped(true);
+                return;
+              }
+              lastTapRef.current = now;
+              setTimeout(() => {
+                if (lastTapRef.current !== 0 && Date.now() - lastTapRef.current >= 340) {
+                  onOpenViewer?.(item);
+                }
+              }, 360);
+            }}>
               <FormattedText
                 text={card.prayer_text}
                 truncateAt={PRAYER_CHAR_LIMIT}
