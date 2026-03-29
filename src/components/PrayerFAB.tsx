@@ -128,6 +128,8 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
   ];
 
   return (
+    <>
+      <style>{`@keyframes fab-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     <div
       className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col-reverse items-end gap-2.5"
       style={{ "--fab-bottom": "5rem", "--fab-right": "1rem" } as React.CSSProperties}
