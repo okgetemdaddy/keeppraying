@@ -71,8 +71,6 @@ export default function CircleDetail() {
   const [schedDesc, setSchedDesc] = useState("");
   const [schedSaving, setSchedSaving] = useState(false);
 
-  // Flyer state
-  const [flyerOpen, setFlyerOpen] = useState(false);
 
   const isOwner = circle?.created_by === user?.id;
   const isLeader = isOwner || members.find(m => m.user_id === user?.id)?.role === "leader";
