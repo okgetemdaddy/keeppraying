@@ -193,32 +193,31 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
               exit={{ opacity: 0, y: 6 }}
               transition={{ delay: 0.22 }}
               onClick={() => { navigate("/bible"); setOpen(false); }}
-              className="flex items-center gap-2 rounded-xl px-4 py-2.5 shadow-lg font-medium text-sm transition-transform hover:scale-105"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 shadow-lg font-medium text-xs transition-transform hover:scale-105"
               style={{
                 background: "hsl(220 45% 42%)",
                 color: "white",
                 boxShadow: "0 4px 14px -4px hsl(220 45% 42% / 0.5)",
               }}
             >
-              <BookOpenCheck className="w-4 h-4" />
+              <BookOpenCheck className="w-3.5 h-3.5" />
               God's Word
             </motion.button>
 
-            {/* Report Issue — slightly bigger for beta */}
             <motion.button
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
               transition={{ delay: 0.26 }}
               onClick={() => { navigate("/support"); setOpen(false); }}
-              className="flex items-center gap-2 rounded-xl px-5 py-3 shadow-lg font-semibold text-sm transition-transform hover:scale-105"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 shadow-lg font-medium text-xs transition-transform hover:scale-105"
               style={{
                 background: "hsl(0 45% 42%)",
                 color: "white",
                 boxShadow: "0 4px 14px -4px hsl(0 45% 42% / 0.5)",
               }}
             >
-              <Bug className="w-5 h-5" />
+              <Bug className="w-3.5 h-3.5" />
               Report Issue
             </motion.button>
           </motion.div>
