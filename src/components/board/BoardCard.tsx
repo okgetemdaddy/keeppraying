@@ -584,10 +584,10 @@ export function BoardCard({
                 <button
                   onClick={() => setFlipped(true)}
                   className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
-                  title="Share your testimony"
+                  title={hasTestimony ? "See your testimony" : "Share your testimony"}
                 >
                   <Bird className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Testify</span>
+                  <span className="hidden sm:inline">{hasTestimony ? "See Testimony" : "Testify"}</span>
                 </button>
               )}
               <ActionButtons
