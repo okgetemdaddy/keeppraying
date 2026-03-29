@@ -422,10 +422,7 @@ export default function Board() {
         isMobile={isMobile}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        currentTheme={prefs.theme}
-        animationsEnabled={prefs.animations_enabled}
-        onThemeChange={(id) => savePrefs({ theme: id })}
-        onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
+        onOpenThemeSanctuary={() => setThemeSanctuaryOpen(true)}
       />
 
       {/* Main content */}
