@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import PrayerCompanions from "@/components/companions/PrayerCompanions";
 import InviteShareModal from "@/components/InviteShareModal";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
