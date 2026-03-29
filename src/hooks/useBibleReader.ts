@@ -12,131 +12,124 @@ async function fetchBible<T = unknown>(endpoint: string): Promise<T> {
   return data as T;
 }
 
-/* ── Types (derived from YouVersion API docs) ── */
+/* ── Types (from actual YouVersion API responses) ── */
 
 export interface BibleVersion {
   id: number;
   abbreviation: string;
-  local_abbreviation: string;
+  localized_abbreviation: string;
   title: string;
-  local_title: string;
+  localized_title: string;
   language_tag: string;
-  text_direction: string;
+  books: string[]; // USFM book codes available in this version
 }
 
-export interface BibleBook {
-  usfm: string;           // e.g. "GEN"
-  human: string;           // e.g. "Genesis"
-  chapters: { usfm: string; human: string }[];
+export interface BibleChapterMeta {
+  id: string;        // "1"
+  passage_id: string; // "GEN.1"
+  title: string;     // "1"
+  verses: { id: string; passage_id: string; title: string }[];
+}
+
+export interface BibleBookMeta {
+  abbreviation: string; // "Gen."
+  canon: string;        // "old_testament" | "new_testament"
+  chapters: BibleChapterMeta[];
+  human_long: string;   // "Genesis"
+  usfm: string;         // "GEN"
 }
 
 export interface BibleIndex {
-  id: number;
-  abbreviation: string;
-  title: string;
-  text_direction: string;
-  books: BibleBook[];
+  books: BibleBookMeta[];
 }
 
-export interface PassageContent {
-  passages: {
-    usfm: string[];
-    content: Array<{
-      type: string;
-      content?: Array<{
-        type: string;
-        attrs?: { number?: string };
-        content?: Array<{
-          type: string;
-          text?: string;
-          attrs?: { verseNumber?: string; number?: string };
-        }>;
-      }>;
-    }>;
-  }[];
-  reference: {
-    human: string;
-    usfm: string;
-  };
+export interface PassageResponse {
+  content: string;
+  id: string;        // e.g. "GEN.1" or "GEN.1.1"
+  reference: string; // e.g. "Genesis 1" or "Genesis 1:1"
 }
 
-/* ── Verse structure we normalise to ── */
+/* ── Normalised verse for the UI ── */
 
 export interface NormalisedVerse {
   number: number;
   text: string;
 }
 
-/**
- * Flatten the YouVersion JSON passage response into simple verse objects.
- * The API returns a nested content tree — we walk it to extract verse numbers + text.
- */
-export function normalisePassage(raw: PassageContent): NormalisedVerse[] {
-  const verses: NormalisedVerse[] = [];
-  let currentVerse = 0;
-  let currentText = "";
-
-  function flush() {
-    if (currentVerse > 0 && currentText.trim()) {
-      verses.push({ number: currentVerse, text: currentText.trim() });
-      currentText = "";
-    }
-  }
-
-  for (const passage of raw.passages ?? []) {
-    for (const block of passage.content ?? []) {
-      for (const node of block.content ?? []) {
-        if (node.content) {
-          for (const leaf of node.content) {
-            const verseNum =
-              leaf.attrs?.verseNumber ?? leaf.attrs?.number;
-            if (verseNum && leaf.type === "verse_number") {
-              flush();
-              currentVerse = parseInt(verseNum, 10);
-            } else if (leaf.text) {
-              currentText += leaf.text;
-            }
-          }
-        }
-      }
-    }
-  }
-  flush();
-
-  return verses;
-}
-
 /* ── React Query hooks ── */
 
-/** Fetch all available Bible versions */
+/** Fetch all available Bible versions (English) */
 export function useBibleVersions() {
-  return useQuery<{ data: BibleVersion[] }>({
+  return useQuery<BibleVersion[]>({
     queryKey: ["bible", "versions"],
-    queryFn: () => fetchBible("/bibles"),
+    queryFn: async () => {
+      const res = await fetchBible<{ data: BibleVersion[] }>(
+        "/bibles?language_ranges[]=en",
+      );
+      return res.data;
+    },
     staleTime: Infinity,
   });
 }
 
 /** Fetch the index (books & chapters) for a specific Bible version */
 export function useBibleIndex(bibleId: number | undefined) {
-  return useQuery<{ data: BibleIndex }>({
+  return useQuery<BibleIndex>({
     queryKey: ["bible", "index", bibleId],
-    queryFn: () => fetchBible(`/bibles/${bibleId}/index`),
+    queryFn: () => fetchBible<BibleIndex>(`/bibles/${bibleId}/index`),
     enabled: !!bibleId,
     staleTime: Infinity,
   });
 }
 
-/** Fetch a passage (chapter) of Bible text */
-export function useBiblePassage(
+/** Fetch a full chapter as plain text */
+export function useBibleChapter(
   bibleId: number | undefined,
-  passageUsfm: string | undefined, // e.g. "GEN.1" for Genesis chapter 1
+  passageId: string | undefined, // e.g. "GEN.1"
 ) {
-  return useQuery<PassageContent>({
-    queryKey: ["bible", "passage", bibleId, passageUsfm],
+  return useQuery<PassageResponse>({
+    queryKey: ["bible", "chapter", bibleId, passageId],
     queryFn: () =>
-      fetchBible(`/bibles/${bibleId}/passages/${passageUsfm}?format=json`),
-    enabled: !!bibleId && !!passageUsfm,
+      fetchBible<PassageResponse>(
+        `/bibles/${bibleId}/passages/${passageId}?content_type=json`,
+      ),
+    enabled: !!bibleId && !!passageId,
+    staleTime: Infinity,
+  });
+}
+
+/**
+ * Fetch all individual verses for a chapter.
+ * Uses the index to know how many verses, then fetches
+ * each verse. Results are cached per-verse in bible_cache.
+ */
+export function useBibleChapterVerses(
+  bibleId: number | undefined,
+  bookUsfm: string | undefined,
+  chapterNumber: string | undefined,
+  verseIds: string[] | undefined, // e.g. ["GEN.1.1", "GEN.1.2", ...]
+) {
+  return useQuery<NormalisedVerse[]>({
+    queryKey: ["bible", "verses", bibleId, bookUsfm, chapterNumber],
+    queryFn: async () => {
+      if (!bibleId || !verseIds?.length) return [];
+
+      // Fetch all verses in parallel
+      const results = await Promise.all(
+        verseIds.map(async (passageId) => {
+          const res = await fetchBible<PassageResponse>(
+            `/bibles/${bibleId}/passages/${passageId}?content_type=json`,
+          );
+          // Extract verse number from passage_id like "GEN.1.3" → 3
+          const parts = passageId.split(".");
+          const num = parseInt(parts[parts.length - 1], 10);
+          return { number: num, text: res.content };
+        }),
+      );
+
+      return results.sort((a, b) => a.number - b.number);
+    },
+    enabled: !!bibleId && !!verseIds?.length,
     staleTime: Infinity,
   });
 }
