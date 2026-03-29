@@ -7,7 +7,6 @@ export interface FamilyRoom {
   name: string;
   description: string | null;
   theme: string;
-  invite_code: string;
   child_friendly: boolean;
   created_by: string;
   created_at: string;
