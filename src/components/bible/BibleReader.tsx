@@ -139,7 +139,8 @@ export function BibleReader() {
   // Auto-select first version & book
   React.useEffect(() => {
     if (versions?.length && !versionId) {
-      setVersionId(versions[0].id);
+      const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
+      setVersionId(bsb ? bsb.id : versions[0].id);
     }
   }, [versions, versionId]);
 
