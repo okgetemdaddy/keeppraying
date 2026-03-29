@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, X, Check, LogIn, Sparkles } from "lucide-react";
+import { Package, X, Check, LogIn, Sparkles, Plus, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import type { BunchWithCount } from "@/components/bible/VerseBunchStrip";
 
 /* ── localStorage / sessionStorage keys ── */
 const LS_AWARE_KEY = "bible_bunch_aware";
