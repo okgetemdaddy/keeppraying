@@ -46,7 +46,7 @@ export function FormattedText({
         return (
           <p
             key={i}
-            className={i > 0 ? "mt-3" : ""}
+            className={i > 0 ? "mt-5" : ""}
             style={indent && i > 0 ? { textIndent: "1.5em" } : undefined}
           >
             {lines.map((line, j) => (
