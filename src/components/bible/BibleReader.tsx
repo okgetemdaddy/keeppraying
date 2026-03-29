@@ -248,7 +248,7 @@ export function BibleReader() {
         {currentBook && currentChapter && (
           <motion.header {...fadeIn} className="mb-8 text-center">
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              {currentBook.abbreviation || currentBook.usfm}{" "}
+              {currentBook.title}{" "}
               {currentChapter.title}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
