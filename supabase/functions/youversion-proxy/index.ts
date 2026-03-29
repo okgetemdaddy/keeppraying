@@ -22,10 +22,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Whitelist: only allow /bible/ paths
-    if (!endpoint.startsWith("/bible/")) {
+    // Whitelist: only allow /bibles/ paths
+    if (!endpoint.startsWith("/bibles")) {
       return new Response(
-        JSON.stringify({ error: "Only /bible/ endpoints are permitted" }),
+        JSON.stringify({ error: "Only /bibles endpoints are permitted" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
