@@ -1,0 +1,1 @@
+ALTER TABLE public.board_preferences ADD COLUMN IF NOT EXISTS bible_text_size smallint NOT NULL DEFAULT 18;
