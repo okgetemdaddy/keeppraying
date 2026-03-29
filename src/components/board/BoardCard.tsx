@@ -119,6 +119,7 @@ export function BoardCard({
   const [collapsed, setCollapsed] = useState(false);
   const [flipped, setFlipped] = useState(false);
   const lastTapRef = useRef(0);
+  const [overlayOpacity, setOverlayOpacity] = useState(
     (item as any).overlay_opacity != null ? (item as any).overlay_opacity : 0.48
   );
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(() => {
