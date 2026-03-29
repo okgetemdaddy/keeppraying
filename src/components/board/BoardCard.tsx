@@ -679,7 +679,15 @@ export function BoardCard({
             minHeight: size === "large" ? 320 : size === "medium" ? 220 : 140,
           }}
         >
-          {flipped && (
+          {flipped && hasTestimony && userTestimony ? (
+            <TestimonyCardFace
+              testimony={userTestimony}
+              onFlipBack={() => setFlipped(false)}
+              accentColor={accentColor}
+              textColor={textColor}
+              cardBg={cardBg}
+            />
+          ) : flipped ? (
             <TestifyBack
               prayerId={card.id}
               prayerAuthorId={card.created_by}
@@ -688,7 +696,7 @@ export function BoardCard({
               textColor={textColor}
               cardBg={cardBg}
             />
-          )}
+          ) : null}
         </motion.div>
       </motion.div>{/* end layout motion.div */}
 
