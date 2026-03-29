@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lamp, Check, ChevronDown, Palette } from "lucide-react";
+import { Lamp, Check, ChevronDown, Palette, Undo2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 /* ── Preset definitions ───────────────────────────────────────────────────── */
 export interface ThemePreset {
