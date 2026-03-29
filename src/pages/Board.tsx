@@ -148,6 +148,7 @@ export default function Board() {
   const [immersive, setImmersive] = useState(false);
   const [classicalOpen, setClassicalOpen] = useState(false);
   const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
+  const [themeSanctuaryOpen, setThemeSanctuaryOpen] = useState(false);
 
   // Auto-hide nav on scroll
   const [navVisible, setNavVisible] = useState(true);
