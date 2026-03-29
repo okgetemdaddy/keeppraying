@@ -287,14 +287,14 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
             <Textarea
               value={body}
               onChange={e => setBody(e.target.value.slice(0, MAX_CHARS))}
-              placeholder="Share how God answered this prayer… Your story matters and will encourage others! 🙏"
-              className="w-full text-sm resize-none rounded-xl border-2 min-h-[100px] focus-visible:ring-0"
+              placeholder="Share how God answered this prayer… Your story matters and will encourage others!"
+              className="w-full text-sm resize-none rounded-xl border-2 min-h-[180px] focus-visible:ring-0 flex-1"
               style={{
                 borderColor: body.length > 0 ? accentColor : `${textColor}20`,
                 background: `${textColor}05`,
                 color: textColor,
               }}
-              rows={4}
+              rows={7}
             />
             <div className="flex items-center justify-between">
               <span className="text-[10px]" style={{ color: subtleText }}>
