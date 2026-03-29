@@ -160,6 +160,7 @@ interface ThemeSanctuaryModalProps {
   currentText: string | null;
   currentAccent: string | null;
   currentScope: string;
+  currentAtmosphereId?: string;
   onApply: (data: {
     theme_preset: string;
     theme_bg: string;
@@ -167,6 +168,7 @@ interface ThemeSanctuaryModalProps {
     theme_accent: string;
     theme_scope: string;
   }) => void;
+  onAtmosphereChange?: (atmosphereId: string) => void;
 }
 
 export function ThemeSanctuaryModal({
