@@ -887,10 +887,10 @@ export function BibleReader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
                 title="Text size"
               >
-                <AArrowUp className="h-3.5 w-3.5" />
+                <AArrowUp className="h-4.5 w-4.5" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-48 p-3" align="end">
