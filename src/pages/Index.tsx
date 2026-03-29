@@ -463,7 +463,7 @@ export default function Index() {
           </motion.div>
 
           {/* Beta notice */}
-          <motion.p variants={fadeUp} className="inline-block backdrop-blur-sm border border-white/15 rounded-2xl px-5 py-3 text-xs font-body tracking-wide max-w-2xl text-secondary-foreground bg-muted-foreground sm:text-base opacity-80">
+          <motion.p variants={fadeUp} className="inline-block backdrop-blur-sm border border-white/15 rounded-2xl px-5 py-3 text-xs font-body tracking-wide max-w-2xl text-secondary-foreground bg-muted-foreground sm:text-base opacity-75">
             <span className="font-bold">🕊️ Currently in beta — built with love for the Church</span>
             <br />Feel free to explore all features and leave feedback as we build a sacred digital prayer closet for the Church and the lost — a holy space where families and friends encounter God together, where a believer’s entire faith journey can be visualized, and where prayers rise like incense. AND much more! May God bless you with endless Testimonies to share!! For His Glory. In Jesus' name, Amen.
           </motion.p>
