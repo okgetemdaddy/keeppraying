@@ -374,6 +374,10 @@ export default function Board() {
       data-theme-bg
     >
       <div className={`absolute inset-0 ${theme.bgClass}`} />
+      <AtmosphereCanvas
+        atmosphereId={prefs.atmosphere_id || "warm-parchment"}
+        enabled={prefs.animations_enabled}
+      />
       <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 

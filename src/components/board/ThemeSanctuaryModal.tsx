@@ -313,10 +313,36 @@ export function ThemeSanctuaryModal({
               {/* Left / Main column */}
               <div className={isMobile ? "" : "flex-1 min-w-0"}>
 
-                {/* Section 1: Preset themes */}
+                {/* Section 0: Atmospheres of Prayer */}
                 <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Atmosphere of Prayer
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mb-3">
+                    Set the animated background for your Prayer Board — this has no effect on your prayer cards.
+                  </p>
+                  <div className={`grid gap-2.5 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
+                    {ATMOSPHERES.map(atm => (
+                      <AtmosphereThumbnail
+                        key={atm.id}
+                        atmosphere={atm}
+                        selected={selectedAtmosphere === atm.id}
+                        onClick={() => {
+                          setSelectedAtmosphere(atm.id);
+                          onAtmosphereChange?.(atm.id);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 1: Preset themes */}
+                <div className="mt-8">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                    Sacred Presets
+                    Card Color Presets
                   </p>
                   <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
                     {PRESETS.map((preset) => {
