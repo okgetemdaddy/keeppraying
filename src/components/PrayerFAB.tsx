@@ -14,6 +14,7 @@ interface FABItem {
   icon: React.ReactNode;
   onClick: () => void;
   color: string;
+  shimmer?: boolean;
 }
 
 interface PrayerFABProps {
@@ -58,6 +59,7 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       icon: <LayoutDashboard className="w-4 h-4" />,
       onClick: authGuard(() => { navigate("/board"); setOpen(false); }),
       color: "hsl(220 45% 42%)",
+      shimmer: true,
     },
     {
       id: "add-breath",
@@ -126,6 +128,8 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
   ];
 
   return (
+    <>
+      <style>{`@keyframes fab-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
     <div
       className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col-reverse items-end gap-2.5"
       style={{ "--fab-bottom": "5rem", "--fab-right": "1rem" } as React.CSSProperties}
@@ -159,13 +163,23 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
             </motion.span>
             {/* Circle icon */}
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-110"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 overflow-hidden"
               style={{
                 background: item.color,
                 color: "white",
                 boxShadow: `0 3px 12px -3px ${item.color}80`,
               }}
             >
+              {(item as any).shimmer && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.25) 55%, transparent 70%)",
+                    backgroundSize: "200% 100%",
+                    animation: "fab-shimmer 2.4s ease-in-out infinite",
+                  }}
+                />
+              )}
               {item.icon}
             </div>
           </motion.button>
@@ -289,5 +303,6 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
