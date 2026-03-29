@@ -17,6 +17,14 @@ export interface ScriptureRef {
   chapterNumber: number;
 }
 
+/** A single verse item for cross-book bunch creation */
+export interface CrossBunchItem {
+  versionId: number;
+  bookUsfm: string;
+  chapterNumber: number;
+  verseNumber: number;
+}
+
 /* ── Query key builder ── */
 function chapterKey(ref: ScriptureRef, userId: string) {
   return [
@@ -278,14 +286,14 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 
-  /* ── VERSE BUNCH: Create bunch + add items ── */
+  /* ── VERSE BUNCH: Create bunch + add items (cross-book) ── */
   const createBunch = useMutation({
     mutationFn: async (params: {
       bunchName: string;
-      verseNumbers: number[];
+      items: CrossBunchItem[];
       description?: string;
     }) => {
-      if (!user || !ref) throw new Error("Not authenticated");
+      if (!user) throw new Error("Not authenticated");
       // Create the bunch container
       const { data: bunch, error: bunchErr } = await supabase
         .from("verse_bunches")
@@ -298,40 +306,52 @@ export function useBibleMutations(ref: ScriptureRef | null) {
         .single();
       if (bunchErr) throw bunchErr;
 
-      // Add items
-      const items = params.verseNumbers.map((vn) => ({
+      // Add items — each with its own book/chapter/version
+      const rows = params.items.map((item) => ({
         bunch_id: bunch.id,
         user_id: user.id,
-        version_id: ref.versionId,
-        book_usfm: ref.bookUsfm,
-        chapter_number: ref.chapterNumber,
-        verse_number: vn,
+        version_id: item.versionId,
+        book_usfm: item.bookUsfm,
+        chapter_number: item.chapterNumber,
+        verse_number: item.verseNumber,
       }));
       const { error: itemsErr } = await supabase
         .from("verse_bunch_items")
-        .insert(items as any);
+        .insert(rows as any);
       if (itemsErr) throw itemsErr;
 
       return { bunchId: bunch.id, bunchName: bunch.bunch_name };
     },
     onMutate: async (params) => {
+      if (!ref) return {};
       await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<BibleChapterData>(key);
       const tempBunchId = `temp-bunch-${Date.now()}`;
-      const newItems: VerseBunchItemWithName[] = params.verseNumbers.map((vn) => ({
-        id: `temp-item-${vn}-${Date.now()}`,
-        bunch_id: tempBunchId,
-        bunch_name: params.bunchName,
-        verse_number: vn,
-      }));
-      updateChapterCache(qc, key, (old) => ({
-        ...old,
-        bunchItems: [...old.bunchItems, ...newItems],
-      }));
+      // Optimistically add items that belong to current chapter
+      const currentChapterItems = params.items.filter(
+        (item) =>
+          item.bookUsfm === ref.bookUsfm &&
+          item.chapterNumber === ref.chapterNumber &&
+          item.versionId === ref.versionId,
+      );
+      if (currentChapterItems.length > 0) {
+        const newItems: VerseBunchItemWithName[] = currentChapterItems.map((item) => ({
+          id: `temp-item-${item.verseNumber}-${Date.now()}`,
+          bunch_id: tempBunchId,
+          bunch_name: params.bunchName,
+          verse_number: item.verseNumber,
+        }));
+        updateChapterCache(qc, key, (old) => ({
+          ...old,
+          bunchItems: [...old.bunchItems, ...newItems],
+        }));
+      }
       return { prev };
     },
     onSuccess: () => {
       toast.success("Verse Bunch created 📦");
+      // Invalidate bunches list
+      qc.invalidateQueries({ queryKey: ["verse_bunches"] });
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(key, ctx.prev);

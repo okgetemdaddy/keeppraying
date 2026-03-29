@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Package } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 
 interface BunchWithCount {
   id: string;
@@ -67,16 +68,20 @@ export function VerseBunchStrip({ onNavigateToBunch }: VerseBunchStripProps) {
               Bunches
             </span>
             <div className="mx-1 h-4 w-px bg-border shrink-0" />
-            {bunches.map((b) => (
-              <button
-                key={b.id}
-                onClick={() => onNavigateToBunch(b)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/40 px-3 py-1 text-xs font-medium text-violet-700 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors whitespace-nowrap"
-              >
-                {b.bunch_name}
-                <span className="text-[0.6rem] opacity-60">{b.item_count}v</span>
-              </button>
-            ))}
+            {bunches.map((b, idx) => {
+              const color = getBunchColor(idx);
+              const classes = BUNCH_COLOR_CLASSES[color];
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => onNavigateToBunch(b)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border ${classes.pill} px-3 py-1 text-xs font-medium ${classes.pillText} hover:opacity-80 transition-colors whitespace-nowrap`}
+                >
+                  {b.bunch_name}
+                  <span className="text-[0.6rem] opacity-60">{b.item_count}v</span>
+                </button>
+              );
+            })}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
