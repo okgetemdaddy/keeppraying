@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lamp, Check, ChevronDown, Palette } from "lucide-react";
+import { Lamp, Check, ChevronDown, Palette, Undo2 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 /* ── Preset definitions ───────────────────────────────────────────────────── */
 export interface ThemePreset {
@@ -122,6 +123,32 @@ function autoTextColor(bg: string): string {
   return isLightColor(bg) ? "#1a1a2e" : "#f0f0f0";
 }
 
+/* ── Snapshot type for revert ────────────────────────────────────────── */
+interface ThemeSnapshot {
+  theme_preset: string;
+  theme_bg: string;
+  theme_text: string;
+  theme_accent: string;
+  theme_scope: string;
+}
+
+const SNAPSHOT_KEY = "kp_theme_sanctuary_snapshot";
+
+function saveSnapshot(snapshot: ThemeSnapshot) {
+  try {
+    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch {}
+}
+
+function loadSnapshot(): ThemeSnapshot | null {
+  try {
+    const raw = localStorage.getItem(SNAPSHOT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 /* ── Main modal ────────────────────────────────────────────────────── */
 interface ThemeSanctuaryModalProps {
   isOpen: boolean;
@@ -162,6 +189,14 @@ export function ThemeSanctuaryModal({
   const [customAccent, setCustomAccent] = useState(currentAccent || ACCENT_SWATCHES[0]);
   const [scope, setScope] = useState<Scope>((currentScope as Scope) || "board");
   const [previewExpanded, setPreviewExpanded] = useState(!isMobile);
+  const [previousSnapshot, setPreviousSnapshot] = useState<ThemeSnapshot | null>(null);
+
+  // Load any existing snapshot on mount
+  useEffect(() => {
+    if (isOpen) {
+      setPreviousSnapshot(loadSnapshot());
+    }
+  }, [isOpen]);
 
   // Determine if dark mode is active
   const isDark = useMemo(() => {
@@ -187,6 +222,17 @@ export function ThemeSanctuaryModal({
   }, []);
 
   const handleApply = useCallback(() => {
+    // Save current theme as a snapshot before applying new one
+    const currentSnapshot: ThemeSnapshot = {
+      theme_preset: currentPreset || "Golden Sunrise",
+      theme_bg: currentBg || PRESETS[3].bg,
+      theme_text: currentText || PRESETS[3].text,
+      theme_accent: currentAccent || PRESETS[3].accent,
+      theme_scope: currentScope,
+    };
+    saveSnapshot(currentSnapshot);
+    setPreviousSnapshot(currentSnapshot);
+
     const colors = customMode
       ? { bg: customBg, text: customText, accent: customAccent }
       : (() => {
@@ -203,8 +249,23 @@ export function ThemeSanctuaryModal({
       theme_accent: colors.accent,
       theme_scope: scope,
     });
+    toast.success("Theme applied — you can revert anytime");
     onOpenChange(false);
-  }, [customMode, customBg, customText, customAccent, selectedPresetName, scope, isDark, onApply, onOpenChange]);
+  }, [customMode, customBg, customText, customAccent, selectedPresetName, scope, isDark, onApply, onOpenChange, currentPreset, currentBg, currentText, currentAccent, currentScope]);
+
+  const handleRevert = useCallback(() => {
+    const snap = previousSnapshot || loadSnapshot();
+    if (!snap) {
+      toast.info("No previous theme to revert to");
+      return;
+    }
+    onApply(snap);
+    // After reverting, clear the snapshot
+    try { localStorage.removeItem(SNAPSHOT_KEY); } catch {}
+    setPreviousSnapshot(null);
+    toast.success("Reverted to your previous theme");
+    onOpenChange(false);
+  }, [previousSnapshot, onApply, onOpenChange]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -460,21 +521,35 @@ export function ThemeSanctuaryModal({
           </div>
 
           {/* ── Footer ──────────────────────────────────────────────── */}
-          <div className="border-t border-border px-6 py-4 flex items-center justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              className="rounded-xl"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleApply}
-              className="rounded-xl gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6"
-            >
-              <Lamp className="w-4 h-4" />
-              Apply Theme
-            </Button>
+          <div className="border-t border-border px-6 py-4 flex items-center justify-between">
+            <div>
+              {(previousSnapshot || loadSnapshot()) && (
+                <Button
+                  variant="outline"
+                  onClick={handleRevert}
+                  className="rounded-xl gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Undo2 className="w-4 h-4" />
+                  Revert to Previous
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApply}
+                className="rounded-xl gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6"
+              >
+                <Lamp className="w-4 h-4" />
+                Apply Theme
+              </Button>
+            </div>
           </div>
         </motion.div>
       </DialogContent>
