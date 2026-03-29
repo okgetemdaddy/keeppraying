@@ -623,6 +623,8 @@ export function BibleReader() {
 
   return (
     <article className="min-h-screen bg-background">
+      {/* ── Verse Bunch strip ── */}
+      <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-3">
