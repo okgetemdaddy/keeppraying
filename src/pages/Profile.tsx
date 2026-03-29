@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import VerseLink from "@/components/VerseLink";
+import { VerseOfTheDay } from "@/components/board/VerseOfTheDay";
 import {
   Flame, Heart, BookOpen, Users, Home, Swords, Music,
   Calendar, Eye, EyeOff, Edit2, Check, X, Award, Star,
