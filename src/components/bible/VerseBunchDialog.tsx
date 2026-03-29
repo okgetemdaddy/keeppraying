@@ -79,10 +79,16 @@ export function VerseBunchTooltip({
   chapterNumber,
   isAuthenticated,
   onConfirm,
+  onAddToExisting,
+  existingBunches,
   onDismiss,
   initialStep = "awareness",
 }: VerseBunchTooltipProps) {
-  const [step, setStep] = useState<TooltipStep>(initialStep);
+  // If user has existing bunches and is authenticated and already aware, start at "choose"
+  const computedInitialStep = initialStep === "form" && existingBunches && existingBunches.length > 0
+    ? "choose"
+    : initialStep;
+  const [step, setStep] = useState<TooltipStep>(computedInitialStep);
   const [bunchName, setBunchName] = useState("");
   const [description, setDescription] = useState("");
   const navigate = useNavigate();
