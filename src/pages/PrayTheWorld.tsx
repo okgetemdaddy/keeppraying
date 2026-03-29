@@ -5,7 +5,7 @@ import { Globe, Radio, Megaphone } from "lucide-react";
 import WorldMap from "@/components/map/WorldMap";
 import LocalRadar from "@/components/map/LocalRadar";
 import GrowthCTA from "@/components/map/GrowthCTA";
-import PrintableFlyers from "@/components/map/PrintableFlyers";
+
 import { usePrayerMapData } from "@/hooks/usePrayerMapData";
 
 type Tab = "world" | "radar" | "grow" | "flyers";
