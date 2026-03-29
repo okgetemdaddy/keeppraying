@@ -198,12 +198,13 @@ export function ThemeSanctuaryModal({
   const [previewExpanded, setPreviewExpanded] = useState(!isMobile);
   const [previousSnapshot, setPreviousSnapshot] = useState<ThemeSnapshot | null>(null);
 
-  // Load any existing snapshot on mount
+  // Load any existing snapshot on mount + sync atmosphere
   useEffect(() => {
     if (isOpen) {
       setPreviousSnapshot(loadSnapshot());
+      setSelectedAtmosphere(currentAtmosphereId || "warm-parchment");
     }
-  }, [isOpen]);
+  }, [isOpen, currentAtmosphereId]);
 
   // Determine if dark mode is active
   const isDark = useMemo(() => {
