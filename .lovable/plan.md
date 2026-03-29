@@ -1,70 +1,40 @@
 
 
-# YouVersion SDK Integration Plan (Updated)
+# YouVersion OAuth Callback Route
 
 ## Summary
-Install `@youversion/platform-react-ui`, wrap the app with `YouVersionProvider`, and add "Connect YouVersion" buttons on Profile, PrayerAssist, SermonSync, **and Board** pages. Add a Verse of the Day widget to the **Prayer Board** (after the daily welcome message) and **Profile** page, each with an adjacent VerseLink. Static AuthGate verses remain hardcoded.
+Create an `/auth/youversion/callback` route that handles the YouVersion OAuth PKCE token exchange, renders a sacred loading state during the brief exchange, then redirects the user back to where they came from.
 
----
+## Why `/auth/youversion/callback` (not `/auth/callback`)
+The app already has `/auth` for its own login page and `/reset-password` for password resets. Using a YouVersion-specific path avoids any routing conflicts and makes redirect URI configuration in the YouVersion Developer Portal clear and unambiguous.
 
-## Steps
+## Technical Details
 
-### 1. Install SDK
-Add `@youversion/platform-react-ui` to dependencies.
+### New file: `src/pages/YouVersionCallback.tsx`
+- On mount, extract `code` and `state` from URL search params via `useSearchParams`
+- Pass them to the YouVersion core client to complete the PKCE token exchange
+- Store the resulting access/refresh tokens (localStorage or a context — will align with the `use-youversion` hook design from the main plan)
+- On success, redirect via `useNavigate` to the page the user came from (stored in `state` param or fallback to `/board`)
+- On error, show a brief toast and redirect to `/board`
+- **UI during exchange**: Full-page dark background with the existing `SacredSpinner` component ("Connecting to YouVersion…") — no bright spinners, no buttons, fully automatic
 
-### 2. Environment Setup
-- Store `VITE_YOUVERSION_APP_KEY` as a publishable env variable in the codebase
-- User must configure redirect URLs in YouVersion Platform dashboard
+### Route registration in `src/App.tsx`
+- Add: `<Route path="/auth/youversion/callback" element={<YouVersionCallback />} />`
+- Placed alongside the existing `/auth` and `/reset-password` routes
+- No `AuthGate` wrapper — the callback must be accessible mid-OAuth flow
 
-### 3. Add YouVersionProvider to App.tsx
-Wrap inside existing provider tree (after `TooltipProvider`, before `BrowserRouter`):
-- `appKey` from `import.meta.env.VITE_YOUVERSION_APP_KEY`
-- `includeAuth={true}`
-- `authRedirectUrl={window.location.origin}`
-- `theme="light"`
-
-### 4. Add YouVersionAuthButton to Pages
-Create reusable `YouVersionStatus.tsx` component using `useYVAuth` hook showing:
-- Connected: user name, avatar, disconnect option, success message
-- Disconnected: connect button with `scopes={['email', 'profile']}` and `mode="auto"`
-
-Place on:
-- **Profile** — dedicated "Connected Accounts" section
-- **PrayerAssist** — connect prompt for enhanced Scripture features
-- **SermonSync** — connect prompt for Bible integration
-- **Board** — subtle connect option near the prayer station hero
-
-### 5. Verse of the Day Widget
-Create `VerseOfTheDay.tsx` component that:
-- Fetches daily verse from YouVersion SDK (or falls back to a curated list if not connected)
-- Displays the NIV verse text in the app's existing italic/muted style
-- Renders a `<VerseLink>` badge adjacent to the reference
-
-Placement:
-- **Board page** — positioned directly after the daily welcome message in `PrayerStationHero`
-- **Profile page** — near the top as a daily inspiration section
-
-### 6. CSS Conflict Mitigation
-Scope YouVersion SDK components to prevent Tailwind base resets from breaking SDK styles. Use a wrapper `div` with reset styles if conflicts arise.
-
----
-
-## Files Changed
+### Files changed
 
 | File | Change |
 |------|--------|
-| `package.json` | Add `@youversion/platform-react-ui` |
-| `src/App.tsx` | Wrap with `YouVersionProvider` |
-| `src/components/YouVersionStatus.tsx` | New: connect/status component |
-| `src/components/board/VerseOfTheDay.tsx` | New: daily verse widget |
-| `src/pages/Profile.tsx` | Add YouVersion section + Verse of the Day |
-| `src/pages/PrayerAssist.tsx` | Add YouVersion connect prompt |
-| `src/pages/SermonSync.tsx` | Add YouVersion connect prompt |
-| `src/pages/Board.tsx` or `PrayerStationHero.tsx` | Add YouVersion connect + Verse of the Day |
+| `src/pages/YouVersionCallback.tsx` | New: callback page component |
+| `src/App.tsx` | Add route for `/auth/youversion/callback` |
 
----
+### Dependency on main plan
+This callback route will call into `src/lib/youversion/client.ts` (the `ApiClient` token exchange method) which is created in the main YouVersion integration plan. Both will be implemented together — the callback route first, then the client/hooks/components.
 
-## Prerequisites
-- YouVersion App Key (from platform.youversion.com)
-- Redirect URLs configured in YouVersion dashboard for both production and preview URLs
+### Redirect URI to configure
+The user will need to register these callback URLs in the YouVersion Developer Portal:
+- `https://keeppraying.lovable.app/auth/youversion/callback`
+- `https://id-preview--ec544a6b-3366-4547-b914-c619394e5a03.lovable.app/auth/youversion/callback`
 
