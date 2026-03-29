@@ -343,6 +343,7 @@ export function BibleReader() {
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
   const [bunchAware, setBunchAwareState] = useState(isBunchAware);
+  const [bunchDialogVerses, setBunchDialogVerses] = useState<number[]>([]);
 
   const readingAreaRef = useRef<HTMLDivElement>(null);
 
