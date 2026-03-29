@@ -301,7 +301,7 @@ export function BoardCard({
             className="w-full h-full object-cover"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${0.9 * overlayOpacity}), rgba(0,0,0,${0.6 * overlayOpacity}), rgba(0,0,0,${0.4 * overlayOpacity}))` }} />
+          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${1.0 * overlayOpacity}), rgba(0,0,0,${0.85 * overlayOpacity}), rgba(0,0,0,${0.7 * overlayOpacity}))` }} />
         </div>
       )}
 
