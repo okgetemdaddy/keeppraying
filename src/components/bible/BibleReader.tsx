@@ -190,8 +190,8 @@ export function BibleReader() {
             </SelectTrigger>
             <SelectContent>
               {index?.books?.map((b) => (
-                <SelectItem key={b.usfm} value={b.usfm}>
-                  {b.abbreviation || b.usfm}
+                <SelectItem key={b.id} value={b.id}>
+                  {b.title}
                 </SelectItem>
               ))}
             </SelectContent>
