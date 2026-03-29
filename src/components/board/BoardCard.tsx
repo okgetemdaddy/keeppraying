@@ -167,7 +167,7 @@ export function BoardCard({
     if (!userId || !item.prayer_cards?.id) return;
     supabase
       .from("testimonies")
-      .select("id, body, title, verses, praise_count, created_at, user_id")
+      .select("id, body, title, verses, praise_count, created_at, user_id, answered_date")
       .eq("prayer_id", item.prayer_cards.id)
       .eq("user_id", userId)
       .maybeSingle()

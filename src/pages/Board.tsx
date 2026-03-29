@@ -14,7 +14,7 @@ import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
-import { ThemeSelector } from "@/components/board/ThemeSelector";
+
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
