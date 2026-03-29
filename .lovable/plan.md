@@ -1,45 +1,70 @@
 
 
-## Plan: Upload Image in Card Menu + Remove Old Board Background
+# YouVersion SDK Integration Plan (Updated)
 
-### Task 1: Add "Upload Image" to Prayer Card `...` Menu
+## Summary
+Install `@youversion/platform-react-ui`, wrap the app with `YouVersionProvider`, and add "Connect YouVersion" buttons on Profile, PrayerAssist, SermonSync, **and Board** pages. Add a Verse of the Day widget to the **Prayer Board** (after the daily welcome message) and **Profile** page, each with an adjacent VerseLink. Static AuthGate verses remain hardcoded.
 
-**File: `src/components/board/BoardCard.tsx`**
+---
 
-Add an "Upload Image" menu item in the `ActionButtons` `...` dropdown (after the card color presets section, before Remove). This lets any card owner upload or replace a background image at any time.
+## Steps
 
-- Add a hidden `<input type="file" accept="image/*">` ref inside `ActionButtons`
-- Add a new `DropdownMenuItem` with an `ImagePlus` icon labeled "Upload Image"
-- On click, trigger the file input
-- On file select:
-  - Upload to `prayer-backgrounds` bucket (path: `userId/timestamp.ext`)
-  - Get the public URL
-  - Update `prayer_cards.background_url` for that card
-  - Call `onRefresh()` to reload
-  - Show success toast
-- Also add a "Remove Image" item when the card already has a background image
+### 1. Install SDK
+Add `@youversion/platform-react-ui` to dependencies.
 
-**Props change**: Add `onUploadImage` callback to `ActionButtonsProps` (or handle inline with a ref). Also need `userId` passed down.
+### 2. Environment Setup
+- Store `VITE_YOUVERSION_APP_KEY` as a publishable env variable in the codebase
+- User must configure redirect URLs in YouVersion Platform dashboard
 
-### Task 2: Remove Old ThemeCanvas Board Background
+### 3. Add YouVersionProvider to App.tsx
+Wrap inside existing provider tree (after `TooltipProvider`, before `BrowserRouter`):
+- `appKey` from `import.meta.env.VITE_YOUVERSION_APP_KEY`
+- `includeAuth={true}`
+- `authRedirectUrl={window.location.origin}`
+- `theme="light"`
 
-The old `ThemeCanvas` (particles, stars, leaves, rain, ripples, candle animations) is now superseded by the new `AtmosphereCanvas`. They currently render on top of each other, which clutters the background.
+### 4. Add YouVersionAuthButton to Pages
+Create reusable `YouVersionStatus.tsx` component using `useYVAuth` hook showing:
+- Connected: user name, avatar, disconnect option, success message
+- Disconnected: connect button with `scopes={['email', 'profile']}` and `mode="auto"`
 
-**File: `src/pages/Board.tsx`**
-- Remove the `ThemeCanvas` import and its `<ThemeCanvas>` render call (line 382)
-- Remove the old `theme.overlay` div (line 383) — the AtmosphereCanvas handles its own visual treatment
-- Keep the `<div className={theme.bgClass}>` for the static gradient base color (this provides the CSS variables and base gradient that cards still use)
-- Remove the `ThemeCanvas` import from line 16
+Place on:
+- **Profile** — dedicated "Connected Accounts" section
+- **PrayerAssist** — connect prompt for enhanced Scripture features
+- **SermonSync** — connect prompt for Bible integration
+- **Board** — subtle connect option near the prayer station hero
 
-**File: `src/components/board/ThemeCanvas.tsx`**
-- Leave the file in place (not deleting) but it will no longer be imported. Can be cleaned up later.
+### 5. Verse of the Day Widget
+Create `VerseOfTheDay.tsx` component that:
+- Fetches daily verse from YouVersion SDK (or falls back to a curated list if not connected)
+- Displays the NIV verse text in the app's existing italic/muted style
+- Renders a `<VerseLink>` badge adjacent to the reference
 
-### Summary of Changes
+Placement:
+- **Board page** — positioned directly after the daily welcome message in `PrayerStationHero`
+- **Profile page** — near the top as a daily inspiration section
+
+### 6. CSS Conflict Mitigation
+Scope YouVersion SDK components to prevent Tailwind base resets from breaking SDK styles. Use a wrapper `div` with reset styles if conflicts arise.
+
+---
+
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/board/BoardCard.tsx` | Add "Upload Image" and "Remove Image" items to `...` dropdown menu |
-| `src/pages/Board.tsx` | Remove `ThemeCanvas` import + render, remove overlay div |
+| `package.json` | Add `@youversion/platform-react-ui` |
+| `src/App.tsx` | Wrap with `YouVersionProvider` |
+| `src/components/YouVersionStatus.tsx` | New: connect/status component |
+| `src/components/board/VerseOfTheDay.tsx` | New: daily verse widget |
+| `src/pages/Profile.tsx` | Add YouVersion section + Verse of the Day |
+| `src/pages/PrayerAssist.tsx` | Add YouVersion connect prompt |
+| `src/pages/SermonSync.tsx` | Add YouVersion connect prompt |
+| `src/pages/Board.tsx` or `PrayerStationHero.tsx` | Add YouVersion connect + Verse of the Day |
 
-No database changes needed — `prayer-backgrounds` bucket and `background_url` column already exist.
+---
+
+## Prerequisites
+- YouVersion App Key (from platform.youversion.com)
+- Redirect URLs configured in YouVersion dashboard for both production and preview URLs
 
