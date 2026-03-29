@@ -394,25 +394,14 @@ export default function Board() {
 
         {/* Desktop control row */}
         {!isMobile && (
-          <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <ThemeSelector
-                currentTheme={prefs.theme}
-                animationsEnabled={prefs.animations_enabled}
-                onThemeChange={(id) => savePrefs({ theme: id })}
-                onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
-              />
-              <StandbyToggle compact dark />
-            </div>
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => setImmersive(i => !i)}
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
-                title="Immersive mode"
-              >
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-end gap-3">
+            <button
+              onClick={() => setImmersive(i => !i)}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
+              title="Immersive mode"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
           </div>
         )}
       </motion.div>
