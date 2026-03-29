@@ -12,6 +12,9 @@ export interface BoardPrefs {
   theme_text: string | null;
   theme_accent: string | null;
   theme_scope: string;
+  calendar_bg: string;
+  calendar_text: string;
+  calendar_accent: string;
 }
 
 const DEFAULTS: BoardPrefs = {
@@ -24,6 +27,9 @@ const DEFAULTS: BoardPrefs = {
   theme_text: null,
   theme_accent: null,
   theme_scope: "board",
+  calendar_bg: "#F5F0E8",
+  calendar_text: "#2C2418",
+  calendar_accent: "#B85C38",
 };
 
 export function useBoardPreferences() {
@@ -36,7 +42,7 @@ export function useBoardPreferences() {
     if (!user) { setLoaded(true); return; }
     supabase
       .from("board_preferences")
-      .select("theme,animations_enabled,sound_id,sound_volume,theme_preset,theme_bg,theme_text,theme_accent,theme_scope")
+      .select("theme,animations_enabled,sound_id,sound_volume,theme_preset,theme_bg,theme_text,theme_accent,theme_scope,calendar_bg,calendar_text,calendar_accent")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -51,6 +57,9 @@ export function useBoardPreferences() {
             theme_text: (data as any).theme_text ?? null,
             theme_accent: (data as any).theme_accent ?? null,
             theme_scope: (data as any).theme_scope ?? DEFAULTS.theme_scope,
+            calendar_bg: (data as any).calendar_bg ?? DEFAULTS.calendar_bg,
+            calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
+            calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
           });
         }
         setLoaded(true);

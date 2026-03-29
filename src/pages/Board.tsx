@@ -551,7 +551,12 @@ export default function Board() {
         )}
 
         {/* ── Interactive Calendar ─────────────────────────────────────── */}
-        <PrayerCalendar textColor={textColor} accentColor={themeVars["--board-accent"]} />
+        <PrayerCalendar
+          textColor={textColor}
+          accentColor={themeVars["--board-accent"]}
+          boardPrefs={prefs}
+          onUpdateCalendarColor={(updates) => savePrefs(updates)}
+        />
 
         {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
