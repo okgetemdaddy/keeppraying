@@ -513,6 +513,18 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
           </div>
         )}
       </div>
+
+      {/* Back to Prayer link */}
+      <div className="sticky bottom-0 z-10 px-4 py-3 border-t text-center"
+        style={{ background: `${cardBg}f5`, borderColor: `${textColor}12`, backdropFilter: "blur(8px)" }}>
+        <button
+          onClick={onFlipBack}
+          className="text-xs font-medium transition-opacity hover:opacity-70"
+          style={{ color: accentColor }}
+        >
+          Back to Prayer
+        </button>
+      </div>
     </div>
   );
 }
