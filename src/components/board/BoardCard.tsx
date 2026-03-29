@@ -371,7 +371,21 @@ export function BoardCard({
             )}
 
             {/* Prayer text — with optional custom font */}
-            <div className="select-none" onClick={() => onOpenViewer?.(item)}>
+            <div className="select-none" onClick={(e) => {
+              const now = Date.now();
+              if (now - lastTapRef.current < 350) {
+                e.stopPropagation();
+                lastTapRef.current = 0;
+                setFlipped(true);
+                return;
+              }
+              lastTapRef.current = now;
+              setTimeout(() => {
+                if (lastTapRef.current !== 0 && Date.now() - lastTapRef.current >= 340) {
+                  onOpenViewer?.(item);
+                }
+              }, 360);
+            }}>
               <FormattedText
                 text={card.prayer_text}
                 truncateAt={PRAYER_CHAR_LIMIT}
