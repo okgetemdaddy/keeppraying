@@ -38,7 +38,9 @@ interface PrayerCalendarProps {
   accentColor?: string;
 }
 
-export function PrayerCalendar({ textColor, accentColor = "hsl(42 85% 58%)" }: PrayerCalendarProps) {
+export function PrayerCalendar({ textColor: _themeText, accentColor = "hsl(42 85% 58%)" }: PrayerCalendarProps) {
+  // Calendar uses Pure Sand bg, so override text to match
+  const textColor = "#2C2418";
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isFullMonth, setIsFullMonth] = useState(false);
