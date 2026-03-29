@@ -558,16 +558,22 @@ export default function FamilyRoomDetail() {
               {room.purpose && <p className="text-sm text-primary/80 font-medium">{room.purpose}</p>}
               {room.description && <p className="text-xs text-muted-foreground">{room.description}</p>}
               {schedule?.day && <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center"><Calendar className="w-3 h-3" /> {schedule.day}{schedule.time ? ` at ${schedule.time}` : ""}</p>}
-              <div className="bg-background rounded-xl p-3 mt-2">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Family Code</p>
-                <p className="font-mono text-lg tracking-[0.25em] text-foreground font-bold">{room.invite_code}</p>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Join at KeepPray.ing/family</p>
+              <p className="text-[10px] text-muted-foreground mt-2">Ask a member for an invite link to join!</p>
+              <p className="text-[10px] text-muted-foreground">KeepPray.ing</p>
             </div>
-            <Button onClick={copyCode} className="btn-gold rounded-xl gap-2 w-full"><Copy className="w-4 h-4" /> Copy Code</Button>
+            <Button onClick={() => setInviteOpen(true)} className="btn-gold rounded-xl gap-2 w-full"><Share2 className="w-4 h-4" /> Generate Invite Link</Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Invite Share Modal */}
+      <InviteShareModal
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        type="family"
+        targetId={room.id}
+        targetName={room.name}
+      />
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={async (newPrayerId?: string) => {
         if (newPrayerId && id && user) {
