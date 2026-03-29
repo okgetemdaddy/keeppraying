@@ -559,6 +559,30 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_welcome_messages: {
+        Row: {
+          active_date: string
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          active_date: string
+          created_at?: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          active_date?: string
+          created_at?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount_cents: number
