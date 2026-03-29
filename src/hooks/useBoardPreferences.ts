@@ -57,6 +57,9 @@ export function useBoardPreferences() {
             theme_text: (data as any).theme_text ?? null,
             theme_accent: (data as any).theme_accent ?? null,
             theme_scope: (data as any).theme_scope ?? DEFAULTS.theme_scope,
+            calendar_bg: (data as any).calendar_bg ?? DEFAULTS.calendar_bg,
+            calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
+            calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
           });
         }
         setLoaded(true);
