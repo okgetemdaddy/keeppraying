@@ -1330,24 +1330,36 @@ export type Database = {
           created_at: string
           flagged: boolean
           id: string
+          is_public: boolean
+          praise_count: number
           prayer_id: string | null
+          title: string | null
           user_id: string
+          verses: Json | null
         }
         Insert: {
           body: string
           created_at?: string
           flagged?: boolean
           id?: string
+          is_public?: boolean
+          praise_count?: number
           prayer_id?: string | null
+          title?: string | null
           user_id: string
+          verses?: Json | null
         }
         Update: {
           body?: string
           created_at?: string
           flagged?: boolean
           id?: string
+          is_public?: boolean
+          praise_count?: number
           prayer_id?: string | null
+          title?: string | null
           user_id?: string
+          verses?: Json | null
         }
         Relationships: [
           {
@@ -1452,6 +1464,35 @@ export type Database = {
           },
         ]
       }
+      testimony_praises: {
+        Row: {
+          created_at: string
+          id: string
+          testimony_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          testimony_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          testimony_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimony_praises_testimony_id_fkey"
+            columns: ["testimony_id"]
+            isOneToOne: false
+            referencedRelation: "testimonies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       update_logs: {
         Row: {
           created_at: string
@@ -1513,6 +1554,35 @@ export type Database = {
             columns: ["prayer_id"]
             isOneToOne: false
             referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_saved_testimonies: {
+        Row: {
+          created_at: string
+          id: string
+          testimony_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          testimony_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          testimony_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_saved_testimonies_testimony_id_fkey"
+            columns: ["testimony_id"]
+            isOneToOne: false
+            referencedRelation: "testimonies"
             referencedColumns: ["id"]
           },
         ]
