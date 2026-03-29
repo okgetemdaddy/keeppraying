@@ -224,6 +224,76 @@ export function VerseBunchTooltip({
     );
   }
 
+  /* ── CHOOSE step (add to existing or create new) ── */
+  if (step === "choose") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl sm:left-1/2 sm:right-auto sm:w-[92vw] sm:-translate-x-1/2 sm:bottom-6 sm:inset-x-auto"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300">
+              <Package className="h-4 w-4" />
+            </div>
+            <h3 className="text-sm font-semibold text-foreground">
+              {selectedVerses.length} verse{selectedVerses.length > 1 ? "s" : ""} selected
+            </h3>
+          </div>
+          <button onClick={onDismiss} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Add to existing bunches */}
+        {existingBunches && existingBunches.length > 0 && (
+          <div className="mb-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Add to existing bunch</p>
+            <ScrollArea className="max-h-[160px]">
+              <div className="space-y-1.5">
+                {existingBunches.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => {
+                      if (onAddToExisting) {
+                        onAddToExisting(b.id, b.bunch_name);
+                      }
+                    }}
+                    className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-all hover:bg-muted/60"
+                  >
+                    <FolderPlus className="h-4 w-4 shrink-0 text-violet-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{b.bunch_name}</p>
+                      <p className="text-[0.65rem] text-muted-foreground">
+                        {b.verse_count} verse{b.verse_count !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        <div className="border-t border-border pt-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setStep("form")}
+            className="w-full gap-1.5"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Create New Bunch
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
+
   /* ── FORM step ── */
   return (
     <motion.div
