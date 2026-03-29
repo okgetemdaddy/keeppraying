@@ -14,6 +14,7 @@ interface FABItem {
   icon: React.ReactNode;
   onClick: () => void;
   color: string;
+  shimmer?: boolean;
 }
 
 interface PrayerFABProps {
