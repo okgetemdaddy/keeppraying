@@ -74,11 +74,13 @@ function StandaloneTestimonyCard({
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [userLiked, setUserLiked] = useState(testimony.user_liked || false);
-  const [likesCount, setLikesCount] = useState(testimony.likes_count || 0);
+  const [userPraised, setUserPraised] = useState(testimony.user_liked || false);
+  const [praiseCount, setPraiseCount] = useState(testimony.likes_count || 0);
   const [userFlagged, setUserFlagged] = useState(testimony.user_flagged || false);
   const [expanded, setExpanded] = useState(false);
   const [prayerOpen, setPrayerOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [praiseAnimating, setPraiseAnimating] = useState(false);
 
   const TRUNCATE_AT = 480;
   const isLong = testimony.body.length > TRUNCATE_AT;
