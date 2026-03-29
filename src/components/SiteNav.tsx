@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User,
   MoreHorizontal, Globe, Sparkles, BookOpen, Users, Home, Swords,
-  Radio, Heart, HandHeart, Wind, HeartHandshake
+  Radio, Heart, HandHeart, Wind, HeartHandshake, BookMarked
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
