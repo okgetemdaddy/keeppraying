@@ -13,10 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import InviteShareModal from "@/components/InviteShareModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import {
-  ArrowLeft, Copy, Users, Heart, Flame, Sparkles, Loader2,
+  ArrowLeft, Users, Heart, Flame, Sparkles, Loader2,
   Share2, LogOut, Trash2, Shield, BookOpen, Calendar, Plus,
   PlusCircle, Check, Crown, ClipboardList, Globe, Lock,
   ArrowUpDown, UserMinus, CheckCircle2, Clock, FileText,
