@@ -41,10 +41,12 @@ import {
   type ToolbarPosition,
 } from "@/components/bible/FloatingToolbar";
 import {
-  VerseBunchDialog,
-  isBunchDialogDismissed,
-  dismissBunchDialog,
+  VerseBunchTooltip,
+  isBunchAware,
+  loadPendingBunch,
+  clearPendingBunch,
 } from "@/components/bible/VerseBunchDialog";
+import { VerseBunchStrip, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
 
 type ReadingMode = "verse" | "paragraph";
 
