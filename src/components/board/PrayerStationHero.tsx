@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { StandbyToggle } from "@/components/StandbyToggle";
-import { VerseOfTheDay } from "@/components/board/VerseOfTheDay";
 import {
   PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp,
 } from "lucide-react";
@@ -171,9 +170,6 @@ export function PrayerStationHero({
           >
             {welcomeMsg || "The Lord is near to all who call on Him…"}
           </motion.p>
-
-          {/* Verse of the Day — after daily welcome */}
-          <VerseOfTheDay />
 
           {/* Action buttons — 2 rows × 3 columns */}
           <motion.div

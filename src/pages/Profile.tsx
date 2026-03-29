@@ -15,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import VerseLink from "@/components/VerseLink";
-import { VerseOfTheDay } from "@/components/board/VerseOfTheDay";
 import {
   Flame, Heart, BookOpen, Users, Home, Swords, Music,
   Calendar, Eye, EyeOff, Edit2, Check, X, Award, Star,
@@ -431,18 +430,6 @@ export default function Profile() {
 
       {/* ── MAIN CONTENT ── */}
       <div className="max-w-5xl mx-auto px-4 pb-20 space-y-8">
-        {/* ── Verse of the Day ── */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card className="overflow-hidden">
-            <CardContent className="p-5">
-              <VerseOfTheDay light />
-            </CardContent>
-          </Card>
-        </motion.section>
         {/* ── Stats Dashboard ── */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}

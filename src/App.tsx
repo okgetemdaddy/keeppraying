@@ -18,7 +18,6 @@ import BlogPost from "./pages/BlogPost";
 import Admin from "./pages/Admin";
 import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
-import YouVersionCallback from "./pages/YouVersionCallback";
 import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
 import TestimonyDetail from "./pages/TestimonyDetail";
@@ -199,7 +198,6 @@ function AppShell() {
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/auth/youversion/callback" element={<YouVersionCallback />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

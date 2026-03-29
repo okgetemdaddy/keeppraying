@@ -16,32 +16,8 @@ When someone sends a message or prayer request through the contact form, respond
 - Sign off as "The KeepPray.ing Team"
 Keep your tone uplifting, biblically grounded, and concise.`;
 
-// Simple in-memory rate limiter (per-instance; resets on cold start)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 5; // max 5 submissions per minute per IP
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
-  }
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  // Rate limiting by IP
-  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (isRateLimited(clientIp)) {
-    return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
-      status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
@@ -71,37 +47,21 @@ serve(async (req) => {
   try {
     const { name, email, message } = await req.json();
 
-    // Validate message
+    // Validate
     if (!message || typeof message !== "string" || message.trim().length < 2) {
       return new Response(JSON.stringify({ error: "Message is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (message.length > 5000) {
-      return new Response(JSON.stringify({ error: "Message too long (max 5000 characters)" }), {
+    if (message.length > 1000) {
+      return new Response(JSON.stringify({ error: "Message too long" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    }
-
-    // Validate name
-    if (name !== undefined && name !== null && typeof name !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid name" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Validate email format
-    if (email !== undefined && email !== null) {
-      if (typeof email !== "string" || (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))) {
-        return new Response(JSON.stringify({ error: "Invalid email address" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
     }
 
     const cleanName = name ? String(name).trim().slice(0, 100) : null;
     const cleanEmail = email ? String(email).trim().slice(0, 255) : null;
-    const cleanMessage = message.trim().slice(0, 5000);
+    const cleanMessage = message.trim().slice(0, 1000);
 
     // Resolve profile info if logged in
     let resolvedName = cleanName;
@@ -162,7 +122,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("contact-form error:", e);
-    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), {
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

@@ -1,40 +1,45 @@
 
 
-# YouVersion OAuth Callback Route
+## Plan: Upload Image in Card Menu + Remove Old Board Background
 
-## Summary
-Create an `/auth/youversion/callback` route that handles the YouVersion OAuth PKCE token exchange, renders a sacred loading state during the brief exchange, then redirects the user back to where they came from.
+### Task 1: Add "Upload Image" to Prayer Card `...` Menu
 
-## Why `/auth/youversion/callback` (not `/auth/callback`)
-The app already has `/auth` for its own login page and `/reset-password` for password resets. Using a YouVersion-specific path avoids any routing conflicts and makes redirect URI configuration in the YouVersion Developer Portal clear and unambiguous.
+**File: `src/components/board/BoardCard.tsx`**
 
-## Technical Details
+Add an "Upload Image" menu item in the `ActionButtons` `...` dropdown (after the card color presets section, before Remove). This lets any card owner upload or replace a background image at any time.
 
-### New file: `src/pages/YouVersionCallback.tsx`
-- On mount, extract `code` and `state` from URL search params via `useSearchParams`
-- Pass them to the YouVersion core client to complete the PKCE token exchange
-- Store the resulting access/refresh tokens (localStorage or a context — will align with the `use-youversion` hook design from the main plan)
-- On success, redirect via `useNavigate` to the page the user came from (stored in `state` param or fallback to `/board`)
-- On error, show a brief toast and redirect to `/board`
-- **UI during exchange**: Full-page dark background with the existing `SacredSpinner` component ("Connecting to YouVersion…") — no bright spinners, no buttons, fully automatic
+- Add a hidden `<input type="file" accept="image/*">` ref inside `ActionButtons`
+- Add a new `DropdownMenuItem` with an `ImagePlus` icon labeled "Upload Image"
+- On click, trigger the file input
+- On file select:
+  - Upload to `prayer-backgrounds` bucket (path: `userId/timestamp.ext`)
+  - Get the public URL
+  - Update `prayer_cards.background_url` for that card
+  - Call `onRefresh()` to reload
+  - Show success toast
+- Also add a "Remove Image" item when the card already has a background image
 
-### Route registration in `src/App.tsx`
-- Add: `<Route path="/auth/youversion/callback" element={<YouVersionCallback />} />`
-- Placed alongside the existing `/auth` and `/reset-password` routes
-- No `AuthGate` wrapper — the callback must be accessible mid-OAuth flow
+**Props change**: Add `onUploadImage` callback to `ActionButtonsProps` (or handle inline with a ref). Also need `userId` passed down.
 
-### Files changed
+### Task 2: Remove Old ThemeCanvas Board Background
+
+The old `ThemeCanvas` (particles, stars, leaves, rain, ripples, candle animations) is now superseded by the new `AtmosphereCanvas`. They currently render on top of each other, which clutters the background.
+
+**File: `src/pages/Board.tsx`**
+- Remove the `ThemeCanvas` import and its `<ThemeCanvas>` render call (line 382)
+- Remove the old `theme.overlay` div (line 383) — the AtmosphereCanvas handles its own visual treatment
+- Keep the `<div className={theme.bgClass}>` for the static gradient base color (this provides the CSS variables and base gradient that cards still use)
+- Remove the `ThemeCanvas` import from line 16
+
+**File: `src/components/board/ThemeCanvas.tsx`**
+- Leave the file in place (not deleting) but it will no longer be imported. Can be cleaned up later.
+
+### Summary of Changes
 
 | File | Change |
 |------|--------|
-| `src/pages/YouVersionCallback.tsx` | New: callback page component |
-| `src/App.tsx` | Add route for `/auth/youversion/callback` |
+| `src/components/board/BoardCard.tsx` | Add "Upload Image" and "Remove Image" items to `...` dropdown menu |
+| `src/pages/Board.tsx` | Remove `ThemeCanvas` import + render, remove overlay div |
 
-### Dependency on main plan
-This callback route will call into `src/lib/youversion/client.ts` (the `ApiClient` token exchange method) which is created in the main YouVersion integration plan. Both will be implemented together — the callback route first, then the client/hooks/components.
-
-### Redirect URI to configure
-The user will need to register these callback URLs in the YouVersion Developer Portal:
-- `https://keeppraying.lovable.app/auth/youversion/callback`
-- `https://id-preview--ec544a6b-3366-4547-b914-c619394e5a03.lovable.app/auth/youversion/callback`
+No database changes needed — `prayer-backgrounds` bucket and `background_url` column already exist.
 
