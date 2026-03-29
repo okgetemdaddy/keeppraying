@@ -98,7 +98,7 @@ export function BibleReader() {
 
   // Derive current book & chapter
   const currentBook: BibleBookMeta | undefined = useMemo(
-    () => index?.books?.find((b) => b.usfm === bookUsfm),
+    () => index?.books?.find((b) => b.id === bookUsfm),
     [index, bookUsfm],
   );
 

@@ -32,11 +32,11 @@ export interface BibleChapterMeta {
 }
 
 export interface BibleBookMeta {
-  abbreviation: string; // "Gen."
+  id: string;           // "GEN"
   canon: string;        // "old_testament" | "new_testament"
   chapters: BibleChapterMeta[];
-  human_long: string;   // "Genesis"
-  usfm: string;         // "GEN"
+  title: string;        // "Genesis"
+  intro: string | null;
 }
 
 export interface BibleIndex {
