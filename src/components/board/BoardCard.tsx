@@ -322,20 +322,17 @@ export function BoardCard({
             )}
 
             {/* Prayer text — with optional custom font */}
-            <div className="select-none">
-              <p
+            <div className="select-none" onClick={() => onOpenViewer?.(item)}>
+              <FormattedText
+                text={card.prayer_text}
+                truncateAt={PRAYER_CHAR_LIMIT}
                 className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : 'text-slate-700'}`}
                 style={{
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                 }}
-                onClick={() => onOpenViewer?.(item)}
-              >
-                {isTruncated
-                  ? card.prayer_text.slice(0, PRAYER_CHAR_LIMIT).trimEnd() + "…"
-                  : card.prayer_text}
-              </p>
+              />
               {isTruncated && (
-                  <button
+                <button
                   onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
                   className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
                 >
