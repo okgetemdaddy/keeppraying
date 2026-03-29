@@ -133,29 +133,23 @@ export function PrayerStationHero({
             {welcomeMsg || "The Lord is near to all who call on Him…"}
           </motion.p>
 
-          {/* Action pills — horizontally scrollable on mobile */}
+          {/* Action buttons — 2 rows × 3 columns, stretching to full width */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.35 }}
-            className={`mt-4 flex gap-2 ${isMobile ? "overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide" : "flex-wrap"}`}
+            className={`mt-4 ${isMobile ? "grid grid-cols-3 gap-2" : "flex flex-wrap gap-2"}`}
           >
             {actions.map((action) => {
               const Icon = action.icon;
+              const isHighlight = (action as any).highlight;
               const inner = (
                 <div
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all active:scale-95"
+                  className={`flex items-center justify-center gap-2 py-2.5 rounded-full text-sm font-medium transition-all active:scale-95 ${isMobile ? "w-full" : "px-4"}`}
                   style={
-                    (action as any).highlight
-                      ? {
-                          background: "hsl(42 85% 46%)",
-                          color: "hsl(220 25% 10%)",
-                        }
-                      : {
-                          background: "rgba(255,255,255,0.08)",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          color: "rgba(255,255,255,0.8)",
-                        }
+                    isHighlight
+                      ? { background: "hsl(42 85% 46%)", color: "hsl(220 25% 10%)" }
+                      : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.8)" }
                   }
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -171,7 +165,7 @@ export function PrayerStationHero({
                 );
               }
               return (
-                <button key={action.id} onClick={(action as any).onClick}>
+                <button key={action.id} onClick={(action as any).onClick} className={isMobile ? "w-full" : ""}>
                   {inner}
                 </button>
               );
