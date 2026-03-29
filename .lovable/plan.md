@@ -1,100 +1,45 @@
 
 
-## Calendar Color Picker + Meeting Key + 3-Day Advance Notifications
+## Plan: Upload Image in Card Menu + Remove Old Board Background
 
-### Overview
-Three additions to the Prayer Calendar:
-1. A color picker button in the legend row (lower right) letting users change calendar background/text/accent — using the same 8 Theme Sanctuary presets
-2. A new calendar key for circle and family room scheduled meetings, displayed as calendar events
-3. A database trigger + notification that alerts users 3 days before any circle or family room meeting
+### Task 1: Add "Upload Image" to Prayer Card `...` Menu
 
----
+**File: `src/components/board/BoardCard.tsx`**
 
-### 1. Calendar Color Picker
+Add an "Upload Image" menu item in the `ActionButtons` `...` dropdown (after the card color presets section, before Remove). This lets any card owner upload or replace a background image at any time.
 
-**Where**: Bottom-right of the existing legend row (line 476-488 of `PrayerCalendar.tsx`)
+- Add a hidden `<input type="file" accept="image/*">` ref inside `ActionButtons`
+- Add a new `DropdownMenuItem` with an `ImagePlus` icon labeled "Upload Image"
+- On click, trigger the file input
+- On file select:
+  - Upload to `prayer-backgrounds` bucket (path: `userId/timestamp.ext`)
+  - Get the public URL
+  - Update `prayer_cards.background_url` for that card
+  - Call `onRefresh()` to reload
+  - Show success toast
+- Also add a "Remove Image" item when the card already has a background image
 
-**Implementation**:
-- Add a small `Palette` icon button at the end of the legend row
-- On click, open a popover (using shadcn `Popover`) showing the 8 `THEME_SANCTUARY_PRESETS` as circular swatches
-- Selecting a preset saves the calendar color to `board_preferences` via a new column `calendar_bg`, `calendar_text`, `calendar_accent`
-- The calendar currently hardcodes `#F5F0E8` / `#2C2418` — replace those with state driven by the saved preference, falling back to Pure Sand defaults
+**Props change**: Add `onUploadImage` callback to `ActionButtonsProps` (or handle inline with a ref). Also need `userId` passed down.
 
-**DB Migration**: Add 3 columns to `board_preferences`:
-```sql
-ALTER TABLE public.board_preferences
-  ADD COLUMN calendar_bg text DEFAULT '#F5F0E8',
-  ADD COLUMN calendar_text text DEFAULT '#2C2418',
-  ADD COLUMN calendar_accent text DEFAULT '#B85C38';
-```
+### Task 2: Remove Old ThemeCanvas Board Background
 
-**Files changed**:
-- `src/components/board/PrayerCalendar.tsx` — add Popover color picker, accept/use saved colors
-- `src/hooks/useBoardPreferences.ts` — extend interface and fetch/save for calendar colors
+The old `ThemeCanvas` (particles, stars, leaves, rain, ripples, candle animations) is now superseded by the new `AtmosphereCanvas`. They currently render on top of each other, which clutters the background.
 
-### 2. Circle & Family Room Meeting Events on Calendar
+**File: `src/pages/Board.tsx`**
+- Remove the `ThemeCanvas` import and its `<ThemeCanvas>` render call (line 382)
+- Remove the old `theme.overlay` div (line 383) — the AtmosphereCanvas handles its own visual treatment
+- Keep the `<div className={theme.bgClass}>` for the static gradient base color (this provides the CSS variables and base gradient that cards still use)
+- Remove the `ThemeCanvas` import from line 16
 
-**Where**: Inside `fetchEvents` in `PrayerCalendar.tsx`
+**File: `src/components/board/ThemeCanvas.tsx`**
+- Leave the file in place (not deleting) but it will no longer be imported. Can be cleaned up later.
 
-**Implementation**:
-- After fetching existing events, also fetch:
-  - All circles the user is a member of (via `accountability_circle_members`) → join to `accountability_circles` to get `schedule` jsonb
-  - All family rooms the user is a member of (via `family_room_members`) → join to `family_rooms` to get `schedule` jsonb
-- The `schedule` jsonb has shape `{ day: string, time: string, description: string }` where `day` is a weekday name
-- For each scheduled circle/family room, compute which dates in the current calendar range fall on that weekday and add them as `CalendarEvent` entries with types `circle_meeting` and `family_meeting`
-- Add two new entries to `EVENT_CONFIG`:
-  - `circle_meeting`: icon `Users`, distinct blue-purple color
-  - `family_meeting`: icon `Home`, distinct warm color
-- Add these to the legend
+### Summary of Changes
 
-**New event types added to `CalendarEvent["type"]`**:
-```ts
-"circle_meeting" | "family_meeting"
-```
+| File | Change |
+|------|--------|
+| `src/components/board/BoardCard.tsx` | Add "Upload Image" and "Remove Image" items to `...` dropdown menu |
+| `src/pages/Board.tsx` | Remove `ThemeCanvas` import + render, remove overlay div |
 
-### 3. Three-Day Advance Meeting Notifications
-
-**Implementation**: A Supabase Edge Function (`meeting-reminders`) that runs daily via `pg_cron`:
-- Queries all circles and family rooms that have a `schedule` with a `day` value
-- For each, checks if the next occurrence of that weekday is exactly 3 days from now
-- If so, finds all members and inserts a notification:
-  - Type: `meeting_reminder`
-  - Title: "📅 [Circle/Family Room name] meets in 3 days"
-  - Body: "[Day] at [Time] — [description]"
-  - Link: `/circles/[id]` or `/family/[id]`
-
-**Files created**:
-- `supabase/functions/meeting-reminders/index.ts`
-
-**Cron job** (via insert tool, not migration):
-```sql
-SELECT cron.schedule(
-  'daily-meeting-reminders',
-  '0 9 * * *',
-  $$ SELECT net.http_post(...) $$
-);
-```
-
-### Technical Details
-
-**PrayerCalendar.tsx changes summary**:
-- Import `Popover`, `PopoverTrigger`, `PopoverContent`, `Palette` icon, and `THEME_SANCTUARY_PRESETS`
-- Add props for `boardPrefs` and `onUpdateCalendarColor` callback
-- Replace hardcoded `#F5F0E8`/`#2C2418` with preference-driven state
-- Add color picker popover in legend row (right-aligned)
-- Add circle/family meeting schedule fetching in `fetchEvents`
-- Add `circle_meeting` and `family_meeting` to `EVENT_CONFIG` and legend
-
-**useBoardPreferences.ts changes**:
-- Add `calendar_bg`, `calendar_text`, `calendar_accent` to `BoardPrefs`
-- Include in upsert/fetch
-
-**Board.tsx changes**:
-- Pass board preferences and update handler to `PrayerCalendar`
-
-**Edge function** (`meeting-reminders`):
-- Uses service role key to query all circles/family rooms with schedules
-- Computes 3-day-ahead check using day-of-week math
-- Inserts notifications for all relevant members
-- Deduplication: checks if a reminder notification already exists for this meeting this week
+No database changes needed — `prayer-backgrounds` bucket and `background_url` column already exist.
 
