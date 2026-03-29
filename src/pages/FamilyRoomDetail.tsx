@@ -138,12 +138,7 @@ export default function FamilyRoomDetail() {
     toast({ title: next ? "Child-friendly mode on 🧸" : "Child-friendly mode off" });
   };
 
-  const copyCode = () => {
-    if (!room) return;
-    navigator.clipboard.writeText(room.invite_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // (old copyCode removed — replaced by InviteShareModal)
 
   // Homework
   const createHomework = async () => {
