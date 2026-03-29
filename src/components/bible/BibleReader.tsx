@@ -881,6 +881,37 @@ export function BibleReader() {
             </span>
           )}
 
+          {/* Text size control */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                title="Text size"
+              >
+                <AArrowUp className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-3" align="end">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <AArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-foreground">{textSize}px</span>
+                  <AArrowUp className="h-4.5 w-4.5 text-muted-foreground" />
+                </div>
+                <Slider
+                  value={[textSize]}
+                  min={MIN_SIZE}
+                  max={MAX_SIZE}
+                  step={1}
+                  onValueChange={([v]) => setTextSize(v)}
+                  className="w-full"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+
           {/* Hide bunches toggle */}
           <Button
             variant="ghost"
