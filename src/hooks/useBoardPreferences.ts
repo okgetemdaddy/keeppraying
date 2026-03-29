@@ -15,6 +15,7 @@ export interface BoardPrefs {
   calendar_bg: string;
   calendar_text: string;
   calendar_accent: string;
+  atmosphere_id: string;
 }
 
 const DEFAULTS: BoardPrefs = {
