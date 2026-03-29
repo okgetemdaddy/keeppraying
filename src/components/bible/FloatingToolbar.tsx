@@ -39,8 +39,12 @@ export interface FloatingToolbarProps {
   /** Whether the selected verse(s) are already bookmarked */
   isBookmarked: boolean;
   bookmarkId?: string;
+  /** Existing highlight info for unhighlight X overlay */
+  existingHighlightColor?: string;
+  existingHighlightId?: string;
   /** Callbacks */
   onHighlight: (color: string, verseNumber: number, start?: number, end?: number) => void;
+  onRemoveHighlight?: (highlightId: string) => void;
   onToggleBookmark: (verseNumber: number, existingId?: string) => void;
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
