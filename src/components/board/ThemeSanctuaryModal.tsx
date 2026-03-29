@@ -2,9 +2,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lamp, Check, ChevronDown, Palette, Undo2 } from "lucide-react";
+import { Lamp, Check, ChevronDown, Palette, Undo2, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { ATMOSPHERES, AtmosphereThumbnail } from "@/components/board/AtmosphereCanvas";
+import type { Atmosphere } from "@/components/board/AtmosphereCanvas";
 
 /* ── Preset definitions ───────────────────────────────────────────────────── */
 export interface ThemePreset {
@@ -158,6 +160,7 @@ interface ThemeSanctuaryModalProps {
   currentText: string | null;
   currentAccent: string | null;
   currentScope: string;
+  currentAtmosphereId?: string;
   onApply: (data: {
     theme_preset: string;
     theme_bg: string;
@@ -165,6 +168,7 @@ interface ThemeSanctuaryModalProps {
     theme_accent: string;
     theme_scope: string;
   }) => void;
+  onAtmosphereChange?: (atmosphereId: string) => void;
 }
 
 export function ThemeSanctuaryModal({
@@ -175,9 +179,12 @@ export function ThemeSanctuaryModal({
   currentText,
   currentAccent,
   currentScope,
+  currentAtmosphereId,
   onApply,
+  onAtmosphereChange,
 }: ThemeSanctuaryModalProps) {
   const isMobile = useIsMobile();
+  const [selectedAtmosphere, setSelectedAtmosphere] = useState(currentAtmosphereId || "warm-parchment");
 
   // Local state
   const [selectedPresetName, setSelectedPresetName] = useState<string | null>(
@@ -191,12 +198,13 @@ export function ThemeSanctuaryModal({
   const [previewExpanded, setPreviewExpanded] = useState(!isMobile);
   const [previousSnapshot, setPreviousSnapshot] = useState<ThemeSnapshot | null>(null);
 
-  // Load any existing snapshot on mount
+  // Load any existing snapshot on mount + sync atmosphere
   useEffect(() => {
     if (isOpen) {
       setPreviousSnapshot(loadSnapshot());
+      setSelectedAtmosphere(currentAtmosphereId || "warm-parchment");
     }
-  }, [isOpen]);
+  }, [isOpen, currentAtmosphereId]);
 
   // Determine if dark mode is active
   const isDark = useMemo(() => {
@@ -305,10 +313,36 @@ export function ThemeSanctuaryModal({
               {/* Left / Main column */}
               <div className={isMobile ? "" : "flex-1 min-w-0"}>
 
-                {/* Section 1: Preset themes */}
+                {/* Section 0: Atmospheres of Prayer */}
                 <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Atmosphere of Prayer
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mb-3">
+                    Set the animated background for your Prayer Board — this has no effect on your prayer cards.
+                  </p>
+                  <div className={`grid gap-2.5 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
+                    {ATMOSPHERES.map(atm => (
+                      <AtmosphereThumbnail
+                        key={atm.id}
+                        atmosphere={atm}
+                        selected={selectedAtmosphere === atm.id}
+                        onClick={() => {
+                          setSelectedAtmosphere(atm.id);
+                          onAtmosphereChange?.(atm.id);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 1: Preset themes */}
+                <div className="mt-8">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                    Sacred Presets
+                    Card Color Presets
                   </p>
                   <div className={`grid gap-3 ${isMobile ? "grid-cols-2" : "grid-cols-4"}`}>
                     {PRESETS.map((preset) => {

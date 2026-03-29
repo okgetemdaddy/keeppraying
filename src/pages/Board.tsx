@@ -35,6 +35,7 @@ import { PrayerCalendar } from "@/components/board/PrayerCalendar";
 import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
 import { PrayerStationHero } from "@/components/board/PrayerStationHero";
 import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
+import { AtmosphereCanvas } from "@/components/board/AtmosphereCanvas";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -374,6 +375,10 @@ export default function Board() {
       data-theme-bg
     >
       <div className={`absolute inset-0 ${theme.bgClass}`} />
+      <AtmosphereCanvas
+        atmosphereId={prefs.atmosphere_id || "warm-parchment"}
+        enabled={prefs.animations_enabled}
+      />
       <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 
@@ -789,7 +794,9 @@ export default function Board() {
         currentText={prefs.theme_text}
         currentAccent={prefs.theme_accent}
         currentScope={prefs.theme_scope}
+        currentAtmosphereId={prefs.atmosphere_id}
         onApply={(data) => savePrefs(data)}
+        onAtmosphereChange={(id) => savePrefs({ atmosphere_id: id })}
       />
 
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}

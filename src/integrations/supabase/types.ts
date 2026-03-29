@@ -285,6 +285,7 @@ export type Database = {
       board_preferences: {
         Row: {
           animations_enabled: boolean
+          atmosphere_id: string | null
           calendar_accent: string | null
           calendar_bg: string | null
           calendar_text: string | null
@@ -303,6 +304,7 @@ export type Database = {
         }
         Insert: {
           animations_enabled?: boolean
+          atmosphere_id?: string | null
           calendar_accent?: string | null
           calendar_bg?: string | null
           calendar_text?: string | null
@@ -321,6 +323,7 @@ export type Database = {
         }
         Update: {
           animations_enabled?: boolean
+          atmosphere_id?: string | null
           calendar_accent?: string | null
           calendar_bg?: string | null
           calendar_text?: string | null
