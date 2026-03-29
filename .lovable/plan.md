@@ -1,71 +1,76 @@
 
 
-## Prayer Station Overhaul Plan
+## Prayer Station Layout + Testimony Journey Overhaul
 
-This is a significant refactor of the `/board` page with 5 interconnected changes. Here is the full plan:
+### 1. Hero Section Rearrangement
 
----
+**PrayerStationHero.tsx** changes:
 
-### 1. Hero Section with Personalized Title + Incense Animation
+- **Title** stays at the top: `"{firstName}'s Prayer Station"`
+- **Standby toggle** moves directly under the title with label text: "Are you available to pray for live prayer requests today?"
+- **Daily welcome message** stays below standby
+- **Action buttons** (2x3 grid) remain
+- **Search bar** moves into the hero section at the bottom (removed from Board.tsx main content area). Hero section expands to accommodate it.
+- **Theme picker** positioned top-right of the hero section (absolute positioned)
 
-**What**: A dark-toned hero section at the top of the board content area displaying "{First Name}'s Prayer Station" with a daily AI-generated welcome message and rising incense smoke animation.
+Props added to PrayerStationHero: `searchQuery`, `onSearchChange`, `onThemeChange`, `currentTheme`, `animationsEnabled`, `onAnimationsToggle`
 
-- Extract user's first name from `user.user_metadata.full_name` (split on space, take first element, fallback to "Your")
-- Title: `"{firstName}'s Prayer Station"` in large display font, white text
-- Daily welcome message: Call Gemini Flash via an edge function (`daily-welcome`) that generates a short, edifying greeting (cached per user per day in a new `daily_welcome_messages` table)
-- Background: Dark gradient (`hsl(215 28% 12%)` to `hsl(220 25% 8%)`) with CSS/canvas-based rising incense animation — thin, wispy smoke tendrils rising slowly using layered animated SVG paths or CSS pseudo-elements with blur + opacity keyframes
-- Move the hamburger menu links (Circles, Family Rooms, Add Prayer, Playlist, Classical Prayers) into this hero section as compact icon+label pill buttons in a horizontally scrollable row
+**Board.tsx** changes:
+- Remove the standalone search bar from main content area
+- Pass search state + theme props into PrayerStationHero
+- Remove ThemeSelector and StandbyToggle from the desktop control row (they live in hero now)
 
-**DB migration**: Create `daily_welcome_messages` table with columns: `id uuid`, `user_id uuid`, `message text`, `active_date date`, `created_at timestamptz`. RLS: users can read/insert own rows.
+### 2. Double-Tap to Flip Card to Testimony Side
 
-**Edge function**: `daily-welcome/index.ts` — calls Gemini 2.5 Flash Lite to generate a 1-2 sentence edifying welcome. Checks if today's message exists first; if so, returns cached.
+**BoardCard.tsx** changes:
+- Add an `onDoubleClick` / `onTouchEnd` (double-tap detection) handler on the card front face that triggers `setFlipped(true)` — flips to testimony side
+- Keep existing single-tap behavior (opens PrayerViewerModal via `onOpenViewer`)
+- Double-tap detection: track last tap timestamp, if second tap within 300ms, flip instead of opening viewer
 
-### 2. Delete Hamburger Menu + Cleanup
+### 3. Testimony Updates + Faith Journey Tracking
 
-- Delete `src/components/board/BoardMobileMenu.tsx` entirely
-- Remove all imports and references from `Board.tsx`
-- The mobile nav bar simplifies to just logo + notification bell (no hamburger)
-- All navigation actions formerly in the hamburger are now in the hero section's action pills
+**DB migration** — create `testimony_updates` table:
+```sql
+CREATE TABLE public.testimony_updates (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  testimony_id uuid NOT NULL REFERENCES public.testimonies(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  body text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.testimony_updates ENABLE ROW LEVEL SECURITY;
+-- Users can CRUD own updates
+CREATE POLICY "Users manage own testimony updates" ON public.testimony_updates
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+```
 
-### 3. Search Bar (Above Sort/Filter Row)
+Also add `answered_date` column to `testimonies`:
+```sql
+ALTER TABLE public.testimonies ADD COLUMN answered_date date DEFAULT NULL;
+```
 
-**What**: A search bar styled similarly to `/prayers` but tailored for the user's own content — searches across saved prayers (title, text, labels), breath prayers, circles, family rooms.
+### 4. Testimony Card Face Overhaul (TestimonyCardFace.tsx)
 
-- Placed immediately above the All/Pinned/Favorites filter row
-- Glassmorphic style matching the board theme (semi-transparent background, rounded-2xl)
-- Client-side filtering: filters `displayedItems` by matching search query against `prayer_cards.title`, `prayer_cards.prayer_text`, and `prayer_cards.labels`
-- Search icon left, clear X button right when active
-- Placeholder: "Search your prayers, groups, events..."
+When a testimony exists and the card is flipped:
+- Show `answered_date` at the top (editable date picker — defaults to `created_at`)
+- Show testimony title + body
+- Below the testimony body: an **"Update"** button that reveals a large text field to add a new update
+- List existing updates chronologically, each with its `created_at` date
+- **"Back to Prayer"** button at the bottom of the card
+- Together these dated entries form the "faith journey" for this prayer
 
-### 4. Tighten Single-Column Card Spacing
+When no testimony exists:
+- Show the existing "Be the first to testify" layout (TestifyBack component) — no change
 
-**What**: Reduce the gap between prayer cards in single-column mobile layout for a tighter, journal-like scroll feel.
+### 5. Files Modified/Created
 
-- Change single-column grid gap from `gap-4` to `gap-2` on mobile (keep `md:gap-6` for desktop)
-- Reduce container `py-8` to `py-4` on mobile
-- This applies to the `one-col` layout path in the grid className
-
-### 5. Auto-Hide Top Nav on Interaction
-
-**What**: The sticky top nav bar hides when the user scrolls down or interacts with content, and reappears when scrolling up.
-
-- Add scroll direction detection (`useRef` for last scroll position)
-- When scrolling down past ~60px, animate nav `y: -100%` with opacity fade
-- When scrolling up, animate nav back into view
-- Use Framer Motion's `animate` prop on the existing `motion.div` wrapping the header
-
----
-
-### Technical Summary
-
-| Change | Files Modified/Created |
+| File | Action |
 |---|---|
-| Hero section + incense animation | `Board.tsx`, new `daily-welcome` edge function, DB migration |
-| Delete hamburger menu | Delete `BoardMobileMenu.tsx`, edit `Board.tsx` |
-| Search bar | `Board.tsx` |
-| Tighter card spacing | `Board.tsx` (grid className) |
-| Auto-hide nav | `Board.tsx` (scroll listener + motion) |
-
-### Rename
-All UI references to "Board" become "Prayer Station" (page title, empty state, etc.).
+| `PrayerStationHero.tsx` | Add search bar, standby toggle, theme picker |
+| `Board.tsx` | Remove standalone search bar, pass new props to hero, remove desktop ThemeSelector/StandbyToggle row |
+| `BoardCard.tsx` | Add double-tap/double-click flip handler |
+| `TestimonyCardFace.tsx` | Add answered_date display/edit, updates list, update form, "Back to Prayer" button |
+| DB migration | Create `testimony_updates` table + add `answered_date` to `testimonies` |
 
