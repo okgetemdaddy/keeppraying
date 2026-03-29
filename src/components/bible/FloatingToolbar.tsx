@@ -72,8 +72,8 @@ export function FloatingToolbar({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="fixed z-50 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
-        style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
+        className="fixed z-50 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-auto max-w-[calc(100vw-2rem)]"
+        style={{ ...(window.innerWidth >= 640 ? { left: position.x, transform: "translateX(-50%)" } : {}), top: position.y }}
       >
         <p className="text-sm text-muted-foreground">Sign in to highlight, bookmark & take notes</p>
       </motion.div>
