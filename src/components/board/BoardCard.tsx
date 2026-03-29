@@ -346,15 +346,13 @@ export function BoardCard({
                   fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
                   ...(cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : {}),
                 }}
-                  fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
-                }}
               />
               {isTruncated && (
-                  <button
-                    onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
-                    className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
-                    style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text, opacity: 0.7 } : undefined}
-                  >
+                <button
+                  onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
+                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
+                  style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text, opacity: 0.7 } : undefined}
+                >
                   See more…
                 </button>
               )}
