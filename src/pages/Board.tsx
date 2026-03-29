@@ -554,6 +554,9 @@ export default function Board() {
           </motion.div>
         )}
 
+        {/* ── Verse Bunches ─────────────────────────────────────────── */}
+        <BoardVerseBunchesSection textColor={textColor} />
+
         {/* ── Interactive Calendar ─────────────────────────────────────── */}
         <PrayerCalendar
           textColor={textColor}
