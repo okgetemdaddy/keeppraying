@@ -806,6 +806,18 @@ export function BibleReader() {
   const primaryVerse = selectedArr[0];
   const primaryBookmark = primaryVerse ? bookmarkMap.get(primaryVerse) : undefined;
 
+  // Derive existing highlight color/id for primary verse (for unhighlight X)
+  const primaryHighlights = primaryVerse ? highlightMap.get(primaryVerse) ?? [] : [];
+  const existingHighlightColor = primaryHighlights.length === 1 ? primaryHighlights[0].color : undefined;
+  const existingHighlightId = primaryHighlights.length === 1 ? primaryHighlights[0].id : undefined;
+
+  const handleRemoveHighlight = useCallback(
+    (highlightId: string) => {
+      mutations.removeHighlight.mutate(highlightId);
+    },
+    [mutations.removeHighlight],
+  );
+
   return (
     <article className="min-h-screen bg-background">
       {/* ── Verse Bunch strip (saved bunches) ── */}
