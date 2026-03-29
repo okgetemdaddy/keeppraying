@@ -46,7 +46,7 @@ export function clearPendingBunch(): void {
 
 /* ── Tooltip component ── */
 
-type TooltipStep = "awareness" | "signin" | "form";
+type TooltipStep = "awareness" | "signin" | "choose" | "form";
 
 export interface VerseBunchTooltipProps {
   selectedVerses: number[];
