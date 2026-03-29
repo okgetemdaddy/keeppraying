@@ -503,6 +503,15 @@ export default function CircleDetail() {
           </motion.div>
         )}
 
+        {/* Prayer Companions */}
+        <PrayerCompanions
+          groupType="circle"
+          groupId={id!}
+          members={members}
+          isLeader={isLeader}
+          userId={user?.id}
+        />
+
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t border-border">
           {!isOwner && (
