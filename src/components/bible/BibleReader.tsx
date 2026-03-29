@@ -839,7 +839,7 @@ export function BibleReader() {
       <AnimatePresence>
         {showBunchDialog && currentBook && currentChapter && versionId && bookUsfm && (
           <VerseBunchTooltip
-            selectedVerses={selectedArr}
+            selectedVerses={bunchDialogVerses}
             bookTitle={currentBook.title}
             chapterTitle={currentChapter.title}
             versionId={versionId}
