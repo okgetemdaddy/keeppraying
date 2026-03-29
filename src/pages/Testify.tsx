@@ -192,32 +192,6 @@ function StandaloneTestimonyCard({
               />
             </div>
 
-            {/* Prayer reference pill */}
-            {prayer && (
-              <div className="flex items-center gap-1.5">
-                <Link
-                  to={`/prayer/${prayer.id}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all hover:scale-105 active:scale-95"
-                  style={{
-                    background: "hsl(42 80% 92%)",
-                    color: "hsl(38 75% 32%)",
-                    boxShadow: "0 1px 4px -1px hsl(42 75% 46% / 0.20)",
-                  }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <BookOpen className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate max-w-[160px]">
-                    {prayer.title || prayer.prayer_text.slice(0, 40) + "…"}
-                  </span>
-                  <ArrowRight className="w-3 h-3 flex-shrink-0 opacity-60" />
-                </Link>
-                {testimonyCountForPrayer > 1 && (
-                  <span className="text-[10px]" style={{ color: "hsl(25 18% 60%)" }}>
-                    · {testimonyCountForPrayer} testimonies
-                  </span>
-                )}
-              </div>
-            )}
 
             {/* Divider */}
             <div className="border-t" style={{ borderColor: "hsl(38 22% 90%)" }} />
