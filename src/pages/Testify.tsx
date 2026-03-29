@@ -566,7 +566,7 @@ export default function Testify() {
         ? supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds)
         : { data: [] },
       prayerIds.length
-        ? supabase.from("prayer_cards").select("id, title, prayer_text, tags, extended_prayer").in("id", prayerIds)
+        ? supabase.from("prayer_cards").select("id, title, prayer_text, labels, extended_prayer").in("id", prayerIds)
         : { data: [] },
     ]);
     const profilesMap = Object.fromEntries((profilesData || []).map(p => [p.id, p]));
