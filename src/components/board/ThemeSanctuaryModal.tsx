@@ -521,21 +521,35 @@ export function ThemeSanctuaryModal({
           </div>
 
           {/* ── Footer ──────────────────────────────────────────────── */}
-          <div className="border-t border-border px-6 py-4 flex items-center justify-end gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => onOpenChange(false)}
-              className="rounded-xl"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleApply}
-              className="rounded-xl gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6"
-            >
-              <Lamp className="w-4 h-4" />
-              Apply Theme
-            </Button>
+          <div className="border-t border-border px-6 py-4 flex items-center justify-between">
+            <div>
+              {(previousSnapshot || loadSnapshot()) && (
+                <Button
+                  variant="outline"
+                  onClick={handleRevert}
+                  className="rounded-xl gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Undo2 className="w-4 h-4" />
+                  Revert to Previous
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApply}
+                className="rounded-xl gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6"
+              >
+                <Lamp className="w-4 h-4" />
+                Apply Theme
+              </Button>
+            </div>
           </div>
         </motion.div>
       </DialogContent>
