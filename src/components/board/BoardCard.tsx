@@ -882,6 +882,54 @@ function ActionButtons({
             </>
           )}
 
+          {/* Background color presets — only when NO bg image */}
+          {!hasBgImage && (
+            <>
+              <DropdownMenuSeparator />
+              <div
+                className="px-3 py-2 space-y-1.5"
+                onClick={e => e.stopPropagation()}
+                onPointerDown={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
+                  <span className="w-3.5 h-3.5 flex items-center justify-center">🎨</span>
+                  <span>Card color</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Default / clear button */}
+                  <button
+                    onClick={() => onCardBgPresetChange(null)}
+                    className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
+                    style={{
+                      borderColor: !cardBgPreset ? 'hsl(42 75% 40%)' : 'hsl(215 14% 80%)',
+                      background: 'white',
+                    }}
+                    title="Default"
+                  >
+                    {!cardBgPreset && <Check className="w-3 h-3 text-amber-600" />}
+                  </button>
+                  {CARD_BG_PRESETS.map(preset => {
+                    const isActive = cardBgPreset?.bg === preset.bg;
+                    return (
+                      <button
+                        key={preset.name}
+                        onClick={() => onCardBgPresetChange(preset)}
+                        className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
+                        style={{
+                          background: preset.bg,
+                          borderColor: isActive ? preset.text : `${preset.text}30`,
+                        }}
+                        title={preset.name}
+                      >
+                        {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-xs gap-2 text-destructive focus:text-destructive"
