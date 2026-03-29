@@ -53,10 +53,7 @@ export function PrayerStationHero({
   isMobile,
   searchQuery,
   onSearchChange,
-  currentTheme,
-  animationsEnabled,
-  onThemeChange,
-  onAnimationsToggle,
+  onOpenThemeSanctuary,
 }: PrayerStationHeroProps) {
   const { user } = useAuth();
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
