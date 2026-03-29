@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Heart, HandHeart, X, Plus, Globe, Sparkles, Users, Home,
   Swords, Radio, BookOpen, HeartHandshake, LayoutDashboard, Wind,
-  BookOpenCheck, Bug
+  BookOpenCheck, Bug, PenLine
 } from "lucide-react";
 
 interface FABItem {
