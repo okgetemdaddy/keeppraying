@@ -462,6 +462,8 @@ export function BoardCard({
                 onOverlayOpacityChange={handleOverlayOpacityChange}
                 cardBgPreset={cardBgPreset}
                 onCardBgPresetChange={handleCardBgPresetChange}
+                userId={userId}
+                onRefresh={onRefresh}
               />
             </div>
           )}
