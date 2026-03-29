@@ -12,6 +12,9 @@ export interface BoardPrefs {
   theme_text: string | null;
   theme_accent: string | null;
   theme_scope: string;
+  calendar_bg: string;
+  calendar_text: string;
+  calendar_accent: string;
 }
 
 const DEFAULTS: BoardPrefs = {
