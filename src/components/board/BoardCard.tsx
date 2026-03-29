@@ -16,7 +16,7 @@ import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
-  SunDim,
+  SunDim, ImagePlus, ImageOff,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
