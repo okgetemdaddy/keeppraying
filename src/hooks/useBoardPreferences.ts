@@ -44,7 +44,7 @@ export function useBoardPreferences() {
     if (!user) { setLoaded(true); return; }
     supabase
       .from("board_preferences")
-      .select("theme,animations_enabled,sound_id,sound_volume,theme_preset,theme_bg,theme_text,theme_accent,theme_scope,calendar_bg,calendar_text,calendar_accent")
+      .select("theme,animations_enabled,sound_id,sound_volume,theme_preset,theme_bg,theme_text,theme_accent,theme_scope,calendar_bg,calendar_text,calendar_accent,atmosphere_id")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
