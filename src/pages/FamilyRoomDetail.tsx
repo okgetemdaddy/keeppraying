@@ -257,11 +257,6 @@ export default function FamilyRoomDetail() {
               <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)} className="rounded-xl gap-1.5 text-xs">
                 <Share2 className="w-3.5 h-3.5" /> Invite
               </Button>
-              {isLeader && (
-                <Button variant="outline" size="sm" onClick={() => setFlyerOpen(true)} className="rounded-xl gap-1.5 text-xs">
-                  <FileText className="w-3.5 h-3.5" /> Flyer
-                </Button>
-              )}
               {!isOwner && (
                 <Button variant="ghost" size="sm" onClick={handleLeave} className="rounded-xl gap-1.5 text-xs text-destructive hover:text-destructive">
                   <LogOut className="w-3.5 h-3.5" /> Leave
