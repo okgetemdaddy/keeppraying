@@ -303,5 +303,6 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
