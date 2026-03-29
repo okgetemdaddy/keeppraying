@@ -67,6 +67,18 @@ const LABEL_PALETTE: Record<string, { bg: string; text: string }> = {
 };
 const DEFAULT_LABEL = { bg: "hsl(42 80% 90%)", text: "hsl(38 75% 35%)" };
 
+/** 8 background-color presets from the design palette */
+export const CARD_BG_PRESETS = [
+  { name: "Warm Parchment",    bg: "#F8F1E3", text: "#2C2418" },
+  { name: "Gentle Sage",       bg: "#E8F0E8", text: "#1F2C22" },
+  { name: "Heavenly Sky",      bg: "#E0F0FA", text: "#132A4A" },
+  { name: "Golden Sunrise",    bg: "#FAF0D8", text: "#3D2A0F" },
+  { name: "Graceful Lavender", bg: "#F0E8FA", text: "#2C1F3D" },
+  { name: "Soft Peach",        bg: "#FAE8E0", text: "#3D2A1F" },
+  { name: "Light Olive",       bg: "#F0F5E8", text: "#263D26" },
+  { name: "Pure Sand",         bg: "#F5F0E8", text: "#2C2418" },
+];
+
 type CardSize = "small" | "medium" | "large";
 
 interface BoardCardProps {
