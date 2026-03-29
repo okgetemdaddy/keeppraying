@@ -968,7 +968,9 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
-              className="font-body text-base sm:text-lg"
+              style={{ fontSize: `${textSize}px` }}
+              className="font-body"
+            >
             >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                 {verses.map((v) => {
