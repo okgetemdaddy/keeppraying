@@ -350,10 +350,11 @@ export function BoardCard({
                 }}
               />
               {isTruncated && (
-                <button
-                  onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
-                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
-                >
+                  <button
+                    onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
+                    className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
+                    style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text, opacity: 0.7 } : undefined}
+                  >
                   See more…
                 </button>
               )}
