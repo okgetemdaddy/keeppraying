@@ -802,7 +802,56 @@ function ActionButtons({
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
+  userId, onRefresh,
 }: ActionButtonsProps) {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId || !item.prayer_cards) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("prayer-backgrounds")
+        .upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage
+        .from("prayer-backgrounds")
+        .getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      const { error: updateErr } = await supabase
+        .from("prayer_cards")
+        .update({ background_url: publicUrl })
+        .eq("id", item.prayer_cards.id);
+      if (updateErr) throw updateErr;
+      onRefresh();
+      toast({ title: "Background image added ✨" });
+    } catch {
+      toast({ title: "Failed to upload image", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!item.prayer_cards) return;
+    try {
+      await supabase
+        .from("prayer_cards")
+        .update({ background_url: null })
+        .eq("id", item.prayer_cards.id);
+      onRefresh();
+      toast({ title: "Background image removed" });
+    } catch {
+      toast({ title: "Failed to remove image", variant: "destructive" });
+    }
+  };
+
   return (
     <>
       <button
