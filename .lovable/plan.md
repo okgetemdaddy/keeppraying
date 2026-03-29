@@ -1,45 +1,27 @@
 
 
-## Plan: Upload Image in Card Menu + Remove Old Board Background
+## Fix: Restrict `prayed_actions` Public Read Access
 
-### Task 1: Add "Upload Image" to Prayer Card `...` Menu
+### Problem
+The `prayed_actions` table has a SELECT policy `"Anyone can view prayed count"` with `USING (true)` on the `public` role, exposing all user prayer activity (user UUIDs, prayer IDs, timestamps) to unauthenticated visitors.
 
-**File: `src/components/board/BoardCard.tsx`**
+### Solution
+Drop the permissive public SELECT policy and replace it with an authenticated-only policy that lets users see their own prayed actions. The aggregate prayed counts are already stored on `prayer_cards.prayed_count`, so no functionality is lost.
 
-Add an "Upload Image" menu item in the `ActionButtons` `...` dropdown (after the card color presets section, before Remove). This lets any card owner upload or replace a background image at any time.
+### Migration SQL
+```sql
+DROP POLICY IF EXISTS "Anyone can view prayed count" ON prayed_actions;
 
-- Add a hidden `<input type="file" accept="image/*">` ref inside `ActionButtons`
-- Add a new `DropdownMenuItem` with an `ImagePlus` icon labeled "Upload Image"
-- On click, trigger the file input
-- On file select:
-  - Upload to `prayer-backgrounds` bucket (path: `userId/timestamp.ext`)
-  - Get the public URL
-  - Update `prayer_cards.background_url` for that card
-  - Call `onRefresh()` to reload
-  - Show success toast
-- Also add a "Remove Image" item when the card already has a background image
+CREATE POLICY "Authenticated users can view own prayed actions"
+  ON prayed_actions FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+```
 
-**Props change**: Add `onUploadImage` callback to `ActionButtonsProps` (or handle inline with a ref). Also need `userId` passed down.
-
-### Task 2: Remove Old ThemeCanvas Board Background
-
-The old `ThemeCanvas` (particles, stars, leaves, rain, ripples, candle animations) is now superseded by the new `AtmosphereCanvas`. They currently render on top of each other, which clutters the background.
-
-**File: `src/pages/Board.tsx`**
-- Remove the `ThemeCanvas` import and its `<ThemeCanvas>` render call (line 382)
-- Remove the old `theme.overlay` div (line 383) — the AtmosphereCanvas handles its own visual treatment
-- Keep the `<div className={theme.bgClass}>` for the static gradient base color (this provides the CSS variables and base gradient that cards still use)
-- Remove the `ThemeCanvas` import from line 16
-
-**File: `src/components/board/ThemeCanvas.tsx`**
-- Leave the file in place (not deleting) but it will no longer be imported. Can be cleaned up later.
-
-### Summary of Changes
-
+### Files Changed
 | File | Change |
 |------|--------|
-| `src/components/board/BoardCard.tsx` | Add "Upload Image" and "Remove Image" items to `...` dropdown menu |
-| `src/pages/Board.tsx` | Remove `ThemeCanvas` import + render, remove overlay div |
+| New migration | Drop public SELECT, add authenticated owner-only SELECT |
 
-No database changes needed — `prayer-backgrounds` bucket and `background_url` column already exist.
+No code changes needed — the app already queries `prayed_actions` as an authenticated user filtering by `user_id`.
 
