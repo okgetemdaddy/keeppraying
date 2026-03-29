@@ -15,7 +15,6 @@ import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
 import { ThemeCanvas } from "@/components/board/ThemeCanvas";
 import { ThemeSelector } from "@/components/board/ThemeSelector";
-// import { AmbientPlayer } from "@/components/board/AmbientPlayer"; // Hidden for now
 import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { SiteNav } from "@/components/SiteNav";
@@ -24,10 +23,9 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind,
+  ArrowUpDown, Filter, Users, Home, Wind, Search, X,
 } from "lucide-react";
 import { StandbyToggle } from "@/components/StandbyToggle";
-import { BoardMobileMenu } from "@/components/board/BoardMobileMenu";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PrayerWarriorsOnline } from "@/components/PrayerWarriorsOnline";
 import { StreakCounter } from "@/components/StreakCounter";
@@ -35,6 +33,7 @@ import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Link } from "react-router-dom";
 import { PrayerCalendar } from "@/components/board/PrayerCalendar";
 import { ClassicalPrayersLibrary } from "@/components/ClassicalPrayersLibrary";
+import { PrayerStationHero } from "@/components/board/PrayerStationHero";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -126,6 +125,7 @@ export default function Board() {
   const [mobileLayout, setMobileLayout] = useState<"two-col" | "one-col">("two-col");
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Stats
   const [totalPrayed, setTotalPrayed] = useState(0);
@@ -146,8 +146,34 @@ export default function Board() {
   const [classicalOpen, setClassicalOpen] = useState(false);
   const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
 
+  // Auto-hide nav on scroll
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const y = window.scrollY;
+      if (y > 60 && y > lastScrollY.current) {
+        setNavVisible(false);
+      } else {
+        setNavVisible(true);
+      }
+      lastScrollY.current = y;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const theme = BOARD_THEMES.find(t => t.id === prefs.theme) || BOARD_THEMES[0];
   const themeVars = theme.vars;
+
+  // Extract first name
+  const firstName = useMemo(() => {
+    const fullName = user?.user_metadata?.full_name as string | undefined;
+    if (fullName) return fullName.split(" ")[0];
+    return "Your";
+  }, [user]);
 
   const fetchSaved = useCallback(async () => {
     if (!user) return;
@@ -176,7 +202,7 @@ export default function Board() {
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);
 
-  // Sorted & filtered items
+  // Sorted, filtered & searched items
   const displayedItems = useMemo(() => {
     let items = [...saved];
 
@@ -184,11 +210,24 @@ export default function Board() {
     if (filterMode === "pinned") items = items.filter(i => i.pinned);
     if (filterMode === "favorites") items = items.filter(i => i.favorite);
 
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter(i => {
+        const card = i.prayer_cards;
+        if (!card) return false;
+        return (
+          (card.title && card.title.toLowerCase().includes(q)) ||
+          card.prayer_text.toLowerCase().includes(q) ||
+          (card.labels && card.labels.some(l => l.toLowerCase().includes(q)))
+        );
+      });
+    }
+
     // Sort
     items.sort((a, b) => {
       const ca = a.prayer_cards;
       const cb = b.prayer_cards;
-      // Pinned always first
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
 
@@ -204,10 +243,8 @@ export default function Board() {
         case "most-liked":
           return (cb?.likes_count || 0) - (ca?.likes_count || 0);
         case "needs-testimony":
-          // Sort by lowest prayed_count — prayers that haven't been testified about
           return (ca?.prayed_count || 0) - (cb?.prayed_count || 0);
         case "not-seen":
-          // Oldest saved first (haven't interacted recently)
           return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         default:
           return 0;
@@ -215,7 +252,7 @@ export default function Board() {
     });
 
     return items;
-  }, [saved, sortMode, filterMode]);
+  }, [saved, sortMode, filterMode, searchQuery]);
 
   // Open stats drawer and load the relevant prayers
   const openStatsDrawer = async (type: "prayed" | "liked") => {
@@ -271,7 +308,6 @@ export default function Board() {
     toast({ title: "Removed from board" });
   };
 
-  // Opens the playlist builder, optionally pre-selecting a prayer card ID
   const openPlaylist = (prayerId?: string) => {
     if (prayerId) {
       const match = saved.find(s => s.prayer_cards?.id === prayerId || s.prayer_id === prayerId);
@@ -311,6 +347,7 @@ export default function Board() {
 
   return (
     <div
+      ref={scrollContainerRef}
       className="relative min-h-screen overflow-hidden"
       style={{
         ...Object.fromEntries(Object.entries(themeVars)),
@@ -322,17 +359,26 @@ export default function Board() {
       <ThemeCanvas theme={theme} enabled={prefs.animations_enabled} />
       <div className="absolute inset-0 pointer-events-none" style={{ background: theme.overlay }} />
 
-      {/* Header */}
+      {/* Header — auto-hides on scroll down */}
       <motion.div
-        animate={{ opacity: immersive ? 0 : 1, y: immersive ? -64 : 0 }}
-        transition={{ duration: 0.35 }}
+        animate={{
+          opacity: immersive ? 0 : navVisible ? 1 : 0,
+          y: immersive ? -64 : navVisible ? 0 : -64,
+        }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         onMouseEnter={() => immersive && setImmersive(false)}
         className="sticky top-0 z-50"
       >
-        {/* Main nav bar */}
         {isMobile ? (
-          /* ── Mobile: logo + hamburger only ── */
-          <nav className="h-14 flex items-center justify-between px-4" style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <nav
+            className="h-14 flex items-center justify-between px-4"
+            style={{
+              background: "rgba(0,0,0,0.25)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              borderBottom: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
             <Link to="/" className="font-display text-xl font-bold">
               <span className="text-white">Keep</span>
               <span className="nav-pray-glow">Pray</span>
@@ -340,20 +386,13 @@ export default function Board() {
             </Link>
             <div className="flex items-center gap-1">
               <NotificationBell dark scrolled={false} />
-              <BoardMobileMenu
-                onAddPrayer={() => setAddOpen(true)}
-                onPlaylist={() => openPlaylist()}
-                onClassical={() => setClassicalOpen(true)}
-                hasPrayers={saved.length > 0}
-              />
             </div>
           </nav>
         ) : (
-          /* ── Desktop: full SiteNav ── */
           <SiteNav dark />
         )}
 
-        {/* ── Desktop control row (below nav) ── */}
+        {/* Desktop control row */}
         {!isMobile && (
           <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -364,42 +403,8 @@ export default function Board() {
                 onAnimationsToggle={(v) => savePrefs({ animations_enabled: v })}
               />
               <StandbyToggle compact dark />
-              <Link to="/circles" state={{ from: "board" }}>
-                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
-                  <Users className="w-4 h-4 text-slate-500" />
-                  Circles
-                </button>
-              </Link>
-              <Link to="/family" state={{ from: "board" }}>
-                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
-                  <Home className="w-4 h-4 text-slate-500" />
-                  Family
-                </button>
-              </Link>
             </div>
             <div className="flex items-center gap-2.5">
-              <button
-                onClick={() => setAddOpen(true)}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-amber-500 hover:bg-amber-600 text-slate-900 shadow-sm transition-all"
-              >
-                <PlusCircle className="w-4 h-4" />
-                Add Prayer
-              </button>
-              <Link to="/breathe">
-                <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors">
-                  <Wind className="w-4 h-4 text-slate-500" />
-                  Add a Breath
-                </button>
-              </Link>
-              {saved.length > 0 && (
-                <button
-                  onClick={() => openPlaylist()}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
-                >
-                  <ListMusic className="w-4 h-4 text-slate-500" />
-                  Playlist
-                </button>
-              )}
               <button
                 onClick={() => setImmersive(i => !i)}
                 className="flex items-center justify-center w-9 h-9 rounded-full bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm transition-colors"
@@ -412,8 +417,50 @@ export default function Board() {
         )}
       </motion.div>
 
+      {/* Hero Section */}
+      <PrayerStationHero
+        firstName={firstName}
+        onAddPrayer={() => setAddOpen(true)}
+        onPlaylist={() => openPlaylist()}
+        onClassical={() => setClassicalOpen(true)}
+        hasPrayers={saved.length > 0}
+        isMobile={isMobile}
+      />
+
       {/* Main content */}
-      <div className="relative container mx-auto px-4 py-8 pb-32 max-w-5xl">
+      <div className={`relative container mx-auto px-4 ${isMobile ? "py-4" : "py-8"} pb-32 max-w-5xl`}>
+
+        {/* ── Search bar ──────────────────────────────────────────────── */}
+        {!loading && saved.length > 0 && (
+          <div className="mb-4">
+            <div
+              className="relative flex items-center rounded-2xl overflow-hidden"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <Search className="w-4 h-4 ml-4 shrink-0" style={{ color: `${textColor}50` }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search your prayers, groups, events..."
+                className="flex-1 bg-transparent border-0 outline-none px-3 py-3 text-sm placeholder:text-white/40"
+                style={{ color: textColor }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="p-2 mr-1 rounded-full transition-colors hover:bg-white/10"
+                >
+                  <X className="w-4 h-4" style={{ color: `${textColor}60` }} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── Sort / Filter / Layout controls ──────────────────────── */}
         {!loading && saved.length > 0 && (
@@ -529,15 +576,15 @@ export default function Board() {
 
         {/* ── Board grid ────────────────────────────────────────────────── */}
         {loading ? (
-          <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"}>
+          <div className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6"}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-44 rounded-2xl shimmer" />
             ))}
           </div>
-        ) : displayedItems.length === 0 && filterMode !== "all" ? (
+        ) : displayedItems.length === 0 && (filterMode !== "all" || searchQuery) ? (
           <div className="text-center py-16">
             <p className="text-sm" style={{ color: `${textColor}60` }}>
-              No {filterMode} prayers. Try switching to "All".
+              {searchQuery ? `No results for "${searchQuery}"` : `No ${filterMode} prayers. Try switching to "All".`}
             </p>
           </div>
         ) : displayedItems.length === 0 ? (
@@ -545,7 +592,11 @@ export default function Board() {
         ) : (
           <motion.div
             layout
-            className={isMobile && mobileLayout === "two-col" ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"}
+            className={
+              isMobile && mobileLayout === "two-col"
+                ? "grid grid-cols-2 gap-3"
+                : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6"
+            }
           >
             <AnimatePresence>
               {displayedItems.map(item => {
@@ -585,13 +636,6 @@ export default function Board() {
           <PlusCircle className="w-4 h-4" /> Add Prayer
         </motion.button>
       )}
-
-      {/* Ambient sound player — hidden for now */}
-      {/* <AmbientPlayer
-        soundId={prefs.sound_id}
-        volume={prefs.sound_volume}
-        onChange={(updates) => savePrefs(updates as { sound_id?: string | null; sound_volume?: number })}
-      /> */}
 
       {/* ── Stats drawer (prayed / liked) ─────────────────────────────── */}
       <Sheet open={!!statsDrawer} onOpenChange={o => !o && setStatsDrawer(null)}>
@@ -857,13 +901,13 @@ function EmptyBoard({ onAdd, themeVars }: { onAdd: () => void; themeVars: Record
       </motion.div>
       <div className="space-y-2">
         <h2 className="font-display text-2xl font-bold" style={{ color: textColor }}>
-          Your sacred space awaits
+          Your Prayer Station awaits
         </h2>
         <p className="text-sm max-w-xs mx-auto leading-relaxed" style={{ color: `${textColor}70` }}>
           "When you pray, go into your room…" — <VerseLink reference="Matthew 6:6" className="[&_.verse-text]:text-white/60 [&>span]:bg-white/10 [&>span]:border-white/20" />
         </p>
         <p className="text-xs max-w-sm mx-auto" style={{ color: `${textColor}50` }}>
-          Write a prayer or save prayers from the collection to build your personal prayer board.
+          Write a prayer or save prayers from the collection to build your personal Prayer Station.
         </p>
       </div>
       <div className="flex flex-wrap gap-3 justify-center">
