@@ -12,7 +12,10 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
 import {
-  Search, X, Loader2, Heart, Share2, Flag, MessageCircle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Search, X, Loader2, Share2, Flag, MessageCircle,
   ChevronDown, Bird, ArrowRight, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
