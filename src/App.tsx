@@ -30,6 +30,7 @@ import CircleDetail from "./pages/CircleDetail";
 import InviteLanding from "./pages/InviteLanding";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
+import Bible from "./pages/Bible";
 import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { PrayerFAB } from "@/components/PrayerFAB";
@@ -198,6 +199,7 @@ function AppShell() {
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
+        <Route path="/bible" element={<Bible />} />
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
