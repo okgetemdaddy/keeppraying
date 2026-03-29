@@ -14,13 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import InviteShareModal from "@/components/InviteShareModal";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  Home, Copy, Check, ArrowLeft, PlusCircle, Loader2,
+  Home, ArrowLeft, PlusCircle, Loader2,
   Crown, LogOut, ArrowUpDown, UserMinus, Baby, Users, Shield,
-  Calendar, ClipboardList, Plus, Trash2, CheckCircle2, Clock, FileText,
-} from "lucide-react";
+  Calendar, ClipboardList, Plus, Trash2, CheckCircle2, Clock, FileText, Share2, Check,
+}from "lucide-react";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SortMode = "newest" | "oldest" | "most-prayed";
@@ -41,7 +42,7 @@ export default function FamilyRoomDetail() {
   const [sharePrayerId, setSharePrayerId] = useState("");
   const [sharing, setSharing] = useState(false);
   const [userPrayers, setUserPrayers] = useState<PrayerCard[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [membersOpen, setMembersOpen] = useState(false);
 
@@ -137,12 +138,7 @@ export default function FamilyRoomDetail() {
     toast({ title: next ? "Child-friendly mode on 🧸" : "Child-friendly mode off" });
   };
 
-  const copyCode = () => {
-    if (!room) return;
-    navigator.clipboard.writeText(room.invite_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // (old copyCode removed — replaced by InviteShareModal)
 
   // Homework
   const createHomework = async () => {
@@ -259,9 +255,8 @@ export default function FamilyRoomDetail() {
                   <Switch checked={room.child_friendly} onCheckedChange={toggleChildFriendly} className="scale-90" />
                 </div>
               )}
-              <Button variant="outline" size="sm" onClick={copyCode} className="rounded-xl gap-1.5 text-xs">
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "Copied!" : "Family Code"}
+              <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)} className="rounded-xl gap-1.5 text-xs">
+                <Share2 className="w-3.5 h-3.5" /> Invite
               </Button>
               {isLeader && (
                 <Button variant="outline" size="sm" onClick={() => setFlyerOpen(true)} className="rounded-xl gap-1.5 text-xs">
@@ -563,16 +558,22 @@ export default function FamilyRoomDetail() {
               {room.purpose && <p className="text-sm text-primary/80 font-medium">{room.purpose}</p>}
               {room.description && <p className="text-xs text-muted-foreground">{room.description}</p>}
               {schedule?.day && <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center"><Calendar className="w-3 h-3" /> {schedule.day}{schedule.time ? ` at ${schedule.time}` : ""}</p>}
-              <div className="bg-background rounded-xl p-3 mt-2">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Family Code</p>
-                <p className="font-mono text-lg tracking-[0.25em] text-foreground font-bold">{room.invite_code}</p>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Join at KeepPray.ing/family</p>
+              <p className="text-[10px] text-muted-foreground mt-2">Ask a member for an invite link to join!</p>
+              <p className="text-[10px] text-muted-foreground">KeepPray.ing</p>
             </div>
-            <Button onClick={copyCode} className="btn-gold rounded-xl gap-2 w-full"><Copy className="w-4 h-4" /> Copy Code</Button>
+            <Button onClick={() => setInviteOpen(true)} className="btn-gold rounded-xl gap-2 w-full"><Share2 className="w-4 h-4" /> Generate Invite Link</Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Invite Share Modal */}
+      <InviteShareModal
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        type="family"
+        targetId={room.id}
+        targetName={room.name}
+      />
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={async (newPrayerId?: string) => {
         if (newPrayerId && id && user) {

@@ -7,7 +7,6 @@ export interface Circle {
   name: string;
   description: string | null;
   purpose: string | null;
-  invite_code: string;
   created_by: string;
   max_members: number;
   ai_encouragement: boolean;

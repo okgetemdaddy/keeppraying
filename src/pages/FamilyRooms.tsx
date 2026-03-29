@@ -15,23 +15,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  Home, Plus, KeyRound, Loader2, Crown, ChevronRight, Baby,
+  Home, Plus, Loader2, Crown, ChevronRight, Baby,
 } from "lucide-react";
 
 export default function FamilyRooms() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { rooms, loading, createRoom, joinByCode } = useFamilyRooms();
+  const { rooms, loading, createRoom } = useFamilyRooms();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const backLink = useBackLink();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [joinOpen, setJoinOpen] = useState(false);
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [childFriendly, setChildFriendly] = useState(false);
-  const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (!user) { navigate("/auth", { replace: true }); return null; }
@@ -42,25 +40,12 @@ export default function FamilyRooms() {
     const room = await createRoom(name.trim(), desc.trim(), childFriendly);
     setSubmitting(false);
     if (room) {
-      toast({ title: `"${name}" created! 🏠`, description: "Share the family code to invite your family." });
+      toast({ title: `"${name}" created! 🏠`, description: "Use the Invite button to share a magic link with your family." });
       setCreateOpen(false);
       setName(""); setDesc(""); setChildFriendly(false);
       navigate(`/family/${room.id}`);
     } else {
       toast({ title: "Failed to create room", variant: "destructive" });
-    }
-  };
-
-  const handleJoin = async () => {
-    if (!code.trim()) return;
-    setSubmitting(true);
-    const result = await joinByCode(code.trim());
-    setSubmitting(false);
-    if (result.error) {
-      toast({ title: result.error, variant: "destructive" });
-    } else {
-      toast({ title: "Welcome to the family! 🏠" });
-      setJoinOpen(false); setCode("");
     }
   };
 
@@ -83,9 +68,6 @@ export default function FamilyRooms() {
         <div className={`flex gap-3 mb-8 ${isMobile ? "flex-col" : "justify-center"}`}>
           <Button onClick={() => setCreateOpen(true)} className="btn-gold rounded-xl gap-2 h-11">
             <Plus className="w-4 h-4" /> Create Family Room
-          </Button>
-          <Button variant="outline" onClick={() => setJoinOpen(true)} className="rounded-xl gap-2 h-11">
-            <KeyRound className="w-4 h-4" /> Join with Family Code
           </Button>
         </div>
 
@@ -168,23 +150,6 @@ export default function FamilyRooms() {
             <Button onClick={handleCreate} disabled={!name.trim() || submitting} className="w-full btn-gold rounded-xl h-11 gap-2">
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Create Family Room
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Join Dialog */}
-      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="font-display flex items-center gap-2"><KeyRound className="w-5 h-5 text-primary" /> Join Family Room</DialogTitle>
-            <DialogDescription>Enter the family code shared by a family member.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Paste family code…" className="rounded-xl text-center tracking-widest font-mono" maxLength={24} />
-            <Button onClick={handleJoin} disabled={!code.trim() || submitting} className="w-full btn-gold rounded-xl h-11 gap-2">
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-              Join Family
             </Button>
           </div>
         </DialogContent>

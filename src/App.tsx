@@ -27,6 +27,7 @@ import PrayTheWorld from "./pages/PrayTheWorld";
 import SermonSync from "./pages/SermonSync";
 import AccountabilityCircles from "./pages/AccountabilityCircles";
 import CircleDetail from "./pages/CircleDetail";
+import InviteLanding from "./pages/InviteLanding";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
 import Profile from "./pages/Profile";
@@ -141,7 +142,7 @@ function AppShell() {
             features={[
               { icon: Home, title: "Family Prayer Space", description: "A warm, safe environment designed for families to pray together." },
               { icon: Heart, title: "Child-Friendly Mode", description: "Optional settings that make prayer approachable for young hearts." },
-              { icon: Users, title: "Invite Family Members", description: "Share an invite code so everyone can join your family room." },
+              { icon: Users, title: "Invite Family Members", description: "Share a magic invite link so everyone can join your family room." },
               { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, and guide your family's prayer journey." },
             ]}
             verse="Train up a child in the way he should go; even when he is old he will not depart from it."
@@ -197,6 +198,7 @@ function AppShell() {
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
+        <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

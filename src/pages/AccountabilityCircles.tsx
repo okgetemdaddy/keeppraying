@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Heart, Users, Plus, Loader2, ArrowRight, Link2, Sparkles, Shield,
+  Heart, Users, Plus, Loader2, Sparkles, Shield,
   Crown, ChevronRight, Globe, Lock,
 } from "lucide-react";
 
@@ -27,12 +27,10 @@ export default function AccountabilityCircles() {
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [joinOpen, setJoinOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [purpose, setPurpose] = useState("");
   const [isPublic, setIsPublic] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleCreate = async () => {
@@ -56,41 +54,12 @@ export default function AccountabilityCircles() {
         circle_id: (circle as any).id, user_id: user.id, role: "owner",
       } as any);
 
-      toast({ title: "Circle created 🕊️", description: "Share the invite code with your group." });
+      toast({ title: "Circle created 🕊️", description: "Use the Invite button to share a magic link." });
       setName(""); setDescription(""); setPurpose(""); setIsPublic(false); setCreateOpen(false);
       refetch();
       navigate(`/circles/${(circle as any).id}`);
     } catch (e) {
       toast({ title: "Could not create circle", description: e instanceof Error ? e.message : "Please try again.", variant: "destructive" });
-    } finally { setSaving(false); }
-  };
-
-  const handleJoin = async () => {
-    if (!user || !inviteCode.trim()) return;
-    setSaving(true);
-    try {
-      const { data: circle } = await supabase
-        .from("accountability_circles")
-        .select("id")
-        .eq("invite_code", inviteCode.trim().toLowerCase())
-        .single();
-      if (!circle) { toast({ title: "Circle not found", description: "Check your invite code and try again.", variant: "destructive" }); setSaving(false); return; }
-
-      const { error } = await supabase.from("accountability_circle_members").insert({
-        circle_id: (circle as any).id, user_id: user.id,
-      } as any);
-      if (error) {
-        if (error.code === "23505") toast({ title: "Already a member", description: "You're already in this circle." });
-        else throw error;
-        setSaving(false); return;
-      }
-
-      toast({ title: "Joined! 🤝", description: "Welcome to the circle." });
-      setInviteCode(""); setJoinOpen(false);
-      refetch();
-      navigate(`/circles/${(circle as any).id}`);
-    } catch (e) {
-      toast({ title: "Could not join circle", variant: "destructive" });
     } finally { setSaving(false); }
   };
 
@@ -124,9 +93,6 @@ export default function AccountabilityCircles() {
           <Button onClick={() => setCreateOpen(true)} className="btn-gold rounded-xl gap-2">
             <Plus className="w-4 h-4" /> Create Circle
           </Button>
-          <Button onClick={() => setJoinOpen(true)} variant="outline" className="rounded-xl gap-2">
-            <Link2 className="w-4 h-4" /> Join with Code
-          </Button>
         </motion.div>
 
         {/* Circles list */}
@@ -140,7 +106,7 @@ export default function AccountabilityCircles() {
           >
             <Heart className="w-10 h-10 mx-auto text-muted-foreground/30" />
             <p className="text-muted-foreground text-sm">
-              You're not in any circles yet. Create one or join with an invite code.
+              You're not in any circles yet. Create one or join via an invite link.
             </p>
             <p className="verse-text text-xs">
               "For where two or three gather in my name, there am I with them." — <VerseLink reference="Matthew 18:20" />
@@ -246,7 +212,7 @@ export default function AccountabilityCircles() {
                 {isPublic ? <Globe className="w-4 h-4 text-primary" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
                 <div>
                   <p className="text-sm font-medium text-foreground">{isPublic ? "Public Circle" : "Private Circle"}</p>
-                  <p className="text-xs text-muted-foreground">{isPublic ? "Anyone can discover and request to join" : "Invite-only with a secret code"}</p>
+                  <p className="text-xs text-muted-foreground">{isPublic ? "Anyone can discover and request to join" : "Invite-only via magic link"}</p>
                 </div>
               </div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} />
@@ -254,29 +220,6 @@ export default function AccountabilityCircles() {
             <Button onClick={handleCreate} disabled={saving || !name.trim()} className="btn-gold rounded-xl w-full gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Create Circle
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Join dialog */}
-      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
-        <DialogContent className="max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display">Join a Circle</DialogTitle>
-            <DialogDescription>Enter the invite code shared by a friend or leader.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <Input
-              value={inviteCode}
-              onChange={e => setInviteCode(e.target.value)}
-              placeholder="Enter invite code"
-              className="rounded-xl font-mono text-center tracking-widest"
-              onKeyDown={e => { if (e.key === "Enter") handleJoin(); }}
-            />
-            <Button onClick={handleJoin} disabled={saving || !inviteCode.trim()} className="btn-gold rounded-xl w-full gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-              Join Circle
             </Button>
           </div>
         </DialogContent>

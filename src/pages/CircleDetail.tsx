@@ -13,10 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import InviteShareModal from "@/components/InviteShareModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import {
-  ArrowLeft, Copy, Users, Heart, Flame, Sparkles, Loader2,
+  ArrowLeft, Users, Heart, Flame, Sparkles, Loader2,
   Share2, LogOut, Trash2, Shield, BookOpen, Calendar, Plus,
   PlusCircle, Check, Crown, ClipboardList, Globe, Lock,
   ArrowUpDown, UserMinus, CheckCircle2, Clock, FileText,
@@ -25,7 +26,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
 type SortMode = "newest" | "oldest" | "most-prayed";
 
@@ -37,7 +38,7 @@ export default function CircleDetail() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  const [shareOpen, setShareOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [encourageLoading, setEncourageLoading] = useState(false);
@@ -75,11 +76,7 @@ export default function CircleDetail() {
   const isOwner = circle?.created_by === user?.id;
   const isLeader = isOwner || members.find(m => m.user_id === user?.id)?.role === "leader";
 
-  const copyInvite = () => {
-    if (!circle) return;
-    navigator.clipboard.writeText((circle as any).invite_code);
-    toast({ title: "Invite code copied! 📋", description: `Share "${(circle as any).invite_code}" with your circle.` });
-  };
+  // (old copyInvite removed — replaced by InviteShareModal)
 
   const handleLeave = async () => {
     if (!user || !id) return;
@@ -262,7 +259,7 @@ export default function CircleDetail() {
               </div>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)} className="rounded-xl gap-1.5 text-xs">
+              <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)} className="rounded-xl gap-1.5 text-xs">
                 <Share2 className="w-3.5 h-3.5" /> Invite
               </Button>
               {isLeader && (
@@ -524,25 +521,14 @@ export default function CircleDetail() {
         </p>
       </div>
 
-      {/* Share invite dialog */}
-      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
-        <DialogContent className="max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display">Invite to Circle</DialogTitle>
-            <DialogDescription>Share this code with someone you'd like to invite.</DialogDescription>
-          </DialogHeader>
-          <div className="text-center space-y-4 pt-2">
-            <div className="bg-muted rounded-xl p-4">
-              <p className="font-mono text-2xl tracking-[0.3em] text-foreground font-bold select-all">
-                {(circle as any)?.invite_code}
-              </p>
-            </div>
-            <Button onClick={copyInvite} className="btn-gold rounded-xl gap-2 w-full">
-              <Copy className="w-4 h-4" /> Copy Code
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Invite Share Modal */}
+      <InviteShareModal
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        type="circle"
+        targetId={circle.id}
+        targetName={circle.name}
+      />
 
       {/* Share prayer dialog */}
       <Dialog open={sharePrayerOpen} onOpenChange={setSharePrayerOpen}>
@@ -725,14 +711,11 @@ export default function CircleDetail() {
                   <Calendar className="w-3 h-3" /> {schedule.day}{schedule.time ? ` at ${schedule.time}` : ""}
                 </p>
               )}
-              <div className="bg-background rounded-xl p-3 mt-2">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Invite Code</p>
-                <p className="font-mono text-lg tracking-[0.25em] text-foreground font-bold">{(circle as any).invite_code}</p>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Join at KeepPray.ing/circles</p>
+              <p className="text-[10px] text-muted-foreground mt-2">Ask a member for an invite link to join!</p>
+              <p className="text-[10px] text-muted-foreground">KeepPray.ing</p>
             </div>
-            <Button onClick={copyInvite} className="btn-gold rounded-xl gap-2 w-full">
-              <Copy className="w-4 h-4" /> Copy Invite Code
+            <Button onClick={() => setInviteOpen(true)} className="btn-gold rounded-xl gap-2 w-full">
+              <Share2 className="w-4 h-4" /> Generate Invite Link
             </Button>
           </div>
         </DialogContent>
@@ -743,7 +726,7 @@ export default function CircleDetail() {
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle>Leave this circle?</DialogTitle>
-            <DialogDescription>You can rejoin later with the invite code.</DialogDescription>
+            <DialogDescription>You can rejoin later with a new invite link.</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 pt-2">
             <Button variant="outline" onClick={() => setLeaveOpen(false)} className="rounded-xl flex-1">Cancel</Button>
