@@ -20,6 +20,7 @@ import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
+import TestimonyDetail from "./pages/TestimonyDetail";
 import FamilyRooms from "./pages/FamilyRooms";
 import FamilyRoomDetail from "./pages/FamilyRoomDetail";
 import PrayTheWorld from "./pages/PrayTheWorld";

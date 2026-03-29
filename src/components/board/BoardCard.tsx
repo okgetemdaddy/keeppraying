@@ -114,6 +114,23 @@ export function BoardCard({
   const [savingFont, setSavingFont] = useState(false);
   const [fontOpen, setFontOpen] = useState(false);
 
+  // Check if user has a testimony for this prayer
+  useEffect(() => {
+    if (!userId || !item.prayer_cards?.id) return;
+    supabase
+      .from("testimonies")
+      .select("id, body, title, verses, praise_count, created_at, user_id")
+      .eq("prayer_id", item.prayer_cards.id)
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setHasTestimony(true);
+          setUserTestimony(data);
+        }
+      });
+  }, [userId, item.prayer_cards?.id]);
+
   if (!card) return null;
 
   const isOwner = !!(userId && card.created_by === userId);
