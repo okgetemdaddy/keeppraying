@@ -62,6 +62,7 @@ export function useBoardPreferences() {
             calendar_bg: (data as any).calendar_bg ?? DEFAULTS.calendar_bg,
             calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
             calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
+            atmosphere_id: (data as any).atmosphere_id ?? DEFAULTS.atmosphere_id,
           });
         }
         setLoaded(true);
