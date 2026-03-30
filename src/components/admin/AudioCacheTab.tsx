@@ -122,6 +122,9 @@ export default function AudioCacheTab() {
         setPlayingId(null);
       }
 
+      // Also remove from users' local IndexedDB cache
+      void removeCachedAudio(entry.cacheId);
+
       setEntries(prev => prev.filter(e => e.cacheId !== entry.cacheId));
       toast({ title: "Cache entry deleted" });
     } catch (e) {
