@@ -23,6 +23,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -870,11 +871,26 @@ export function BibleReader() {
               <SelectValue placeholder={versionsLoading ? "Loading…" : "Version"} />
             </SelectTrigger>
             <SelectContent>
-              {versions?.map((v) => (
-                <SelectItem key={v.id} value={v.id.toString()}>
-                  {v.id === 110 ? "For Kids" : v.localized_abbreviation}
-                </SelectItem>
-              ))}
+              {versions?.map((v, i) => {
+                // Insert separator after the featured translations (NIV, NIrV, BSB)
+                const FEATURED_IDS = new Set([111, 110]);
+                const isBSB = v.abbreviation === "BSB" || v.localized_abbreviation === "BSB";
+                const isFeatured = FEATURED_IDS.has(v.id) || isBSB;
+                const nextV = versions[i + 1];
+                const nextIsFeatured = nextV
+                  ? FEATURED_IDS.has(nextV.id) || nextV.abbreviation === "BSB" || nextV.localized_abbreviation === "BSB"
+                  : false;
+                const showSep = isFeatured && !nextIsFeatured && i < versions.length - 1;
+
+                return (
+                  <React.Fragment key={v.id}>
+                    <SelectItem value={v.id.toString()}>
+                      {v.id === 110 ? "For Kids" : v.localized_abbreviation}
+                    </SelectItem>
+                    {showSep && <SelectSeparator />}
+                  </React.Fragment>
+                );
+              })}
             </SelectContent>
           </Select>
 

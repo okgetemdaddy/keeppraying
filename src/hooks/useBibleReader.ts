@@ -69,16 +69,19 @@ export function useBibleVersions() {
         fetchBible<BibleVersion>("/bibles/111").catch(() => null),
         fetchBible<BibleVersion>("/bibles/110").catch(() => null),
       ]);
-      const versions = listRes.data;
-      // Inject NIV if not already present
-      if (nivRes && !versions.some((v) => v.id === 111)) {
-        versions.unshift(nivRes);
-      }
-      // Inject NIrV if not already present
-      if (nirvRes && !versions.some((v) => v.id === 110)) {
-        versions.push(nirvRes);
-      }
-      return versions;
+      const rest = listRes.data.filter((v) => v.id !== 111 && v.id !== 110);
+
+      // Prioritized order: NIV → NIrV (For Kids) → BSB → everything else
+      const bsbIdx = rest.findIndex((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
+      const bsb = bsbIdx >= 0 ? rest.splice(bsbIdx, 1)[0] : null;
+
+      const ordered: BibleVersion[] = [];
+      if (nivRes) ordered.push(nivRes);
+      if (nirvRes) ordered.push(nirvRes);
+      if (bsb) ordered.push(bsb);
+      // Mark the boundary — everything after index `ordered.length - 1` is "other"
+      ordered.push(...rest);
+      return ordered;
     },
     staleTime: Infinity,
   });
