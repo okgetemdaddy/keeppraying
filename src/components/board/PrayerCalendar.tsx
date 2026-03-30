@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon,
   Maximize2, Minimize2, Flame, Heart, BookOpen,
   Bird, MessageSquare, Wind, Users, Home, Radio, Loader2, Palette,
+  Church, Highlighter, StickyNote, Bookmark,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, eachWeekOfInterval, isToday, addDays, getDay } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
