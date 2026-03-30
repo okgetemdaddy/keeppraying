@@ -686,6 +686,7 @@ export function BoardCard({
                 onCardBgPresetChange={handleCardBgPresetChange}
                 userId={userId}
                 onRefresh={onRefresh}
+                onSharePrivately={() => setShareModalOpen(true)}
               />
             </div>
           </div>
