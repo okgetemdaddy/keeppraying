@@ -15,7 +15,7 @@ import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 interface CalendarEvent {
   id: string;
   date: Date;
-  type: "prayer_created" | "prayed" | "liked" | "testimony" | "comment" | "breath" | "standby" | "streak_milestone" | "group_activity" | "family_activity" | "circle_meeting" | "family_meeting";
+  type: "prayer_created" | "prayed" | "liked" | "testimony" | "comment" | "breath" | "standby" | "streak_milestone" | "group_activity" | "family_activity" | "circle_meeting" | "family_meeting" | "sermon_plan_day" | "bible_highlight" | "bible_note" | "bible_bookmark";
   label: string;
   detail?: string;
   link?: string;
