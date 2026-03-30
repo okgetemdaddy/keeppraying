@@ -55,6 +55,7 @@ interface PrayerCalendarProps {
 }
 
 export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColor = "hsl(42 85% 58%)", boardPrefs, onUpdateCalendarColor }: PrayerCalendarProps) {
+  const navigate = useNavigate();
   const calBg = boardPrefs?.calendar_bg || "#F5F0E8";
   const textColor = boardPrefs?.calendar_text || "#2C2418";
   const accentColor = boardPrefs?.calendar_accent || "#B85C38";
@@ -291,6 +292,63 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
           }
           d = addDays(d, 1);
         }
+      });
+
+      // ── Sermon Prayer Plan days (future + past) ──
+      (sermonMemberships || []).forEach((m: any) => {
+        const plan = m.sermon_prayer_plans;
+        if (!plan?.starts_on || !plan?.daily_prompts) return;
+        const prompts = Array.isArray(plan.daily_prompts) ? plan.daily_prompts : [];
+        const planStart = new Date(plan.starts_on + "T00:00:00");
+
+        prompts.forEach((prompt: any, idx: number) => {
+          const dayDate = addDays(planStart, idx);
+          if (dayDate >= rangeStartDate && dayDate <= rangeEndDate) {
+            const dayLabel = prompt?.day || prompt?.label || `Day ${idx + 1}`;
+            mapped.push({
+              id: `sp-${plan.id}-day${idx}`,
+              date: dayDate,
+              type: "sermon_plan_day",
+              label: `${plan.sermon_title}`,
+              detail: typeof dayLabel === "string" ? dayLabel : `Day ${idx + 1}`,
+              link: "/sermon-sync",
+            });
+          }
+        });
+      });
+
+      // ── Bible highlights ──
+      (bibleHighlights || []).forEach((h: any) => {
+        mapped.push({
+          id: `bh-${h.id}`,
+          date: new Date(h.created_at),
+          type: "bible_highlight",
+          label: `Highlighted ${h.book_usfm} ${h.chapter_number}:${h.verse_number}`,
+          link: `/bible?book=${h.book_usfm}&chapter=${h.chapter_number}&verse=${h.verse_number}`,
+        });
+      });
+
+      // ── Bible notes ──
+      (bibleNotes || []).forEach((n: any) => {
+        mapped.push({
+          id: `bn-${n.id}`,
+          date: new Date(n.created_at),
+          type: "bible_note",
+          label: `Note on ${n.book_usfm} ${n.chapter_number}:${n.verse_number}`,
+          detail: n.note_content?.slice(0, 60),
+          link: `/bible?book=${n.book_usfm}&chapter=${n.chapter_number}&verse=${n.verse_number}`,
+        });
+      });
+
+      // ── Bible bookmarks ──
+      (bibleBookmarks || []).forEach((b: any) => {
+        mapped.push({
+          id: `bb-${b.id}`,
+          date: new Date(b.created_at),
+          type: "bible_bookmark",
+          label: `Bookmarked ${b.book_usfm} ${b.chapter_number}:${b.verse_number}`,
+          link: `/bible?book=${b.book_usfm}&chapter=${b.chapter_number}&verse=${b.verse_number}`,
+        });
       });
 
       setEvents(mapped);
@@ -554,7 +612,8 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
                         key={event.id}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-start gap-2.5 rounded-xl px-3 py-2 transition-colors"
+                        onClick={() => event.link && navigate(event.link)}
+                        className={`flex items-start gap-2.5 rounded-xl px-3 py-2 transition-colors ${event.link ? "cursor-pointer hover:brightness-110" : ""}`}
                         style={{ background: config.bg }}
                       >
                         <div className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: config.color }}>
@@ -570,9 +629,14 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
                             </p>
                           )}
                         </div>
-                        <span className="text-[10px] flex-shrink-0" style={{ color: `${textColor}40` }}>
-                          {format(event.date, "h:mm a")}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="text-[10px]" style={{ color: `${textColor}40` }}>
+                            {format(event.date, "h:mm a")}
+                          </span>
+                          {event.link && (
+                            <ChevronRight className="w-3 h-3" style={{ color: `${textColor}30` }} />
+                          )}
+                        </div>
                       </motion.div>
                     );
                   })}
