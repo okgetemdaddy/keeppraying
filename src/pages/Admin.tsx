@@ -20,7 +20,7 @@ import {
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
   Pencil, Save, XCircle, Scroll, Trash2, Shield, Activity, Settings, LayoutDashboard,
   ChevronRight, TrendingUp, Heart, MessageSquare, Star, Bell, LogOut, Menu, ChevronDown,
-  BookText, Flag, Flame, Crown, Wind, Volume2,
+  BookText, Flag, Flame, Crown, Wind, Volume2, Youtube,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
