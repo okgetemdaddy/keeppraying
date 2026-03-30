@@ -17,8 +17,9 @@ import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
-  SunDim, ImagePlus, ImageOff,
+  SunDim, ImagePlus, ImageOff, Send,
 } from "lucide-react";
+import { SharePrayerModal } from "@/components/SharePrayerModal";
 import { Slider } from "@/components/ui/slider";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -132,6 +133,7 @@ export function BoardCard({
   });
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
@@ -465,6 +467,7 @@ export function BoardCard({
                 onCardBgPresetChange={handleCardBgPresetChange}
                 userId={userId}
                 onRefresh={onRefresh}
+                onSharePrivately={() => setShareModalOpen(true)}
               />
             </div>
           )}
@@ -683,6 +686,7 @@ export function BoardCard({
                 onCardBgPresetChange={handleCardBgPresetChange}
                 userId={userId}
                 onRefresh={onRefresh}
+                onSharePrivately={() => setShareModalOpen(true)}
               />
             </div>
           </div>
@@ -739,6 +743,14 @@ export function BoardCard({
           onApplied={onRefresh}
         />
       )}
+
+      {/* Share Prayer Modal */}
+      <SharePrayerModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        prayerId={card.id}
+        prayerTitle={card.title}
+      />
         </motion.div>{/* end front face */}
 
         {/* ── BACK face — TestifyBack ──────────────────────────────────── */}
@@ -810,6 +822,7 @@ interface ActionButtonsProps {
   onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
   userId?: string;
   onRefresh: () => void;
+  onSharePrivately?: () => void;
 }
 
 function ActionButtons({
@@ -818,7 +831,7 @@ function ActionButtons({
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
-  userId, onRefresh,
+  userId, onRefresh, onSharePrivately,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -919,6 +932,19 @@ function ActionButtons({
           <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("large")}>
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
+
+          {/* Share Privately */}
+          {onSharePrivately && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={onSharePrivately}
+              >
+                <Send className="w-3.5 h-3.5" /> Share Privately
+              </DropdownMenuItem>
+            </>
+          )}
 
           {/* Add to playlist */}
           {onAddToPlaylist && item.prayer_cards && (

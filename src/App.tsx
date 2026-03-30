@@ -31,6 +31,7 @@ import InviteLanding from "./pages/InviteLanding";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
 import Bible from "./pages/Bible";
+import SharedPrayerLanding from "./pages/SharedPrayerLanding";
 import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
@@ -203,6 +204,7 @@ function AppShell() {
         <Route path="/breathe" element={<Breathe />} />
         <Route path="/bible" element={<Bible />} />
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
+        <Route path="/shared-prayer/:token" element={<SharedPrayerLanding />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
