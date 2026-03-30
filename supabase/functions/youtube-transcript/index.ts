@@ -120,8 +120,9 @@ async function fetchAudioViaZyla(
 ): Promise<{ url: string; approxDuration: number }> {
   console.log(`[yt] Fetching audio via Zyla Labs for ${videoId}`);
 
+  // Try the "Get Audio" endpoint first (returns download URL)
   const resp = await fetch(
-    `https://zylalabs.com/api/1106/youtube+download+and+info+api/1145/download?id=${videoId}`,
+    `https://zylalabs.com/api/381/youtube+to+audio+api/8884/get+audio?id=${videoId}`,
     {
       headers: {
         "Authorization": `Bearer ${zylaApiKey}`,
@@ -137,59 +138,49 @@ async function fetchAudioViaZyla(
   }
 
   const data = await resp.json();
-  console.log(`[yt] Zyla response keys:`, Object.keys(data));
+  console.log(`[yt] Zyla response:`, JSON.stringify(data).slice(0, 1000));
 
-  // Zyla returns various format links — find audio-only or lowest quality
-  // The response structure has adaptiveFormats or similar
   let audioUrl: string | null = null;
   let duration = 0;
 
-  // Try to get duration from videoDetails
+  // The "Youtube to Audio API" typically returns a download_url or link field
+  if (data.download_url) {
+    audioUrl = data.download_url;
+    console.log(`[yt] Zyla audio from download_url`);
+  } else if (data.link) {
+    audioUrl = data.link;
+    console.log(`[yt] Zyla audio from link`);
+  } else if (data.url) {
+    audioUrl = data.url;
+    console.log(`[yt] Zyla audio from url`);
+  }
+
+  // Try to get duration from response
   if (data.videoDetails?.lengthSeconds) {
     duration = parseInt(data.videoDetails.lengthSeconds, 10);
+  } else if (data.duration) {
+    duration = typeof data.duration === "number" ? data.duration : parseInt(data.duration, 10);
+  } else if (data.lengthSeconds) {
+    duration = parseInt(data.lengthSeconds, 10);
   }
 
-  // Look for audio in adaptiveFormats
-  if (Array.isArray(data.adaptiveFormats)) {
-    const audioFormats = data.adaptiveFormats
-      .filter((f: any) => f.mimeType?.startsWith("audio/") && f.url)
-      .sort((a: any, b: any) => (a.bitrate || 999999) - (b.bitrate || 999999));
-    if (audioFormats.length > 0) {
-      audioUrl = audioFormats[0].url;
-      if (!duration && audioFormats[0].approxDurationMs) {
-        duration = parseInt(audioFormats[0].approxDurationMs, 10) / 1000;
-      }
-      console.log(`[yt] Zyla audio from adaptiveFormats: bitrate=${audioFormats[0].bitrate}`);
+  // If primary endpoint didn't return a URL, try the "download" endpoint
+  if (!audioUrl) {
+    console.log(`[yt] Primary Zyla endpoint had no URL, trying download endpoint...`);
+    const resp2 = await fetch(
+      `https://zylalabs.com/api/381/youtube+to+audio+api/9142/download?id=${videoId}`,
+      {
+        headers: { "Authorization": `Bearer ${zylaApiKey}` },
+        signal: AbortSignal.timeout(30000),
+      },
+    );
+    if (resp2.ok) {
+      const data2 = await resp2.json();
+      console.log(`[yt] Zyla download endpoint response:`, JSON.stringify(data2).slice(0, 1000));
+      audioUrl = data2.download_url || data2.link || data2.url || null;
+    } else {
+      console.error(`[yt] Zyla download endpoint failed: ${resp2.status}`);
     }
-  }
-
-  // Try streamingData.adaptiveFormats pattern
-  if (!audioUrl && data.streamingData?.adaptiveFormats) {
-    const audioFormats = data.streamingData.adaptiveFormats
-      .filter((f: any) => f.mimeType?.startsWith("audio/") && f.url)
-      .sort((a: any, b: any) => (a.bitrate || 999999) - (b.bitrate || 999999));
-    if (audioFormats.length > 0) {
-      audioUrl = audioFormats[0].url;
-      if (!duration && audioFormats[0].approxDurationMs) {
-        duration = parseInt(audioFormats[0].approxDurationMs, 10) / 1000;
-      }
-      console.log(`[yt] Zyla audio from streamingData: bitrate=${audioFormats[0].bitrate}`);
-    }
-  }
-
-  // Try formats array (combined audio+video, less ideal but works)
-  if (!audioUrl && Array.isArray(data.formats)) {
-    const withAudio = data.formats.filter((f: any) => f.url && f.mimeType?.includes("audio"));
-    if (withAudio.length > 0) {
-      audioUrl = withAudio[0].url;
-      console.log(`[yt] Zyla audio from formats (combined stream)`);
-    }
-  }
-
-  // Last resort: look for any download link in the response
-  if (!audioUrl && data.link) {
-    audioUrl = data.link;
-    console.log(`[yt] Zyla audio from direct link`);
   }
 
   if (!audioUrl) {
