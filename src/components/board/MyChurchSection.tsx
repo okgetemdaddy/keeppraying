@@ -133,6 +133,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const headStyle = { color: `${textColor}90` };
   const iconStyle = { color: hasBrand ? primaryColor : `${textColor}60` };
 
+  /** Minimize toggle for upper-right of each card */
+  const MinBtn = ({ id }: { id: string }) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); toggleMin(id); }}
+      className="absolute top-2 right-2 p-0.5 rounded-full hover:bg-white/10 transition-colors z-10"
+      title={minimized[id] ? "Expand" : "Minimize"}
+    >
+      {minimized[id]
+        ? <Plus className="w-3 h-3" style={{ color: `${textColor}50` }} />
+        : <Minus className="w-3 h-3" style={{ color: `${textColor}50` }} />}
+    </button>
+  );
+
   return (
     <div className="mb-6">
       {/* ── Header with logo ── */}
