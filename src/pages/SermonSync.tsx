@@ -854,6 +854,8 @@ function PremiumResultView({
           <Button variant="ghost" onClick={onReset} className="rounded-xl text-muted-foreground">
             Try another sermon
           </Button>
+        </motion.div>
+      ) : (
         <div className="text-center py-4">
           <p className="text-sm text-muted-foreground mb-3">Sign in to save prayers to your Board</p>
           <Link to="/auth">
