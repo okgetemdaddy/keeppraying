@@ -1,4 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: (() => void) | undefined;
+  }
+}
 import { useAuth } from "@/contexts/AuthContext";
 import { useSermonPlans } from "@/hooks/useSermonPlans";
 
@@ -109,6 +116,13 @@ export default function SermonSync() {
     if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
     if (parts.length === 2) return parts[0] * 60 + parts[1];
     return null;
+  };
+
+  const secondsToTime = (totalSeconds: number): string => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
+    return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
   };
 
   const jumpToTimestamp = useCallback((seconds: number) => {
@@ -315,6 +329,86 @@ export default function SermonSync() {
 
   const previewVideoId = url ? extractVideoId(url) : "";
 
+  /* ─── YouTube IFrame Player API ─── */
+  const ytPlayerRef = useRef<any>(null);
+  const ytContainerRef = useRef<HTMLDivElement>(null);
+  const [ytReady, setYtReady] = useState(false);
+
+  // Load the YT IFrame API script once
+  useEffect(() => {
+    if (window.YT?.Player) return;
+    if (document.querySelector('script[src*="youtube.com/iframe_api"]')) return;
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  }, []);
+
+  // Create / recreate player when previewVideoId changes
+  useEffect(() => {
+    if (!previewVideoId || loading || result) {
+      // Destroy player when not needed
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+        setYtReady(false);
+      }
+      return;
+    }
+
+    const buildPlayer = () => {
+      if (!ytContainerRef.current) return;
+      // Clear previous
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+        setYtReady(false);
+      }
+
+      ytPlayerRef.current = new window.YT.Player(ytContainerRef.current, {
+        videoId: previewVideoId,
+        playerVars: {
+          autoplay: 0,
+          modestbranding: 1,
+          rel: 0,
+          start: timeToSeconds(sermonStart) ?? undefined,
+          end: timeToSeconds(sermonEnd) ?? undefined,
+        },
+        events: {
+          onReady: () => setYtReady(true),
+        },
+      });
+    };
+
+    if (window.YT?.Player) {
+      buildPlayer();
+    } else {
+      // Wait for API to load
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        prev?.();
+        buildPlayer();
+      };
+    }
+
+    return () => {
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+        setYtReady(false);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewVideoId, loading, result]);
+
+  const grabCurrentTime = (target: "start" | "end") => {
+    if (!ytPlayerRef.current?.getCurrentTime) return;
+    const t = ytPlayerRef.current.getCurrentTime();
+    const formatted = secondsToTime(t);
+    if (target === "start") setSermonStart(formatted);
+    else setSermonEnd(formatted);
+    if (navigator.vibrate) navigator.vibrate(10);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteNav />
@@ -397,17 +491,11 @@ export default function SermonSync() {
             </Button>
           </div>
 
-          {/* Video preview */}
+          {/* Video preview via YouTube Player API */}
           {previewVideoId && !loading && !result && (
             <>
               <div className="rounded-xl overflow-hidden border border-border aspect-video">
-                <iframe
-                  src={`https://www.youtube.com/embed/${previewVideoId}${sermonStart ? `?start=${timeToSeconds(sermonStart) ?? 0}` : ""}${sermonEnd ? `${sermonStart ? "&" : "?"}end=${timeToSeconds(sermonEnd) ?? 0}` : ""}`}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="Sermon preview"
-                />
+                <div ref={ytContainerRef} className="w-full h-full" />
               </div>
 
               {/* Sermon time range selector */}
@@ -417,29 +505,53 @@ export default function SermonSync() {
                   Sermon Time Range
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Set the start and end time so AI focuses only on the sermon portion
+                  Scrub the video to the right moment, then tap <strong>Set</strong> — or type manually
                 </p>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-end">
                   <div className="flex-1 space-y-1">
                     <label className="text-xs text-muted-foreground">Starts at</label>
-                    <Input
-                      value={sermonStart}
-                      onChange={(e) => setSermonStart(e.target.value)}
-                      placeholder="00:15:00"
-                      className="rounded-lg text-sm font-mono"
-                    />
+                    <div className="flex gap-1.5">
+                      <Input
+                        value={sermonStart}
+                        onChange={(e) => setSermonStart(e.target.value)}
+                        placeholder="00:15:00"
+                        className="rounded-lg text-sm font-mono"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!ytReady}
+                        onClick={() => grabCurrentTime("start")}
+                        className="shrink-0 rounded-lg text-xs gap-1"
+                      >
+                        <Play className="w-3 h-3" /> Set
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-end pb-1">
+                  <div className="pb-2">
                     <ArrowRight className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 space-y-1">
                     <label className="text-xs text-muted-foreground">Ends at</label>
-                    <Input
-                      value={sermonEnd}
-                      onChange={(e) => setSermonEnd(e.target.value)}
-                      placeholder="01:15:00"
-                      className="rounded-lg text-sm font-mono"
-                    />
+                    <div className="flex gap-1.5">
+                      <Input
+                        value={sermonEnd}
+                        onChange={(e) => setSermonEnd(e.target.value)}
+                        placeholder="01:15:00"
+                        className="rounded-lg text-sm font-mono"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!ytReady}
+                        onClick={() => grabCurrentTime("end")}
+                        className="shrink-0 rounded-lg text-xs gap-1"
+                      >
+                        <Play className="w-3 h-3" /> Set
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
