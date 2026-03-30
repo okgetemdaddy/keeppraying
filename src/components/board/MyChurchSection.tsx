@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Church, MapPin, Phone, Mail, Clock, ChevronDown, ChevronUp, Play,
   Globe, RefreshCw, Heart, Users, ExternalLink, Facebook, Instagram, Youtube,
-  Twitter, Music, Video, Sparkles, Star,
+  Twitter, Music, Video, Sparkles, Star, Navigation, ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +80,13 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const pastorImageUrl = scraped.pastor_image_url as string | null;
   const heroImageUrl = scraped.hero_image_url as string | null;
   const faviconUrl = scraped.favicon_url as string | null;
+  const buildingPhotoUrl = scraped.building_photo_url as string | null;
+
+  // Google Places data
+  const googleMapsUrl = scraped.google_maps_url as string | null;
+  const googleRating = scraped.google_rating as number | null;
+  const googleReviewCount = scraped.google_review_count as number | null;
+  const googlePhotos = Array.isArray(scraped.google_photos) ? scraped.google_photos as string[] : [];
 
   // Use brand colors when available, fallback to theme textColor
   const hasBrand = !!brandPrimary;
@@ -109,6 +116,9 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const denomination = scraped.denomination as string | null;
   const givingUrl = scraped.giving_url as string | null;
   const liveStreamUrl = scraped.live_stream_url as string | null;
+
+  // Hero: prefer website hero, fall back to Google building photo
+  const displayHeroUrl = heroImageUrl || buildingPhotoUrl || null;
 
   const jumpToTimestamp = (videoId: string, seconds: number) => {
     window.open(`https://www.youtube.com/watch?v=${videoId}&t=${seconds}s`, "_blank");
@@ -200,11 +210,11 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
               </div>
             ) : church ? (
               <>
-                {/* ── Hero Banner (if available) ── */}
-                {heroImageUrl && (
+                {/* ── Hero Banner (website hero or Google building photo) ── */}
+                {displayHeroUrl && (
                   <div className="rounded-2xl overflow-hidden relative" style={{ height: 120 }}>
                     <img
-                      src={heroImageUrl}
+                      src={displayHeroUrl}
                       alt=""
                       className="w-full h-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = "none"; }}
@@ -212,40 +222,48 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                     <div className="absolute inset-0" style={{
                       background: `linear-gradient(to top, ${hexAlpha(brandPrimary || "#000000", "85")}, transparent 60%)`,
                     }} />
-                    {/* Logo overlay on hero */}
                     {logoUrl && (
                       <div className="absolute bottom-2 left-3 flex items-center gap-2">
-                        <img
-                          src={logoUrl}
-                          alt=""
+                        <img src={logoUrl} alt=""
                           className="w-8 h-8 rounded-lg object-contain shadow-lg"
                           style={{ background: "rgba(255,255,255,0.9)" }}
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       </div>
                     )}
+                    {googleRating && (
+                      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                        style={{ background: "rgba(0,0,0,0.6)", color: "#FFD700" }}>
+                        <Star className="w-3 h-3 fill-current" />
+                        {googleRating.toFixed(1)}
+                        {googleReviewCount && <span className="text-white/60 font-normal">({googleReviewCount})</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!displayHeroUrl && googleRating && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl" style={{ background: cardBg }}>
+                    <Star className="w-3.5 h-3.5" style={{ color: "#FFD700" }} />
+                    <span className="text-xs font-semibold" style={{ color: textColor }}>{googleRating.toFixed(1)}</span>
+                    {googleReviewCount && <span className="text-[10px]" style={labelStyle}>({googleReviewCount} reviews)</span>}
                   </div>
                 )}
 
                 {/* ── About / Mission with Pastor ── */}
                 {(aboutUs || missionStatement || pastorName) && (
                   <div className="rounded-2xl p-4 space-y-3" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
-                    {/* Pastor card */}
                     {pastorName && (
                       <div className="flex items-center gap-3">
                         {pastorImageUrl ? (
-                          <img
-                            src={pastorImageUrl}
-                            alt={pastorName}
+                          <img src={pastorImageUrl} alt={pastorName}
                             className="w-10 h-10 rounded-full object-cover border-2 flex-shrink-0"
                             style={{ borderColor: primaryColor }}
                             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                           />
                         ) : (
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
-                            style={{ background: primaryColor }}
-                          >
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-sm"
+                            style={{ background: primaryColor }}>
                             {pastorName.charAt(0)}
                           </div>
                         )}
@@ -258,13 +276,11 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         </div>
                       </div>
                     )}
-
                     {!pastorName && denomination && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full inline-block" style={{ background: pillBg, ...bodyStyle }}>
                         {denomination}
                       </span>
                     )}
-
                     {aboutUs && (
                       <p className="text-xs leading-relaxed italic" style={bodyStyle}>"{aboutUs}"</p>
                     )}
@@ -281,7 +297,23 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                   {church.address && (
                     <div className="flex items-start gap-2">
                       <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={iconStyle} />
-                      <p className="text-xs" style={bodyStyle}>{church.address}</p>
+                      <div className="flex-1">
+                        <p className="text-xs" style={bodyStyle}>{church.address}</p>
+                        {googleMapsUrl && (
+                          <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] mt-0.5 hover:underline"
+                            style={{ color: hasBrand ? primaryColor : `${textColor}60` }}>
+                            <Navigation className="w-2.5 h-2.5" /> Open in Maps
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {!church.address && googleMapsUrl && (
+                    <div className="flex items-center gap-2">
+                      <Navigation className="w-3.5 h-3.5 flex-shrink-0" style={iconStyle} />
+                      <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-xs underline" style={bodyStyle}>View on Google Maps</a>
                     </div>
                   )}
                   {church.phone && (
@@ -306,6 +338,23 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                     </div>
                   )}
                 </div>
+
+                {/* ── Google Building Photos Gallery ── */}
+                {googlePhotos.length > 1 && (
+                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
+                      <ImageIcon className="w-3 h-3" /> Photos
+                    </p>
+                    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                      {googlePhotos.slice(0, 4).map((url: string, i: number) => (
+                        <img key={i} src={url} alt=""
+                          className="w-20 h-14 rounded-lg object-cover flex-shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Service Times ── */}
                 {serviceTimes.length > 0 && (
