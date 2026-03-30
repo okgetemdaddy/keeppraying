@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon,
   Maximize2, Minimize2, Flame, Heart, BookOpen,
   Bird, MessageSquare, Wind, Users, Home, Radio, Loader2, Palette,
+  Church, Highlighter, StickyNote, Bookmark,
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isSameDay, startOfMonth, endOfMonth, eachWeekOfInterval, isToday, addDays, getDay } from "date-fns";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -15,7 +17,7 @@ import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 interface CalendarEvent {
   id: string;
   date: Date;
-  type: "prayer_created" | "prayed" | "liked" | "testimony" | "comment" | "breath" | "standby" | "streak_milestone" | "group_activity" | "family_activity" | "circle_meeting" | "family_meeting";
+  type: "prayer_created" | "prayed" | "liked" | "testimony" | "comment" | "breath" | "standby" | "streak_milestone" | "group_activity" | "family_activity" | "circle_meeting" | "family_meeting" | "sermon_plan_day" | "bible_highlight" | "bible_note" | "bible_bookmark";
   label: string;
   detail?: string;
   link?: string;
@@ -34,6 +36,10 @@ const EVENT_CONFIG: Record<CalendarEvent["type"], { icon: React.ComponentType<{ 
   family_activity: { icon: Home, color: "hsl(25 70% 60%)", bg: "hsl(25 70% 50% / 0.15)" },
   circle_meeting: { icon: Users, color: "hsl(260 55% 65%)", bg: "hsl(260 55% 50% / 0.15)" },
   family_meeting: { icon: Home, color: "hsl(30 75% 55%)", bg: "hsl(30 75% 45% / 0.15)" },
+  sermon_plan_day: { icon: Church, color: "hsl(280 60% 60%)", bg: "hsl(280 60% 50% / 0.15)" },
+  bible_highlight: { icon: Highlighter, color: "hsl(55 80% 55%)", bg: "hsl(55 80% 45% / 0.15)" },
+  bible_note: { icon: StickyNote, color: "hsl(180 50% 55%)", bg: "hsl(180 50% 45% / 0.15)" },
+  bible_bookmark: { icon: Bookmark, color: "hsl(15 75% 60%)", bg: "hsl(15 75% 50% / 0.15)" },
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -98,6 +104,10 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
         { data: familyPrayers },
         { data: circleMemberships },
         { data: familyMemberships },
+        { data: sermonMemberships },
+        { data: bibleHighlights },
+        { data: bibleNotes },
+        { data: bibleBookmarks },
       ] = await Promise.all([
         supabase.from("prayer_cards").select("id, title, prayer_text, created_at")
           .eq("created_by", user.id)
@@ -124,12 +134,25 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
         supabase.from("family_room_prayers").select("id, created_at, room_id")
           .eq("shared_by", user.id)
           .gte("created_at", rangeStart).lte("created_at", rangeEnd),
-        // Fetch circle memberships + circle schedule
         supabase.from("accountability_circle_members").select("circle_id, accountability_circles(id, name, schedule)")
           .eq("user_id", user.id),
-        // Fetch family memberships + family room schedule
         supabase.from("family_room_members").select("room_id, family_rooms(id, name, schedule)")
           .eq("user_id", user.id),
+        // Sermon plan memberships with plan details
+        supabase.from("sermon_plan_members").select("plan_id, sermon_prayer_plans(id, sermon_title, starts_on, daily_prompts)")
+          .eq("user_id", user.id) as any,
+        // Bible highlights
+        supabase.from("user_highlights").select("id, book_usfm, chapter_number, verse_number, color, created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", rangeStart).lte("created_at", rangeEnd),
+        // Bible notes
+        supabase.from("user_notes").select("id, book_usfm, chapter_number, verse_number, note_content, created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", rangeStart).lte("created_at", rangeEnd),
+        // Bible bookmarks
+        supabase.from("user_bookmarks").select("id, book_usfm, chapter_number, verse_number, created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", rangeStart).lte("created_at", rangeEnd),
       ]);
 
       const mapped: CalendarEvent[] = [];
