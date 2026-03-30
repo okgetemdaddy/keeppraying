@@ -118,8 +118,10 @@ export default function SermonSync() {
   }, [videoId, url]);
 
   const PROGRESS_STEPS = [
-    "Sending to AI…",
-    "Analyzing sermon content…",
+    "Extracting audio…",
+    "Transcribing sermon…",
+    "Still transcribing — hang tight…",
+    "Analyzing with AI…",
     "Preparing results…",
   ];
 
@@ -128,7 +130,7 @@ export default function SermonSync() {
     if (progressTimer.current) clearInterval(progressTimer.current);
     progressTimer.current = setInterval(() => {
       setProgressStep((prev) => Math.min(prev + 1, PROGRESS_STEPS.length - 1));
-    }, 6000);
+    }, 30000);
   };
 
   const stopProgressAnimation = () => {
@@ -485,10 +487,10 @@ export default function SermonSync() {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center max-w-sm mx-auto">
                 {loadingMode === "premium"
-                  ? "Deep-diving into the Word — this may take a minute for long sermons"
-                  : "Meditating on the Word — extracting prayer prompts and notes"}
+                  ? "Transcribing every word, then deep-diving into the sermon — this takes 2-5 minutes for a full service"
+                  : "Transcribing and analyzing the sermon — this may take a few minutes"}
               </p>
             </motion.div>
           )}
