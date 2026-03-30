@@ -133,10 +133,12 @@ export default function InviteShareModal({ open, onOpenChange, type, targetId, t
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <Icon className="w-5 h-5 text-primary" />
-            Invite to {targetName}
+            {type === "sermon_plan" ? "Invite to Week of Prayer" : `Invite to ${targetName}`}
           </DialogTitle>
           <DialogDescription>
-            Share this secure link to invite someone to your {type === "family" ? "family room" : "prayer circle"}.
+            {type === "sermon_plan"
+              ? "Share this secure link to invite church members to join your Week of Prayer."
+              : `Share this secure link to invite someone to your ${type === "family" ? "family room" : "prayer circle"}.`}
           </DialogDescription>
         </DialogHeader>
 
