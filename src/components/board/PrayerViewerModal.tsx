@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PRAYER_FONTS } from "./BoardCard";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import { PrayedButton } from "@/components/PrayedButton";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SavedPrayer = Database["public"]["Tables"]["user_saved_prayers"]["Row"] & {
