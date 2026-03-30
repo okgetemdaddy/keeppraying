@@ -128,67 +128,13 @@ export default function UserMonitorTab() {
     </div>
   );
 
-  // ── USER DETAIL VIEW ──
   if (selected) {
-    const score = engagementScore(selected);
-    const { label, color } = tier(score);
-    const data = selected as unknown as Record<string, unknown>;
     return (
-      <div className="space-y-5">
-        <button onClick={() => setSelected(null)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" />Back to users
-        </button>
-
-        <div className="prayer-card p-5 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-divine flex items-center justify-center text-lg font-display font-bold text-foreground flex-shrink-0">
-                {selected.avatar_url
-                  ? <img src={selected.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
-                  : (selected.full_name?.[0] || selected.email?.[0] || "?").toUpperCase()
-                }
-              </div>
-              <div>
-                <h3 className="font-semibold text-base">{selected.full_name || "Anonymous"}</h3>
-                {selected.email && <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail className="w-3 h-3" />{selected.email}</p>}
-                <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant={selected.role === "admin" ? "default" : "secondary"} className="text-xs">{selected.role}</Badge>
-                  <span className={`text-xs font-medium ${color}`}>{label} · {score} pts</span>
-                </div>
-              </div>
-            </div>
-            {session && (
-              <AIInsightButton
-                data={data}
-                context="user profile"
-                accessToken={session.access_token}
-              />
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { icon: BookOpen, label: "Prayers", value: selected.prayers_count, color: "text-primary" },
-              { icon: Heart, label: "Likes Given", value: selected.likes_count, color: "text-red-400" },
-              { icon: HandMetal, label: "Times Prayed", value: selected.prayed_count, color: "text-forest" },
-              { icon: Sparkles, label: "AI Chats", value: selected.chat_count, color: "text-gold" },
-              { icon: BookOpen, label: "Saved Prayers", value: selected.saved_count, color: "text-primary" },
-              { icon: Calendar, label: "Joined", value: new Date(selected.created_at).toLocaleDateString(), color: "text-muted-foreground", isText: true },
-            ].map(m => (
-              <div key={m.label} className="bg-muted/40 rounded-xl p-3 text-center">
-                <m.icon className={`w-4 h-4 mx-auto mb-1 ${m.color}`} />
-                <div className="font-display font-bold text-lg">{m.value}</div>
-                <div className="text-xs text-muted-foreground">{m.label}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-border pt-3 space-y-1">
-            <p className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />Member since {new Date(selected.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</p>
-            <p className="text-xs text-muted-foreground font-mono">ID: {selected.id}</p>
-          </div>
-        </div>
-      </div>
+      <UserDetailPanel
+        user={selected}
+        accessToken={session?.access_token || null}
+        onBack={() => setSelected(null)}
+      />
     );
   }
 
