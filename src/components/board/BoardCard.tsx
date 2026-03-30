@@ -126,6 +126,11 @@ export function BoardCard({
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [prayed, setPrayed] = useState(false);
+  const [prayedCount, setPrayedCount] = useState(0);
+  const [prayAnim, setPrayAnim] = useState(false);
+  const [prayedFloat, setPrayedFloat] = useState(false);
+  const prayedCooldownRef = useRef(false);
   const [flipped, setFlipped] = useState(false);
   const lastTapRef = useRef(0);
   const [overlayOpacity, setOverlayOpacity] = useState(
