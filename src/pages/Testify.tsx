@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, X, Loader2, Share2, Flag, MessageCircle,
-  ChevronDown, Bird, ArrowRight, BookOpen,
+  ChevronDown, Bird, ArrowRight, BookOpen, Volume2, VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormattedText } from "@/lib/FormattedText";
