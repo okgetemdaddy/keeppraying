@@ -1,24 +1,31 @@
 
 
-## Accept All YouTube Link Formats
+## Fix Sermon Sync Audio Extraction
 
-### Problem
-The current URL validation and video ID extraction only handle standard `youtube.com/watch?v=`, `/embed/`, `/v/`, and `youtu.be/` formats. It misses:
-- Mobile share links with query params: `https://youtu.be/ABC123?si=sharetoken`
-- YouTube Shorts: `youtube.com/shorts/VIDEO_ID`
-- YouTube Live: `youtube.com/live/VIDEO_ID`
-- Mobile domain: `m.youtube.com/watch?v=VIDEO_ID`
-- Music domain: `music.youtube.com/watch?v=VIDEO_ID`
-- Bare video IDs (11-char alphanumeric strings)
+### Findings
+- **Option 4 (AssemblyAI direct YouTube) won't work.** AssemblyAI docs explicitly state: "YouTube URLs are not supported in the `audio_url` parameter since it requires a direct link to a downloadable audio file."
+- **Root cause**: The two cobalt instances currently used (`api.cobalt.tools` and `cobalt-api.kwiatekmiki.com`) are returning 400 and 530 errors respectively.
 
-### Changes — single file: `src/pages/SermonSync.tsx`
+### Plan: Add more reliable cobalt instances (Option 1b)
 
-**1. Update `isYouTubeUrl` (line 104-105)**
-Broaden the regex to accept all known YouTube URL patterns including `shorts/`, `live/`, `m.youtube.com`, `music.youtube.com`, and `youtu.be` with query params.
+There is an active directory of cobalt instances at `cobalt.directory` and `instances.cobalt.best` with many community instances that support YouTube. The fix is straightforward:
 
-**2. Update `extractVideoId` (line 107-109)**
-Expand extraction regex to also match `/shorts/`, `/live/`, and handle URLs with extra query parameters (like `?si=...` on mobile share links). Also support pasting a bare 11-character video ID.
+**Single file change: `supabase/functions/sermon-sync/index.ts`**
 
-**3. Update placeholder text**
-Change the input placeholder to indicate that any YouTube link format works (e.g. "Paste any YouTube link…").
+1. **Replace the 2 broken cobalt instances with 5-6 known-good community instances** from the cobalt directory (e.g. `nuko-c.meowing.de`, `cobalt-backend.canine.tools`, etc.) plus the official instances (`kityune.imput.net`, `blossom.imput.net`, `sunny.imput.net`)
+
+2. **Update the cobalt API request format** to match the v11 API format used by current instances — the request body key may be `url` + `downloadMode: "audio"` (verify and align)
+
+3. **Add a small timeout per instance** (8 seconds) so a hanging instance doesn't block the whole chain — fail fast and try the next one
+
+4. **Keep the existing fallback** to legacy URL-based analysis if all cobalt instances fail
+
+### Why this will work
+- The cobalt directory shows dozens of active instances with YouTube support scores of 75-96%
+- Multiple instances means if one goes down, others pick up
+- This is the exact same approach, just with more redundancy
+
+### No other files change
+- Frontend and AssemblyAI transcription logic remain untouched
+- Only the `getAudioUrl()` function in the edge function is updated
 
