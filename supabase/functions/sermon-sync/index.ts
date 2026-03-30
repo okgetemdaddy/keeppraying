@@ -12,6 +12,14 @@ function extractVideoId(url: string): string | null {
   return m?.[1] || null;
 }
 
+function formatTimeRange(start?: string, end?: string): string {
+  if (!start && !end) return "";
+  const parts: string[] = [];
+  if (start) parts.push(`from ${start}`);
+  if (end) parts.push(`to ${end}`);
+  return `\n\nIMPORTANT: Only analyze the portion of the video ${parts.join(" ")}. Ignore everything outside this range (worship, announcements, offering, altar calls, etc.). Focus exclusively on the sermon content within this time window.`;
+}
+
 function detectRefusal(content: string): boolean {
   const head = content.trimStart().slice(0, 220).toLowerCase();
   const indicators = [
@@ -78,11 +86,11 @@ function isEmptyPremiumResult(result: Record<string, unknown>): boolean {
     && Array.isArray(result.dailyPrayers) && result.dailyPrayers.length === 0;
 }
 
-const STANDARD_PROMPT = (youtubeUrl: string) => `You are a faithful Christian ministry assistant.
+const STANDARD_PROMPT = (youtubeUrl: string, timeRange: string) => `You are a faithful Christian ministry assistant.
 
 Watch and analyze this entire YouTube video from start to finish:
 ${youtubeUrl}
-
+${timeRange}
 Analyze the video content directly. Generate the following:
 
 1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references when present). Format as markdown bullet points.
@@ -107,10 +115,11 @@ Return valid JSON (no markdown fences):
   ]
 }`;
 
-const PREMIUM_GROK_PROMPT = (youtubeUrl: string) => `You are an expert at creating detailed church service and sermon outlines.
+const PREMIUM_GROK_PROMPT = (youtubeUrl: string, timeRange: string) => `You are an expert at creating detailed church service and sermon outlines.
 
 Watch and analyze this entire YouTube video from start to finish:
 ${youtubeUrl}
+${timeRange}
 
 Create a professional, detailed breakdown of the service/sermon.
 
@@ -181,8 +190,10 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { youtubeUrl, mode } = body;
-    console.log("[sermon-sync] mode:", mode, "url:", youtubeUrl);
+    const { youtubeUrl, mode, sermonStart, sermonEnd } = body;
+    const timeRangeInstruction = formatTimeRange(sermonStart, sermonEnd);
+    const hasTimeRange = !!(sermonStart || sermonEnd);
+    console.log("[sermon-sync] mode:", mode, "url:", youtubeUrl, "range:", sermonStart, "-", sermonEnd);
 
     if (!youtubeUrl || typeof youtubeUrl !== "string") {
       return new Response(JSON.stringify({ error: "youtubeUrl is required" }), {
@@ -200,24 +211,32 @@ serve(async (req) => {
     const isPremium = mode === "premium";
     const cacheField = isPremium ? "premium_result" : "analysis_result";
 
-    // Check cache
-    const { data: cached } = await supabase
-      .from("sermon_transcripts")
-      .select(`${cacheField}, raw_ai_response`)
-      .eq("video_id", videoId)
-      .maybeSingle();
+    // Check cache (skip when time range is provided — different ranges produce different results)
+    if (!hasTimeRange) {
+      const { data: cached } = await supabase
+        .from("sermon_transcripts")
+        .select(`${cacheField}, raw_ai_response`)
+        .eq("video_id", videoId)
+        .maybeSingle();
 
-    const cachedResult = cached?.[cacheField];
-    if (cachedResult && typeof cachedResult === "object") {
-      console.log("[sermon-sync] returning cached result for", videoId);
-      return new Response(JSON.stringify({
-        ...(cachedResult as Record<string, unknown>),
-        mode: isPremium ? "premium" : "standard",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const cachedResult = cached?.[cacheField];
+      if (cachedResult && typeof cachedResult === "object") {
+        console.log("[sermon-sync] returning cached result for", videoId);
+        return new Response(JSON.stringify({
+          ...(cachedResult as Record<string, unknown>),
+          mode: isPremium ? "premium" : "standard",
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // Ensure a row exists for caching
-    if (!cached) {
+    const { data: existingRow } = await supabase
+      .from("sermon_transcripts")
+      .select("raw_ai_response")
+      .eq("video_id", videoId)
+      .maybeSingle();
+
+    if (!existingRow) {
       await supabase.from("sermon_transcripts").insert({
         video_id: videoId,
         user_id: user.id,
@@ -228,8 +247,8 @@ serve(async (req) => {
 
     if (isPremium) {
       // Phase 1: Grok analyzes the video directly
-      let rawAnalysis = typeof cached?.raw_ai_response === "string" && !detectRefusal(cached.raw_ai_response)
-        ? cached.raw_ai_response
+      let rawAnalysis = !hasTimeRange && typeof existingRow?.raw_ai_response === "string" && !detectRefusal(existingRow.raw_ai_response)
+        ? existingRow.raw_ai_response
         : null;
 
       if (!rawAnalysis) {
@@ -248,7 +267,7 @@ serve(async (req) => {
             temperature: 0.0,
             max_tokens: 12000,
             messages: [
-              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl) },
+              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl, timeRangeInstruction) },
             ],
           }),
         });
@@ -338,7 +357,7 @@ serve(async (req) => {
           max_tokens: 8000,
           messages: [
             { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
-            { role: "user", content: STANDARD_PROMPT(youtubeUrl) },
+            { role: "user", content: STANDARD_PROMPT(youtubeUrl, timeRangeInstruction) },
           ],
         }),
       });

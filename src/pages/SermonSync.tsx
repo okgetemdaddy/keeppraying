@@ -75,6 +75,8 @@ type SermonResult = StandardResult | PremiumResult;
 
 export default function SermonSync() {
   const [url, setUrl] = useState("");
+  const [sermonStart, setSermonStart] = useState("");
+  const [sermonEnd, setSermonEnd] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingMode, setLoadingMode] = useState<"standard" | "premium" | null>(null);
   const [result, setResult] = useState<SermonResult | null>(null);
@@ -98,6 +100,15 @@ export default function SermonSync() {
   const extractVideoId = (u: string) => {
     const m = u.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
     return m?.[1] || "";
+  };
+
+  const timeToSeconds = (t: string): number | null => {
+    if (!t.trim()) return null;
+    const parts = t.trim().split(":").map(Number);
+    if (parts.some(isNaN)) return null;
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return null;
   };
 
   const jumpToTimestamp = useCallback((seconds: number) => {
@@ -150,7 +161,7 @@ export default function SermonSync() {
 
       setProgressStep(0);
       const syncResp = await supabase.functions.invoke("sermon-sync", {
-        body: { youtubeUrl: url, mode },
+        body: { youtubeUrl: url, mode, sermonStart: sermonStart || undefined, sermonEnd: sermonEnd || undefined },
       });
 
       if (syncResp.error) throw new Error(syncResp.error.message || "Analysis failed");
@@ -360,7 +371,7 @@ export default function SermonSync() {
           </div>
           <Input
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => { setUrl(e.target.value); setSermonStart(""); setSermonEnd(""); }}
             placeholder="https://www.youtube.com/watch?v=..."
             className="rounded-xl"
             onKeyDown={(e) => { if (e.key === "Enter") handleSync("standard"); }}
@@ -386,15 +397,51 @@ export default function SermonSync() {
 
           {/* Video preview */}
           {previewVideoId && !loading && !result && (
-            <div className="rounded-xl overflow-hidden border border-border aspect-video">
-              <iframe
-                src={`https://www.youtube.com/embed/${previewVideoId}`}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title="Sermon preview"
-              />
-            </div>
+            <>
+              <div className="rounded-xl overflow-hidden border border-border aspect-video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${previewVideoId}${sermonStart ? `?start=${timeToSeconds(sermonStart) ?? 0}` : ""}${sermonEnd ? `${sermonStart ? "&" : "?"}end=${timeToSeconds(sermonEnd) ?? 0}` : ""}`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Sermon preview"
+                />
+              </div>
+
+              {/* Sermon time range selector */}
+              <div className="space-y-3 p-4 rounded-xl bg-muted/50 border border-border">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Sermon Time Range
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Set the start and end time so AI focuses only on the sermon portion
+                </p>
+                <div className="flex gap-3">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-xs text-muted-foreground">Starts at</label>
+                    <Input
+                      value={sermonStart}
+                      onChange={(e) => setSermonStart(e.target.value)}
+                      placeholder="00:15:00"
+                      className="rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <label className="text-xs text-muted-foreground">Ends at</label>
+                    <Input
+                      value={sermonEnd}
+                      onChange={(e) => setSermonEnd(e.target.value)}
+                      placeholder="01:15:00"
+                      className="rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </motion.div>
 
