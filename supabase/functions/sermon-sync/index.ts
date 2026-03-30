@@ -96,6 +96,7 @@ Return valid JSON with this exact structure:
       "title": "string — concise subtopic heading (5-10 words)",
       "explanation": "string — 2-4 sentence explanation of this point from the sermon",
       "illustration": "string or null — if the pastor used a story, analogy, or real-life example for this point, describe it in 1-2 sentences. If NO illustration was used, set this to null. Do NOT invent illustrations.",
+      "application_points": ["string — 1-3 practical, personal application points that help the listener walk out this truth in daily life. Each should be a short actionable sentence (e.g. 'Speak one Scripture declaration over your family before breakfast this week')"],
       "supporting_verses": ["string — e.g. Ephesians 6:14", "Isaiah 59:17"],
       "timestamp_keywords": ["string — 2-3 distinctive words/phrases from this section to find the timestamp"]
     }
