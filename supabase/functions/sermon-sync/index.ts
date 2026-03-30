@@ -25,6 +25,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    console.log("[sermon-sync] Request received, method:", req.method);
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Authorization required" }), {
@@ -45,7 +46,9 @@ serve(async (req) => {
       });
     }
 
-    const { transcript, rawSegments, videoTitle, videoId, mode } = await req.json();
+    const body = await req.json();
+    const { transcript, rawSegments, videoTitle, videoId, mode } = body;
+    console.log("[sermon-sync] mode:", mode, "videoId:", videoId, "transcript length:", transcript?.length);
 
     if (!transcript || typeof transcript !== "string") {
       return new Response(JSON.stringify({ error: "transcript is required" }), {

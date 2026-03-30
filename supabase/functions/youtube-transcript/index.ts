@@ -67,6 +67,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    console.log("[youtube-transcript] Request received, method:", req.method);
     // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -96,6 +97,7 @@ serve(async (req) => {
     }
 
     const videoId = extractVideoId(youtubeUrl);
+    console.log("[youtube-transcript] videoId:", videoId, "url:", youtubeUrl);
     if (!videoId) {
       return new Response(JSON.stringify({ error: "Invalid YouTube URL" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -111,6 +113,7 @@ serve(async (req) => {
       .gte("fetched_at", cutoff)
       .maybeSingle();
 
+    console.log("[youtube-transcript] cache check:", cached ? "HIT" : "MISS");
     if (cached && cached.raw_segments && cached.full_text) {
       return new Response(JSON.stringify({
         videoId,
@@ -147,6 +150,7 @@ serve(async (req) => {
     const html = await pageResp.text();
     const captionMatch = html.match(/"captionTracks":\[(\{[^}]*?"baseUrl":"([^"]+)"[^}]*?\})/);
 
+    console.log("[youtube-transcript] captionMatch found:", !!captionMatch?.[2]);
     if (!captionMatch?.[2]) {
       return new Response(JSON.stringify({
         error: "No captions available for this video. Try a sermon that has subtitles or closed captions enabled.",

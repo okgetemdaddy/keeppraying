@@ -11,8 +11,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[prayer-tts] Request received, method:", req.method);
     const XAI_SPEAKER_KEY = Deno.env.get("XAi_Speaker");
     if (!XAI_SPEAKER_KEY) {
+      console.error("[prayer-tts] XAi_Speaker secret not found");
       return new Response(JSON.stringify({ error: "xAI Speaker API key not configured." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -27,6 +29,7 @@ serve(async (req) => {
       });
     }
 
+    console.log("[prayer-tts] Calling xAI TTS, text length:", text.trim().length);
     const response = await fetch("https://api.x.ai/v1/tts", {
       method: "POST",
       headers: {
@@ -40,9 +43,10 @@ serve(async (req) => {
       }),
     });
 
+    console.log("[prayer-tts] xAI response status:", response.status);
     if (!response.ok) {
       const err = await response.text();
-      console.error("xAI TTS error:", response.status, err);
+      console.error("[prayer-tts] xAI TTS error:", response.status, err);
       return new Response(JSON.stringify({ error: "Failed to generate speech." }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
