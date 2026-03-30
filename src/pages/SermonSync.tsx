@@ -828,11 +828,32 @@ function PremiumResultView({
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             Save {Object.keys(generatedPrayers).length} Prayer{Object.keys(generatedPrayers).length !== 1 ? "s" : ""} to My Board
           </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!result || !user) return;
+              setCreatingPlan(true);
+              try {
+                const dailyPrompts = result.mode === "premium"
+                  ? (result as PremiumResult).dailyPrayers
+                  : [];
+                await createPlan(result.sermonTitle, videoId, dailyPrompts);
+                toast({ title: "Week of Prayer created! 🙏", description: "Invite your church members to join." });
+              } catch {
+                toast({ title: "Could not create plan", variant: "destructive" });
+              } finally {
+                setCreatingPlan(false);
+              }
+            }}
+            disabled={creatingPlan}
+            className="rounded-xl gap-2"
+          >
+            {creatingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+            Start a Week of Prayer
+          </Button>
           <Button variant="ghost" onClick={onReset} className="rounded-xl text-muted-foreground">
             Try another sermon
           </Button>
-        </motion.div>
-      ) : (
         <div className="text-center py-4">
           <p className="text-sm text-muted-foreground mb-3">Sign in to save prayers to your Board</p>
           <Link to="/auth">
