@@ -2039,6 +2039,27 @@ export type Database = {
           },
         ]
       }
+      user_sermon_progress: {
+        Row: {
+          completed_points: Json
+          notif_times: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_points?: Json
+          notif_times?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_points?: Json
+          notif_times?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       verse_bunch_items: {
         Row: {
           book_usfm: string
