@@ -17,8 +17,9 @@ interface BreathPrayer {
 }
 
 export function useBreathPrayers() {
-  const [prayers, setPrayers] = useState<BreathPrayer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = getLocalCacheWithTTL<BreathPrayer[]>(cacheKeys.breathPrayers(), 60 * 60 * 1000);
+  const [prayers, setPrayers] = useState<BreathPrayer[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   const load = useCallback(async () => {
     setLoading(true);
