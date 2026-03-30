@@ -12,11 +12,11 @@ function extractVideoId(url: string): string | null {
   return m?.[1] || null;
 }
 
-const STANDARD_PROMPT = (youtubeUrl: string) => `You are a faithful Christian ministry assistant. Analyze this sermon video.
+const STANDARD_PROMPT = (youtubeUrl: string) => `You are a faithful Christian ministry assistant. Watch and analyze this entire sermon video from beginning to end — do not skip any section or stop early.
 
 YouTube Video URL: ${youtubeUrl}
 
-Watch/analyze the sermon and generate the following:
+Review the full video thoroughly, then generate the following:
 
 1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references). Format as markdown bullet points.
 
@@ -26,6 +26,8 @@ Watch/analyze the sermon and generate the following:
    - Include 1-2 Scripture references
    - Include 1-2 labels from: [faith, healing, gratitude, family, guidance, strength, provision, forgiveness, worship, surrender, hope, peace, joy, love, patience, wisdom, protection, breakthrough, intercession, praise]
    - Estimate the timestamp in seconds where this topic appears in the sermon video
+
+All notes and prayer prompts must be derived directly from the actual sermon content — do not invent or add anything beyond what was taught.
 
 Return valid JSON (no markdown fences):
 {
@@ -42,7 +44,7 @@ Return valid JSON (no markdown fences):
   ]
 }`;
 
-const PREMIUM_PROMPT = (youtubeUrl: string) => `Grok, can you give me a sermon overview with timestamps from this video: ${youtubeUrl}
+const PREMIUM_PROMPT = (youtubeUrl: string) => `Grok, watch this entire sermon video from beginning to end — do not skip any section or stop early — and give me a full sermon overview with timestamps: ${youtubeUrl}
 
 Return the overview as valid JSON in this structure:
 {
@@ -64,7 +66,7 @@ Return the overview as valid JSON in this structure:
   ]
 }
 
-Include 4-7 subtopics and 6 daily prayers (Monday–Saturday). All subtopics, application points, and daily prayers must be derived directly from what the pastor actually preached in the sermon — do not invent or add content beyond what was taught. Only use real Scripture references.`;
+Include 4-7 subtopics and 6 daily prayers (Monday–Saturday). All subtopics, application points, and daily prayers must be derived directly from what the pastor actually preached in the sermon — review the entire video from start to finish and do not invent or add content beyond what was taught. Only use real Scripture references.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
