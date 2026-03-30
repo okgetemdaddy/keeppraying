@@ -40,6 +40,7 @@ import { BoardVerseBunchesSection } from "@/components/board/BoardVerseBunchesSe
 import { BoardBibleAnnotations } from "@/components/board/BoardBibleAnnotations";
 import { useSermonPlans } from "@/hooks/useSermonPlans";
 import { PlanProgressCard } from "@/components/sermon/PlanProgressCard";
+import { MyChurchSection } from "@/components/board/MyChurchSection";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
