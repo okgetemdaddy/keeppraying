@@ -13,12 +13,19 @@ function extractVideoId(url: string): string | null {
 }
 
 function detectRefusal(content: string): boolean {
+  // Only check the first 300 chars — a real refusal starts at the top.
+  // Longer responses that happen to contain "I cannot" mid-text are legitimate.
+  const head = content.substring(0, 300).toLowerCase();
   const indicators = [
-    "I cannot", "I don't have the ability", "cannot complete this request",
-    "I'm unable to", "As a language model", "my limitations", "I apologize, but",
-    "I can't access", "I'm not able to", "I do not have access",
+    "i cannot", "i don't have the ability", "cannot complete this request",
+    "i'm unable to", "as a language model", "my limitations", "i apologize, but",
+    "i can't access", "i'm not able to", "i do not have access",
+    "i'm sorry, but", "i am not able",
   ];
-  return indicators.some(i => content.toLowerCase().includes(i.toLowerCase()));
+  const hitCount = indicators.filter(i => head.includes(i)).length;
+  // Require the refusal phrase to appear in the opening AND the response to be short
+  // (a real refusal is typically under 500 chars)
+  return hitCount > 0 && content.length < 800;
 }
 
 function extractJson(raw: string): Record<string, unknown> {
