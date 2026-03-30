@@ -10,7 +10,13 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   ArrowLeft, Heart, Bookmark, Share2, Sparkles, Loader2,
   ChevronDown, Tag, Volume2, VolumeX, ListPlus, Users, ShieldCheck, Bird,
+  MoreVertical, SunDim, Check, Palette,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
 import TtsLoadingPopup from "@/components/TtsLoadingPopup";
@@ -19,7 +25,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { TestifyBack } from "@/components/board/TestifyBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SiteNav } from "@/components/SiteNav";
-import { PRAYER_FONTS } from "@/components/board/BoardCard";
+import { PRAYER_FONTS, CARD_BG_PRESETS } from "@/components/board/BoardCard";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 
@@ -125,6 +131,11 @@ export default function Prayer() {
   const [userPlaylists, setUserPlaylists] = useState<{ id: string; name: string; prayer_ids: string[] | null }[]>([]);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
 
+  // Card transparency + color (creator-owned)
+  const [cardOpacity, setCardOpacity] = useState(100);
+  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
+  const isOwner = !!(user && card && card.created_by === user.id);
+
   // Font
   const activeFontFamily = card?.text_style
     ? PRAYER_FONTS.find(f => f.family === card.text_style)?.family ?? null
@@ -139,6 +150,13 @@ export default function Prayer() {
         document.title = `${data.title || data.prayer_text.slice(0, 50)}… | KeepPray.ing`;
         setLikesCount(data.likes_count);
         setPrayedCount(data.prayed_count);
+        // Initialize creator card styling
+        const rawOpacity = (data as any).card_opacity;
+        if (rawOpacity != null) setCardOpacity(Math.round(rawOpacity * 100));
+        const rawColor = (data as any).card_color;
+        if (rawColor && typeof rawColor === 'object' && 'bg' in rawColor) {
+          setCardBgPreset(rawColor as { bg: string; text: string });
+        }
         // Pre-load the font if set
         const font = PRAYER_FONTS.find(f => f.family === data.text_style);
         if (font) loadFont(font.url);
@@ -176,6 +194,24 @@ export default function Prayer() {
     supabase.from("prayer_playlists").select("id,name,prayer_ids").eq("user_id", user.id)
       .then(({ data }) => setUserPlaylists((data || []) as { id: string; name: string; prayer_ids: string[] | null }[]));
   }, [user]);
+
+  // ── Creator styling handlers ──────────────────────────────────────────────────
+  const opacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleOpacityChange = (val: number[]) => {
+    const v = val[0];
+    setCardOpacity(v);
+    if (opacityTimerRef.current) clearTimeout(opacityTimerRef.current);
+    opacityTimerRef.current = setTimeout(() => {
+      if (!id) return;
+      supabase.from("prayer_cards").update({ card_opacity: v / 100 } as any).eq("id", id).then();
+    }, 400);
+  };
+
+  const handleColorChange = (preset: { bg: string; text: string } | null) => {
+    setCardBgPreset(preset);
+    if (!id) return;
+    supabase.from("prayer_cards").update({ card_color: preset } as any).eq("id", id).then();
+  };
 
   // ── Actions ───────────────────────────────────────────────────────────────────
   const toggleLike = async () => {
@@ -312,28 +348,98 @@ export default function Prayer() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="prayer-card-premium flex flex-col overflow-hidden"
+            className="relative flex flex-col overflow-hidden rounded-2xl"
+            style={{ background: "transparent" }}
           >
-            <div className="flex flex-col flex-1 p-6 sm:p-8">
+            {/* Inner background layer — only this gets transparency */}
+            <div
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
+                opacity: cardOpacity / 100,
+              }}
+            />
+
+            <div className="relative z-10 flex flex-col flex-1 p-6 sm:p-8">
 
               {/* Header */}
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex-1 min-w-0">
                   {card.title && (
                     <h1 className="font-display text-2xl sm:text-3xl font-bold leading-snug"
-                      style={{ color: "hsl(25 35% 14%)" }}>
+                      style={{ color: cardBgPreset?.text ?? "hsl(25 35% 14%)" }}>
                       {card.title}
                     </h1>
                   )}
                 </div>
-                <SourceBadge source={card.source} status={card.status} />
+                <div className="flex items-center gap-1.5">
+                  <SourceBadge source={card.source} status={card.status} />
+                  {isOwner && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" title="Card settings">
+                          <MoreVertical className="w-4 h-4" style={{ color: cardBgPreset?.text ?? "hsl(25 18% 56%)" }} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64 p-3 rounded-xl">
+                        <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                          <SunDim className="w-3.5 h-3.5" /> Card Transparency
+                        </DropdownMenuLabel>
+                        <div className="px-1 py-2">
+                          <Slider
+                            value={[cardOpacity]}
+                            onValueChange={handleOpacityChange}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                            <span>Transparent</span>
+                            <span>{cardOpacity}%</span>
+                            <span>Solid</span>
+                          </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                          <Palette className="w-3.5 h-3.5" /> Card Color
+                        </DropdownMenuLabel>
+                        <div className="flex flex-wrap gap-1.5 px-1 py-2">
+                          {/* Default swatch */}
+                          <button
+                            onClick={() => handleColorChange(null)}
+                            className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                            style={{ background: "#F8F1E3", borderColor: !cardBgPreset ? "hsl(42 75% 40%)" : "hsl(38 22% 85%)" }}
+                            title="Default"
+                          >
+                            {!cardBgPreset && <Check className="w-3 h-3" style={{ color: "#2C2418" }} />}
+                          </button>
+                          {CARD_BG_PRESETS.map(preset => {
+                            const isActive = cardBgPreset?.bg === preset.bg;
+                            return (
+                              <button
+                                key={preset.name}
+                                onClick={() => handleColorChange({ bg: preset.bg, text: preset.text })}
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                                style={{ background: preset.bg, borderColor: isActive ? "hsl(42 75% 40%)" : "hsl(38 22% 85%)" }}
+                                title={preset.name}
+                              >
+                                {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
               </div>
 
               {/* Prayer text */}
               <p
                 className="leading-[1.85] text-base sm:text-lg"
                 style={{
-                  color: "hsl(25 28% 28%)",
+                  color: cardBgPreset?.text ?? "hsl(25 28% 28%)",
                   fontFamily: textFontFamily,
                   whiteSpace: "pre-wrap",
                 }}
@@ -414,7 +520,14 @@ export default function Prayer() {
               </div>
 
               {/* ── Action row ──────────────────────────────────────────────── */}
-              <div className="flex items-center gap-0.5 pt-4 mt-4 border-t" style={{ borderColor: "hsl(38 22% 90%)" }}>
+              <div
+                className="flex items-center gap-0.5 pt-4 mt-4 border-t rounded-b-2xl -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 px-6 sm:px-8 pb-4"
+                style={{
+                  borderColor: "hsl(38 22% 90%)",
+                  backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
+                  opacity: Math.max(cardOpacity / 100, 0.8),
+                }}
+              >
                 {/* Like */}
                 <motion.button
                   onClick={toggleLike}

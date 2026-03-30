@@ -1236,6 +1236,8 @@ export type Database = {
         Row: {
           audio_url: string | null
           background_url: string | null
+          card_color: Json | null
+          card_opacity: number | null
           created_at: string
           created_by: string | null
           extended_prayer: string | null
@@ -1258,6 +1260,8 @@ export type Database = {
         Insert: {
           audio_url?: string | null
           background_url?: string | null
+          card_color?: Json | null
+          card_opacity?: number | null
           created_at?: string
           created_by?: string | null
           extended_prayer?: string | null
@@ -1280,6 +1284,8 @@ export type Database = {
         Update: {
           audio_url?: string | null
           background_url?: string | null
+          card_color?: Json | null
+          card_opacity?: number | null
           created_at?: string
           created_by?: string | null
           extended_prayer?: string | null
