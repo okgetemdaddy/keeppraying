@@ -596,13 +596,6 @@ serve(async (req) => {
       const cached = existingRow.raw_segments as any;
       if (Array.isArray(cached?.timed)) {
         timedSegments = cached.timed;
-      } else if (Array.isArray(cached?.words)) {
-        // Convert old AssemblyAI word format to timed segments
-        timedSegments = (cached.words as Array<{ text: string; start: number; end: number }>).map((w) => ({
-          offset: w.start,
-          duration: w.end - w.start,
-          text: w.text,
-        }));
       }
     }
 
