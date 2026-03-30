@@ -439,7 +439,7 @@ export default function Prayer() {
               <p
                 className="leading-[1.85] text-base sm:text-lg"
                 style={{
-                  color: "hsl(25 28% 28%)",
+                  color: cardBgPreset?.text ?? "hsl(25 28% 28%)",
                   fontFamily: textFontFamily,
                   whiteSpace: "pre-wrap",
                 }}
