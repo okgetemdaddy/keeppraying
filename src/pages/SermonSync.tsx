@@ -329,6 +329,86 @@ export default function SermonSync() {
 
   const previewVideoId = url ? extractVideoId(url) : "";
 
+  /* ─── YouTube IFrame Player API ─── */
+  const ytPlayerRef = useRef<any>(null);
+  const ytContainerRef = useRef<HTMLDivElement>(null);
+  const [ytReady, setYtReady] = useState(false);
+
+  // Load the YT IFrame API script once
+  useEffect(() => {
+    if (window.YT?.Player) return;
+    if (document.querySelector('script[src*="youtube.com/iframe_api"]')) return;
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  }, []);
+
+  // Create / recreate player when previewVideoId changes
+  useEffect(() => {
+    if (!previewVideoId || loading || result) {
+      // Destroy player when not needed
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+        setYtReady(false);
+      }
+      return;
+    }
+
+    const buildPlayer = () => {
+      if (!ytContainerRef.current) return;
+      // Clear previous
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+        setYtReady(false);
+      }
+
+      ytPlayerRef.current = new window.YT.Player(ytContainerRef.current, {
+        videoId: previewVideoId,
+        playerVars: {
+          autoplay: 0,
+          modestbranding: 1,
+          rel: 0,
+          start: timeToSeconds(sermonStart) ?? undefined,
+          end: timeToSeconds(sermonEnd) ?? undefined,
+        },
+        events: {
+          onReady: () => setYtReady(true),
+        },
+      });
+    };
+
+    if (window.YT?.Player) {
+      buildPlayer();
+    } else {
+      // Wait for API to load
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        prev?.();
+        buildPlayer();
+      };
+    }
+
+    return () => {
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch {}
+        ytPlayerRef.current = null;
+        setYtReady(false);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewVideoId, loading, result]);
+
+  const grabCurrentTime = (target: "start" | "end") => {
+    if (!ytPlayerRef.current?.getCurrentTime) return;
+    const t = ytPlayerRef.current.getCurrentTime();
+    const formatted = secondsToTime(t);
+    if (target === "start") setSermonStart(formatted);
+    else setSermonEnd(formatted);
+    if (navigator.vibrate) navigator.vibrate(10);
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteNav />
