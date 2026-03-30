@@ -929,6 +929,7 @@ interface ActionButtonsProps {
   userId?: string;
   onRefresh: () => void;
   onSharePrivately?: () => void;
+  isSharedRecipient?: boolean;
 }
 
 function ActionButtons({
@@ -937,7 +938,7 @@ function ActionButtons({
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
-  userId, onRefresh, onSharePrivately,
+  userId, onRefresh, onSharePrivately, isSharedRecipient,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
