@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -16,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, X, Loader2, Share2, Flag, MessageCircle,
-  ChevronDown, Bird, ArrowRight, BookOpen,
+  ChevronDown, Bird, ArrowRight, BookOpen, Volume2, VolumeX,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormattedText } from "@/lib/FormattedText";
@@ -83,6 +86,9 @@ function StandaloneTestimonyCard({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [praiseAnimating, setPraiseAnimating] = useState(false);
 
+  // TTS
+  const tts = useTtsPlayer({ cacheId: `testimony_${testimony.id}` });
+
   const TRUNCATE_AT = 480;
   const isLong = testimony.body.length > TRUNCATE_AT;
   const displayBody = expanded || !isLong ? testimony.body : testimony.body.slice(0, TRUNCATE_AT);
@@ -136,6 +142,17 @@ function StandaloneTestimonyCard({
 
   return (
     <>
+      <TtsContemplationOverlay
+        playing={tts.ttsPlaying}
+        onStop={tts.stopTts}
+        onPause={tts.pauseTts}
+        onResume={tts.resumeTts}
+        text={testimony.body}
+        playbackRate={tts.playbackRate}
+        onPlaybackRateChange={tts.changePlaybackRate}
+        timedPhrases={tts.timedPhrases}
+        audioRef={tts.audioRef}
+      />
       {/* 2.5D wrapper — perspective on the parent */}
       <div style={{ perspective: "1000px" }} className="h-full">
         <motion.div
@@ -227,6 +244,26 @@ function StandaloneTestimonyCard({
                   <Flag className="w-3.5 h-3.5" />
                 </button>
               )}
+
+              {/* Listen */}
+              <div className="relative">
+                <TtsLoadingPopup visible={tts.ttsLoading && !tts.ttsPlaying} />
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); tts.toggleTts(testimony.body, `testimony_${testimony.id}`); }}
+                  whileTap={{ scale: 0.85 }}
+                  title={tts.ttsPlaying ? "Stop reading" : "Listen"}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40 active:scale-95"
+                  style={{ color: tts.ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 58%)" }}
+                >
+                  {tts.ttsLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : tts.ttsPlaying ? (
+                    <VolumeX className="w-3.5 h-3.5" />
+                  ) : (
+                    <Volume2 className="w-3.5 h-3.5" />
+                  )}
+                </motion.button>
+              </div>
 
               <div className="flex-1" />
 

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Share2, CalendarIcon, ChevronDown, Send } from "lucide-react";
+import { BookOpen, Share2, CalendarIcon, ChevronDown, Send, Volume2, VolumeX, Loader2 } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 
 interface Verse {
   ref: string;
@@ -52,6 +55,9 @@ export function TestimonyCardFace({
   const [praiseCount, setPraiseCount] = useState(testimony.praise_count || 0);
   const [userPraised, setUserPraised] = useState(false);
   const [praiseAnimating, setPraiseAnimating] = useState(false);
+
+  // TTS
+  const tts = useTtsPlayer({ cacheId: `testimony_${testimony.id}` });
 
   // Answered date
   const [answeredDate, setAnsweredDate] = useState<Date | undefined>(
@@ -132,6 +138,18 @@ export function TestimonyCardFace({
   const verses: Verse[] = Array.isArray(testimony.verses) ? testimony.verses : [];
 
   return (
+    <>
+      <TtsContemplationOverlay
+        playing={tts.ttsPlaying}
+        onStop={tts.stopTts}
+        onPause={tts.pauseTts}
+        onResume={tts.resumeTts}
+        text={testimony.body}
+        playbackRate={tts.playbackRate}
+        onPlaybackRateChange={tts.changePlaybackRate}
+        timedPhrases={tts.timedPhrases}
+        audioRef={tts.audioRef}
+      />
     <div
       className="relative flex flex-col h-full overflow-y-auto overscroll-contain p-4"
       style={{ background: cardBg, color: textColor }}
@@ -292,6 +310,26 @@ export function TestimonyCardFace({
             <Share2 className="w-3.5 h-3.5" />
           </button>
 
+          {/* Listen */}
+          <div className="relative">
+            <TtsLoadingPopup visible={tts.ttsLoading && !tts.ttsPlaying} />
+            <motion.button
+              onClick={() => tts.toggleTts(testimony.body, `testimony_${testimony.id}`)}
+              whileTap={{ scale: 0.85 }}
+              title={tts.ttsPlaying ? "Stop reading" : "Listen"}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40"
+              style={{ color: tts.ttsPlaying ? accentColor : subtleText }}
+            >
+              {tts.ttsLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : tts.ttsPlaying ? (
+                <VolumeX className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </motion.button>
+          </div>
+
           <div className="flex-1" />
 
           {/* Back to Prayer */}
@@ -305,5 +343,6 @@ export function TestimonyCardFace({
         </div>
       </div>
     </div>
+    </>
   );
 }
