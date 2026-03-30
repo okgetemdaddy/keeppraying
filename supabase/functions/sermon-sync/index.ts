@@ -7,58 +7,203 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type CaptionTrack = {
+  langCode: string;
+  name: string;
+  kind: string | null;
+  isDefault: boolean;
+};
+
+type TranscriptSegment = {
+  start_seconds: number;
+  duration_seconds: number;
+  text: string;
+};
+
 function extractVideoId(url: string): string | null {
   const m = url.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
   return m?.[1] || null;
 }
 
 function detectRefusal(content: string): boolean {
-  // Only check the first 300 chars — a real refusal starts at the top.
-  // Longer responses that happen to contain "I cannot" mid-text are legitimate.
-  const head = content.substring(0, 300).toLowerCase();
+  const head = content.trimStart().slice(0, 220).toLowerCase();
   const indicators = [
-    "i cannot", "i don't have the ability", "cannot complete this request",
-    "i'm unable to", "as a language model", "my limitations", "i apologize, but",
-    "i can't access", "i'm not able to", "i do not have access",
-    "i'm sorry, but", "i am not able",
+    "i cannot",
+    "i don't have the ability",
+    "cannot complete this request",
+    "i'm unable to",
+    "as a language model",
+    "my limitations",
+    "i apologize, but",
+    "i can't access",
+    "i'm not able to",
+    "i do not have access",
+    "i'm sorry, but",
+    "i am not able",
   ];
-  const hitCount = indicators.filter(i => head.includes(i)).length;
-  // Require the refusal phrase to appear in the opening AND the response to be short
-  // (a real refusal is typically under 500 chars)
-  return hitCount > 0 && content.length < 800;
+
+  return indicators.some((indicator) => head.startsWith(indicator));
 }
 
 function extractJson(raw: string): Record<string, unknown> {
   if (detectRefusal(raw)) {
-    throw new Error("The AI could not analyze this video. It may be too long, private, or unavailable. Please try a different sermon link.");
+    throw new Error("The AI could not analyze this sermon transcript. Please try another sermon link.");
   }
+
   const cleaned = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-  try { return JSON.parse(cleaned); } catch { /* fall through */ }
-  const match = cleaned.match(/\{[\s\S]*\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch { /* fall through */ }
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        // fall through
+      }
+    }
   }
+
   throw new Error("AI returned an unexpected response. Please try again.");
 }
 
-// --- PROMPTS ---
+function isEmptyPremiumResult(result: Record<string, unknown>): boolean {
+  const sermonTitle = result.sermonTitle;
+  const mainScripture = result.mainScripture;
+  const overallMessage = result.overallMessage;
+  const subtopics = result.subtopics;
+  const dailyPrayers = result.dailyPrayers;
 
-const STANDARD_PROMPT = (youtubeUrl: string) => `You are a faithful Christian ministry assistant. Watch and analyze this entire sermon video from beginning to end — do not skip any section or stop early.
+  return !sermonTitle && !mainScripture && !overallMessage
+    && Array.isArray(subtopics) && subtopics.length === 0
+    && Array.isArray(dailyPrayers) && dailyPrayers.length === 0;
+}
 
-YouTube Video URL: ${youtubeUrl}
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
 
-Review the full video thoroughly, then generate the following:
+function decodeXmlText(value: string): string {
+  const xml = `<root>${value}</root>`;
+  const parsed = new DOMParser().parseFromString(xml, "text/xml");
+  return parsed?.documentElement?.textContent ?? value;
+}
 
-1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references). Format as markdown bullet points.
+function chooseBestTrack(tracks: CaptionTrack[]): CaptionTrack | null {
+  if (tracks.length === 0) return null;
+
+  const score = (track: CaptionTrack) => {
+    const lang = track.langCode.toLowerCase();
+    const isEnglish = lang === "en" || lang.startsWith("en-");
+    const isHuman = track.kind !== "asr";
+
+    return [
+      isEnglish ? 100 : 0,
+      isHuman ? 10 : 0,
+      track.isDefault ? 5 : 0,
+    ].reduce((a, b) => a + b, 0);
+  };
+
+  return [...tracks].sort((a, b) => score(b) - score(a))[0] ?? null;
+}
+
+async function fetchCaptionTracks(videoId: string): Promise<CaptionTrack[]> {
+  const endpoints = [
+    `https://www.youtube.com/api/timedtext?type=list&v=${videoId}`,
+    `https://video.google.com/timedtext?type=list&v=${videoId}`,
+  ];
+
+  for (const endpoint of endpoints) {
+    const response = await fetch(endpoint);
+    if (!response.ok) continue;
+
+    const xml = await response.text();
+    if (!xml.trim()) continue;
+
+    const parsed = new DOMParser().parseFromString(xml, "text/xml");
+    const trackNodes = parsed ? Array.from(parsed.getElementsByTagName("track")) : [];
+
+    const tracks = trackNodes.map((node) => ({
+      langCode: node.getAttribute("lang_code") || "",
+      name: node.getAttribute("name") || "",
+      kind: node.getAttribute("kind") || null,
+      isDefault: node.getAttribute("lang_default") === "true",
+    })).filter((track) => track.langCode);
+
+    if (tracks.length > 0) return tracks;
+  }
+
+  return [];
+}
+
+async function fetchTranscriptFromYoutube(videoId: string): Promise<{ fullText: string; segments: TranscriptSegment[] }> {
+  const tracks = await fetchCaptionTracks(videoId);
+  const chosenTrack = chooseBestTrack(tracks);
+
+  if (!chosenTrack) {
+    throw new Error("No transcript/captions were available for this sermon video.");
+  }
+
+  const params = new URLSearchParams({
+    v: videoId,
+    lang: chosenTrack.langCode,
+  });
+
+  if (chosenTrack.name) params.set("name", chosenTrack.name);
+  if (chosenTrack.kind) params.set("kind", chosenTrack.kind);
+
+  const transcriptUrl = `https://www.youtube.com/api/timedtext?${params.toString()}`;
+  const transcriptResponse = await fetch(transcriptUrl);
+
+  if (!transcriptResponse.ok) {
+    throw new Error("Failed to fetch the sermon transcript.");
+  }
+
+  const xml = await transcriptResponse.text();
+  const parsed = new DOMParser().parseFromString(xml, "text/xml");
+  const textNodes = parsed ? Array.from(parsed.getElementsByTagName("text")) : [];
+
+  const segments = textNodes.map((node) => {
+    const rawText = decodeXmlText(node.textContent || "");
+    return {
+      start_seconds: Number(node.getAttribute("start") || 0),
+      duration_seconds: Number(node.getAttribute("dur") || 0),
+      text: normalizeWhitespace(rawText),
+    } satisfies TranscriptSegment;
+  }).filter((segment) => segment.text.length > 0);
+
+  if (segments.length === 0) {
+    throw new Error("The sermon transcript was empty.");
+  }
+
+  return {
+    fullText: segments.map((segment) => segment.text).join(" "),
+    segments,
+  };
+}
+
+const STANDARD_PROMPT = (youtubeUrl: string, transcript: string) => `You are a faithful Christian ministry assistant.
+
+You are given the sermon transcript below for this YouTube video:
+${youtubeUrl}
+
+Analyze ONLY the transcript content below. Do not invent anything that is not explicitly supported by the transcript.
+
+--- TRANSCRIPT START ---
+${transcript}
+--- TRANSCRIPT END ---
+
+Generate the following:
+
+1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references when present). Format as markdown bullet points.
 
 2. **Prayer Prompts** — Generate exactly 4 distinct prayer prompts inspired by the sermon. Each prompt should:
    - Have a short title (5-8 words)
    - Include prayer direction text (2-3 sentences guiding WHAT to pray about)
-   - Include 1-2 Scripture references
+   - Include 1-2 Scripture references when supported by the transcript
    - Include 1-2 labels from: [faith, healing, gratitude, family, guidance, strength, provision, forgiveness, worship, surrender, hope, peace, joy, love, patience, wisdom, protection, breakthrough, intercession, praise]
-   - Estimate the timestamp in seconds where this topic appears in the sermon video
-
-All notes and prayer prompts must be derived directly from the actual sermon content — do not invent or add anything beyond what was taught.
+   - Estimate the timestamp in seconds using the transcript flow
 
 Return valid JSON (no markdown fences):
 {
@@ -68,59 +213,53 @@ Return valid JSON (no markdown fences):
     {
       "title": "string",
       "prayer_text": "string",
-      "verses": "string (e.g. Romans 8:28, Psalm 23:1)",
+      "verses": "string",
       "labels": ["string"],
       "timestamp_seconds": number_or_null
     }
   ]
 }`;
 
-// Premium Phase 1: Let Grok analyze freely in natural language — NO JSON requirement
-const PREMIUM_GROK_PROMPT = (youtubeUrl: string) => `You are Grok, an expert at creating clean, highly usable, timestamped church service and sermon outlines from full YouTube videos.
+const PREMIUM_GROK_PROMPT = (youtubeUrl: string, transcript: string) => `You are an expert at creating clean, highly usable, timestamped church service and sermon outlines from transcripts.
 
-Analyze the complete video here: ${youtubeUrl}
+You are given the sermon transcript below for this YouTube video:
+${youtubeUrl}
 
-Create a professional, detailed breakdown of the entire service/sermon. Make the timestamps as precise as possible using the video's captions/transcript. Include:
+Analyze ONLY the transcript. Do not claim you cannot access the video. Do not mention limitations. Work strictly from the transcript provided.
 
-1. **Service Outline** — Break down the full service into sections (e.g. Worship Set, Announcements, Sermon, Altar Call) with start and end timestamps (HH:MM:SS format).
+--- TRANSCRIPT START ---
+${transcript}
+--- TRANSCRIPT END ---
 
-2. **Sermon Title & Main Scripture** — Identify the sermon title and the primary Bible passage.
+Create a professional, detailed breakdown of the service/sermon. Use the transcript flow to infer timestamps as precisely as possible.
 
-3. **Overall Message** — Write a 2-3 sentence summary of the sermon's core message.
+Include:
+1. Service Outline — sections with start and end timestamps (HH:MM:SS when possible)
+2. Sermon Title & Main Scripture
+3. Overall Message — 2-3 sentence summary
+4. Subtopics (4-7) with title, explanation, illustrations/stories actually mentioned, application points, supporting verses, and approximate timestamp
+5. Daily Prayer Prompts (Monday-Saturday) with a short prompt and verse
 
-4. **Subtopics** (4-7) — For each major point the pastor teaches:
-   - Title
-   - Explanation (2-4 sentences)
-   - Any illustration or personal story the pastor used (only if they actually used one)
-   - Practical application points
-   - Supporting Scripture references
-   - Approximate timestamp
+Use warm, encouraging, practical language. All content must be derived directly from the transcript — do not invent or embellish.`;
 
-5. **Daily Prayer Prompts** (Monday–Saturday) — Write 6 daily prayer directions inspired by the sermon, each with a relevant verse reference.
+const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `Extract structured data from the sermon analysis below into the exact JSON schema requested. Do not add information that is not present in the analysis. If a field cannot be determined, use null or an empty array.
 
-Use warm, encouraging, practical language. Match the level of detail and formatting from previous high-quality responses you have given on church services.
-
-All content must be derived directly from what was actually preached — do not invent or add content beyond what was taught. Only use real Scripture references.`;
-
-// Premium Phase 2: Gemini extracts structured JSON from Grok's raw analysis
-const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `You are a structured data extraction assistant. Below is a detailed sermon analysis written by another AI. Extract the information into the exact JSON structure specified. Do NOT add any information beyond what is present in the analysis. If a field cannot be determined, use null.
-
---- SERMON ANALYSIS ---
+--- SERMON ANALYSIS START ---
 ${rawAnalysis}
---- END ---
+--- SERMON ANALYSIS END ---
 
-Extract into this exact JSON structure (return valid JSON only, no markdown fences):
+Return valid JSON only in this exact shape:
 {
   "sermonTitle": "string",
-  "mainScripture": "string (primary Bible passage)",
-  "overallMessage": "string (2-3 sentence summary)",
+  "mainScripture": "string",
+  "overallMessage": "string",
   "serviceOutline": [
     { "section": "string", "start": "HH:MM:SS", "end": "HH:MM:SS" }
   ],
   "subtopics": [
     {
       "title": "string",
-      "explanation": "string (2-4 sentences)",
+      "explanation": "string",
       "illustration": "string or null",
       "application_points": ["string"],
       "supporting_verses": ["string"],
@@ -130,9 +269,7 @@ Extract into this exact JSON structure (return valid JSON only, no markdown fenc
   "dailyPrayers": [
     { "day": "Monday", "prompt": "string", "verse": "string" }
   ]
-}
-
-Include all subtopics and daily prayers found in the analysis. Convert any HH:MM:SS timestamps to seconds for timestamp_seconds fields.`;
+}`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -141,7 +278,8 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Authorization required" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -154,7 +292,8 @@ serve(async (req) => {
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
     if (authErr || !user) {
       return new Response(JSON.stringify({ error: "Invalid session" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -164,47 +303,81 @@ serve(async (req) => {
 
     if (!youtubeUrl || typeof youtubeUrl !== "string") {
       return new Response(JSON.stringify({ error: "youtubeUrl is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const videoId = extractVideoId(youtubeUrl);
     if (!videoId) {
       return new Response(JSON.stringify({ error: "Invalid YouTube URL" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const isPremium = mode === "premium";
-
-    // --- Check cache ---
     const cacheField = isPremium ? "premium_result" : "analysis_result";
+
     const { data: cached } = await supabase
       .from("sermon_transcripts")
-      .select(`${cacheField}, raw_ai_response`)
+      .select(`${cacheField}, raw_ai_response, full_text, raw_segments`)
       .eq("video_id", videoId)
       .maybeSingle();
 
     const cachedResult = cached?.[cacheField];
     if (cachedResult && typeof cachedResult === "object") {
       console.log("[sermon-sync] returning cached result for", videoId);
-      return new Response(JSON.stringify({ ...cachedResult as Record<string, unknown>, mode: isPremium ? "premium" : "standard" }), {
+      return new Response(JSON.stringify({
+        ...(cachedResult as Record<string, unknown>),
+        mode: isPremium ? "premium" : "standard",
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    let transcriptText = typeof cached?.full_text === "string" ? cached.full_text.trim() : "";
+    let transcriptSegments = Array.isArray(cached?.raw_segments) ? cached.raw_segments : null;
+
+    if (!transcriptText) {
+      console.log("[sermon-sync] fetching transcript for", videoId);
+      const transcript = await fetchTranscriptFromYoutube(videoId);
+      transcriptText = transcript.fullText;
+      transcriptSegments = transcript.segments;
+
+      const { data: existingTranscript } = await supabase
+        .from("sermon_transcripts")
+        .select("id")
+        .eq("video_id", videoId)
+        .maybeSingle();
+
+      if (existingTranscript) {
+        await supabase.from("sermon_transcripts").update({
+          full_text: transcriptText,
+          raw_segments: transcriptSegments,
+        }).eq("video_id", videoId);
+      } else {
+        await supabase.from("sermon_transcripts").insert({
+          video_id: videoId,
+          user_id: user.id,
+          full_text: transcriptText,
+          raw_segments: transcriptSegments,
+        });
+      }
     }
 
     let result: Record<string, unknown>;
 
     if (isPremium) {
-      // === TWO-PHASE PREMIUM FLOW ===
-      let rawAnalysis = (cached?.raw_ai_response as string) || null;
+      let rawAnalysis = typeof cached?.raw_ai_response === "string" && !detectRefusal(cached.raw_ai_response)
+        ? cached.raw_ai_response
+        : null;
 
-      // Phase 1: Grok generates natural-language analysis (skip if we already have it)
       if (!rawAnalysis) {
         const GROK_API_KEY = Deno.env.get("GROK_API_KEY");
         if (!GROK_API_KEY) throw new Error("GROK_API_KEY not configured");
 
-        console.log("[sermon-sync] Phase 1: Calling Grok for raw analysis...");
+        console.log("[sermon-sync] Phase 1: Calling Grok on transcript...");
         const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -216,7 +389,7 @@ serve(async (req) => {
             temperature: 0.0,
             max_tokens: 12000,
             messages: [
-              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl) },
+              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl, transcriptText) },
             ],
           }),
         });
@@ -224,11 +397,12 @@ serve(async (req) => {
         if (!grokResponse.ok) {
           if (grokResponse.status === 429) {
             return new Response(JSON.stringify({ error: "Rate limit reached. Please wait and try again." }), {
-              status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 429,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
           }
-          const t = await grokResponse.text();
-          console.error("Grok API error:", grokResponse.status, t);
+          const errorText = await grokResponse.text();
+          console.error("Grok API error:", grokResponse.status, errorText);
           throw new Error("Premium analysis failed");
         }
 
@@ -237,33 +411,14 @@ serve(async (req) => {
         console.log("[sermon-sync] Phase 1 complete. Raw length:", rawAnalysis.length);
 
         if (detectRefusal(rawAnalysis)) {
-          throw new Error("The AI could not analyze this video. It may be too long, private, or unavailable. Please try a different sermon link.");
+          throw new Error("The AI could not analyze this sermon transcript. Please try another sermon link.");
         }
 
-        // Save raw analysis to DB immediately
-        const { data: existing } = await supabase
-          .from("sermon_transcripts")
-          .select("id")
-          .eq("video_id", videoId)
-          .maybeSingle();
-
-        if (existing) {
-          await supabase.from("sermon_transcripts").update({
-            raw_ai_response: rawAnalysis,
-          }).eq("video_id", videoId);
-        } else {
-          await supabase.from("sermon_transcripts").insert({
-            video_id: videoId,
-            user_id: user.id,
-            raw_ai_response: rawAnalysis,
-          });
-        }
-        console.log("[sermon-sync] Phase 1 saved to DB");
-      } else {
-        console.log("[sermon-sync] Phase 1 skipped — raw_ai_response already cached");
+        await supabase.from("sermon_transcripts").update({
+          raw_ai_response: rawAnalysis,
+        }).eq("video_id", videoId);
       }
 
-      // Phase 2: Gemini extracts structured JSON from the raw analysis
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -275,10 +430,10 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: "You are a structured data extraction assistant. Return only valid JSON, no markdown fences." },
-            { role: "user", content: GEMINI_EXTRACTION_PROMPT(rawAnalysis!) },
+            { role: "system", content: "You extract structured sermon data and return only valid JSON." },
+            { role: "user", content: GEMINI_EXTRACTION_PROMPT(rawAnalysis) },
           ],
         }),
       });
@@ -286,16 +441,18 @@ serve(async (req) => {
       if (!geminiResponse.ok) {
         if (geminiResponse.status === 429) {
           return new Response(JSON.stringify({ error: "Rate limit reached. Please wait and try again." }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         if (geminiResponse.status === 402) {
           return new Response(JSON.stringify({ error: "AI credits exhausted. Please contact support." }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        const t = await geminiResponse.text();
-        console.error("Gemini extraction error:", geminiResponse.status, t);
+        const errorText = await geminiResponse.text();
+        console.error("Gemini extraction error:", geminiResponse.status, errorText);
         throw new Error("JSON extraction failed");
       }
 
@@ -304,8 +461,10 @@ serve(async (req) => {
       console.log("[sermon-sync] Phase 2 raw (first 200):", geminiContent.substring(0, 200));
       result = extractJson(geminiContent);
 
+      if (isEmptyPremiumResult(result)) {
+        throw new Error("Premium analysis returned no sermon details. Please try again.");
+      }
     } else {
-      // === STANDARD FLOW (unchanged) ===
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
@@ -316,10 +475,10 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
-            { role: "user", content: STANDARD_PROMPT(youtubeUrl) },
+            { role: "user", content: STANDARD_PROMPT(youtubeUrl, transcriptText) },
           ],
         }),
       });
@@ -327,16 +486,18 @@ serve(async (req) => {
       if (!response.ok) {
         if (response.status === 429) {
           return new Response(JSON.stringify({ error: "Rate limit reached. Please wait and try again." }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         if (response.status === 402) {
           return new Response(JSON.stringify({ error: "AI credits exhausted. Please contact support." }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        const t = await response.text();
-        console.error("AI gateway error:", response.status, t);
+        const errorText = await response.text();
+        console.error("AI gateway error:", response.status, errorText);
         throw new Error("AI processing failed");
       }
 
@@ -346,35 +507,23 @@ serve(async (req) => {
       result = extractJson(content);
     }
 
-    // --- Cache the structured result ---
     const videoTitle = (result.sermonTitle as string) || (result.sermon_title as string) || null;
-    const { data: existing } = await supabase
-      .from("sermon_transcripts")
-      .select("id")
-      .eq("video_id", videoId)
-      .maybeSingle();
+    await supabase.from("sermon_transcripts").update({
+      [cacheField]: result,
+      ...(videoTitle ? { video_title: videoTitle } : {}),
+    }).eq("video_id", videoId);
 
-    if (existing) {
-      await supabase.from("sermon_transcripts").update({
-        [cacheField]: result,
-        ...(videoTitle ? { video_title: videoTitle } : {}),
-      }).eq("video_id", videoId);
-    } else {
-      await supabase.from("sermon_transcripts").insert({
-        video_id: videoId,
-        user_id: user.id,
-        video_title: videoTitle,
-        [cacheField]: result,
-      });
-    }
-
-    return new Response(JSON.stringify({ ...result, mode: isPremium ? "premium" : "standard" }), {
+    return new Response(JSON.stringify({
+      ...result,
+      mode: isPremium ? "premium" : "standard",
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("sermon-sync error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
