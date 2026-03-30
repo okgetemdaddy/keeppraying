@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
+import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TestifyBack } from "@/components/board/TestifyBack";
@@ -509,23 +510,26 @@ export default function Prayer() {
                 <div className="flex-1" />
 
                 {/* Listen */}
-                <motion.button
-                  onClick={toggleTts}
-                  whileTap={{ scale: 0.85 }}
-                  title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
-                  className="p-2 rounded-xl transition-all hover:bg-accent/60"
-                  style={{ color: ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
-                >
-                  {ttsLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : ttsPlaying ? (
-                    <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}>
-                      <VolumeX className="w-4 h-4" />
-                    </motion.div>
-                  ) : (
-                    <Volume2 className="w-4 h-4" />
-                  )}
-                </motion.button>
+                <div className="relative">
+                  <TtsLoadingPopup visible={ttsLoading && !ttsPlaying} />
+                  <motion.button
+                    onClick={toggleTts}
+                    whileTap={{ scale: 0.85 }}
+                    title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
+                    className="p-2 rounded-xl transition-all hover:bg-accent/60"
+                    style={{ color: ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 56%)" }}
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : ttsPlaying ? (
+                      <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}>
+                        <VolumeX className="w-4 h-4" />
+                      </motion.div>
+                    ) : (
+                      <Volume2 className="w-4 h-4" />
+                    )}
+                  </motion.button>
+                </div>
 
                 {/* Add to playlist */}
                 <motion.button
