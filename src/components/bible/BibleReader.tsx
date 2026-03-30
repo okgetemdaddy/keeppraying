@@ -471,8 +471,10 @@ export function BibleReader() {
   // Auto-select BSB (Berean Standard Bible) as default — NIV is not available via the API
   useEffect(() => {
     if (versions?.length && !versionId) {
+      // Prefer NIV, then BSB, then first available
+      const niv = versions.find((v) => v.id === 111);
       const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
-      setVersionId(bsb ? bsb.id : versions[0].id);
+      setVersionId(niv?.id ?? bsb?.id ?? versions[0].id);
     }
   }, [versions, versionId]);
 
