@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getLocalCache, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 interface Church {
   id: string;
