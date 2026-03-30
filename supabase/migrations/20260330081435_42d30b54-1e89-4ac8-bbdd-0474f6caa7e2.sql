@@ -1,0 +1,1 @@
+ALTER TABLE public.sermon_transcripts ADD COLUMN raw_ai_response text;
