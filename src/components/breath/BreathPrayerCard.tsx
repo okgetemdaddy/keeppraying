@@ -5,6 +5,7 @@ import { Heart, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import VerseLink from "@/components/VerseLink";
+import { PrayedButton } from "@/components/PrayedButton";
 
 interface BreathPrayerCardProps {
   id: string;
