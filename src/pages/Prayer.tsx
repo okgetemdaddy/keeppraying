@@ -10,7 +10,13 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   ArrowLeft, Heart, Bookmark, Share2, Sparkles, Loader2,
   ChevronDown, Tag, Volume2, VolumeX, ListPlus, Users, ShieldCheck, Bird,
+  MoreVertical, SunDim, Check, Palette,
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
 import TtsLoadingPopup from "@/components/TtsLoadingPopup";
