@@ -1,61 +1,41 @@
 
 
-## Remove Transcript Fetching, Direct Video Analysis, Relaxed Timestamps
+## Add Sermon Start/End Time Selector
 
-### What changes
+### Concept
+After pasting a YouTube URL, the user sees the video preview with two time-picker inputs: "Sermon starts at" and "Sermon ends at" (HH:MM:SS format). They set the range, then press Sync. The AI prompt includes instructions to only analyze that specific portion of the video.
 
-**Single file:** `supabase/functions/sermon-sync/index.ts`
+### Changes
 
-**1. Delete all transcript-fetching code**
-Remove these functions and types entirely:
-- `CaptionTrack`, `TranscriptSegment` types
-- `normalizeWhitespace`, `decodeXmlText`, `chooseBestTrack`, `fetchCaptionTracks`, `fetchTranscriptFromYoutube`
+**1. `src/pages/SermonSync.tsx` — Add time range UI + pass times to edge function**
 
-**2. Remove transcript-fetching block from main flow (~lines 339-367)**
-Delete the block that calls `fetchTranscriptFromYoutube` and stores `full_text`/`raw_segments`. The function will no longer read or write transcript columns.
+- Add two new state variables: `sermonStart` (string, default `""`) and `sermonEnd` (string, default `""`)
+- Below the video preview iframe, render a "Sermon Time Range" section with:
+  - Two time inputs (HH:MM:SS) using standard `<Input>` with `type="text"` and placeholder `"00:00:00"`
+  - Labels: "Sermon starts at" and "Sermon ends at"
+  - Helper text: "Set the start and end time so AI focuses only on the sermon portion"
+- Update the YouTube embed `src` to include `?start=X&end=Y` parameters when set (converts HH:MM:SS to seconds) so the preview reflects the selected range
+- Pass `sermonStart` and `sermonEnd` in the `handleSync` body:
+  ```ts
+  body: { youtubeUrl: url, mode, sermonStart, sermonEnd }
+  ```
+- Reset `sermonStart`/`sermonEnd` when URL changes
 
-**3. Update prompts — URL-only, timestamps optional**
+**2. `supabase/functions/sermon-sync/index.ts` — Use time range in AI prompts**
 
-`STANDARD_PROMPT(youtubeUrl)`:
-- Remove transcript block; just pass the YouTube URL
-- Tell the AI to analyze the video directly
-- Remove `timestamp_seconds` from the prayer prompt requirements
+- Parse `sermonStart` and `sermonEnd` from request body
+- Add a helper `formatTimeRange(start, end)` that returns a prompt instruction like:
+  `"IMPORTANT: Only analyze the portion of the video from 00:15:30 to 01:02:00. Ignore everything outside this range (worship, announcements, etc.)."`
+  Returns empty string if neither is set.
+- Append this instruction to both `STANDARD_PROMPT` and `PREMIUM_GROK_PROMPT` when provided
+- Update cache key logic: include time range in cache lookup so different ranges for the same video get separate cached results. Use a composite approach: append `_start_end` to video_id when querying/storing, or add the range to the cache check query.
 
-`PREMIUM_GROK_PROMPT(youtubeUrl)`:
-```
-You are an expert at creating detailed church service and sermon outlines.
-
-Watch and analyze this entire YouTube video from start to finish:
-{youtubeUrl}
-
-Create a professional, detailed breakdown of the service/sermon.
-
-Include:
-1. Service Outline — major sections of the service in order
-2. Sermon Title & Main Scripture
-3. Overall Message — 2-3 sentence summary
-4. Subtopics (4-7) with title, explanation, illustrations/stories mentioned, application points, and supporting verses
-5. Daily Prayer Prompts (Monday-Saturday) with a short prompt and verse
-
-If you can identify approximate timestamps, include them, but do not force or fabricate them. Focus on content accuracy over timing precision.
-
-Use warm, encouraging, practical language. All content must come from the video — do not invent or embellish.
-```
-
-Key change: timestamps are welcome but **optional** — Grok won't refuse or get stuck trying to produce exact HH:MM:SS values.
-
-`GEMINI_EXTRACTION_PROMPT(rawAnalysis)`:
-- Make `start`/`end` in `serviceOutline` nullable
-- Make `timestamp_seconds` in `subtopics` nullable (already is, but reinforce in prompt text: "use null if not available")
-
-**4. Simplify the main flow**
-- Premium: check `premium_result` cache → check `raw_ai_response` (run Phase 2 only) → call Grok with URL → save raw → call Gemini to extract JSON → save/return
-- Standard: check `analysis_result` cache → call Gemini with URL → save/return
-- Still create/update `sermon_transcripts` row by `video_id` for caching, but skip transcript columns
+**3. Cache consideration**
+- When start/end times are provided, skip the cache (or use a range-specific cache key) since different time ranges produce different results. Simplest approach: skip cache when times are provided — users typically sync a sermon once.
 
 ### Technical details
-- Grok-4.20-reasoning supports multimodal YouTube URL analysis
-- Gemini models also support URL-based video content analysis
-- Two-phase architecture preserved for premium mode
-- No frontend changes needed — same JSON shape returned, timestamps just may be null
+- Time input validation: accept `MM:SS` or `HH:MM:SS`, convert to seconds with a helper
+- YouTube embed already supports `?start=X&end=Y` in seconds
+- No database changes needed — just passing extra params to the edge function
+- Prompts will explicitly tell the AI to focus only on the specified time range
 
