@@ -86,7 +86,7 @@ function isEmptyPremiumResult(result: Record<string, unknown>): boolean {
     && Array.isArray(result.dailyPrayers) && result.dailyPrayers.length === 0;
 }
 
-const STANDARD_PROMPT = (youtubeUrl: string) => `You are a faithful Christian ministry assistant.
+const STANDARD_PROMPT = (youtubeUrl: string, timeRange: string) => `You are a faithful Christian ministry assistant.
 
 Watch and analyze this entire YouTube video from start to finish:
 ${youtubeUrl}
