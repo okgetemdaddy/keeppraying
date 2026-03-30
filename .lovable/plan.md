@@ -1,61 +1,68 @@
 
 
-## Private Prayer Sharing System
+## Shared Prayer Board Restrictions + Duplicate-to-Public Guard
 
-### Overview
-Enable users to share a private prayer with another platform user via two paths: (1) in-app user search → one-click share → notification, and (2) generate a secure link for SMS/text sharing with a branded landing page for unauthenticated recipients.
+### Revised scope (per user clarification)
 
-### Database Changes
+- **Copy protection is NOT needed** — users can freely copy/paste any prayer text and keep it on their private board.
+- **Shared-via-secure-link prayers on recipient boards**: recipient can bookmark (save) and unbookmark only. No sharing, no deleting, no editing the prayer card.
+- **Duplicate-to-public prevention**: When a user tries to make ANY prayer public (via the visibility toggle), check if a substantially similar prayer already exists in public. If yes, block it, explain why, and link to the existing public prayer. Offer a "Dispute" button that sends a message to admin.
+- **No plagiarism check on private prayers** — only triggered when toggling to public.
 
-**New table: `prayer_shares`**
+### Changes
+
+**1. `src/components/board/BoardCard.tsx` — Shared recipient restrictions**
+
+- On mount, query `prayer_shares` to check if this prayer was shared to the current user (`recipient_id = userId` and `prayer_id = card.id`). Set `isSharedRecipient` flag.
+- When `isSharedRecipient` is true:
+  - Hide the Share2 button (public link copy)
+  - Hide "Share Privately" menu item
+  - Hide all owner-only controls (font, AI enrich, image upload, visibility toggle) — already gated by `isOwner`, but also hide the share button which isn't gated
+  - Relabel "Remove" to "Unbookmark" — same underlying action (delete from `user_saved_prayers`)
+  - Keep: favorite, pin, card size, add to playlist, open viewer
+
+**2. `src/components/board/BoardCard.tsx` — Duplicate-to-public check in `handlePublicToggle`**
+
+Before the moderation call (line ~271), add a similarity check:
+- Call `supabase.rpc('check_prayer_similarity', { input_text: card.prayer_text })` 
+- If a match is found with score > 0.55 AND the matched prayer is public (`status = 'approved'`):
+  - Show a dialog/toast explaining: "A very similar prayer already exists in the community. You can view it here: [link]. If you believe this is an error, let us know and we'll get back to you ASAP."
+  - Offer two actions: **"View Existing Prayer"** (link to `/prayer/{match_id}`) and **"Dispute This"** (opens dispute flow)
+  - Block the public toggle
+- If no match or match is private, proceed normally with moderation
+
+**3. Database: Add `check_prayer_similarity` function**
+
 ```sql
-CREATE TABLE public.prayer_shares (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  prayer_id uuid NOT NULL,
-  sender_id uuid NOT NULL,
-  recipient_id uuid,              -- null when shared via link before claim
-  token text NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'),
-  message text,                    -- optional personal note
-  status text NOT NULL DEFAULT 'pending',  -- pending | viewed | saved
-  created_at timestamptz NOT NULL DEFAULT now(),
-  expires_at timestamptz NOT NULL DEFAULT now() + interval '30 days',
-  UNIQUE(token)
-);
-
-ALTER TABLE public.prayer_shares ENABLE ROW LEVEL SECURITY;
-
--- Sender can do everything with their shares
-CREATE POLICY "Senders manage own shares"
-  ON public.prayer_shares FOR ALL TO authenticated
-  USING (auth.uid() = sender_id)
-  WITH CHECK (auth.uid() = sender_id);
-
--- Recipients can view shares sent to them
-CREATE POLICY "Recipients can view their shares"
-  ON public.prayer_shares FOR SELECT TO authenticated
-  USING (auth.uid() = recipient_id);
-
--- Recipients can update status (mark viewed/saved)
-CREATE POLICY "Recipients can update share status"
-  ON public.prayer_shares FOR UPDATE TO authenticated
-  USING (auth.uid() = recipient_id);
-
--- Anyone can read by valid token (for landing page before auth)
-CREATE POLICY "Anyone can read by valid token"
-  ON public.prayer_shares FOR SELECT TO public
-  USING (expires_at > now());
+CREATE OR REPLACE FUNCTION public.check_prayer_similarity(input_text text)
+RETURNS TABLE(match_score real, match_id uuid, match_status text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = 'public'
+AS $$
+  SELECT similarity(prayer_text, input_text) AS match_score, 
+         id AS match_id,
+         status AS match_status
+  FROM prayer_cards
+  WHERE similarity(prayer_text, input_text) > 0.55
+  ORDER BY match_score DESC
+  LIMIT 1;
+$$;
 ```
 
-**New table: `prayer_share_comments`** (private thread between sender and recipient only)
-```sql
-CREATE TABLE public.prayer_share_comments (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  share_id uuid NOT NULL REFERENCES prayer_shares(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL,
-  text text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
+**4. Dispute flow — insert into `contact_submissions`**
 
-ALTER TABLE public.prayer_share_comments ENABLE ROW LEVEL SECURITY;
+When user clicks "Dispute This":
+- Insert into `contact_submissions` with:
+  - `name`: user's full_name
+  - `email`: user's email
+  - `message`: auto-generated message like "Prayer duplicate dispute: My prayer [id] was flagged as similar to [match_id]. I believe this is unique."
+- Show toast: "Message sent to KeepPray.ing — we'll get back to you ASAP 🙏"
+- This already appears in the admin panel's Contact Forms tab
 
--- Only
+**5. `src/components/board/BoardCard.tsx` — Duplicate block UI**
+
+Add a small inline dialog/alert state that shows when duplicate is detected during public toggle:
+- Prayer title/link to existing public prayer
+- "Dispute This" button
+- "Got It" dismiss button
+- Styled to match the prayer card aesthetic
+
