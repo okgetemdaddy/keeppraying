@@ -605,6 +605,7 @@ export function BoardCard({
                 <SermonApplicationPoints
                   meditationEssay={card.meditation_essay}
                   userId={userId}
+                  cardId={card.id}
                   accentColor={accentColor}
                   textColor={textColor}
                   onRefresh={onRefresh}
