@@ -138,6 +138,18 @@ export function TestimonyCardFace({
   const verses: Verse[] = Array.isArray(testimony.verses) ? testimony.verses : [];
 
   return (
+    <>
+      <TtsContemplationOverlay
+        playing={tts.ttsPlaying}
+        onStop={tts.stopTts}
+        onPause={tts.pauseTts}
+        onResume={tts.resumeTts}
+        text={testimony.body}
+        playbackRate={tts.playbackRate}
+        onPlaybackRateChange={tts.changePlaybackRate}
+        timedPhrases={tts.timedPhrases}
+        audioRef={tts.audioRef}
+      />
     <div
       className="relative flex flex-col h-full overflow-y-auto overscroll-contain p-4"
       style={{ background: cardBg, color: textColor }}
