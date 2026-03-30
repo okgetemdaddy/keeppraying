@@ -1042,8 +1042,8 @@ function ActionButtons({
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
 
-          {/* Share Privately */}
-          {onSharePrivately && (
+          {/* Share Privately — hidden for shared recipients */}
+          {onSharePrivately && !isSharedRecipient && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
