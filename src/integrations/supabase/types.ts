@@ -2467,6 +2467,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_prayer_similarity: {
+        Args: { input_text: string }
+        Returns: {
+          match_id: string
+          match_score: number
+          match_status: string
+        }[]
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       is_circle_member: {
         Args: { _circle_id: string; _user_id: string }

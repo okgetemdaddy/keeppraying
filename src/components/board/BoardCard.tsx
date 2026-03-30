@@ -17,10 +17,15 @@ import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
-  SunDim, ImagePlus, ImageOff, Send,
+  SunDim, ImagePlus, ImageOff, Send, BookmarkX, AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import { SharePrayerModal } from "@/components/SharePrayerModal";
 import { Slider } from "@/components/ui/slider";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub,
@@ -134,6 +139,9 @@ export function BoardCard({
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [isSharedRecipient, setIsSharedRecipient] = useState(false);
+  const [duplicateDialog, setDuplicateDialog] = useState<{ matchId: string } | null>(null);
+  const [disputeSending, setDisputeSending] = useState(false);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
@@ -181,6 +189,21 @@ export function BoardCard({
         }
       });
   }, [userId, item.prayer_cards?.id]);
+
+  // Check if this prayer was shared to the current user via secure link
+  useEffect(() => {
+    if (!userId || !item.prayer_cards?.id) return;
+    if (item.prayer_cards.created_by === userId) return; // owner, skip
+    supabase
+      .from("prayer_shares")
+      .select("id")
+      .eq("prayer_id", item.prayer_cards.id)
+      .eq("recipient_id", userId)
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setIsSharedRecipient(true);
+      });
+  }, [userId, item.prayer_cards?.id, item.prayer_cards?.created_by]);
 
   if (!card) return null;
 
@@ -269,6 +292,19 @@ export function BoardCard({
     setTogglingPublic(true);
     try {
       if (makePublic) {
+        // Duplicate-to-public check
+        const { data: simData } = await supabase.rpc('check_prayer_similarity', {
+          input_text: card.prayer_text,
+        });
+        if (simData && Array.isArray(simData) && simData.length > 0) {
+          const best = simData[0] as { match_score: number; match_id: string; match_status: string };
+          if (best.match_score > 0.55 && best.match_status === 'approved' && best.match_id !== card.id) {
+            setDuplicateDialog({ matchId: best.match_id });
+            setTogglingPublic(false);
+            return;
+          }
+        }
+
         const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-prayer`, {
           method: "POST",
           headers: {
@@ -298,6 +334,29 @@ export function BoardCard({
       toast({ title: "Failed to update visibility", variant: "destructive" });
     } finally {
       setTogglingPublic(false);
+    }
+  };
+
+  const handleDispute = async () => {
+    if (!duplicateDialog || !userId) return;
+    setDisputeSending(true);
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", userId)
+        .maybeSingle();
+      await supabase.from("contact_submissions").insert({
+        name: profile?.full_name || "User",
+        email: profile?.email || "",
+        message: `Prayer duplicate dispute: My prayer "${card.title || card.id}" was flagged as similar to existing public prayer ${duplicateDialog.matchId}. I believe this is unique and should be allowed to go public.`,
+      });
+      toast({ title: "Message sent to KeepPray.ing — we'll get back to you ASAP 🙏" });
+      setDuplicateDialog(null);
+    } catch {
+      toast({ title: "Failed to send dispute", variant: "destructive" });
+    } finally {
+      setDisputeSending(false);
     }
   };
 
@@ -468,6 +527,7 @@ export function BoardCard({
                 userId={userId}
                 onRefresh={onRefresh}
                 onSharePrivately={() => setShareModalOpen(true)}
+                isSharedRecipient={isSharedRecipient}
               />
             </div>
           )}
@@ -687,6 +747,7 @@ export function BoardCard({
                 userId={userId}
                 onRefresh={onRefresh}
                 onSharePrivately={() => setShareModalOpen(true)}
+                isSharedRecipient={isSharedRecipient}
               />
             </div>
           </div>
@@ -794,6 +855,51 @@ export function BoardCard({
         </motion.div>
       </motion.div>{/* end layout motion.div */}
 
+      {/* ── Duplicate-to-public dialog ────────────────────────────────── */}
+      <Dialog open={!!duplicateDialog} onOpenChange={(open) => { if (!open) setDuplicateDialog(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Similar prayer already exists
+            </DialogTitle>
+            <DialogDescription>
+              A very similar prayer is already available in the community. To keep the prayer library meaningful, we can't publish duplicates — but you can keep this prayer on your private board.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                if (duplicateDialog) {
+                  window.open(`/prayer/${duplicateDialog.matchId}`, '_blank');
+                }
+              }}
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Existing Prayer
+            </Button>
+            <Button
+              variant="secondary"
+              className="w-full gap-2"
+              onClick={handleDispute}
+              disabled={disputeSending}
+            >
+              {disputeSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Dispute This
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setDuplicateDialog(null)}
+            >
+              Got It
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
@@ -823,6 +929,7 @@ interface ActionButtonsProps {
   userId?: string;
   onRefresh: () => void;
   onSharePrivately?: () => void;
+  isSharedRecipient?: boolean;
 }
 
 function ActionButtons({
@@ -831,7 +938,7 @@ function ActionButtons({
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
-  userId, onRefresh, onSharePrivately,
+  userId, onRefresh, onSharePrivately, isSharedRecipient,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -901,14 +1008,16 @@ function ActionButtons({
         <Pin className="w-3.5 h-3.5" />
       </button>
 
-      <button
-        onClick={onShare}
-        className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
-        style={{ color: `${textColor}55` }}
-        aria-label="Share"
-      >
-        <Share2 className="w-3.5 h-3.5" />
-      </button>
+      {!isSharedRecipient && (
+        <button
+          onClick={onShare}
+          className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
+          style={{ color: `${textColor}55` }}
+          aria-label="Share"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -933,8 +1042,8 @@ function ActionButtons({
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
 
-          {/* Share Privately */}
-          {onSharePrivately && (
+          {/* Share Privately — hidden for shared recipients */}
+          {onSharePrivately && !isSharedRecipient && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -1092,10 +1201,14 @@ function ActionButtons({
 
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-xs gap-2 text-destructive focus:text-destructive"
+            className={`text-xs gap-2 ${isSharedRecipient ? '' : 'text-destructive focus:text-destructive'}`}
             onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }}
           >
-            <Trash2 className="w-3.5 h-3.5" /> Remove
+            {isSharedRecipient ? (
+              <><BookmarkX className="w-3.5 h-3.5" /> Unbookmark</>
+            ) : (
+              <><Trash2 className="w-3.5 h-3.5" /> Remove</>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
