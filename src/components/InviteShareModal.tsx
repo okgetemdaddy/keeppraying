@@ -125,7 +125,7 @@ export default function InviteShareModal({ open, onOpenChange, type, targetId, t
     ? Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : 7;
 
-  const Icon = type === "family" ? Home : Users;
+  const Icon = type === "family" ? Home : type === "sermon_plan" ? Users : Users;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
