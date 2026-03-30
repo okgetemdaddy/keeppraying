@@ -138,7 +138,7 @@ export function TtsContemplationOverlay({
 
   const IconComponent = paused ? Play : Pause;
 
-  return (
+  const overlay = (
     <AnimatePresence>
       {playing && (
         <motion.div
@@ -146,7 +146,7 @@ export function TtsContemplationOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
           style={{ background: "radial-gradient(ellipse at center, hsla(30,15%,8%,0.88) 0%, hsla(30,10%,4%,0.94) 100%)" }}
           onClick={onStop}
         >
@@ -295,4 +295,7 @@ export function TtsContemplationOverlay({
       )}
     </AnimatePresence>
   );
+
+  // Portal to document.body to escape any stacking context (e.g. BoardCard's perspective/willChange)
+  return createPortal(overlay, document.body);
 }
