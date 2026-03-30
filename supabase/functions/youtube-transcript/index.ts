@@ -67,6 +67,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    console.log("[youtube-transcript] Request received, method:", req.method);
     // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
