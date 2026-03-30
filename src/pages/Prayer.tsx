@@ -328,6 +328,8 @@ export default function Prayer() {
           if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
           setTtsPlaying(false);
         }}
+        onPause={() => { if (audioRef.current) audioRef.current.pause(); }}
+        onResume={() => { if (audioRef.current) audioRef.current.play(); }}
         text={card?.prayer_text}
         playbackRate={playbackRate}
         onPlaybackRateChange={(r) => {

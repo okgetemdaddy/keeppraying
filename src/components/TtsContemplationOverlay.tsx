@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pause } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 interface TtsContemplationOverlayProps {
   playing: boolean;
   onStop: () => void;
+  onPause?: () => void;
+  onResume?: () => void;
   text?: string;
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
@@ -19,7 +21,6 @@ const LINE_HEIGHT = 30;
 const MS_PER_WORD_AT_1X = 150;
 
 function splitIntoLines(text: string): string[] {
-  // Split on sentence boundaries first, then break long sentences into ~10-word chunks
   const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
   const lines: string[] = [];
   for (const sentence of sentences) {
@@ -45,22 +46,25 @@ function getLineOpacity(distance: number): number {
 }
 
 export function TtsContemplationOverlay({
-  playing, onStop, text, playbackRate = 1, onPlaybackRateChange,
+  playing, onStop, onPause, onResume, text, playbackRate = 1, onPlaybackRateChange,
 }: TtsContemplationOverlayProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   const lines = useMemo(() => (text ? splitIntoLines(text) : []), [text]);
 
   // Reset on play
   useEffect(() => {
-    if (playing) setCurrentLineIndex(0);
+    if (playing) {
+      setCurrentLineIndex(0);
+      setPaused(false);
+    }
   }, [playing]);
 
-  // Auto-advance timer
+  // Auto-advance timer — only when playing AND not paused
   useEffect(() => {
-    if (!playing || lines.length === 0) return;
+    if (!playing || paused || lines.length === 0) return;
 
-    // Estimate ms per line based on word count of each line
     const totalWords = lines.reduce((sum, l) => sum + l.split(/\s+/).length, 0);
     const totalMs = (totalWords * MS_PER_WORD_AT_1X) / playbackRate;
     const msPerLine = totalMs / lines.length;
@@ -73,7 +77,20 @@ export function TtsContemplationOverlay({
     }, msPerLine);
 
     return () => clearInterval(interval);
-  }, [playing, lines, playbackRate]);
+  }, [playing, paused, lines, playbackRate]);
+
+  const handleTogglePause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (paused) {
+      setPaused(false);
+      onResume?.();
+    } else {
+      setPaused(true);
+      onPause?.();
+    }
+  };
+
+  const IconComponent = paused ? Play : Pause;
 
   return (
     <AnimatePresence>
@@ -87,7 +104,7 @@ export function TtsContemplationOverlay({
           style={{ background: "radial-gradient(ellipse at center, hsla(30,15%,8%,0.88) 0%, hsla(30,10%,4%,0.94) 100%)" }}
           onClick={onStop}
         >
-          {/* Concentric pulse rings */}
+          {/* Concentric pulse rings — freeze when paused */}
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
@@ -97,11 +114,11 @@ export function TtsContemplationOverlay({
                 width: 120 + i * 80,
                 height: 120 + i * 80,
               }}
-              animate={{
+              animate={paused ? { scale: 1, opacity: 0.12 } : {
                 scale: [1, 1.3 + i * 0.1, 1],
                 opacity: [0.4 - i * 0.1, 0.08, 0.4 - i * 0.1],
               }}
-              transition={{
+              transition={paused ? { duration: 0.6 } : {
                 duration: 3 + i * 0.5,
                 repeat: Infinity,
                 ease: "easeInOut",
@@ -110,9 +127,9 @@ export function TtsContemplationOverlay({
             />
           ))}
 
-          {/* Central stop button */}
+          {/* Central pause/play toggle button */}
           <motion.button
-            onClick={(e) => { e.stopPropagation(); onStop(); }}
+            onClick={handleTogglePause}
             className="relative z-10 flex items-center justify-center w-20 h-20 rounded-full"
             style={{
               background: "radial-gradient(circle, hsla(42,50%,50%,0.2) 0%, hsla(42,40%,30%,0.08) 100%)",
@@ -122,15 +139,17 @@ export function TtsContemplationOverlay({
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
             animate={{
-              boxShadow: [
-                "0 0 20px hsla(42,50%,50%,0.15)",
-                "0 0 40px hsla(42,50%,50%,0.25)",
-                "0 0 20px hsla(42,50%,50%,0.15)",
-              ],
+              boxShadow: paused
+                ? "0 0 20px hsla(42,50%,50%,0.1)"
+                : [
+                    "0 0 20px hsla(42,50%,50%,0.15)",
+                    "0 0 40px hsla(42,50%,50%,0.25)",
+                    "0 0 20px hsla(42,50%,50%,0.15)",
+                  ],
             }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            transition={paused ? { duration: 0.3 } : { duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           >
-            <Pause className="w-7 h-7" style={{ color: "hsla(42,60%,70%,0.9)" }} />
+            <IconComponent className="w-7 h-7" style={{ color: "hsla(42,60%,70%,0.9)" }} />
           </motion.button>
 
           {/* Speed slider */}
