@@ -12,14 +12,6 @@ function extractVideoId(url: string): string | null {
   return m?.[1] || null;
 }
 
-function formatTimeRange(start?: string, end?: string): string {
-  if (!start && !end) return "";
-  const parts: string[] = [];
-  if (start) parts.push(`from ${start}`);
-  if (end) parts.push(`to ${end}`);
-  return `\n\nIMPORTANT: Only analyze the portion of the video ${parts.join(" ")}. Ignore everything outside this range (worship, announcements, offering, altar calls, etc.). Focus exclusively on the sermon content within this time window.`;
-}
-
 function detectRefusal(content: string): boolean {
   const head = content.trimStart().slice(0, 220).toLowerCase();
   const indicators = [
@@ -37,37 +29,30 @@ function extractJson(raw: string): Record<string, unknown> {
   }
   const cleaned = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
 
-  // Try direct parse first
   try { return JSON.parse(cleaned); } catch { /* fall through */ }
 
-  // Try extracting JSON object
   const match = cleaned.match(/\{[\s\S]*\}/);
   if (match) {
     try { return JSON.parse(match[0]); } catch { /* fall through */ }
 
-    // Fix common truncation/formatting issues
     let fixed = match[0]
-      .replace(/,\s*}/g, "}") // trailing commas in objects
-      .replace(/,\s*]/g, "]") // trailing commas in arrays
-      .replace(/[\x00-\x1F\x7F]/g, (c) => c === "\n" || c === "\t" ? c : ""); // control chars
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+      .replace(/[\x00-\x1F\x7F]/g, (c) => c === "\n" || c === "\t" ? c : "");
 
-    // Fix truncated JSON by closing open brackets/braces
     const openBraces = (fixed.match(/{/g) || []).length;
     const closeBraces = (fixed.match(/}/g) || []).length;
     const openBrackets = (fixed.match(/\[/g) || []).length;
     const closeBrackets = (fixed.match(/\]/g) || []).length;
 
     if (openBraces > closeBraces || openBrackets > closeBrackets) {
-      // Truncate to last complete value (last comma or colon+value)
       const lastGoodComma = fixed.lastIndexOf(",");
       const lastGoodBrace = fixed.lastIndexOf("}");
       const lastGoodBracket = fixed.lastIndexOf("]");
       const cutPoint = Math.max(lastGoodComma, lastGoodBrace, lastGoodBracket);
       if (cutPoint > fixed.length * 0.5) {
         fixed = fixed.substring(0, cutPoint);
-        // Remove trailing partial key-value
         fixed = fixed.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, "");
-        // Close remaining open structures
         for (let i = 0; i < openBrackets - (fixed.match(/\]/g) || []).length; i++) fixed += "]";
         for (let i = 0; i < openBraces - (fixed.match(/}/g) || []).length; i++) fixed += "}";
       }
@@ -86,12 +71,173 @@ function isEmptyPremiumResult(result: Record<string, unknown>): boolean {
     && Array.isArray(result.dailyPrayers) && result.dailyPrayers.length === 0;
 }
 
-const STANDARD_PROMPT = (youtubeUrl: string, timeRange: string) => `You are a faithful Christian ministry assistant.
+/* ─── Transcript helpers ─── */
 
-Watch and analyze this entire YouTube video from start to finish:
-${youtubeUrl}
-${timeRange}
-Analyze the video content directly. Generate the following:
+/** Extract a direct audio URL from YouTube via cobalt.tools API */
+async function getAudioUrl(youtubeUrl: string): Promise<string> {
+  console.log("[sermon-sync] Phase 1: Extracting audio URL via cobalt...");
+
+  // Try multiple cobalt instances for redundancy
+  const cobaltInstances = [
+    "https://api.cobalt.tools",
+    "https://cobalt-api.kwiatekmiki.com",
+  ];
+
+  let lastError = "";
+  for (const baseUrl of cobaltInstances) {
+    try {
+      const resp = await fetch(`${baseUrl}/`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: youtubeUrl,
+          downloadMode: "audio",
+          audioFormat: "mp3",
+        }),
+      });
+
+      if (!resp.ok) {
+        lastError = `cobalt ${baseUrl} returned ${resp.status}`;
+        console.warn(`[sermon-sync] ${lastError}`);
+        continue;
+      }
+
+      const data = await resp.json();
+      if (data.url) {
+        console.log("[sermon-sync] Got audio URL from cobalt");
+        return data.url;
+      }
+      if (data.status === "tunnel" || data.status === "redirect") {
+        console.log("[sermon-sync] Got tunnel/redirect URL from cobalt");
+        return data.url;
+      }
+      lastError = `cobalt returned unexpected shape: ${JSON.stringify(data).substring(0, 200)}`;
+      console.warn(`[sermon-sync] ${lastError}`);
+    } catch (e) {
+      lastError = `cobalt ${baseUrl} error: ${e instanceof Error ? e.message : String(e)}`;
+      console.warn(`[sermon-sync] ${lastError}`);
+    }
+  }
+
+  throw new Error(`Could not extract audio from YouTube. ${lastError}`);
+}
+
+/** Submit audio to AssemblyAI and poll until complete */
+async function transcribeWithAssemblyAI(audioUrl: string): Promise<{
+  full_text: string;
+  chapters: Array<{ start: number; end: number; gist: string; headline: string; summary: string }>;
+  utterances: Array<{ speaker: string; text: string; start: number; end: number }>;
+  words: Array<{ text: string; start: number; end: number; speaker: string | null }>;
+}> {
+  const ASSEMBLY_KEY = Deno.env.get("Assembly_Ai");
+  if (!ASSEMBLY_KEY) throw new Error("AssemblyAI API key not configured");
+
+  console.log("[sermon-sync] Phase 2: Submitting to AssemblyAI...");
+
+  // Submit transcription job
+  const submitResp = await fetch("https://api.assemblyai.com/v2/transcript", {
+    method: "POST",
+    headers: {
+      "Authorization": ASSEMBLY_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      audio_url: audioUrl,
+      auto_chapters: true,
+      speaker_labels: true,
+      language_detection: true,
+    }),
+  });
+
+  if (!submitResp.ok) {
+    const errText = await submitResp.text();
+    console.error("[sermon-sync] AssemblyAI submit error:", submitResp.status, errText);
+    throw new Error("Transcription service error. Please try again.");
+  }
+
+  const submitData = await submitResp.json();
+  const transcriptId = submitData.id;
+  console.log("[sermon-sync] AssemblyAI job submitted:", transcriptId);
+
+  // Poll for completion (max ~8 minutes with 10s intervals)
+  const maxPolls = 48;
+  const pollInterval = 10_000;
+
+  for (let i = 0; i < maxPolls; i++) {
+    await new Promise((r) => setTimeout(r, pollInterval));
+
+    const pollResp = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
+      headers: { "Authorization": ASSEMBLY_KEY },
+    });
+
+    if (!pollResp.ok) {
+      console.warn("[sermon-sync] Poll error:", pollResp.status);
+      continue;
+    }
+
+    const pollData = await pollResp.json();
+    console.log(`[sermon-sync] Poll ${i + 1}/${maxPolls}: status=${pollData.status}`);
+
+    if (pollData.status === "completed") {
+      console.log("[sermon-sync] Transcription complete. Text length:", pollData.text?.length);
+      return {
+        full_text: pollData.text || "",
+        chapters: pollData.chapters || [],
+        utterances: pollData.utterances || [],
+        words: pollData.words || [],
+      };
+    }
+
+    if (pollData.status === "error") {
+      console.error("[sermon-sync] AssemblyAI error:", pollData.error);
+      throw new Error("Transcription failed: " + (pollData.error || "Unknown error"));
+    }
+  }
+
+  throw new Error("Transcription timed out. The sermon may be too long. Please try again.");
+}
+
+/** Extract transcript within a time range using word-level timestamps */
+function extractTimeRange(
+  words: Array<{ text: string; start: number; end: number }>,
+  startTime?: string,
+  endTime?: string
+): string {
+  if (!startTime && !endTime) return "";
+
+  const parseTime = (t: string): number => {
+    const parts = t.trim().split(":").map(Number);
+    if (parts.length === 3) return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+    if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 1000;
+    return 0;
+  };
+
+  const startMs = startTime ? parseTime(startTime) : 0;
+  const endMs = endTime ? parseTime(endTime) : Infinity;
+
+  const filtered = words
+    .filter((w) => w.start >= startMs && w.end <= endMs)
+    .map((w) => w.text);
+
+  return filtered.join(" ");
+}
+
+/* ─── Prompts (updated to use transcript instead of URL) ─── */
+
+const STANDARD_PROMPT_TRANSCRIPT = (transcript: string, chaptersInfo: string) => `You are a faithful Christian ministry assistant.
+
+Here is the full transcript of a sermon:
+
+--- TRANSCRIPT START ---
+${transcript}
+--- TRANSCRIPT END ---
+
+${chaptersInfo ? `Auto-detected chapters:\n${chaptersInfo}\n` : ""}
+
+Analyze this sermon transcript. Generate the following:
 
 1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references when present). Format as markdown bullet points.
 
@@ -115,24 +261,27 @@ Return valid JSON (no markdown fences):
   ]
 }`;
 
-const PREMIUM_GROK_PROMPT = (youtubeUrl: string, timeRange: string) => `You are an expert at creating detailed church service and sermon outlines.
+const PREMIUM_GROK_PROMPT_TRANSCRIPT = (transcript: string, chaptersInfo: string) => `You are an expert at creating detailed church service and sermon outlines.
 
-Watch and analyze this entire YouTube video from start to finish:
-${youtubeUrl}
-${timeRange}
+Here is the full transcript of a sermon/service:
+
+--- TRANSCRIPT START ---
+${transcript}
+--- TRANSCRIPT END ---
+
+${chaptersInfo ? `Auto-detected chapters from transcription:\n${chaptersInfo}\n` : ""}
 
 Create a professional, detailed breakdown of the service/sermon.
 
 Include:
-1. Service Outline — major sections of the service in order
+1. Service Outline — major sections of the service in order (use the auto-detected chapters and speaker changes to identify worship, announcements, sermon, altar call, etc.)
 2. Sermon Title & Main Scripture
 3. Overall Message — 2-3 sentence summary
 4. Subtopics (4-7) with title, explanation, illustrations/stories mentioned, application points, and supporting verses
 5. Daily Prayer Prompts (Monday-Saturday) with a short prompt and verse
 
-If you can identify approximate timestamps, include them, but do not force or fabricate them. Focus on content accuracy over timing precision.
-
-Use warm, encouraging, practical language. All content must come from the video — do not invent or embellish.`;
+Use the transcript faithfully — all content must come from what was actually said.
+Use warm, encouraging, practical language.`;
 
 const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `You are extracting structured sermon data from a raw AI analysis. The analysis may be informal, use markdown, or have varying formats. Extract every piece of information you can find — even partial data is valuable.
 
@@ -167,6 +316,64 @@ Return valid JSON only:
 
 Use null for any timestamp or field you truly cannot determine from the analysis.`;
 
+/* ─── Legacy prompts (fallback when no transcript available) ─── */
+
+const STANDARD_PROMPT_LEGACY = (youtubeUrl: string, timeRange: string) => `You are a faithful Christian ministry assistant.
+
+Watch and analyze this entire YouTube video from start to finish:
+${youtubeUrl}
+${timeRange}
+Analyze the video content directly. Generate the following:
+
+1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references when present). Format as markdown bullet points.
+
+2. **Prayer Prompts** — Generate exactly 4 distinct prayer prompts inspired by the sermon. Each prompt should:
+   - Have a short title (5-8 words)
+   - Include prayer direction text (2-3 sentences guiding WHAT to pray about)
+   - Include 1-2 Scripture references when supported by the sermon content
+   - Include 1-2 labels from: [faith, healing, gratitude, family, guidance, strength, provision, forgiveness, worship, surrender, hope, peace, joy, love, patience, wisdom, protection, breakthrough, intercession, praise]
+
+Return valid JSON (no markdown fences):
+{
+  "sermonTitle": "string",
+  "sermonNotes": "markdown string",
+  "prayers": [
+    {
+      "title": "string",
+      "prayer_text": "string",
+      "verses": "string",
+      "labels": ["string"]
+    }
+  ]
+}`;
+
+const PREMIUM_GROK_PROMPT_LEGACY = (youtubeUrl: string, timeRange: string) => `You are an expert at creating detailed church service and sermon outlines.
+
+Watch and analyze this entire YouTube video from start to finish:
+${youtubeUrl}
+${timeRange}
+
+Create a professional, detailed breakdown of the service/sermon.
+
+Include:
+1. Service Outline — major sections of the service in order
+2. Sermon Title & Main Scripture
+3. Overall Message — 2-3 sentence summary
+4. Subtopics (4-7) with title, explanation, illustrations/stories mentioned, application points, and supporting verses
+5. Daily Prayer Prompts (Monday-Saturday) with a short prompt and verse
+
+If you can identify approximate timestamps, include them, but do not force or fabricate them. Focus on content accuracy over timing precision.
+
+Use warm, encouraging, practical language. All content must come from the video — do not invent or embellish.`;
+
+function formatTimeRange(start?: string, end?: string): string {
+  if (!start && !end) return "";
+  const parts: string[] = [];
+  if (start) parts.push(`from ${start}`);
+  if (end) parts.push(`to ${end}`);
+  return `\n\nIMPORTANT: Only analyze the portion of the video ${parts.join(" ")}. Ignore everything outside this range (worship, announcements, offering, altar calls, etc.). Focus exclusively on the sermon content within this time window.`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -193,7 +400,6 @@ serve(async (req) => {
 
     const body = await req.json();
     const { youtubeUrl, mode, sermonStart, sermonEnd } = body;
-    const timeRangeInstruction = formatTimeRange(sermonStart, sermonEnd);
     const hasTimeRange = !!(sermonStart || sermonEnd);
     console.log("[sermon-sync] mode:", mode, "url:", youtubeUrl, "range:", sermonStart, "-", sermonEnd);
 
@@ -213,11 +419,11 @@ serve(async (req) => {
     const isPremium = mode === "premium";
     const cacheField = isPremium ? "premium_result" : "analysis_result";
 
-    // Check cache (skip when time range is provided — different ranges produce different results)
+    // Check cache (skip when time range is provided)
     if (!hasTimeRange) {
       const { data: cached } = await supabase
         .from("sermon_transcripts")
-        .select(`${cacheField}, raw_ai_response`)
+        .select(`${cacheField}, raw_ai_response, full_text`)
         .eq("video_id", videoId)
         .maybeSingle();
 
@@ -234,7 +440,7 @@ serve(async (req) => {
     // Ensure a row exists for caching
     const { data: existingRow } = await supabase
       .from("sermon_transcripts")
-      .select("raw_ai_response")
+      .select("raw_ai_response, full_text, raw_segments")
       .eq("video_id", videoId)
       .maybeSingle();
 
@@ -245,10 +451,84 @@ serve(async (req) => {
       });
     }
 
+    /* ─── Phase 1 & 2: Get transcript (from cache or fresh) ─── */
+    let fullText = typeof existingRow?.full_text === "string" && existingRow.full_text.length > 100
+      ? existingRow.full_text : null;
+    let rawSegments = existingRow?.raw_segments as {
+      chapters?: Array<{ start: number; end: number; gist: string; headline: string; summary: string }>;
+      utterances?: Array<{ speaker: string; text: string; start: number; end: number }>;
+      words?: Array<{ text: string; start: number; end: number; speaker?: string | null }>;
+    } | null;
+
+    let usedTranscript = false;
+
+    if (!fullText) {
+      // Try to get a real transcript via cobalt + AssemblyAI
+      try {
+        const audioUrl = await getAudioUrl(youtubeUrl);
+        const transcription = await transcribeWithAssemblyAI(audioUrl);
+
+        fullText = transcription.full_text;
+        rawSegments = {
+          chapters: transcription.chapters,
+          utterances: transcription.utterances,
+          words: transcription.words,
+        };
+
+        // Cache transcript
+        await supabase.from("sermon_transcripts").update({
+          full_text: fullText,
+          raw_segments: rawSegments as unknown as Record<string, unknown>,
+        }).eq("video_id", videoId);
+
+        usedTranscript = true;
+        console.log("[sermon-sync] Transcript cached. Length:", fullText.length);
+      } catch (e) {
+        console.warn("[sermon-sync] Transcript extraction failed, falling back to legacy:", e instanceof Error ? e.message : String(e));
+        // Will fall back to legacy "watch the video" approach
+      }
+    } else {
+      usedTranscript = true;
+      console.log("[sermon-sync] Using cached transcript. Length:", fullText.length);
+    }
+
+    /* ─── Prepare transcript text for AI ─── */
+    let transcriptForAI = fullText || "";
+
+    // If time range specified and we have word-level timestamps, extract just that range
+    if (hasTimeRange && usedTranscript && rawSegments?.words) {
+      const rangeText = extractTimeRange(
+        rawSegments.words as Array<{ text: string; start: number; end: number }>,
+        sermonStart,
+        sermonEnd
+      );
+      if (rangeText.length > 50) {
+        transcriptForAI = rangeText;
+        console.log("[sermon-sync] Using time-range filtered transcript. Length:", rangeText.length);
+      }
+    }
+
+    // Truncate very long transcripts to avoid token limits (~40k words ≈ ~50k tokens)
+    if (transcriptForAI.length > 160_000) {
+      transcriptForAI = transcriptForAI.substring(0, 160_000) + "\n\n[Transcript truncated for length]";
+    }
+
+    // Format chapters info for context
+    let chaptersInfo = "";
+    if (rawSegments?.chapters && rawSegments.chapters.length > 0) {
+      chaptersInfo = rawSegments.chapters.map((ch) => {
+        const startMin = Math.floor(ch.start / 1000 / 60);
+        const startSec = Math.floor((ch.start / 1000) % 60);
+        return `[${startMin}:${String(startSec).padStart(2, "0")}] ${ch.headline} — ${ch.summary}`;
+      }).join("\n");
+    }
+
     let result: Record<string, unknown>;
 
     if (isPremium) {
-      // Phase 1: Grok analyzes the video directly
+      /* ─── Premium: Grok analyzes transcript → Gemini extracts JSON ─── */
+
+      // Phase 3a: Grok analysis
       let rawAnalysis = !hasTimeRange && typeof existingRow?.raw_ai_response === "string" && !detectRefusal(existingRow.raw_ai_response)
         ? existingRow.raw_ai_response
         : null;
@@ -257,7 +537,12 @@ serve(async (req) => {
         const GROK_API_KEY = Deno.env.get("GROK_API_KEY");
         if (!GROK_API_KEY) throw new Error("GROK_API_KEY not configured");
 
-        console.log("[sermon-sync] Phase 1: Calling Grok to analyze video...");
+        console.log("[sermon-sync] Phase 3a: Calling Grok to analyze", usedTranscript ? "transcript" : "video URL", "...");
+
+        const prompt = usedTranscript
+          ? PREMIUM_GROK_PROMPT_TRANSCRIPT(transcriptForAI, chaptersInfo)
+          : PREMIUM_GROK_PROMPT_LEGACY(youtubeUrl, formatTimeRange(sermonStart, sermonEnd));
+
         const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -269,7 +554,7 @@ serve(async (req) => {
             temperature: 0.0,
             max_tokens: 12000,
             messages: [
-              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl, timeRangeInstruction) },
+              { role: "user", content: prompt },
             ],
           }),
         });
@@ -287,14 +572,12 @@ serve(async (req) => {
 
         const grokData = await grokResponse.json();
         rawAnalysis = grokData.choices?.[0]?.message?.content || "";
-        console.log("[sermon-sync] Phase 1 complete. Raw length:", rawAnalysis.length);
-        console.log("[sermon-sync] Phase 1 raw (first 500):", rawAnalysis.substring(0, 500));
+        console.log("[sermon-sync] Phase 3a complete. Raw length:", rawAnalysis.length);
 
         if (detectRefusal(rawAnalysis)) {
           throw new Error("The AI could not analyze this sermon. Please try another sermon link.");
         }
 
-        // Only cache raw response when no time range (avoid polluting full-video cache)
         if (!hasTimeRange) {
           await supabase.from("sermon_transcripts").update({
             raw_ai_response: rawAnalysis,
@@ -302,11 +585,11 @@ serve(async (req) => {
         }
       }
 
-      // Phase 2: Gemini extracts structured JSON
+      // Phase 3b: Gemini extracts structured JSON
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-      console.log("[sermon-sync] Phase 2: Calling Gemini for JSON extraction...");
+      console.log("[sermon-sync] Phase 3b: Calling Gemini for JSON extraction...");
       const geminiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -341,13 +624,16 @@ serve(async (req) => {
 
       const geminiData = await geminiResponse.json();
       const geminiContent = geminiData.choices?.[0]?.message?.content || "";
-      console.log("[sermon-sync] Phase 2 raw (first 200):", geminiContent.substring(0, 200));
+      console.log("[sermon-sync] Phase 3b raw (first 200):", geminiContent.substring(0, 200));
       result = extractJson(geminiContent);
 
       if (isEmptyPremiumResult(result)) {
-        console.log("[sermon-sync] Empty premium result. Raw Grok analysis:", rawAnalysis.substring(0, 800));
-        // Retry: fall back to standard Gemini direct analysis of the video
-        console.log("[sermon-sync] Falling back to standard Gemini direct analysis...");
+        console.log("[sermon-sync] Empty premium result — attempting fallback...");
+        // Fallback to standard analysis
+        const fallbackPrompt = usedTranscript
+          ? STANDARD_PROMPT_TRANSCRIPT(transcriptForAI, chaptersInfo)
+          : STANDARD_PROMPT_LEGACY(youtubeUrl, formatTimeRange(sermonStart, sermonEnd));
+
         const fallbackResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -359,16 +645,14 @@ serve(async (req) => {
             max_tokens: 8000,
             messages: [
               { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
-              { role: "user", content: STANDARD_PROMPT(youtubeUrl, timeRangeInstruction) },
+              { role: "user", content: fallbackPrompt },
             ],
           }),
         });
         if (fallbackResp.ok) {
           const fbData = await fallbackResp.json();
           const fbContent = fbData.choices?.[0]?.message?.content || "";
-          console.log("[sermon-sync] Fallback raw (first 200):", fbContent.substring(0, 200));
           const fbResult = extractJson(fbContent);
-          // Convert standard result shape to premium-compatible
           result = {
             ...fbResult,
             mainScripture: (fbResult as Record<string, unknown>).mainScripture || null,
@@ -383,9 +667,13 @@ serve(async (req) => {
         }
       }
     } else {
-      // Standard: Gemini analyzes the video directly
+      /* ─── Standard: Gemini analyzes transcript ─── */
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
       if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+      const prompt = usedTranscript
+        ? STANDARD_PROMPT_TRANSCRIPT(transcriptForAI, chaptersInfo)
+        : STANDARD_PROMPT_LEGACY(youtubeUrl, formatTimeRange(sermonStart, sermonEnd));
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -398,7 +686,7 @@ serve(async (req) => {
           max_tokens: 8000,
           messages: [
             { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
-            { role: "user", content: STANDARD_PROMPT(youtubeUrl, timeRangeInstruction) },
+            { role: "user", content: prompt },
           ],
         }),
       });
