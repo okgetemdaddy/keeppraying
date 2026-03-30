@@ -371,7 +371,7 @@ export default function SermonSync() {
           </div>
           <Input
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => { setUrl(e.target.value); setSermonStart(""); setSermonEnd(""); }}
             placeholder="https://www.youtube.com/watch?v=..."
             className="rounded-xl"
             onKeyDown={(e) => { if (e.key === "Enter") handleSync("standard"); }}
