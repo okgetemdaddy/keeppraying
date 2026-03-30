@@ -832,21 +832,7 @@ function PremiumResultView({
           </Button>
           <Button
             variant="outline"
-            onClick={async () => {
-              if (!result || !user) return;
-              setCreatingPlan(true);
-              try {
-                const dailyPrompts = result.mode === "premium"
-                  ? (result as PremiumResult).dailyPrayers
-                  : [];
-                await createPlan(result.sermonTitle, videoId, dailyPrompts);
-                toast({ title: "Week of Prayer created! 🙏", description: "Invite your church members to join." });
-              } catch {
-                toast({ title: "Could not create plan", variant: "destructive" });
-              } finally {
-                setCreatingPlan(false);
-              }
-            }}
+            onClick={onStartPlan}
             disabled={creatingPlan}
             className="rounded-xl gap-2"
           >
