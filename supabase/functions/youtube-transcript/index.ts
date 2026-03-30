@@ -120,8 +120,9 @@ async function fetchAudioViaZyla(
 ): Promise<{ url: string; approxDuration: number }> {
   console.log(`[yt] Fetching audio via Zyla Labs for ${videoId}`);
 
+  // Try the "Get Audio" endpoint first (returns download URL)
   const resp = await fetch(
-    `https://zylalabs.com/api/1106/youtube+download+and+info+api/1145/download?id=${videoId}`,
+    `https://zylalabs.com/api/381/youtube+to+audio+api/8884/get+audio?id=${videoId}`,
     {
       headers: {
         "Authorization": `Bearer ${zylaApiKey}`,
