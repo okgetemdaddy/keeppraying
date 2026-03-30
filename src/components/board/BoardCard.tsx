@@ -855,6 +855,51 @@ export function BoardCard({
         </motion.div>
       </motion.div>{/* end layout motion.div */}
 
+      {/* ── Duplicate-to-public dialog ────────────────────────────────── */}
+      <Dialog open={!!duplicateDialog} onOpenChange={(open) => { if (!open) setDuplicateDialog(null); }}>
+        <DialogContent className="rounded-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Similar prayer already exists
+            </DialogTitle>
+            <DialogDescription>
+              A very similar prayer is already available in the community. To keep the prayer library meaningful, we can't publish duplicates — but you can keep this prayer on your private board.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                if (duplicateDialog) {
+                  window.open(`/prayer/${duplicateDialog.matchId}`, '_blank');
+                }
+              }}
+            >
+              <ExternalLink className="w-4 h-4" />
+              View Existing Prayer
+            </Button>
+            <Button
+              variant="secondary"
+              className="w-full gap-2"
+              onClick={handleDispute}
+              disabled={disputeSending}
+            >
+              {disputeSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Dispute This
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setDuplicateDialog(null)}
+            >
+              Got It
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
