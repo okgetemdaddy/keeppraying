@@ -42,43 +42,29 @@ Return valid JSON (no markdown fences):
   ]
 }`;
 
-const PREMIUM_PROMPT = (youtubeUrl: string) => `You are a Christian sermon analyst. Analyze this sermon video in depth.
+const PREMIUM_PROMPT = (youtubeUrl: string) => `Grok, can you give me a sermon overview with timestamps from this video: ${youtubeUrl}
 
-YouTube Video URL: ${youtubeUrl}
-
-Watch/analyze the sermon and return a comprehensive breakdown.
-
-Return valid JSON (no markdown fences) with this exact structure:
+Return the overview as valid JSON in this structure:
 {
-  "sermonTitle": "string — the sermon title derived from content",
-  "mainScripture": "string — the primary Bible passage (e.g. Ephesians 6:10-18)",
-  "overallMessage": "string — 2-3 sentence summary of the sermon's core message",
+  "sermonTitle": "string",
+  "mainScripture": "string (primary Bible passage)",
+  "overallMessage": "string (2-3 sentence summary)",
   "subtopics": [
     {
-      "title": "string — concise subtopic heading (5-10 words)",
-      "explanation": "string — 2-4 sentence explanation of this point from the sermon",
-      "illustration": "string or null — if the pastor used a story, analogy, or real-life example for this point, describe it in 1-2 sentences. If NO illustration was used, set this to null. Do NOT invent illustrations.",
-      "application_points": ["string — 1-3 practical, personal application points that help the listener walk out this truth in daily life. Each should be a short actionable sentence."],
-      "supporting_verses": ["string — e.g. Ephesians 6:14", "Isaiah 59:17"],
+      "title": "string",
+      "explanation": "string",
+      "illustration": "string or null (only if the pastor actually used one)",
+      "application_points": ["practical takeaway"],
+      "supporting_verses": ["verse reference"],
       "timestamp_seconds": number_or_null
     }
   ],
   "dailyPrayers": [
-    {
-      "day": "Monday",
-      "prompt": "string — 2-3 sentence prayer direction based on the sermon. Guide what to pray about, don't write the prayer.",
-      "verse": "string — supporting verse reference"
-    }
+    { "day": "Monday", "prompt": "prayer direction", "verse": "verse reference" }
   ]
 }
 
-Requirements:
-- Generate 4-7 subtopics covering the sermon's key points
-- illustration MUST be null when the pastor did not use a story or example — never fabricate
-- application_points MUST contain 1-3 practical, personal application steps
-- Generate exactly 6 dailyPrayers for Monday through Saturday
-- All Scripture references must be real and relevant
-- Estimate timestamp_seconds for each subtopic based on where that topic appears in the sermon`;
+Include 4-7 subtopics and 6 daily prayers (Monday–Saturday). All subtopics, application points, and daily prayers must be derived directly from what the pastor actually preached in the sermon — do not invent or add content beyond what was taught. Only use real Scripture references.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
