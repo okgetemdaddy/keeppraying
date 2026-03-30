@@ -23,7 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind,
+  ArrowUpDown, Filter, Users, Home, Wind, Church,
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
@@ -38,6 +38,8 @@ import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
 import { AtmosphereCanvas } from "@/components/board/AtmosphereCanvas";
 import { BoardVerseBunchesSection } from "@/components/board/BoardVerseBunchesSection";
 import { BoardBibleAnnotations } from "@/components/board/BoardBibleAnnotations";
+import { useSermonPlans } from "@/hooks/useSermonPlans";
+import { PlanProgressCard } from "@/components/sermon/PlanProgressCard";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -115,6 +117,7 @@ export default function Board() {
   const navigate = useNavigate();
   const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
   const isMobile = useIsMobile();
+  const { plans: sermonPlans, memberships: sermonMemberships, updateMemberToggles, markDayComplete } = useSermonPlans();
 
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -432,6 +435,30 @@ export default function Board() {
 
       {/* Main content */}
       <div className={`relative container mx-auto px-4 ${isMobile ? "py-4" : "py-8"} pb-32 max-w-5xl`}>
+
+        {/* ── Active Sermon Prayer Plans ──────────────────────── */}
+        {sermonPlans.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <h3 className="text-sm font-display font-bold flex items-center gap-2" style={{ color: textColor }}>
+              <Church className="w-4 h-4" /> Week of Prayer
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {sermonPlans.map((plan) => {
+                const mem = sermonMemberships.find((m) => m.plan_id === plan.id);
+                if (!mem) return null;
+                return (
+                  <PlanProgressCard
+                    key={plan.id}
+                    plan={plan}
+                    membership={mem}
+                    onToggle={updateMemberToggles}
+                    onMarkDay={markDayComplete}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Sort / Filter / Layout controls ──────────────────────── */}
         {!loading && saved.length > 0 && (

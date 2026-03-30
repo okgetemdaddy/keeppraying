@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSermonPlans } from "@/hooks/useSermonPlans";
+import { WeekOfPrayerPanel } from "@/components/sermon/WeekOfPrayerPanel";
 import VerseLink from "@/components/VerseLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,7 @@ import {
 import {
   BookOpen, Loader2, Sparkles, Check, ChevronDown, ChevronUp,
   Church, Youtube, ArrowRight, Heart, Plus, ExternalLink,
-  Play, Crown, RefreshCw, Calendar, Clock,
+  Play, Crown, RefreshCw, Calendar, Clock, Users,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -81,9 +83,11 @@ export default function SermonSync() {
   const [generatedPrayers, setGeneratedPrayers] = useState<Record<string, string>>({});
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [videoId, setVideoId] = useState("");
+  const [creatingPlan, setCreatingPlan] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { plans, memberships, createPlan, updateMemberToggles, markDayComplete } = useSermonPlans();
 
   const isValidYouTube = (u: string) =>
     /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/.test(u);
@@ -310,7 +314,29 @@ export default function SermonSync() {
           </Link>
         </motion.div>
 
-        {/* YouTube input */}
+        {/* Active Week of Prayer Plans */}
+        {plans.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              My Prayer Plans
+            </h2>
+            {plans.map((plan) => {
+              const mem = memberships.find((m) => m.plan_id === plan.id);
+              if (!mem) return null;
+              return (
+                <WeekOfPrayerPanel
+                  key={plan.id}
+                  plan={plan}
+                  membership={mem}
+                  onToggle={updateMemberToggles}
+                  onMarkDay={markDayComplete}
+                />
+              );
+            })}
+          </div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -421,6 +447,22 @@ export default function SermonSync() {
               saving={saving}
               user={user}
               onReset={() => { setResult(null); setUrl(""); }}
+              creatingPlan={creatingPlan}
+              onStartPlan={async () => {
+                if (!result || !user) return;
+                setCreatingPlan(true);
+                try {
+                  const dailyPrompts = result.mode === "premium"
+                    ? (result as PremiumResult).dailyPrayers
+                    : [];
+                  await createPlan(result.sermonTitle, videoId, dailyPrompts);
+                  toast({ title: "Week of Prayer created! 🙏", description: "Invite your church members to join." });
+                } catch {
+                  toast({ title: "Could not create plan", variant: "destructive" });
+                } finally {
+                  setCreatingPlan(false);
+                }
+              }}
             />
           )}
         </AnimatePresence>
@@ -590,7 +632,7 @@ function StandardResultView({
 function PremiumResultView({
   result, url, videoId, openSubtopics, toggleSubtopic, jumpToTimestamp,
   generatedPrayers, setGeneratedPrayers, generatingDay, generateDayPrayer,
-  savePremiumPrayers, saving, user, onReset,
+  savePremiumPrayers, saving, user, onReset, onStartPlan, creatingPlan,
 }: {
   result: PremiumResult;
   url: string;
@@ -606,6 +648,8 @@ function PremiumResultView({
   saving: boolean;
   user: unknown;
   onReset: () => void;
+  onStartPlan: () => Promise<void>;
+  creatingPlan: boolean;
 }) {
   const { notifTimes, setNotifTime } = useSermonProgress();
   const TIMES = ["Morning", "Afternoon", "Night"];
@@ -801,6 +845,15 @@ function PremiumResultView({
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             Save {Object.keys(generatedPrayers).length} Prayer{Object.keys(generatedPrayers).length !== 1 ? "s" : ""} to My Board
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onStartPlan}
+            disabled={creatingPlan}
+            className="rounded-xl gap-2"
+          >
+            {creatingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
+            Start a Week of Prayer
           </Button>
           <Button variant="ghost" onClick={onReset} className="rounded-xl text-muted-foreground">
             Try another sermon

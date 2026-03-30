@@ -8,7 +8,7 @@ import SacredSpinner from "@/components/SacredSpinner";
 import { Button } from "@/components/ui/button";
 import VerseLink from "@/components/VerseLink";
 import {
-  Home, Users, Heart, BookOpen, Shield, Sparkles, Loader2, CheckCircle2, AlertCircle,
+  Home, Users, Heart, BookOpen, Shield, Sparkles, Loader2, CheckCircle2, AlertCircle, Church,
 } from "lucide-react";
 
 export default function InviteLanding() {
@@ -52,16 +52,28 @@ export default function InviteLanding() {
       setTokenData(data);
 
       // Fetch target info
-      const table = type === "family" ? "family_rooms" : "accountability_circles";
-      const { data: target } = await supabase
-        .from(table)
-        .select("name, description, purpose")
-        .eq("id", (data as any).target_id)
-        .single();
+      if (type === "sermon_plan") {
+        const { data: target } = await supabase
+          .from("sermon_prayer_plans")
+          .select("*")
+          .eq("id", (data as any).target_id)
+          .single() as any;
+        if (target) {
+          setTargetName(target.sermon_title || "Week of Prayer");
+          setTargetDesc(`A ${(target.daily_prompts || []).length}-day prayer plan inspired by "${target.sermon_title}"`);
+        }
+      } else {
+        const table = type === "family" ? "family_rooms" : "accountability_circles";
+        const { data: target } = await supabase
+          .from(table)
+          .select("name, description, purpose")
+          .eq("id", (data as any).target_id)
+          .single();
 
-      if (target) {
-        setTargetName((target as any).name || "");
-        setTargetDesc((target as any).purpose || (target as any).description || "");
+        if (target) {
+          setTargetName((target as any).name || "");
+          setTargetDesc((target as any).purpose || (target as any).description || "");
+        }
       }
 
       setLoading(false);
@@ -80,7 +92,6 @@ export default function InviteLanding() {
 
   const handleJoin = async () => {
     if (!user) {
-      // Save intent and redirect to auth
       sessionStorage.setItem("pending_invite_join", `${type}/${token}`);
       navigate(`/auth?redirect=/invite/${type}/${token}`);
       return;
@@ -90,43 +101,59 @@ export default function InviteLanding() {
     setJoining(true);
 
     try {
-      const memberTable = type === "family" ? "family_room_members" : "accountability_circle_members";
-      const idColumn = type === "family" ? "room_id" : "circle_id";
+      if (type === "sermon_plan") {
+        // Join sermon plan
+        const { error: memberError } = await supabase
+          .from("sermon_plan_members")
+          .insert({
+            plan_id: tokenData.target_id,
+            user_id: user.id,
+          } as any);
 
-      // Insert membership
-      const { error: memberError } = await supabase
-        .from(memberTable)
-        .insert({
-          [idColumn]: tokenData.target_id,
-          user_id: user.id,
-          role: "member",
-        } as any);
+        if (memberError) {
+          if (memberError.code === "23505") {
+            toast({ title: "You're already in this plan! 🙏" });
+            navigate("/sermon-sync");
+            return;
+          }
+          throw memberError;
+        }
 
-      if (memberError) {
-        if (memberError.code === "23505") {
-          // Already a member — just redirect
-          toast({ title: "You're already a member! 🙏" });
+        await supabase.from("invite_tokens").update({ used: true } as any).eq("id", tokenData.id);
+        setJoined(true);
+        toast({ title: `Joined Week of Prayer! 🙏`, description: `You've joined the prayer plan for "${targetName}".` });
+        setTimeout(() => navigate("/sermon-sync"), 1500);
+      } else {
+        const memberTable = type === "family" ? "family_room_members" : "accountability_circle_members";
+        const idColumn = type === "family" ? "room_id" : "circle_id";
+
+        const { error: memberError } = await supabase
+          .from(memberTable)
+          .insert({
+            [idColumn]: tokenData.target_id,
+            user_id: user.id,
+            role: "member",
+          } as any);
+
+        if (memberError) {
+          if (memberError.code === "23505") {
+            toast({ title: "You're already a member! 🙏" });
+            const redirectPath = type === "family" ? `/family/${tokenData.target_id}` : `/circles/${tokenData.target_id}`;
+            navigate(redirectPath);
+            return;
+          }
+          throw memberError;
+        }
+
+        await supabase.from("invite_tokens").update({ used: true } as any).eq("id", tokenData.id);
+        setJoined(true);
+        toast({ title: `Welcome to ${targetName}! 🙏`, description: type === "family" ? "You've joined the family room." : "You've joined the circle." });
+
+        setTimeout(() => {
           const redirectPath = type === "family" ? `/family/${tokenData.target_id}` : `/circles/${tokenData.target_id}`;
           navigate(redirectPath);
-          return;
-        }
-        throw memberError;
+        }, 1500);
       }
-
-      // Mark token as used
-      await supabase
-        .from("invite_tokens")
-        .update({ used: true } as any)
-        .eq("id", tokenData.id);
-
-      setJoined(true);
-      toast({ title: `Welcome to ${targetName}! 🙏`, description: type === "family" ? "You've joined the family room." : "You've joined the circle." });
-
-      // Redirect after a moment
-      setTimeout(() => {
-        const redirectPath = type === "family" ? `/family/${tokenData.target_id}` : `/circles/${tokenData.target_id}`;
-        navigate(redirectPath);
-      }, 1500);
     } catch {
       toast({ title: "Could not join", description: "Please try again or ask for a new invite.", variant: "destructive" });
     } finally {
@@ -165,8 +192,8 @@ export default function InviteLanding() {
     );
   }
 
-  const Icon = type === "family" ? Home : Users;
-  const typeLabel = type === "family" ? "Family Prayer Room" : "Prayer Circle";
+  const Icon = type === "family" ? Home : type === "sermon_plan" ? Church : Users;
+  const typeLabel = type === "family" ? "Family Prayer Room" : type === "sermon_plan" ? "Week of Prayer" : "Prayer Circle";
 
   return (
     <div className="min-h-screen bg-background">
