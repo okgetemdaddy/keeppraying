@@ -142,45 +142,19 @@ export default function SermonSync() {
     setSelected(new Set());
     setOpenSubtopics(new Set());
     setGeneratedPrayers({});
-    setAnnouncements([]);
-    setAnnouncementsDismissed(false);
-    setTranscriptSource(null);
     startProgressAnimation();
 
     try {
-      const session = (await supabase.auth.getSession()).data.session;
-      if (!session) throw new Error("No active session");
+      const vid = extractVideoId(url);
+      setVideoId(vid);
 
-      // Step 1: Fetch transcript
       setProgressStep(0);
-      const transcriptResp = await supabase.functions.invoke("youtube-transcript", {
-        body: { youtubeUrl: url },
-      });
-
-      if (transcriptResp.error) throw new Error(transcriptResp.error.message || "Transcript fetch failed");
-      const transcript = transcriptResp.data;
-      setVideoId(transcript.videoId);
-      setTranscriptSource(transcript.source || "captions");
-
-      // Save announcements if returned from AI transcription
-      if (transcript.announcements && Array.isArray(transcript.announcements) && transcript.announcements.length > 0) {
-        setAnnouncements(transcript.announcements);
-      }
-
-      // Step 2: Analyze
-      setProgressStep(3);
       const syncResp = await supabase.functions.invoke("sermon-sync", {
-        body: {
-          transcript: transcript.fullText,
-          rawSegments: transcript.raw,
-          videoTitle: transcript.videoTitle,
-          videoId: transcript.videoId,
-          mode,
-        },
+        body: { youtubeUrl: url, mode },
       });
 
       if (syncResp.error) throw new Error(syncResp.error.message || "Analysis failed");
-      setProgressStep(4);
+      setProgressStep(2);
       const data = syncResp.data as SermonResult;
       setResult(data);
 
