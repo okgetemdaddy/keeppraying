@@ -203,13 +203,17 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     }
     if (ttsLoading) return;
     setTtsLoading(true);
+
+    // Create Audio element immediately during user gesture to satisfy autoplay policy
+    const audio = new Audio();
+    audioRef.current = audio;
+    audio.onended = () => setTtsPlaying(false);
+    audio.onerror = () => setTtsPlaying(false);
+
     try {
       // Check for cached audio first
       if ((card as any).audio_url) {
-        const audio = new Audio((card as any).audio_url);
-        audioRef.current = audio;
-        audio.onended = () => setTtsPlaying(false);
-        audio.onerror = () => setTtsPlaying(false);
+        audio.src = (card as any).audio_url;
         await audio.play();
         setTtsPlaying(true);
         setTtsLoading(false);
@@ -240,15 +244,12 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
         .upload(storagePath, blob, { contentType: "audio/mpeg", upsert: true });
       if (!uploadErr) {
         const { data: { publicUrl } } = supabase.storage.from("prayer-audio").getPublicUrl(storagePath);
-        // Save URL to prayer card
         await supabase.from("prayer_cards").update({ audio_url: publicUrl } as any).eq("id", card.id);
       }
 
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
+      audio.src = url;
       audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
-      audio.onerror = () => { setTtsPlaying(false); };
       await audio.play();
       setTtsPlaying(true);
     } catch (err) {
