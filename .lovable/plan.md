@@ -1,43 +1,36 @@
 
 
-## TTS Loading Popup Above Speaker Button
+## Fix: Pause Button Should Pause, Not Stop
 
-### What We're Building
+### Problem
+The central button in the TTS contemplation overlay calls `onStop()`, which resets the audio to `currentTime = 0` and closes the overlay. The user expects tapping the pause button to **pause** playback (keeping position), with the ability to resume — and only closing the overlay via "tap anywhere" on the background.
 
-A small floating popup that appears directly above the speaker/listen button when TTS is loading, with a two-phase message sequence:
+### Solution
+Add pause/resume support to the overlay by introducing an `onPause` and `onResume` callback, and track a paused state internally.
 
-1. **Phase 1** (immediate): "Some prayers take time to load" — fades in, then fades out after ~2s
-2. **Phase 2** (2.5s delay): "Warming up the vocal cords…" — fades in where the first message was
-3. **Dismiss**: The entire popup instantly disappears the moment `ttsPlaying` becomes true (audio ready)
+### Changes
 
-### Approach
+**1. `src/components/TtsContemplationOverlay.tsx`**
+- Add `onPause` and `onResume` props alongside `onStop`
+- Track internal `paused` state
+- Central button toggles between pause/play (show Play icon when paused, Pause icon when playing)
+- Clicking the button calls `onPause`/`onResume` — does NOT close the overlay
+- Background "tap anywhere" still calls `onStop` (full stop + close)
+- When paused, freeze the caption auto-advance timer
+- Show a subtle "paused" visual state (e.g. pulse rings slow/stop, slight dim)
 
-Create a small reusable component `TtsLoadingPopup` and add it to both `Prayer.tsx` and `Prayers.tsx` next to the speaker button.
+**2. `src/pages/Prayer.tsx` (~lines 325-337)**
+- Add `onPause` and `onResume` handlers:
+  - `onPause`: `audioRef.current.pause()` (no currentTime reset)
+  - `onResume`: `audioRef.current.play()`
+- Keep `onStop` as-is for full stop via background tap
 
-### New File: `src/components/TtsLoadingPopup.tsx`
-
-- Props: `visible: boolean` (bound to `ttsLoading && !ttsPlaying`)
-- Internal state machine with `useEffect` timers:
-  - On `visible` becoming true → show message 1, start 2s fade-out timer
-  - After fade-out → 0.5s gap → fade in message 2 at 2.5s total
-  - On `visible` becoming false → instantly unmount (no exit animation)
-- Styled as a small pill/tooltip with a subtle downward-pointing caret, positioned `absolute bottom-full mb-2` relative to the button wrapper
-- Warm gold/cream tones matching the prayer card aesthetic
-- Uses `framer-motion` `AnimatePresence` for fade transitions between the two messages
-
-### Changes to `src/pages/Prayer.tsx` (lines ~511-530)
-
-- Wrap the Listen button in a `relative` container (like the Prayed button already is)
-- Add `<TtsLoadingPopup visible={ttsLoading && !ttsPlaying} />` above the button
-
-### Changes to `src/pages/Prayers.tsx` (lines ~459-479)
-
-- Same pattern: wrap Listen button in `relative` div, add `<TtsLoadingPopup />`
+**3. `src/pages/Prayers.tsx` (~lines 272-285)**
+- Same `onPause`/`onResume` pattern as Prayer.tsx
 
 ### Technical Details
-
-- Timer cleanup on unmount / `visible` change to prevent stale state
-- `whitespace-nowrap` to keep messages on one line
-- Popup has `pointer-events-none` so it doesn't interfere with button clicks
-- Subtle `backdrop-blur` and semi-transparent warm background
+- Import `Play` icon from lucide-react alongside `Pause`
+- Caption timer effect checks both `playing` and `!paused` before advancing
+- The "Tap anywhere to stop" hint remains — background tap is the exit action
+- Central button becomes a pause/resume toggle, not a stop button
 
