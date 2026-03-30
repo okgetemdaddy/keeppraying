@@ -11,8 +11,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log("[prayer-tts] Request received, method:", req.method);
     const XAI_SPEAKER_KEY = Deno.env.get("XAi_Speaker");
     if (!XAI_SPEAKER_KEY) {
+      console.error("[prayer-tts] XAi_Speaker secret not found");
       return new Response(JSON.stringify({ error: "xAI Speaker API key not configured." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
