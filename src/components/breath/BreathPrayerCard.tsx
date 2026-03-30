@@ -193,6 +193,7 @@ export default function BreathPrayerCard({
             <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
             {likesLocal > 0 && <span>{likesLocal}</span>}
           </button>
+          <PrayedButton prayerId={id} userId={userId ?? undefined} initialCount={prayed_count} size="sm" accentColor="hsl(42 75% 46%)" />
           <button
             onClick={toggleSave}
             className="flex items-center gap-1 text-xs transition-colors"
