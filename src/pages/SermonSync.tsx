@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useSermonProgress } from "@/hooks/useSermonProgress";
 import { SiteNav } from "@/components/SiteNav";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
@@ -67,17 +68,6 @@ interface PremiumResult {
 type SermonResult = StandardResult | PremiumResult;
 
 /* ─── Helpers ─── */
-const NOTIF_KEY = "sermon-prayer-notif-times";
-
-function getNotifTimes(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(NOTIF_KEY) || "{}"); }
-  catch { return {}; }
-}
-function setNotifTime(day: string, time: string) {
-  const t = getNotifTimes();
-  t[day] = time;
-  localStorage.setItem(NOTIF_KEY, JSON.stringify(t));
-}
 
 export default function SermonSync() {
   const [url, setUrl] = useState("");
@@ -617,7 +607,7 @@ function PremiumResultView({
   user: unknown;
   onReset: () => void;
 }) {
-  const notifTimes = getNotifTimes();
+  const { notifTimes, setNotifTime } = useSermonProgress();
   const TIMES = ["Morning", "Afternoon", "Night"];
 
   return (
