@@ -51,15 +51,6 @@ export function SermonApplicationPoints({
     } catch { return new Set(); }
   });
 
-  let meta: SermonAppMeta;
-  try {
-    meta = JSON.parse(meditationEssay);
-  } catch {
-    return null;
-  }
-
-  if (!meta.application_points?.length) return null;
-
   const markCompleted = useCallback((idx: number) => {
     setCompletedPoints((prev) => {
       const next = new Set(prev);
@@ -70,6 +61,15 @@ export function SermonApplicationPoints({
     setActivePoint(null);
     setActiveAction(null);
   }, []);
+
+  let meta: SermonAppMeta;
+  try {
+    meta = JSON.parse(meditationEssay);
+  } catch {
+    return null;
+  }
+
+  if (!meta.application_points?.length) return null;
 
   const handleGenerate = async (point: AppPoint) => {
     setGenerating(true);
