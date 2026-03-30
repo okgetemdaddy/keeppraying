@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Church, MapPin, Phone, Mail, Clock, ChevronDown, ChevronUp, Play,
   Globe, RefreshCw, Heart, Users, ExternalLink, Facebook, Instagram, Youtube,
-  Twitter, Music, Video, Sparkles, Star, Navigation, ImageIcon,
+  Twitter, Music, Video, Sparkles, Star, Navigation, ImageIcon, Minus, Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
