@@ -3,13 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, User, ChevronRight, ArrowLeft, Heart, HandMetal,
-  BookOpen, MessageSquare, Clock, Calendar, Mail, Sparkles, Loader2,
+  Search, User, ChevronRight, Heart,
+  BookOpen, MessageSquare, Loader2, Sparkles,
 } from "lucide-react";
 import AIInsightButton from "./AIInsightButton";
+import UserDetailPanel from "./UserDetailPanel";
 
 interface UserMetrics {
   id: string;
