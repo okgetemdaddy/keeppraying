@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getCachedAudio, setCachedAudio } from "@/lib/audioCache";
 
 export interface TimedPhrase {
   text: string;
@@ -12,6 +13,32 @@ interface UseTtsPlayerOptions {
   cacheId?: string;
   /** Pre-existing audio URL (e.g. prayer_cards.audio_url) */
   audioUrl?: string | null;
+}
+
+/** Fetch a URL as a Blob, returning null on failure. */
+async function fetchBlob(url: string): Promise<Blob | null> {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.blob();
+  } catch {
+    return null;
+  }
+}
+
+/** Try to load phrases JSON from Supabase Storage. */
+async function fetchRemotePhrases(id: string): Promise<TimedPhrase[] | null> {
+  try {
+    const phrasesUrl = supabase.storage
+      .from("prayer-audio")
+      .getPublicUrl(`${id}_phrases.json`).data.publicUrl;
+    const resp = await fetch(phrasesUrl);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return Array.isArray(data) ? data : null;
+  } catch {
+    return null;
+  }
 }
 
 export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
@@ -44,6 +71,7 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
   }, []);
 
   const toggleTts = useCallback(async (text: string, cacheId?: string) => {
+    // Toggle off if already playing
     if (ttsPlaying && audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -62,57 +90,67 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
     const id = cacheId || options.cacheId;
 
     try {
-      // Check for cached audio via audioUrl prop
-      if (options.audioUrl) {
-        audio.src = options.audioUrl;
-        // Try loading cached phrases JSON
-        if (id) {
-          try {
-            const phrasesUrl = supabase.storage
-              .from("prayer-audio")
-              .getPublicUrl(`${id}_phrases.json`).data.publicUrl;
-            const phrasesResp = await fetch(phrasesUrl);
-            if (phrasesResp.ok) {
-              const phrases = await phrasesResp.json();
-              if (Array.isArray(phrases)) setTimedPhrases(phrases);
-            }
-          } catch { /* no cached phrases */ }
+      /* ─── 1) IndexedDB — instant local cache ─── */
+      if (id) {
+        const local = await getCachedAudio(id);
+        if (local) {
+          const url = URL.createObjectURL(local.blob);
+          audio.src = url;
+          audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
+          if (local.phrases) setTimedPhrases(local.phrases);
+          await audio.play();
+          setTtsPlaying(true);
+          setTtsLoading(false);
+          return;
         }
-        await audio.play();
-        setTtsPlaying(true);
-        setTtsLoading(false);
-        return;
       }
 
-      // Check if cached in storage by id
+      /* ─── 2) Pre-existing audioUrl prop ─── */
+      if (options.audioUrl) {
+        const blob = await fetchBlob(options.audioUrl);
+        const phrases = id ? await fetchRemotePhrases(id) : null;
+        if (phrases) setTimedPhrases(phrases);
+
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          audio.src = url;
+          audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
+          await audio.play();
+          setTtsPlaying(true);
+          setTtsLoading(false);
+          // Background-save to IndexedDB
+          if (id) void setCachedAudio(id, blob, phrases);
+          return;
+        }
+        // If blob fetch failed, fall through to next layer
+      }
+
+      /* ─── 3) Supabase Storage (remote DB cache) ─── */
       if (id) {
-        try {
-          const cachedUrl = supabase.storage
-            .from("prayer-audio")
-            .getPublicUrl(`${id}.mp3`).data.publicUrl;
-          const headResp = await fetch(cachedUrl, { method: "HEAD" });
-          if (headResp.ok && headResp.headers.get("content-length") !== "0") {
-            audio.src = cachedUrl;
-            // Try loading cached phrases
-            try {
-              const phrasesUrl = supabase.storage
-                .from("prayer-audio")
-                .getPublicUrl(`${id}_phrases.json`).data.publicUrl;
-              const phrasesResp = await fetch(phrasesUrl);
-              if (phrasesResp.ok) {
-                const phrases = await phrasesResp.json();
-                if (Array.isArray(phrases)) setTimedPhrases(phrases);
-              }
-            } catch { /* no cached phrases */ }
+        const cachedUrl = supabase.storage
+          .from("prayer-audio")
+          .getPublicUrl(`${id}.mp3`).data.publicUrl;
+        const headResp = await fetch(cachedUrl, { method: "HEAD" });
+        if (headResp.ok && headResp.headers.get("content-length") !== "0") {
+          const blob = await fetchBlob(cachedUrl);
+          const phrases = await fetchRemotePhrases(id);
+          if (phrases) setTimedPhrases(phrases);
+
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            audio.src = url;
+            audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
             await audio.play();
             setTtsPlaying(true);
             setTtsLoading(false);
+            // Background-save to IndexedDB
+            void setCachedAudio(id, blob, phrases);
             return;
           }
-        } catch { /* not cached, generate fresh */ }
+        }
       }
 
-      // Generate fresh audio via edge function
+      /* ─── 4) Edge function — last resort, generate fresh ─── */
       const resp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prayer-tts`,
         {
@@ -133,31 +171,34 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
       for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
       const blob = new Blob([bytes], { type: "audio/mpeg" });
 
-      // Set timed phrases if available
-      if (data.timedPhrases && Array.isArray(data.timedPhrases)) {
-        setTimedPhrases(data.timedPhrases);
-      }
+      // Phrases
+      const phrases: TimedPhrase[] | null =
+        data.timedPhrases && Array.isArray(data.timedPhrases) ? data.timedPhrases : null;
+      if (phrases) setTimedPhrases(phrases);
 
-      // Cache audio + phrases to storage
+      // Upload to Supabase Storage (source of truth)
       if (id) {
         const storagePath = `${id}.mp3`;
         await supabase.storage
           .from("prayer-audio")
           .upload(storagePath, blob, { contentType: "audio/mpeg", upsert: true });
-        // Cache phrases JSON
-        if (data.timedPhrases) {
-          const phrasesBlob = new Blob([JSON.stringify(data.timedPhrases)], { type: "application/json" });
+        if (phrases) {
+          const phrasesBlob = new Blob([JSON.stringify(phrases)], { type: "application/json" });
           await supabase.storage
             .from("prayer-audio")
             .upload(`${id}_phrases.json`, phrasesBlob, { contentType: "application/json", upsert: true });
         }
       }
 
+      // Play
       const url = URL.createObjectURL(blob);
       audio.src = url;
       audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
       await audio.play();
       setTtsPlaying(true);
+
+      // Background-save to IndexedDB
+      if (id) void setCachedAudio(id, blob, phrases);
     } catch {
       toast({ title: "Could not read aloud", variant: "destructive" });
     } finally {

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2, Play, Pause, Search, RefreshCw, Download, Volume2, FileAudio, FileText } from "lucide-react";
+import { removeCachedAudio, clearAudioCache } from "@/lib/audioCache";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -121,6 +122,9 @@ export default function AudioCacheTab() {
         setPlayingId(null);
       }
 
+      // Also remove from users' local IndexedDB cache
+      void removeCachedAudio(entry.cacheId);
+
       setEntries(prev => prev.filter(e => e.cacheId !== entry.cacheId));
       toast({ title: "Cache entry deleted" });
     } catch (e) {
@@ -146,6 +150,9 @@ export default function AudioCacheTab() {
         const { error } = await supabase.storage.from("prayer-audio").remove(batch);
         if (error) throw error;
       }
+
+      // Also wipe local IndexedDB cache
+      void clearAudioCache();
 
       audioRef.current?.pause();
       setPlayingId(null);
