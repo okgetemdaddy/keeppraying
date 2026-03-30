@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SiteNav } from "@/components/SiteNav";
@@ -43,6 +43,7 @@ export default function Support() {
   const [searchParams] = useSearchParams();
   const donated = searchParams.get("donated") === "true";
 
+  const location = useLocation();
   const [donationTab, setDonationTab] = useState<"one_time" | "recurring">("one_time");
   const [donating, setDonating] = useState<string | null>(null);
   const [logs, setLogs] = useState<UpdateLog[]>([]);
@@ -66,7 +67,22 @@ export default function Support() {
     }
   }, [donated, session]);
 
-  // Load update logs + realtime subscription
+  // Scroll to hash section with fast smooth animation
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.slice(1);
+      // Small delay to let the page render
+      const timer = setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [location.hash]);
+
+
   useEffect(() => {
     const fetchLogs = () => {
       supabase
