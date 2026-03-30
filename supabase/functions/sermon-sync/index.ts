@@ -197,8 +197,8 @@ serve(async (req) => {
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "";
-      const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      result = JSON.parse(cleaned);
+      console.log("[sermon-sync] Grok raw (first 200):", content.substring(0, 200));
+      result = extractJson(content);
     } else {
       // Standard: Lovable AI (Gemini)
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
