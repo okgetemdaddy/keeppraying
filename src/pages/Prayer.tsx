@@ -277,18 +277,12 @@ export default function Prayer() {
     <div className="min-h-screen bg-background">
       <TtsContemplationOverlay
         playing={ttsPlaying}
-        onStop={() => {
-          if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-          setTtsPlaying(false);
-        }}
-        onPause={() => { if (audioRef.current) audioRef.current.pause(); }}
-        onResume={() => { if (audioRef.current) audioRef.current.play(); }}
-        text={card?.prayer_text}
+        onStop={stopTts}
+        onPause={pauseTts}
+        onResume={resumeTts}
+        text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
         playbackRate={playbackRate}
-        onPlaybackRateChange={(r) => {
-          setPlaybackRate(r);
-          if (audioRef.current) audioRef.current.playbackRate = r;
-        }}
+        onPlaybackRateChange={changePlaybackRate}
         timedPhrases={timedPhrases}
         audioRef={audioRef}
       />
