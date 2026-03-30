@@ -75,6 +75,8 @@ type SermonResult = StandardResult | PremiumResult;
 
 export default function SermonSync() {
   const [url, setUrl] = useState("");
+  const [sermonStart, setSermonStart] = useState("");
+  const [sermonEnd, setSermonEnd] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingMode, setLoadingMode] = useState<"standard" | "premium" | null>(null);
   const [result, setResult] = useState<SermonResult | null>(null);
