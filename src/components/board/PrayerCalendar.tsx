@@ -55,6 +55,7 @@ interface PrayerCalendarProps {
 }
 
 export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColor = "hsl(42 85% 58%)", boardPrefs, onUpdateCalendarColor }: PrayerCalendarProps) {
+  const navigate = useNavigate();
   const calBg = boardPrefs?.calendar_bg || "#F5F0E8";
   const textColor = boardPrefs?.calendar_text || "#2C2418";
   const accentColor = boardPrefs?.calendar_accent || "#B85C38";
