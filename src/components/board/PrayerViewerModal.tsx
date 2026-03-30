@@ -438,6 +438,14 @@ export function PrayerViewerModal({
                                 );
                               })}
                             </div>
+                            <DropdownMenuSeparator />
+                            {/* Open Prayer Page */}
+                            <button
+                              onClick={() => window.open(`/prayer/${card.id}`, '_blank')}
+                              className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-md transition-colors hover:bg-accent"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" /> Open Prayer Page
+                            </button>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
