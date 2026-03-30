@@ -37,7 +37,32 @@
   <meta name="twitter:description" content="Your personal Christian prayer companion. Discover daily prayers, build your war room, get biblical guidance, and connect with a faith community.">
 </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        .sacred-preload{display:flex;min-height:100vh;align-items:center;justify-content:center;background:#0f0d0a}
+        .sacred-preload-inner{text-align:center}
+        .sacred-rings{position:relative;width:48px;height:48px;margin:0 auto 16px}
+        .sacred-rings .outer{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(196,164,112,.3);animation:spin-cw 3s linear infinite}
+        .sacred-rings .inner{position:absolute;inset:4px;border-radius:50%;border:2px solid transparent;border-top-color:rgba(196,164,112,.85);border-bottom-color:rgba(196,164,112,.2);animation:spin-ccw 2s linear infinite}
+        .sacred-rings .dot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+        .sacred-rings .dot::after{content:'';width:8px;height:8px;border-radius:50%;background:rgba(196,164,112,.6);animation:pulse-dot 2s ease-in-out infinite}
+        .sacred-preload p{font-family:'Playfair Display',Georgia,serif;font-style:italic;font-size:14px;color:rgba(196,164,112,.7);margin:0}
+        @keyframes spin-cw{to{transform:rotate(360deg)}}
+        @keyframes spin-ccw{to{transform:rotate(-360deg)}}
+        @keyframes pulse-dot{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+        @media(prefers-color-scheme:light){.sacred-preload{background:#faf8f5}.sacred-preload p{color:rgba(90,70,40,.6)}.sacred-rings .outer{border-color:rgba(90,70,40,.2)}.sacred-rings .inner{border-top-color:rgba(90,70,40,.7);border-bottom-color:rgba(90,70,40,.15)}.sacred-rings .dot::after{background:rgba(90,70,40,.5)}}
+      </style>
+      <div class="sacred-preload">
+        <div class="sacred-preload-inner">
+          <div class="sacred-rings">
+            <div class="outer"></div>
+            <div class="inner"></div>
+            <div class="dot"></div>
+          </div>
+          <p>Be still and know…</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
