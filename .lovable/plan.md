@@ -1,17 +1,26 @@
 
 
-## Plan: Align side buttons with "Add a Breath"
+## Plan: Set NIV as the default Bible version
 
-### What's happening now
-The side buttons container (`God's Word`, `Add a Prayer`, `Report Issue`) is positioned with `bottom: calc(var(--fab-bottom, 5rem) + 16.5rem)`, which places them too high.
+### Context
+The NIV license (`version_id=111`) is now active on your YouVersion App Key. The test fetch of John 1 returned HTTP 200 successfully. Currently, BibleReader defaults to BSB.
 
-### Change
-In `src/components/PrayerFAB.tsx` line 199, reduce the bottom offset from `16.5rem` to approximately `10.5rem` so the bottom edge of the side button group aligns with the bottom of the "Add a Breath" FAB item (4th item from the FAB button).
+### Change (1 file)
 
-**Single line change:**
+**`src/components/bible/BibleReader.tsx`** — Line 474
+
+Change the auto-select logic to prefer NIV first, falling back to BSB:
+
+```typescript
+// Before:
+const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
+setVersionId(bsb ? bsb.id : versions[0].id);
+
+// After:
+const niv = versions.find((v) => v.abbreviation === "NIV" || v.localized_abbreviation === "NIV");
+const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
+setVersionId(niv ? niv.id : bsb ? bsb.id : versions[0].id);
 ```
-bottom: "calc(var(--fab-bottom, 5rem) + 16.5rem)"
-→
-bottom: "calc(var(--fab-bottom, 5rem) + 10.5rem)"
-```
+
+This prioritizes NIV → BSB → first available version. One line change, no new files or migrations needed.
 
