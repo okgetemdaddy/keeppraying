@@ -150,6 +150,13 @@ export default function Prayer() {
         document.title = `${data.title || data.prayer_text.slice(0, 50)}… | KeepPray.ing`;
         setLikesCount(data.likes_count);
         setPrayedCount(data.prayed_count);
+        // Initialize creator card styling
+        const rawOpacity = (data as any).card_opacity;
+        if (rawOpacity != null) setCardOpacity(Math.round(rawOpacity * 100));
+        const rawColor = (data as any).card_color;
+        if (rawColor && typeof rawColor === 'object' && 'bg' in rawColor) {
+          setCardBgPreset(rawColor as { bg: string; text: string });
+        }
         // Pre-load the font if set
         const font = PRAYER_FONTS.find(f => f.family === data.text_style);
         if (font) loadFont(font.url);
