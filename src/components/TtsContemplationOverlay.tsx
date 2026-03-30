@@ -1,7 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+
+export interface TimedPhrase {
+  text: string;
+  start: number;
+}
 
 interface TtsContemplationOverlayProps {
   playing: boolean;
@@ -11,6 +16,8 @@ interface TtsContemplationOverlayProps {
   text?: string;
   playbackRate?: number;
   onPlaybackRateChange?: (rate: number) => void;
+  timedPhrases?: TimedPhrase[] | null;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
 }
 
 const RATE_LABELS: Record<number, string> = {
@@ -47,11 +54,18 @@ function getLineOpacity(distance: number): number {
 
 export function TtsContemplationOverlay({
   playing, onStop, onPause, onResume, text, playbackRate = 1, onPlaybackRateChange,
+  timedPhrases, audioRef,
 }: TtsContemplationOverlayProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  const lines = useMemo(() => (text ? splitIntoLines(text) : []), [text]);
+  const hasTimedPhrases = timedPhrases && timedPhrases.length > 0;
+
+  // Use timed phrases as lines when available, otherwise fall back to text splitting
+  const lines = useMemo(() => {
+    if (hasTimedPhrases) return timedPhrases!.map(p => p.text);
+    return text ? splitIntoLines(text) : [];
+  }, [text, timedPhrases, hasTimedPhrases]);
 
   // Reset on play
   useEffect(() => {
@@ -61,9 +75,33 @@ export function TtsContemplationOverlay({
     }
   }, [playing]);
 
-  // Auto-advance timer — only when playing AND not paused
+  // ── Timeupdate-driven sync (when timedPhrases available) ────────────────────
   useEffect(() => {
-    if (!playing || paused || lines.length === 0) return;
+    if (!playing || !hasTimedPhrases || !audioRef?.current) return;
+
+    const audio = audioRef.current;
+    const phrases = timedPhrases!;
+
+    const handleTimeUpdate = () => {
+      const t = audio.currentTime;
+      // Find the last phrase whose start <= currentTime
+      let idx = 0;
+      for (let i = phrases.length - 1; i >= 0; i--) {
+        if (phrases[i].start <= t) {
+          idx = i;
+          break;
+        }
+      }
+      setCurrentLineIndex(idx);
+    };
+
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+  }, [playing, hasTimedPhrases, timedPhrases, audioRef]);
+
+  // ── Fallback: word-count interval timer (no timedPhrases) ───────────────────
+  useEffect(() => {
+    if (!playing || paused || lines.length === 0 || hasTimedPhrases) return;
 
     const totalWords = lines.reduce((sum, l) => sum + l.split(/\s+/).length, 0);
     const totalMs = (totalWords * MS_PER_WORD_AT_1X) / playbackRate;
@@ -77,9 +115,9 @@ export function TtsContemplationOverlay({
     }, msPerLine);
 
     return () => clearInterval(interval);
-  }, [playing, paused, lines, playbackRate]);
+  }, [playing, paused, lines, playbackRate, hasTimedPhrases]);
 
-  const handleTogglePause = (e: React.MouseEvent) => {
+  const handleTogglePause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (paused) {
       setPaused(false);
@@ -88,7 +126,7 @@ export function TtsContemplationOverlay({
       setPaused(true);
       onPause?.();
     }
-  };
+  }, [paused, onPause, onResume]);
 
   const IconComponent = paused ? Play : Pause;
 
