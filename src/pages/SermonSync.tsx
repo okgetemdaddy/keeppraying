@@ -107,9 +107,7 @@ export default function SermonSync() {
   }, [videoId, url]);
 
   const PROGRESS_STEPS = [
-    "Checking for captions…",
-    "Downloading sermon audio…",
-    "Transcribing with AI…",
+    "Sending to AI…",
     "Analyzing sermon content…",
     "Preparing results…",
   ];
