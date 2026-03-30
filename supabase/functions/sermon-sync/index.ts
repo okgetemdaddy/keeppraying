@@ -73,155 +73,242 @@ function isEmptyPremiumResult(result: Record<string, unknown>): boolean {
     && Array.isArray(result.dailyPrayers) && result.dailyPrayers.length === 0;
 }
 
-/* ─── Transcript helpers ─── */
+/* ─── Transcript helpers (captions-first, no Cobalt/AssemblyAI) ─── */
 
-/** Extract a direct audio URL from YouTube via cobalt.tools API */
-async function getAudioUrl(youtubeUrl: string): Promise<string> {
-  console.log("[sermon-sync] Phase 1: Extracting audio URL via cobalt...");
+/** Parse timed-text json3 response into { text, timed } */
+function parseJson3Captions(data: Record<string, unknown>): { text: string; timed: Array<{ offset: number; duration: number; text: string }> } | null {
+  const events = (data as any).events;
+  if (!Array.isArray(events)) return null;
+  const segments = events.filter((e: any) => e.segs);
+  if (segments.length === 0) return null;
+  const timed = segments.map((seg: any) => ({
+    offset: seg.tStartMs || 0,
+    duration: seg.dDurationMs || 0,
+    text: (seg.segs?.map((s: any) => s.utf8).join("") || "").replace(/\n/g, " "),
+  }));
+  const text = timed.map((s) => s.text).join(" ").replace(/\s+/g, " ").trim();
+  return text.length > 50 ? { text, timed } : null;
+}
 
-  // Ranked by score from instances.cobalt.best — top instances first
-  const cobaltInstances = [
-    "https://cobalt-api.meowing.de",      // 96%
-    "https://cobalt-backend.canine.tools", // 80%
-    "https://kityune.imput.net",           // 76% (official)
-    "https://nachos.imput.net",            // 76% (official)
-    "https://sunny.imput.net",             // 76% (official)
-    "https://blossom.imput.net",           // 76% (official)
-    "https://capi.3kh0.net",              // 72%
-  ];
+/** Extract YouTube transcript using captions-first approach (no third-party services) */
+async function getYouTubeTranscript(videoId: string): Promise<{
+  text: string;
+  timed: Array<{ offset: number; duration: number; text: string }>;
+}> {
+  const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
-  let lastError = "";
-  for (const baseUrl of cobaltInstances) {
+  // === Tier 1: Direct timedtext API ===
+  console.log("[sermon-sync] Tier 1: Trying direct timedtext API...");
+  for (const lang of ["en", "en-US", "en-GB"]) {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10_000);
-
-      const resp = await fetch(`${baseUrl}/`, {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: youtubeUrl,
-          downloadMode: "audio",
-          audioFormat: "mp3",
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeout);
-
-      if (!resp.ok) {
-        const body = await resp.text().catch(() => "");
-        lastError = `cobalt ${baseUrl} returned ${resp.status}: ${body.substring(0, 120)}`;
-        console.warn(`[sermon-sync] ${lastError}`);
-        continue;
+      const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=${lang}&fmt=json3`;
+      const res = await fetch(url, { headers: { "User-Agent": UA } });
+      if (res.ok) {
+        const data = await res.json();
+        const parsed = parseJson3Captions(data);
+        if (parsed) {
+          console.log(`[sermon-sync] Tier 1 success (lang=${lang}). Text length: ${parsed.text.length}`);
+          return parsed;
+        }
       }
-
-      const data = await resp.json();
-      if (data.url) {
-        console.log(`[sermon-sync] Got audio URL from cobalt (${baseUrl})`);
-        return data.url;
-      }
-      if (data.status === "tunnel" || data.status === "redirect") {
-        console.log(`[sermon-sync] Got tunnel/redirect URL from cobalt (${baseUrl})`);
-        return data.url;
-      }
-      lastError = `cobalt ${baseUrl} unexpected response: ${JSON.stringify(data).substring(0, 200)}`;
-      console.warn(`[sermon-sync] ${lastError}`);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("aborted")) {
-        lastError = `cobalt ${baseUrl} timed out (10s)`;
-      } else {
-        lastError = `cobalt ${baseUrl} error: ${msg}`;
-      }
-      console.warn(`[sermon-sync] ${lastError}`);
+      console.warn(`[sermon-sync] Tier 1 (${lang}) error:`, e instanceof Error ? e.message : String(e));
     }
   }
 
-  throw new Error(`Could not extract audio from YouTube. ${lastError}`);
-}
+  // Also try auto-generated captions (ASR)
+  try {
+    const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&kind=asr&fmt=json3`;
+    const res = await fetch(url, { headers: { "User-Agent": UA } });
+    if (res.ok) {
+      const data = await res.json();
+      const parsed = parseJson3Captions(data);
+      if (parsed) {
+        console.log(`[sermon-sync] Tier 1 success (asr). Text length: ${parsed.text.length}`);
+        return parsed;
+      }
+    }
+  } catch (_) {}
 
-/** Submit audio to AssemblyAI and poll until complete */
-async function transcribeWithAssemblyAI(audioUrl: string): Promise<{
-  full_text: string;
-  chapters: Array<{ start: number; end: number; gist: string; headline: string; summary: string }>;
-  utterances: Array<{ speaker: string; text: string; start: number; end: number }>;
-  words: Array<{ text: string; start: number; end: number; speaker: string | null }>;
-}> {
-  const ASSEMBLY_KEY = Deno.env.get("Assembly_Ai");
-  if (!ASSEMBLY_KEY) throw new Error("AssemblyAI API key not configured");
+  // === Tier 2: Scrape watch page HTML for captionTracks ===
+  console.log("[sermon-sync] Tier 2: Scraping watch page for caption tracks...");
+  try {
+    const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        "User-Agent": UA,
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": "CONSENT=PENDING+999",
+      },
+    });
+    if (watchRes.ok) {
+      const html = await watchRes.text();
+      console.log(`[sermon-sync] Watch page HTML length: ${html.length}`);
 
-  console.log("[sermon-sync] Phase 2: Submitting to AssemblyAI...");
+      // Extract ytInitialPlayerResponse from HTML
+      const playerMatch = html.match(/var\s+ytInitialPlayerResponse\s*=\s*/);
+      if (playerMatch && playerMatch.index !== undefined) {
+        const start = playerMatch.index + playerMatch[0].length;
+        // Find matching closing brace
+        let depth = 0;
+        let end = start;
+        for (let i = start; i < html.length && i < start + 200000; i++) {
+          if (html[i] === "{") depth++;
+          else if (html[i] === "}") {
+            depth--;
+            if (depth === 0) { end = i + 1; break; }
+          }
+        }
+        if (end > start) {
+          const playerData = JSON.parse(html.substring(start, end));
+          const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
 
-  // Submit transcription job
-  const submitResp = await fetch("https://api.assemblyai.com/v2/transcript", {
-    method: "POST",
-    headers: {
-      "Authorization": ASSEMBLY_KEY,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      audio_url: audioUrl,
-      auto_chapters: true,
-      speaker_labels: true,
-      language_detection: true,
-    }),
-  });
+          if (Array.isArray(captionTracks) && captionTracks.length > 0) {
+            console.log(`[sermon-sync] Tier 2: Found ${captionTracks.length} caption track(s) from watch page`);
 
-  if (!submitResp.ok) {
-    const errText = await submitResp.text();
-    console.error("[sermon-sync] AssemblyAI submit error:", submitResp.status, errText);
-    throw new Error("Transcription service error. Please try again.");
+            const track =
+              captionTracks.find((t: any) => t.languageCode === "en") ||
+              captionTracks.find((t: any) => t.languageCode?.startsWith("en")) ||
+              captionTracks[0];
+
+            if (track?.baseUrl) {
+              const separator = track.baseUrl.includes("?") ? "&" : "?";
+              const trackUrl = `${track.baseUrl}${separator}fmt=json3`;
+              console.log(`[sermon-sync] Fetching caption track: lang=${track.languageCode}, kind=${track.kind || "manual"}`);
+
+              const trackRes = await fetch(trackUrl, { headers: { "User-Agent": UA } });
+              if (trackRes.ok) {
+                const trackData = await trackRes.json();
+                const parsed = parseJson3Captions(trackData);
+                if (parsed) {
+                  console.log(`[sermon-sync] Tier 2 success. Text length: ${parsed.text.length}`);
+                  return parsed;
+                }
+              }
+            }
+          } else {
+            console.log("[sermon-sync] Tier 2: No caption tracks in player response (status:", playerData?.playabilityStatus?.status, ")");
+          }
+        }
+      }
+
+      // Also try extracting from ytInitialData or embedded timedtext URLs
+      const timedtextMatch = html.match(/https:\/\/www\.youtube\.com\/api\/timedtext[^"\\]+/g);
+      if (timedtextMatch) {
+        console.log(`[sermon-sync] Tier 2: Found ${timedtextMatch.length} timedtext URL(s) in HTML`);
+        for (const rawUrl of timedtextMatch.slice(0, 3)) {
+          try {
+            const ttUrl = rawUrl.replace(/\\u0026/g, "&") + "&fmt=json3";
+            const ttRes = await fetch(ttUrl, { headers: { "User-Agent": UA } });
+            if (ttRes.ok) {
+              const ttData = await ttRes.json();
+              const parsed = parseJson3Captions(ttData);
+              if (parsed) {
+                console.log(`[sermon-sync] Tier 2 success (timedtext URL). Text length: ${parsed.text.length}`);
+                return parsed;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[sermon-sync] Tier 2 error:", e instanceof Error ? e.message : String(e));
   }
 
-  const submitData = await submitResp.json();
-  const transcriptId = submitData.id;
-  console.log("[sermon-sync] AssemblyAI job submitted:", transcriptId);
-
-  // Poll for completion (max ~8 minutes with 10s intervals)
-  const maxPolls = 48;
-  const pollInterval = 10_000;
-
-  for (let i = 0; i < maxPolls; i++) {
-    await new Promise((r) => setTimeout(r, pollInterval));
-
-    const pollResp = await fetch(`https://api.assemblyai.com/v2/transcript/${transcriptId}`, {
-      headers: { "Authorization": ASSEMBLY_KEY },
+  // === Tier 2b: Innertube player API ===
+  console.log("[sermon-sync] Tier 2b: Trying Innertube player API...");
+  try {
+    const playerRes = await fetch("https://www.youtube.com/youtubei/v1/player", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "User-Agent": UA },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: "WEB",
+            clientVersion: "2.20250301.01.00",
+            hl: "en",
+            gl: "US",
+          },
+        },
+        videoId,
+      }),
     });
 
-    if (!pollResp.ok) {
-      console.warn("[sermon-sync] Poll error:", pollResp.status);
-      continue;
+    if (playerRes.ok) {
+      const playerData = await playerRes.json();
+      const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+
+      if (Array.isArray(captionTracks) && captionTracks.length > 0) {
+        console.log(`[sermon-sync] Found ${captionTracks.length} caption track(s) via Innertube`);
+
+        const track =
+          captionTracks.find((t: any) => t.languageCode === "en") ||
+          captionTracks.find((t: any) => t.languageCode?.startsWith("en")) ||
+          captionTracks[0];
+
+        if (track?.baseUrl) {
+          const separator = track.baseUrl.includes("?") ? "&" : "?";
+          const trackUrl = `${track.baseUrl}${separator}fmt=json3`;
+
+          const trackRes = await fetch(trackUrl, { headers: { "User-Agent": UA } });
+          if (trackRes.ok) {
+            const trackData = await trackRes.json();
+            const parsed = parseJson3Captions(trackData);
+            if (parsed) {
+              console.log(`[sermon-sync] Tier 2b success. Text length: ${parsed.text.length}`);
+              return parsed;
+            }
+          }
+        }
+      }
     }
+  } catch (e) {
+    console.warn("[sermon-sync] Tier 2b error:", e instanceof Error ? e.message : String(e));
+  }
 
-    const pollData = await pollResp.json();
-    console.log(`[sermon-sync] Poll ${i + 1}/${maxPolls}: status=${pollData.status}`);
-
-    if (pollData.status === "completed") {
-      console.log("[sermon-sync] Transcription complete. Text length:", pollData.text?.length);
-      return {
-        full_text: pollData.text || "",
-        chapters: pollData.chapters || [],
-        utterances: pollData.utterances || [],
-        words: pollData.words || [],
-      };
-    }
-
-    if (pollData.status === "error") {
-      console.error("[sermon-sync] AssemblyAI error:", pollData.error);
-      throw new Error("Transcription failed: " + (pollData.error || "Unknown error"));
+  // === Tier 3: Zyla API (paid fallback) ===
+  const ZYLA_KEY = Deno.env.get("ZYLA_API_KEY");
+  if (ZYLA_KEY) {
+    console.log("[sermon-sync] Tier 3: Trying Zyla API...");
+    try {
+      const zylaRes = await fetch(
+        `https://zylalabs.com/api/5765/youtube+transcriptor+api/7094/transcript?video_id=${videoId}`,
+        { headers: { "Authorization": `Bearer ${ZYLA_KEY}` } }
+      );
+      if (zylaRes.ok) {
+        const zylaData = await zylaRes.json();
+        if (Array.isArray(zylaData)) {
+          const timed = zylaData.map((seg: any) => ({
+            offset: Math.round((seg.start || seg.offset || 0) * 1000),
+            duration: Math.round((seg.duration || 0) * 1000),
+            text: (seg.text || "").replace(/\n/g, " "),
+          }));
+          const text = timed.map((s) => s.text).join(" ").replace(/\s+/g, " ").trim();
+          if (text.length > 50) {
+            console.log(`[sermon-sync] Tier 3 success. Text length: ${text.length}`);
+            return { text, timed };
+          }
+        } else if (zylaData?.transcript) {
+          const text = typeof zylaData.transcript === "string" ? zylaData.transcript : JSON.stringify(zylaData.transcript);
+          if (text.length > 50) {
+            console.log(`[sermon-sync] Tier 3 success (text only). Text length: ${text.length}`);
+            return { text, timed: [] };
+          }
+        }
+      } else {
+        console.warn("[sermon-sync] Tier 3: Zyla returned", zylaRes.status);
+      }
+    } catch (e) {
+      console.warn("[sermon-sync] Tier 3 error:", e instanceof Error ? e.message : String(e));
     }
   }
 
-  throw new Error("Transcription timed out. The sermon may be too long. Please try again.");
+  throw new Error("Could not extract transcript. This video may not have captions available. Please try a different sermon link.");
 }
 
-/** Extract transcript within a time range using word-level timestamps */
+/** Extract transcript within a time range using segment-level timestamps */
 function extractTimeRange(
-  words: Array<{ text: string; start: number; end: number }>,
+  timed: Array<{ offset: number; duration: number; text: string }>,
   startTime?: string,
   endTime?: string
 ): string {
@@ -237,9 +324,12 @@ function extractTimeRange(
   const startMs = startTime ? parseTime(startTime) : 0;
   const endMs = endTime ? parseTime(endTime) : Infinity;
 
-  const filtered = words
-    .filter((w) => w.start >= startMs && w.end <= endMs)
-    .map((w) => w.text);
+  const filtered = timed
+    .filter((seg) => {
+      const segEnd = seg.offset + seg.duration;
+      return seg.offset >= startMs && (segEnd <= endMs || seg.offset <= endMs);
+    })
+    .map((seg) => seg.text);
 
   return filtered.join(" ");
 }
@@ -470,34 +560,39 @@ serve(async (req) => {
       });
     }
 
-    /* ─── Phase 1 & 2: Get transcript (from cache or fresh) ─── */
+    /* ─── Phase 1: Get transcript (from cache or fresh via YouTube captions) ─── */
     let fullText = typeof existingRow?.full_text === "string" && existingRow.full_text.length > 100
       ? existingRow.full_text : null;
-    let rawSegments = existingRow?.raw_segments as {
-      chapters?: Array<{ start: number; end: number; gist: string; headline: string; summary: string }>;
-      utterances?: Array<{ speaker: string; text: string; start: number; end: number }>;
-      words?: Array<{ text: string; start: number; end: number; speaker?: string | null }>;
-    } | null;
+    let timedSegments: Array<{ offset: number; duration: number; text: string }> = [];
+
+    // Try to recover timed segments from cache
+    if (existingRow?.raw_segments) {
+      const cached = existingRow.raw_segments as any;
+      if (Array.isArray(cached?.timed)) {
+        timedSegments = cached.timed;
+      } else if (Array.isArray(cached?.words)) {
+        // Convert old AssemblyAI word format to timed segments
+        timedSegments = (cached.words as Array<{ text: string; start: number; end: number }>).map((w) => ({
+          offset: w.start,
+          duration: w.end - w.start,
+          text: w.text,
+        }));
+      }
+    }
 
     let usedTranscript = false;
 
     if (!fullText) {
-      // Try to get a real transcript via cobalt + AssemblyAI
+      // Get transcript via YouTube captions (no Cobalt/AssemblyAI needed)
       try {
-        const audioUrl = await getAudioUrl(youtubeUrl);
-        const transcription = await transcribeWithAssemblyAI(audioUrl);
-
-        fullText = transcription.full_text;
-        rawSegments = {
-          chapters: transcription.chapters,
-          utterances: transcription.utterances,
-          words: transcription.words,
-        };
+        const transcript = await getYouTubeTranscript(videoId);
+        fullText = transcript.text;
+        timedSegments = transcript.timed;
 
         // Cache transcript
         await supabase.from("sermon_transcripts").update({
           full_text: fullText,
-          raw_segments: rawSegments as unknown as Record<string, unknown>,
+          raw_segments: { timed: timedSegments } as unknown as Record<string, unknown>,
         }).eq("video_id", videoId);
 
         usedTranscript = true;
@@ -514,13 +609,9 @@ serve(async (req) => {
     /* ─── Prepare transcript text for AI ─── */
     let transcriptForAI = fullText || "";
 
-    // If time range specified and we have word-level timestamps, extract just that range
-    if (hasTimeRange && usedTranscript && rawSegments?.words) {
-      const rangeText = extractTimeRange(
-        rawSegments.words as Array<{ text: string; start: number; end: number }>,
-        sermonStart,
-        sermonEnd
-      );
+    // If time range specified and we have timed segments, extract just that range
+    if (hasTimeRange && usedTranscript && timedSegments.length > 0) {
+      const rangeText = extractTimeRange(timedSegments, sermonStart, sermonEnd);
       if (rangeText.length > 50) {
         transcriptForAI = rangeText;
         console.log("[sermon-sync] Using time-range filtered transcript. Length:", rangeText.length);
@@ -532,15 +623,9 @@ serve(async (req) => {
       transcriptForAI = transcriptForAI.substring(0, 160_000) + "\n\n[Transcript truncated for length]";
     }
 
-    // Format chapters info for context
+    // Format chapters info for context (from timed segments if available)
     let chaptersInfo = "";
-    if (rawSegments?.chapters && rawSegments.chapters.length > 0) {
-      chaptersInfo = rawSegments.chapters.map((ch) => {
-        const startMin = Math.floor(ch.start / 1000 / 60);
-        const startSec = Math.floor((ch.start / 1000) % 60);
-        return `[${startMin}:${String(startSec).padStart(2, "0")}] ${ch.headline} — ${ch.summary}`;
-      }).join("\n");
-    }
+    // No auto-chapters from YouTube captions, but timed segments provide time context
 
     let result: Record<string, unknown>;
 
