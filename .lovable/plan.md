@@ -1,60 +1,58 @@
 
 
-## Plan: Enhanced Sermon Mode — Final Version
+## Plan: Cross-Device Sync for Sermon Progress & Preferences
 
-### Summary
+### Problem
+Two pieces of sermon-related user data are stored in `localStorage` and lost when switching devices:
+1. **Completed application points** (`sermon-app-completed`) in `SermonApplicationPoints.tsx`
+2. **Prayer notification time preferences** (`sermon-prayer-notif-times`) in `SermonSync.tsx`
 
-Two-tier Sermon Mode with new caption extractor, caption cleaning, cached transcripts, "Jump to" timestamps, and Premium Sync via Grok API. Subtopic cards conditionally hide the illustration section when the AI determines none exists.
+### Solution
+Store both in a new `user_sermon_progress` database table keyed by `user_id`, with a single JSONB column for flexibility. Load on mount, write-through on change (debounced), with localStorage as fast cache.
 
-### Changes (5 files + 1 migration)
+### Changes
 
-#### 1. Database Migration: `sermon_transcripts` table
+#### 1. Database Migration: `user_sermon_progress`
+```sql
+CREATE TABLE public.user_sermon_progress (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  completed_points jsonb DEFAULT '{}',   -- { "cardId:pointIdx": true }
+  notif_times jsonb DEFAULT '{}',        -- { "Monday": "Morning", ... }
+  updated_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.user_sermon_progress ENABLE ROW LEVEL SECURITY;
+-- Authenticated users can read/write only their own row
+CREATE POLICY "Users manage own progress" ON public.user_sermon_progress
+  FOR ALL TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+```
 
-New table for caching transcripts and analysis results keyed by video ID with 30-day TTL. Columns: `video_id` (unique), `video_title`, `raw_segments` (jsonb with start/dur/text), `full_text`, `analysis_result` (jsonb), `premium_result` (jsonb), `fetched_at`, `user_id`. RLS: authenticated select all, insert own.
+Key change: completed points will be keyed by **prayer card ID + point index** (e.g. `"abc123:0"`) instead of just a global index, so progress is scoped per sermon card.
 
-#### 2. New Edge Function: `supabase/functions/youtube-transcript/index.ts`
+#### 2. New Hook: `src/hooks/useSermonProgress.ts`
+- Fetches the user's row on mount, falls back to localStorage for instant display
+- Exposes `completedPoints`, `notifTimes`, `markPointCompleted(cardId, idx)`, `setNotifTime(day, time)`
+- Debounced upsert to database (800ms), immediate localStorage write for responsiveness
+- On load, merges cloud data into localStorage cache
 
-Dedicated caption extractor. Auth required. Extracts video ID, checks cache (30-day TTL), fetches YouTube HTML + caption XML if not cached. Parses timed segments with `start`/`dur`. Cleans captions (strips `[Music]`, `[Applause]`, `♪`, filler words). Returns `{ videoId, videoTitle, raw, fullText, cached }`. Rate limits 20 req/min per user. User-friendly error when captions unavailable.
+#### 3. Update: `src/components/board/SermonApplicationPoints.tsx`
+- Accept `cardId` prop (the prayer card's ID)
+- Replace raw localStorage reads/writes with the `useSermonProgress` hook
+- `completedPoints` keyed as `"cardId:idx"` instead of bare index
 
-#### 3. Rewrite: `supabase/functions/sermon-sync/index.ts`
+#### 4. Update: `src/pages/SermonSync.tsx`
+- Replace `getNotifTimes()` / `setNotifTime()` localStorage helpers with the same hook
+- Notification time preferences sync to database
 
-Remove all old caption fetching and oEmbed code. Accept `{ transcript, rawSegments, videoTitle, videoId, mode }`.
-
-- **Standard mode**: Lovable AI (Gemini) with current prompt structure, adds `timestamp_seconds` per note point using the timed segments.
-- **Premium mode**: Grok API (`api.x.ai`, `grok-4.20-0309-reasoning`, `GROK_API_KEY`). Prompt instructs AI to return `illustration` as `null` or omit when no illustration/story was used by the pastor. Returns structured subtopics with `title`, `explanation`, `illustration` (nullable), `supporting_verses`, `timestamp_seconds`, plus `main_scripture`, `overall_message`, and 6 daily prayer prompts (Mon–Sat).
-
-Caches results back to `sermon_transcripts`.
-
-#### 4. New Edge Function: `supabase/functions/sermon-generate-prayer/index.ts`
-
-Accepts `{ prompt, day, sermonTitle }` with auth. Uses Grok API to generate a full prayer. Returns `{ prayer: string }`.
-
-#### 5. UI Update: `src/pages/SermonSync.tsx`
-
-**Two buttons**: "Sync" (existing gold) and "Premium Sync" (gradient with sparkle icon). Both call `youtube-transcript` first, then `sermon-sync` with appropriate mode.
-
-**Standard flow**: Same as today but each note gets a "Jump to ▶" button.
-
-**Premium flow**:
-- Sermon title + main scripture header
-- Overall message paragraph
-- Expandable subtopic cards:
-  - Header: title + "Jump to ▶" button
-  - Body: explanation paragraph
-  - **Illustration section conditionally rendered only when `illustration` is non-null/non-empty** — if the pastor didn't use a story or example, the section is completely absent from the card (no empty heading, no placeholder)
-  - Supporting verses as tappable `VerseLink` components
-- 6 daily prayer prompt cards (Mon–Sat) with day badge, Generate Prayer button (calls `sermon-generate-prayer`), editable textarea, Regenerate button, notification time selector (Morning/Afternoon/Night in localStorage)
-- Select/deselect + batch save to Board with `videoId`, `timestamp_seconds` in metadata so Jump to works from `/board`
-
-**Jump to behavior**: Opens YouTube iframe embed with `?start=<seconds>&autoplay=1`. On `/board`, sermon cards with timestamp metadata render the Jump to button that pulls up the video at the exact second.
+#### 5. Update: `src/components/board/BoardCard.tsx`
+- Pass `card.id` as `cardId` prop to `SermonApplicationPoints`
 
 ### Files
 
 | File | Action |
 |---|---|
-| DB migration | New — `sermon_transcripts` table |
-| `supabase/functions/youtube-transcript/index.ts` | New |
-| `supabase/functions/sermon-sync/index.ts` | Rewrite |
-| `supabase/functions/sermon-generate-prayer/index.ts` | New |
+| DB migration | New — `user_sermon_progress` |
+| `src/hooks/useSermonProgress.ts` | New |
+| `src/components/board/SermonApplicationPoints.tsx` | Update |
 | `src/pages/SermonSync.tsx` | Update |
+| `src/components/board/BoardCard.tsx` | Update (pass cardId) |
 
