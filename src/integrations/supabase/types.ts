@@ -312,6 +312,7 @@ export type Database = {
           calendar_bg: string | null
           calendar_text: string | null
           created_at: string
+          cross_translation_annotations: boolean
           id: string
           sound_id: string | null
           sound_volume: number
@@ -332,6 +333,7 @@ export type Database = {
           calendar_bg?: string | null
           calendar_text?: string | null
           created_at?: string
+          cross_translation_annotations?: boolean
           id?: string
           sound_id?: string | null
           sound_volume?: number
@@ -352,6 +354,7 @@ export type Database = {
           calendar_bg?: string | null
           calendar_text?: string | null
           created_at?: string
+          cross_translation_annotations?: boolean
           id?: string
           sound_id?: string | null
           sound_volume?: number
