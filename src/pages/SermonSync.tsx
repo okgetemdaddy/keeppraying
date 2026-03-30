@@ -44,6 +44,7 @@ interface PremiumSubtopic {
   title: string;
   explanation: string;
   illustration?: string | null;
+  application_points?: string[];
   supporting_verses: string[];
   timestamp_seconds?: number | null;
 }
@@ -679,6 +680,19 @@ function PremiumResultView({
                     <div className="bg-muted/40 rounded-xl p-3 border-l-2 border-primary/30">
                       <p className="text-xs font-medium text-muted-foreground mb-1">💡 Illustration</p>
                       <p className="text-sm text-foreground/70 italic">{sub.illustration}</p>
+                    </div>
+                  )}
+
+                  {/* Application Points */}
+                  {sub.application_points && sub.application_points.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">🎯 Apply It</p>
+                      {sub.application_points.map((ap, apIdx) => (
+                        <div key={apIdx} className="flex items-start gap-2 pl-1">
+                          <span className="w-4 h-4 rounded-full bg-primary/10 text-primary text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5 font-bold">{apIdx + 1}</span>
+                          <p className="text-sm text-foreground/75 leading-relaxed">{ap}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
 
