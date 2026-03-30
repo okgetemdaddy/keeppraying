@@ -872,7 +872,7 @@ export function BibleReader() {
             <SelectContent>
               {versions?.map((v) => (
                 <SelectItem key={v.id} value={v.id.toString()}>
-                  {v.localized_abbreviation}
+                  {v.id === 110 ? "For Kids" : v.localized_abbreviation}
                 </SelectItem>
               ))}
             </SelectContent>
