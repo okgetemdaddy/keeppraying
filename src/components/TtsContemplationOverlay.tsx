@@ -81,14 +81,14 @@ export function TtsContemplationOverlay({
 
   // ── Timeupdate-driven sync (when timedPhrases available) ────────────────────
   useEffect(() => {
-    if (!playing || !hasTimedPhrases || !audioRef?.current) return;
+    if (!playing || !hasTimedPhrases) return;
 
-    const audio = audioRef.current;
     const phrases = timedPhrases!;
 
     const handleTimeUpdate = () => {
+      const audio = audioRef?.current;
+      if (!audio) return;
       const t = audio.currentTime;
-      // Find the last phrase whose start <= currentTime
       let idx = 0;
       for (let i = phrases.length - 1; i >= 0; i--) {
         if (phrases[i].start <= t) {
@@ -99,8 +99,11 @@ export function TtsContemplationOverlay({
       setCurrentLineIndex(idx);
     };
 
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+    // Use an interval to poll currentTime — more reliable than timeupdate
+    // since the audio element may be set on the ref after this effect runs.
+    const interval = setInterval(handleTimeUpdate, 80);
+
+    return () => clearInterval(interval);
   }, [playing, hasTimedPhrases, timedPhrases, audioRef]);
 
   // ── Fallback: word-count interval timer (no timedPhrases) ───────────────────
