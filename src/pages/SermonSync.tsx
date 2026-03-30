@@ -1,12 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSermonPlans } from "@/hooks/useSermonPlans";
+import { useUserChurch } from "@/hooks/useUserChurch";
 import { WeekOfPrayerPanel } from "@/components/sermon/WeekOfPrayerPanel";
 import VerseLink from "@/components/VerseLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useSermonProgress } from "@/hooks/useSermonProgress";
 import { SiteNav } from "@/components/SiteNav";
