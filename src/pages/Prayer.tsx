@@ -361,6 +361,8 @@ export default function Prayer() {
           setPlaybackRate(r);
           if (audioRef.current) audioRef.current.playbackRate = r;
         }}
+        timedPhrases={timedPhrases}
+        audioRef={audioRef}
       />
       {/* Background */}
       {card.background_url && (
