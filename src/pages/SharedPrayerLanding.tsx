@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +34,7 @@ interface PrayerData {
   id: string;
   title: string | null;
   prayer_text: string;
+  prayer_type: string;
   background_url: string | null;
   audio_url: string | null;
   extended_prayer: string | null;
@@ -68,6 +69,7 @@ export default function SharedPrayerLanding() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [ttsOverlayOpen, setTtsOverlayOpen] = useState(false);
+  const [showPrayer, setShowPrayer] = useState(false);
 
   // Comments
   const [comments, setComments] = useState<Comment[]>([]);
@@ -111,7 +113,7 @@ export default function SharedPrayerLanding() {
         // Fetch prayer
         const { data: prayerData } = await supabase
           .from("prayer_cards")
-          .select("id, title, prayer_text, background_url, audio_url, extended_prayer")
+          .select("id, title, prayer_text, prayer_type, background_url, audio_url, extended_prayer")
           .eq("id", shareData.prayer_id)
           .single();
 
@@ -122,6 +124,7 @@ export default function SharedPrayerLanding() {
               id: shareData.prayer_id,
               title: "A Prayer Shared With You",
               prayer_text: "Sign in to read this prayer — it was sent with love.",
+              prayer_type: "personal",
               background_url: null,
               audio_url: null,
               extended_prayer: null,
@@ -329,6 +332,9 @@ export default function SharedPrayerLanding() {
   const isParticipant = user && (user.id === share.sender_id || user.id === share.recipient_id);
   const isSender = user && user.id === share.sender_id;
 
+  // Check if the prayer is publicly accessible (anon could read the real text)
+  const isAccessible = prayer.prayer_text !== "Sign in to read this prayer — it was sent with love.";
+
   // ── UNAUTHENTICATED landing ─────────────────────────────────────────────────
   if (!isAuthenticated) {
     const recipientFirstName = recipient?.full_name?.split(" ")[0] || "friend";
@@ -365,6 +371,103 @@ export default function SharedPrayerLanding() {
         desc: "Your prayers are visible only to you and those you choose",
       },
     ];
+
+    // Handler for CTA
+    const handleCta = () => {
+      if (isAccessible) {
+        // Public prayer — fade landing, reveal prayer
+        setShowPrayer(true);
+      } else {
+        // Private prayer — redirect to auth with return path
+        sessionStorage.setItem("kp_post_login", JSON.stringify({ path: `/shared-prayer/${token}` }));
+        navigate("/auth");
+      }
+    };
+
+    // If showPrayer is true, fade out landing and show the full prayer
+    if (showPrayer && isAccessible) {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="min-h-screen bg-gradient-to-b from-amber-50/50 to-white pb-24"
+        >
+          {/* Hero */}
+          <div className="relative overflow-hidden">
+            {prayer.background_url ? (
+              <div className="absolute inset-0">
+                <img src={prayer.background_url} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/70" />
+              </div>
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-800 to-stone-800" />
+            )}
+
+            <div className="relative z-10 px-5 pt-12 pb-8 text-white">
+              <div className="flex items-center gap-3 mb-4">
+                <Avatar className="w-10 h-10 ring-2 ring-white/20">
+                  <AvatarImage src={sender?.avatar_url || undefined} />
+                  <AvatarFallback className="bg-white/20 text-white text-sm font-semibold">
+                    {senderFirstName[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold">From {senderFirstName}</p>
+                  <p className="text-xs text-white/60">
+                    {formatDistanceToNow(new Date(share.created_at), { addSuffix: true })}
+                  </p>
+                </div>
+              </div>
+
+              {share.message && (
+                <p className="text-sm text-white/70 italic mb-3">"{share.message}"</p>
+              )}
+
+              {prayer.title && (
+                <h1 className="text-xl font-bold mb-2">{prayer.title}</h1>
+              )}
+            </div>
+          </div>
+
+          {/* Prayer content */}
+          <div className="px-5 -mt-4 relative z-10">
+            <div className="rounded-2xl bg-card border border-border shadow-lg p-5 space-y-4">
+              <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                {prayer.prayer_text}
+              </p>
+
+              {prayer.extended_prayer && (
+                <p className="text-xs italic text-muted-foreground leading-relaxed border-t border-border pt-3">
+                  {prayer.extended_prayer}
+                </p>
+              )}
+
+              {/* Sign in prompt */}
+              <div className="pt-3 border-t border-border text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Sign in to save this prayer, listen aloud, and more
+                </p>
+                <Button
+                  onClick={() => {
+                    sessionStorage.setItem("kp_post_login", JSON.stringify({ path: `/shared-prayer/${token}` }));
+                    navigate("/auth");
+                  }}
+                  className="rounded-xl h-11 px-8 font-semibold"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(42 80% 50%) 0%, hsl(38 75% 45%) 100%)",
+                    color: "white",
+                  }}
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
 
     return (
       <div className="min-h-screen relative overflow-hidden flex flex-col">
@@ -438,18 +541,27 @@ export default function SharedPrayerLanding() {
             }}
           >
             <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(25 18% 52%)" }}>
-              <Lock className="w-3.5 h-3.5" />
-              <span className="font-medium">Private Prayer</span>
+              {isAccessible ? (
+                <>
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span className="font-medium">Shared Prayer</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span className="font-medium">Private Prayer</span>
+                </>
+              )}
             </div>
             {prayer.title && prayer.title !== "A Prayer Shared With You" && (
               <h2 className="text-lg font-semibold" style={{ color: "hsl(25 35% 14%)" }}>{prayer.title}</h2>
             )}
             <p className="text-sm leading-relaxed line-clamp-4" style={{ color: "hsl(25 28% 28%)" }}>
-              {prayer.prayer_text}
+              {isAccessible ? prayer.prayer_text : "A heartfelt prayer has been shared with you…"}
             </p>
             <div className="pt-2 border-t text-[11px]" style={{ borderColor: "hsl(42 40% 88%)", color: "hsl(25 18% 58%)" }}>
               <BookOpen className="w-3 h-3 inline mr-1" />
-              Sign in to read the full prayer
+              {isAccessible ? "Tap below to read the full prayer" : "Sign in to read the full prayer"}
             </div>
           </motion.div>
         </div>
@@ -507,25 +619,33 @@ export default function SharedPrayerLanding() {
         {/* Spacer for sticky button */}
         <div className="flex-1 min-h-[80px]" />
 
-        {/* ── Sticky sign-in CTA ── */}
+        {/* ── Sticky CTA ── */}
         <div className="sticky bottom-0 z-20 px-5 pb-5 pt-3" style={{ background: "linear-gradient(to top, white 70%, transparent)" }}>
-          <Link to={`/auth?redirect=/shared-prayer/${token}`} className="block">
-            <motion.button
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
-              className="w-full h-13 rounded-2xl font-semibold text-base shadow-lg flex items-center justify-center gap-2"
-              style={{
-                height: 52,
-                background: "linear-gradient(135deg, hsl(42 80% 50%) 0%, hsl(38 75% 45%) 100%)",
-                color: "white",
-                boxShadow: "0 8px 24px -4px hsl(42 80% 50% / 0.35)",
-              }}
-            >
-              <LogIn className="w-5 h-5" />
-              Sign In to See Your Prayer
-            </motion.button>
-          </Link>
+          <motion.button
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+            onClick={handleCta}
+            className="w-full h-13 rounded-2xl font-semibold text-base shadow-lg flex items-center justify-center gap-2"
+            style={{
+              height: 52,
+              background: "linear-gradient(135deg, hsl(42 80% 50%) 0%, hsl(38 75% 45%) 100%)",
+              color: "white",
+              boxShadow: "0 8px 24px -4px hsl(42 80% 50% / 0.35)",
+            }}
+          >
+            {isAccessible ? (
+              <>
+                <BookOpen className="w-5 h-5" />
+                See Prayer
+              </>
+            ) : (
+              <>
+                <LogIn className="w-5 h-5" />
+                Sign In to See Your Prayer
+              </>
+            )}
+          </motion.button>
           <p className="text-center text-[11px] mt-2" style={{ color: "hsl(25 18% 55%)" }}>
             Free account — no credit card needed
           </p>

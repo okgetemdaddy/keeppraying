@@ -134,7 +134,7 @@ export function SharePrayerModal({ open, onOpenChange, prayerId, prayerTitle }: 
         .single();
 
       if (error) throw error;
-      const link = `${window.location.origin}/shared-prayer/${(data as any).token}`;
+      const link = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-prayer-preview?token=${(data as any).token}`;
       setGeneratedLink(link);
     } catch {
       toast({ title: "Failed to generate link", variant: "destructive" });
