@@ -52,16 +52,28 @@ export default function InviteLanding() {
       setTokenData(data);
 
       // Fetch target info
-      const table = type === "family" ? "family_rooms" : "accountability_circles";
-      const { data: target } = await supabase
-        .from(table)
-        .select("name, description, purpose")
-        .eq("id", (data as any).target_id)
-        .single();
+      if (type === "sermon_plan") {
+        const { data: target } = await supabase
+          .from("sermon_prayer_plans")
+          .select("*")
+          .eq("id", (data as any).target_id)
+          .single() as any;
+        if (target) {
+          setTargetName(target.sermon_title || "Week of Prayer");
+          setTargetDesc(`A ${(target.daily_prompts || []).length}-day prayer plan inspired by "${target.sermon_title}"`);
+        }
+      } else {
+        const table = type === "family" ? "family_rooms" : "accountability_circles";
+        const { data: target } = await supabase
+          .from(table)
+          .select("name, description, purpose")
+          .eq("id", (data as any).target_id)
+          .single();
 
-      if (target) {
-        setTargetName((target as any).name || "");
-        setTargetDesc((target as any).purpose || (target as any).description || "");
+        if (target) {
+          setTargetName((target as any).name || "");
+          setTargetDesc((target as any).purpose || (target as any).description || "");
+        }
       }
 
       setLoading(false);
