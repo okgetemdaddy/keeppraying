@@ -307,6 +307,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
         setPlaybackRate(r);
         if (audioRef.current) audioRef.current.playbackRate = r;
       }}
+      timedPhrases={timedPhrases}
+      audioRef={audioRef}
     />
     <motion.div
       variants={cardVariants}
