@@ -468,12 +468,11 @@ export function BibleReader() {
   const canPrev = chapterIdx > 0;
   const canNext = chapterIdx < totalChapters - 1;
 
-  // Auto-select BSB & first book
+  // Auto-select BSB (Berean Standard Bible) as default — NIV is not available via the API
   useEffect(() => {
     if (versions?.length && !versionId) {
-      const niv = versions.find((v) => v.abbreviation === "NIV" || v.localized_abbreviation === "NIV");
       const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
-      setVersionId(niv ? niv.id : bsb ? bsb.id : versions[0].id);
+      setVersionId(bsb ? bsb.id : versions[0].id);
     }
   }, [versions, versionId]);
 
