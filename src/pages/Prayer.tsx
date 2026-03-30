@@ -195,6 +195,24 @@ export default function Prayer() {
       .then(({ data }) => setUserPlaylists((data || []) as { id: string; name: string; prayer_ids: string[] | null }[]));
   }, [user]);
 
+  // ── Creator styling handlers ──────────────────────────────────────────────────
+  const opacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleOpacityChange = (val: number[]) => {
+    const v = val[0];
+    setCardOpacity(v);
+    if (opacityTimerRef.current) clearTimeout(opacityTimerRef.current);
+    opacityTimerRef.current = setTimeout(() => {
+      if (!id) return;
+      supabase.from("prayer_cards").update({ card_opacity: v / 100 } as any).eq("id", id).then();
+    }, 400);
+  };
+
+  const handleColorChange = (preset: { bg: string; text: string } | null) => {
+    setCardBgPreset(preset);
+    if (!id) return;
+    supabase.from("prayer_cards").update({ card_color: preset } as any).eq("id", id).then();
+  };
+
   // ── Actions ───────────────────────────────────────────────────────────────────
   const toggleLike = async () => {
     if (!user) { toast({ title: "Sign in to like prayers" }); return; }
