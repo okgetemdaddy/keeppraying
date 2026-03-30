@@ -113,6 +113,7 @@ Return valid JSON with this exact structure:
 Requirements:
 - Generate 4-7 subtopics covering the sermon's key points
 - illustration MUST be null when the pastor did not use a story or example for that point — never fabricate
+- application_points MUST contain 1-3 practical, personal application steps derived from the subtopic — make them specific and actionable, not generic
 - Generate exactly 6 dailyPrayers for Monday through Saturday
 - All Scripture references must be real and relevant`,
             },
