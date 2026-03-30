@@ -124,6 +124,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedFloat, setPrayedFloat] = useState(false);
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testimonyCount, setTestimonyCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -267,10 +268,19 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
 
   return (
     <>
-    <TtsContemplationOverlay playing={ttsPlaying} onStop={() => {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-      setTtsPlaying(false);
-    }} />
+    <TtsContemplationOverlay
+      playing={ttsPlaying}
+      onStop={() => {
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+        setTtsPlaying(false);
+      }}
+      text={card.prayer_text}
+      playbackRate={playbackRate}
+      onPlaybackRateChange={(r) => {
+        setPlaybackRate(r);
+        if (audioRef.current) audioRef.current.playbackRate = r;
+      }}
+    />
     <motion.div
       variants={cardVariants}
       whileHover={collapsed ? {} : { y: -6, scale: 1.015 }}
