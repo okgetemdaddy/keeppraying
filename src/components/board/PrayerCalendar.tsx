@@ -36,6 +36,10 @@ const EVENT_CONFIG: Record<CalendarEvent["type"], { icon: React.ComponentType<{ 
   family_activity: { icon: Home, color: "hsl(25 70% 60%)", bg: "hsl(25 70% 50% / 0.15)" },
   circle_meeting: { icon: Users, color: "hsl(260 55% 65%)", bg: "hsl(260 55% 50% / 0.15)" },
   family_meeting: { icon: Home, color: "hsl(30 75% 55%)", bg: "hsl(30 75% 45% / 0.15)" },
+  sermon_plan_day: { icon: Church, color: "hsl(280 60% 60%)", bg: "hsl(280 60% 50% / 0.15)" },
+  bible_highlight: { icon: Highlighter, color: "hsl(55 80% 55%)", bg: "hsl(55 80% 45% / 0.15)" },
+  bible_note: { icon: StickyNote, color: "hsl(180 50% 55%)", bg: "hsl(180 50% 45% / 0.15)" },
+  bible_bookmark: { icon: Bookmark, color: "hsl(15 75% 60%)", bg: "hsl(15 75% 50% / 0.15)" },
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
