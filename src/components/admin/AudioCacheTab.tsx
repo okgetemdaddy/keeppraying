@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Trash2, Play, Pause, Search, RefreshCw, Download, Volume2, FileAudio, FileText } from "lucide-react";
+import { removeCachedAudio, clearAudioCache } from "@/lib/audioCache";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
