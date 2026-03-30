@@ -520,7 +520,14 @@ export default function Prayer() {
               </div>
 
               {/* ── Action row ──────────────────────────────────────────────── */}
-              <div className="flex items-center gap-0.5 pt-4 mt-4 border-t" style={{ borderColor: "hsl(38 22% 90%)" }}>
+              <div
+                className="flex items-center gap-0.5 pt-4 mt-4 border-t rounded-b-2xl -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 px-6 sm:px-8 pb-4"
+                style={{
+                  borderColor: "hsl(38 22% 90%)",
+                  backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
+                  opacity: Math.max(cardOpacity / 100, 0.8),
+                }}
+              >
                 {/* Like */}
                 <motion.button
                   onClick={toggleLike}
