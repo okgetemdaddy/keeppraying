@@ -332,100 +332,203 @@ export default function SharedPrayerLanding() {
   // ── UNAUTHENTICATED landing ─────────────────────────────────────────────────
   if (!isAuthenticated) {
     const recipientFirstName = recipient?.full_name?.split(" ")[0] || "friend";
+
+    const features = [
+      {
+        icon: <Headphones className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
+        title: "Listen Aloud",
+        desc: "Hear this prayer spoken with a warm, human-like voice",
+      },
+      {
+        icon: <Bookmark className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
+        title: "Save to Board",
+        desc: "Bookmark prayers to your personal prayer board",
+      },
+      {
+        icon: <MessageSquare className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
+        title: "Realtime Comments",
+        desc: `Share a private, live conversation about this prayer with ${senderFirstName}`,
+      },
+      {
+        icon: <Flame className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
+        title: "Prayer Streak",
+        desc: "Build a daily prayer habit and watch your streak grow",
+      },
+      {
+        icon: <Sparkles className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
+        title: "AI Enrichment",
+        desc: "Receive Scripture-rooted encouragement woven into your prayers",
+      },
+      {
+        icon: <Shield className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
+        title: "Safe & Private",
+        desc: "Your prayers are visible only to you and those you choose",
+      },
+    ];
+
     return (
-      <div className="min-h-screen relative overflow-hidden">
-        {/* Background */}
-        {prayer.background_url ? (
-          <div className="absolute inset-0">
-            <img src={prayer.background_url} alt="" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-b from-amber-900 via-amber-800 to-stone-900" />
-        )}
+      <div className="min-h-screen relative overflow-hidden flex flex-col">
+        {/* ── Hero gradient background ── */}
+        <div className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, hsl(25 60% 10%) 0%, hsl(30 40% 8%) 50%, hsl(35 35% 6%) 100%)" }}>
+          {/* Subtle radial dot pattern */}
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: "radial-gradient(circle, hsl(42 80% 70%) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }} />
 
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-12 text-white text-center">
-          {/* Sender avatar */}
-          <Avatar className="w-16 h-16 mb-4 ring-2 ring-white/30">
-            <AvatarImage src={sender?.avatar_url || undefined} />
-            <AvatarFallback className="bg-white/20 text-white text-lg font-semibold">
-              {senderFirstName[0]}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative z-10 px-6 pt-14 pb-10 text-center">
+            {/* Sender avatar */}
+            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
+              <Avatar className="w-18 h-18 mx-auto mb-5 ring-3 ring-amber-400/30 shadow-lg shadow-amber-500/20" style={{ width: 72, height: 72 }}>
+                <AvatarImage src={sender?.avatar_url || undefined} />
+                <AvatarFallback className="text-xl font-bold" style={{ background: "hsl(42 60% 25%)", color: "hsl(42 80% 75%)" }}>
+                  {senderFirstName[0]}
+                </AvatarFallback>
+              </Avatar>
+            </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-bold leading-tight mb-2"
-          >
-            {senderFirstName} shared a prayer with you
-          </motion.h1>
-
-          {share.message && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="text-sm text-white/70 italic mb-6 max-w-xs"
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.6 }}
+              className="text-2xl font-bold leading-tight mb-2"
+              style={{ color: "hsl(42 80% 85%)", fontFamily: '"Playfair Display", serif' }}
             >
-              "{share.message}"
-            </motion.p>
-          )}
+              {senderFirstName} shared a prayer with you
+            </motion.h1>
 
+            {share.message && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-sm italic mb-4 max-w-xs mx-auto"
+                style={{ color: "hsl(42 30% 60%)" }}
+              >
+                "{share.message}"
+              </motion.p>
+            )}
+
+            {/* Dove SVG accent */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 0.15, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="absolute top-6 right-6"
+            >
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="hsl(42 80% 70%)" strokeWidth="1.2">
+                <path d="M24 8c-4 0-8 4-8 10v6l-4 6v4h24v-4l-4-6v-6c0-6-4-10-8-10z" />
+                <path d="M16 24h-3a3 3 0 000 6h3M32 24h3a3 3 0 010 6h-3" />
+              </svg>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* ── Prayer preview card ── */}
+        <div className="px-5 -mt-5 relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="w-full max-w-sm space-y-4 mb-8"
+            initial={{ opacity: 0, y: 20, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.25, duration: 0.5, type: "spring", stiffness: 200, damping: 24 }}
+            className="rounded-2xl p-5 space-y-3"
+            style={{
+              background: "linear-gradient(135deg, hsl(42 55% 97%) 0%, hsl(38 45% 95%) 100%)",
+              border: "1px solid hsl(42 40% 88%)",
+              boxShadow: "0 8px 32px -8px hsl(42 50% 40% / 0.12), 0 2px 8px -2px hsl(42 50% 40% / 0.08)",
+            }}
           >
-            <div className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-5 space-y-3 text-left">
-              <div className="flex items-center gap-2 text-white/60 text-xs">
-                <Lock className="w-3 h-3" /> Private Prayer
-              </div>
-              {prayer.title && (
-                <h2 className="text-lg font-semibold text-white">{prayer.title}</h2>
-              )}
-              <p className="text-sm text-white/80 leading-relaxed line-clamp-4">
-                {prayer.prayer_text}
-              </p>
-              <div className="pt-2 border-t border-white/10 text-[11px] text-white/40">
-                Sign in to read the full prayer
-              </div>
+            <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(25 18% 52%)" }}>
+              <Lock className="w-3.5 h-3.5" />
+              <span className="font-medium">Private Prayer</span>
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="space-y-4 w-full max-w-sm"
-          >
-            <div className="space-y-2 text-sm text-white/70">
-              <div className="flex items-center gap-2">
-                <Volume2 className="w-4 h-4 text-amber-400" />
-                <span>Press <strong className="text-white">Speak</strong> to hear the prayer read aloud</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Bookmark className="w-4 h-4 text-amber-400" />
-                <span><strong className="text-white">Bookmark</strong> to save to your board</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-amber-400" />
-                <span>Share <strong className="text-white">comments</strong> with {senderFirstName}</span>
-              </div>
-            </div>
-
-            <p className="text-xs text-white/50 mt-4">
-              And much more — just sign in, {recipientFirstName} 🙏
+            {prayer.title && prayer.title !== "A Prayer Shared With You" && (
+              <h2 className="text-lg font-semibold" style={{ color: "hsl(25 35% 14%)" }}>{prayer.title}</h2>
+            )}
+            <p className="text-sm leading-relaxed line-clamp-4" style={{ color: "hsl(25 28% 28%)" }}>
+              {prayer.prayer_text}
             </p>
-
-            <Link to={`/auth?redirect=/shared-prayer/${token}`}>
-              <Button className="w-full h-12 rounded-2xl font-semibold text-base bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/30">
-                <LogIn className="w-5 h-5 mr-2" />
-                Sign In to See Your Prayer
-              </Button>
-            </Link>
+            <div className="pt-2 border-t text-[11px]" style={{ borderColor: "hsl(42 40% 88%)", color: "hsl(25 18% 58%)" }}>
+              <BookOpen className="w-3 h-3 inline mr-1" />
+              Sign in to read the full prayer
+            </div>
           </motion.div>
+        </div>
+
+        {/* ── Feature showcase ── */}
+        <div className="px-5 py-8">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-xs font-semibold uppercase tracking-widest text-center mb-5"
+            style={{ color: "hsl(42 60% 45%)" }}
+          >
+            What you can do on KeepPray.ing
+          </motion.p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {features.map((feat, i) => (
+              <motion.div
+                key={feat.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.45 + i * 0.08, duration: 0.4 }}
+                className="rounded-xl p-3.5 space-y-2"
+                style={{
+                  background: "hsl(42 40% 97%)",
+                  border: "1px solid hsl(42 35% 91%)",
+                }}
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "hsl(42 60% 92%)" }}>
+                  {feat.icon}
+                </div>
+                <h3 className="text-sm font-semibold" style={{ color: "hsl(25 35% 18%)" }}>{feat.title}</h3>
+                <p className="text-[11px] leading-snug" style={{ color: "hsl(25 18% 48%)" }}>{feat.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Scripture verse ── */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.9 }}
+          className="px-8 pb-6 text-center"
+        >
+          <p className="text-xs italic" style={{ color: "hsl(25 18% 52%)" }}>
+            "The prayer of a righteous person is powerful and effective."
+          </p>
+          <p className="text-[10px] mt-1" style={{ color: "hsl(25 18% 62%)" }}>
+            — James 5:16
+          </p>
+        </motion.div>
+
+        {/* Spacer for sticky button */}
+        <div className="flex-1 min-h-[80px]" />
+
+        {/* ── Sticky sign-in CTA ── */}
+        <div className="sticky bottom-0 z-20 px-5 pb-5 pt-3" style={{ background: "linear-gradient(to top, white 70%, transparent)" }}>
+          <Link to={`/auth?redirect=/shared-prayer/${token}`} className="block">
+            <motion.button
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="w-full h-13 rounded-2xl font-semibold text-base shadow-lg flex items-center justify-center gap-2"
+              style={{
+                height: 52,
+                background: "linear-gradient(135deg, hsl(42 80% 50%) 0%, hsl(38 75% 45%) 100%)",
+                color: "white",
+                boxShadow: "0 8px 24px -4px hsl(42 80% 50% / 0.35)",
+              }}
+            >
+              <LogIn className="w-5 h-5" />
+              Sign In to See Your Prayer
+            </motion.button>
+          </Link>
+          <p className="text-center text-[11px] mt-2" style={{ color: "hsl(25 18% 55%)" }}>
+            Free account — no credit card needed
+          </p>
         </div>
       </div>
     );
