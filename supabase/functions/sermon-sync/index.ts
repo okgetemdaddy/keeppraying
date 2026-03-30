@@ -267,7 +267,7 @@ serve(async (req) => {
             temperature: 0.0,
             max_tokens: 12000,
             messages: [
-              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl) },
+              { role: "user", content: PREMIUM_GROK_PROMPT(youtubeUrl, timeRangeInstruction) },
             ],
           }),
         });
