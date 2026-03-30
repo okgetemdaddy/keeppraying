@@ -116,11 +116,24 @@ export default function SharedPrayerLanding() {
           .single();
 
         if (!prayerData) {
-          setError("This prayer is no longer available.");
-          setLoading(false);
-          return;
+          // If not authenticated, don't error — show the welcome landing instead with placeholder
+          if (!user) {
+            setPrayer({
+              id: shareData.prayer_id,
+              title: "A Prayer Shared With You",
+              prayer_text: "Sign in to read this prayer — it was sent with love.",
+              background_url: null,
+              audio_url: null,
+              extended_prayer: null,
+            });
+          } else {
+            setError("This prayer is no longer available.");
+            setLoading(false);
+            return;
+          }
+        } else {
+          setPrayer(prayerData as PrayerData);
         }
-        setPrayer(prayerData as PrayerData);
 
         // Fetch sender profile
         const { data: senderData } = await supabase
