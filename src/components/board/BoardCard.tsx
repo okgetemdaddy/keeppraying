@@ -741,6 +741,14 @@ export function BoardCard({
           onApplied={onRefresh}
         />
       )}
+
+      {/* Share Prayer Modal */}
+      <SharePrayerModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        prayerId={card.id}
+        prayerTitle={card.title}
+      />
         </motion.div>{/* end front face */}
 
         {/* ── BACK face — TestifyBack ──────────────────────────────────── */}
