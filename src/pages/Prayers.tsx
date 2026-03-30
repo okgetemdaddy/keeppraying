@@ -556,6 +556,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
         </AnimatePresence>
       </div>
     </motion.div>
+    </>
   );
 }
 
