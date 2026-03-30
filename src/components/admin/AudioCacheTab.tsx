@@ -151,6 +151,9 @@ export default function AudioCacheTab() {
         if (error) throw error;
       }
 
+      // Also wipe local IndexedDB cache
+      void clearAudioCache();
+
       audioRef.current?.pause();
       setPlayingId(null);
       setEntries([]);
