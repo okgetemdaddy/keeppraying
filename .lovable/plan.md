@@ -1,45 +1,32 @@
 
 
-## Diagnose and Fix Premium Sync + Prayer TTS
+## Add Playback Speed Slider + Captions to TTS Overlay
 
-### Investigation Results
+### What We're Building
 
-Both edge functions are **deployed and booting** successfully:
-- `prayer-tts`: Returns 200 with audio data when tested directly — the xAI TTS integration is working
-- `sermon-sync`: Returns 401 (expected, requires auth) — the function is live
+Enhance the `TtsContemplationOverlay` to include:
+1. **Playback speed slider** — 0.5x to 2x, positioned below the central pause button
+2. **Live captions** — the prayer/testimony text displayed word-by-word as it's read, using a modern legible font (Inter or system sans-serif at readable size)
 
-The code is correct: model name is `grok-4.20-reasoning`, prayer-tts uses `XAi_Speaker`, CORS headers are present.
+### Changes
 
-### Likely Root Causes
+**1. Update `TtsContemplationOverlay` props and UI**
+File: `src/components/TtsContemplationOverlay.tsx`
 
-1. **sermon-sync shows zero request logs** — This suggests either (a) the `youtube-transcript` step is failing *before* sermon-sync is called, or (b) there's an edge function version mismatch (stale deployment). The frontend catches errors at line 132 before ever calling sermon-sync if transcript fetch fails.
+- Add new props: `audioRef`, `text` (the prayer/testimony body), `playbackRate`, `onPlaybackRateChange`
+- **Speed slider**: Render a horizontal slider (0.5–2.0, step 0.25) below the pause button, styled in gold tones to match the overlay. Show the current rate label (e.g. "1.0×"). When changed, set `audioRef.current.playbackRate`.
+- **Captions area**: Display the full prayer text in a scrollable region near the bottom third of the screen. Use `font-family: 'Inter', system-ui, sans-serif` at ~18px, `hsla(42,40%,90%,0.85)` color, centered, max-width ~600px, with generous line-height (1.7). Subtle fade-in animation. No word-by-word sync needed (that requires timestamps the TTS API doesn't provide) — just show the full text as a readable caption block while listening.
+- Prevent background click-to-stop from triggering when interacting with the slider or caption area (`e.stopPropagation()`)
 
-2. **prayer-tts works from server but may fail from browser** — Could be a cached `audio_url` pointing to an old/broken file, or the anon key auth header format issue on the frontend.
+**2. Pass props from Prayer.tsx and Prayers.tsx**
+Files: `src/pages/Prayer.tsx`, `src/pages/Prayers.tsx`
 
-### Plan
+- Pass `audioRef`, `text={card.prayer_text}`, `playbackRate` state, and `onPlaybackRateChange` handler to the overlay
+- Initialize `playbackRate` state at `1.0`
+- On rate change, update both state and `audioRef.current.playbackRate`
 
-**Step 1 — Force redeploy both functions**
-Redeploy `sermon-sync` and `prayer-tts` to ensure the latest code is live.
-
-**Step 2 — Add diagnostic logging to sermon-sync**
-Add `console.log` statements at key points (function entry, before/after Grok API call, response status) so we can trace failures in edge function logs.
-
-**Step 3 — Add diagnostic logging to prayer-tts**
-Log the xAI TTS response status and any error details before returning, so failures are visible in logs.
-
-**Step 4 — Check youtube-transcript function**
-Since sermon-sync has zero request logs, the failure may be happening at the transcript fetch step. Review and redeploy `youtube-transcript` as well.
-
-**Step 5 — Test end-to-end**
-After redeployment, test both features to verify they work.
-
-### Technical Details
-
-The frontend call chain for sermon sync is:
-1. `youtube-transcript` → fetches captions
-2. `sermon-sync` → analyzes with Grok (premium) or Gemini (standard)
-
-If step 1 fails, step 2 never fires — which explains the zero logs for sermon-sync.
-
-For prayer-tts, the frontend in `Prayer.tsx` and `Prayers.tsx` calls the function with the anon key as Bearer token, which should work fine since `verify_jwt = false` by default.
+### Technical Notes
+- Using the existing `Slider` component from `src/components/ui/slider.tsx` (Radix), styled with custom gold track/thumb colors via inline styles
+- Caption text uses Inter (already loaded as `--font-body`) — clean, modern, highly legible
+- No database changes needed
 
