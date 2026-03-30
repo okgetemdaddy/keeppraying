@@ -286,14 +286,18 @@ serve(async (req) => {
         const grokData = await grokResponse.json();
         rawAnalysis = grokData.choices?.[0]?.message?.content || "";
         console.log("[sermon-sync] Phase 1 complete. Raw length:", rawAnalysis.length);
+        console.log("[sermon-sync] Phase 1 raw (first 500):", rawAnalysis.substring(0, 500));
 
         if (detectRefusal(rawAnalysis)) {
           throw new Error("The AI could not analyze this sermon. Please try another sermon link.");
         }
 
-        await supabase.from("sermon_transcripts").update({
-          raw_ai_response: rawAnalysis,
-        }).eq("video_id", videoId);
+        // Only cache raw response when no time range (avoid polluting full-video cache)
+        if (!hasTimeRange) {
+          await supabase.from("sermon_transcripts").update({
+            raw_ai_response: rawAnalysis,
+          }).eq("video_id", videoId);
+        }
       }
 
       // Phase 2: Gemini extracts structured JSON
