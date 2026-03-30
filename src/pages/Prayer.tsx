@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
+import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TestifyBack } from "@/components/board/TestifyBack";
