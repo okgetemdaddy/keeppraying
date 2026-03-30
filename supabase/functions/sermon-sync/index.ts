@@ -134,17 +134,19 @@ If you can identify approximate timestamps, include them, but do not force or fa
 
 Use warm, encouraging, practical language. All content must come from the video — do not invent or embellish.`;
 
-const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `Extract structured data from the sermon analysis below into the exact JSON schema requested. Do not add information that is not present in the analysis. If a field cannot be determined, use null or an empty array.
+const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `You are extracting structured sermon data from a raw AI analysis. The analysis may be informal, use markdown, or have varying formats. Extract every piece of information you can find — even partial data is valuable.
 
 --- SERMON ANALYSIS START ---
 ${rawAnalysis}
 --- SERMON ANALYSIS END ---
 
-Return valid JSON only in this exact shape:
+Extract ALL available information into this JSON shape. Use the actual content from the analysis — do not return empty/null if there is data present. If you find sermon points, themes, or teachings, map them to subtopics. If you find any prayer-related content, map it to dailyPrayers.
+
+Return valid JSON only:
 {
-  "sermonTitle": "string",
+  "sermonTitle": "string (use main topic/theme if no explicit title)",
   "mainScripture": "string or null",
-  "overallMessage": "string",
+  "overallMessage": "string (summarize the main teaching)",
   "serviceOutline": [
     { "section": "string", "start": "HH:MM:SS or null", "end": "HH:MM:SS or null" }
   ],
@@ -163,7 +165,7 @@ Return valid JSON only in this exact shape:
   ]
 }
 
-Use null for any timestamp or field you cannot determine from the analysis.`;
+Use null for any timestamp or field you truly cannot determine from the analysis.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -286,14 +288,18 @@ serve(async (req) => {
         const grokData = await grokResponse.json();
         rawAnalysis = grokData.choices?.[0]?.message?.content || "";
         console.log("[sermon-sync] Phase 1 complete. Raw length:", rawAnalysis.length);
+        console.log("[sermon-sync] Phase 1 raw (first 500):", rawAnalysis.substring(0, 500));
 
         if (detectRefusal(rawAnalysis)) {
           throw new Error("The AI could not analyze this sermon. Please try another sermon link.");
         }
 
-        await supabase.from("sermon_transcripts").update({
-          raw_ai_response: rawAnalysis,
-        }).eq("video_id", videoId);
+        // Only cache raw response when no time range (avoid polluting full-video cache)
+        if (!hasTimeRange) {
+          await supabase.from("sermon_transcripts").update({
+            raw_ai_response: rawAnalysis,
+          }).eq("video_id", videoId);
+        }
       }
 
       // Phase 2: Gemini extracts structured JSON
@@ -339,7 +345,42 @@ serve(async (req) => {
       result = extractJson(geminiContent);
 
       if (isEmptyPremiumResult(result)) {
-        throw new Error("Premium analysis returned no sermon details. Please try again.");
+        console.log("[sermon-sync] Empty premium result. Raw Grok analysis:", rawAnalysis.substring(0, 800));
+        // Retry: fall back to standard Gemini direct analysis of the video
+        console.log("[sermon-sync] Falling back to standard Gemini direct analysis...");
+        const fallbackResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            max_tokens: 8000,
+            messages: [
+              { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
+              { role: "user", content: STANDARD_PROMPT(youtubeUrl, timeRangeInstruction) },
+            ],
+          }),
+        });
+        if (fallbackResp.ok) {
+          const fbData = await fallbackResp.json();
+          const fbContent = fbData.choices?.[0]?.message?.content || "";
+          console.log("[sermon-sync] Fallback raw (first 200):", fbContent.substring(0, 200));
+          const fbResult = extractJson(fbContent);
+          // Convert standard result shape to premium-compatible
+          result = {
+            ...fbResult,
+            mainScripture: (fbResult as Record<string, unknown>).mainScripture || null,
+            overallMessage: (fbResult as Record<string, unknown>).sermonNotes || (fbResult as Record<string, unknown>).overallMessage || "",
+            subtopics: (fbResult as Record<string, unknown>).subtopics || [],
+            dailyPrayers: (fbResult as Record<string, unknown>).dailyPrayers || [],
+          };
+        }
+
+        if (isEmptyPremiumResult(result) && !(result as Record<string, unknown>).sermonNotes) {
+          throw new Error("Could not extract sermon details from this video. Please try a different sermon or adjust the time range.");
+        }
       }
     } else {
       // Standard: Gemini analyzes the video directly
