@@ -30,7 +30,9 @@ export function useBreathPrayers() {
       .in("status", ["approved", "ai_generated"])
       .order("created_at", { ascending: false })
       .limit(50) as any);
-    setPrayers((data as BreathPrayer[]) || []);
+    const results = (data as BreathPrayer[]) || [];
+    setPrayers(results);
+    setLocalCache(cacheKeys.breathPrayers(), results);
     setLoading(false);
   }, []);
 
