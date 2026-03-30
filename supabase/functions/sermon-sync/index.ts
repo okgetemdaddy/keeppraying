@@ -211,20 +211,22 @@ serve(async (req) => {
     const isPremium = mode === "premium";
     const cacheField = isPremium ? "premium_result" : "analysis_result";
 
-    // Check cache
-    const { data: cached } = await supabase
-      .from("sermon_transcripts")
-      .select(`${cacheField}, raw_ai_response`)
-      .eq("video_id", videoId)
-      .maybeSingle();
+    // Check cache (skip when time range is provided — different ranges produce different results)
+    if (!hasTimeRange) {
+      const { data: cached } = await supabase
+        .from("sermon_transcripts")
+        .select(`${cacheField}, raw_ai_response`)
+        .eq("video_id", videoId)
+        .maybeSingle();
 
-    const cachedResult = cached?.[cacheField];
-    if (cachedResult && typeof cachedResult === "object") {
-      console.log("[sermon-sync] returning cached result for", videoId);
-      return new Response(JSON.stringify({
-        ...(cachedResult as Record<string, unknown>),
-        mode: isPremium ? "premium" : "standard",
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const cachedResult = cached?.[cacheField];
+      if (cachedResult && typeof cachedResult === "object") {
+        console.log("[sermon-sync] returning cached result for", videoId);
+        return new Response(JSON.stringify({
+          ...(cachedResult as Record<string, unknown>),
+          mode: isPremium ? "premium" : "standard",
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     // Ensure a row exists for caching
