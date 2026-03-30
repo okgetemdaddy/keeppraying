@@ -33,6 +33,7 @@ import Breathe from "./pages/Breathe";
 import Bible from "./pages/Bible";
 import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
+import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
@@ -56,6 +57,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  useActivityLogger(); // auto-tracks page views & sessions
   return (
     <>
       <Toaster />
