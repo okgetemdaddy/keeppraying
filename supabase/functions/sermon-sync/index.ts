@@ -115,10 +115,11 @@ Return valid JSON (no markdown fences):
   ]
 }`;
 
-const PREMIUM_GROK_PROMPT = (youtubeUrl: string) => `You are an expert at creating detailed church service and sermon outlines.
+const PREMIUM_GROK_PROMPT = (youtubeUrl: string, timeRange: string) => `You are an expert at creating detailed church service and sermon outlines.
 
 Watch and analyze this entire YouTube video from start to finish:
 ${youtubeUrl}
+${timeRange}
 
 Create a professional, detailed breakdown of the service/sermon.
 
