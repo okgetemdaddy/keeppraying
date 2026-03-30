@@ -431,24 +431,106 @@ export default function SermonSync() {
           )}
         </motion.div>
 
-        {/* Loading state */}
+        {/* Loading state with progress */}
         <AnimatePresence>
           {loading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center py-12 space-y-4"
+              className="py-12 space-y-6"
             >
               <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-              <p className="verse-text text-sm">
-                {loadingMode === "premium" ? "Deep-diving into the Word…" : "Meditating on the Word…"}
-              </p>
-              <p className="text-xs text-muted-foreground">
+
+              <div className="max-w-md mx-auto space-y-3">
+                <Progress value={((progressStep + 1) / PROGRESS_STEPS.length) * 100} className="h-2" />
+                <div className="space-y-2">
+                  {PROGRESS_STEPS.map((step, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{
+                        opacity: i <= progressStep ? 1 : 0.3,
+                        x: 0,
+                      }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      {i < progressStep ? (
+                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      ) : i === progressStep ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border border-muted-foreground/30 flex-shrink-0" />
+                      )}
+                      <span className={i <= progressStep ? "text-foreground" : "text-muted-foreground"}>
+                        {step}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
                 {loadingMode === "premium"
-                  ? "Extracting subtopics, illustrations, and daily prayer prompts"
-                  : "Extracting prayer prompts and sermon notes"}
+                  ? "Deep-diving into the Word — this may take a minute for long sermons"
+                  : "Meditating on the Word — extracting prayer prompts and notes"}
               </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Announcements Card */}
+        <AnimatePresence>
+          {announcements.length > 0 && !announcementsDismissed && !loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="prayer-card rounded-2xl p-5 space-y-3 border-2 border-primary/20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-primary" />
+                  <h3 className="font-display text-sm font-bold text-foreground">Church Announcements Found</h3>
+                </div>
+                <button onClick={() => setAnnouncementsDismissed(true)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                We detected {announcements.length} announcement{announcements.length !== 1 ? "s" : ""} in this sermon.
+              </p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {announcements.map((ann, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <button
+                      onClick={() => jumpToTimestamp(ann.start)}
+                      className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors flex-shrink-0 mt-0.5"
+                    >
+                      <Play className="w-2 h-2" /> {Math.floor(ann.start / 60)}:{(ann.start % 60).toString().padStart(2, "0")}
+                    </button>
+                    <p className="text-foreground/80">{ann.text}</p>
+                  </div>
+                ))}
+              </div>
+              {church ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl gap-2 text-xs"
+                  onClick={() => {
+                    saveAnnouncements(announcements, videoId, result?.sermonTitle || "");
+                    setAnnouncementsDismissed(true);
+                  }}
+                >
+                  <Church className="w-3 h-3" /> Save to {church.name}
+                </Button>
+              ) : (
+                <p className="text-[10px] text-muted-foreground">
+                  Set up "My Church" on your Board to save announcements.
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
