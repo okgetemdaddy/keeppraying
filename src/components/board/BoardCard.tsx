@@ -1008,14 +1008,16 @@ function ActionButtons({
         <Pin className="w-3.5 h-3.5" />
       </button>
 
-      <button
-        onClick={onShare}
-        className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
-        style={{ color: `${textColor}55` }}
-        aria-label="Share"
-      >
-        <Share2 className="w-3.5 h-3.5" />
-      </button>
+      {!isSharedRecipient && (
+        <button
+          onClick={onShare}
+          className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
+          style={{ color: `${textColor}55` }}
+          aria-label="Share"
+        >
+          <Share2 className="w-3.5 h-3.5" />
+        </button>
+      )}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
