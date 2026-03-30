@@ -230,7 +230,13 @@ serve(async (req) => {
     }
 
     // Ensure a row exists for caching
-    if (!cached) {
+    const { data: existingRow } = await supabase
+      .from("sermon_transcripts")
+      .select("raw_ai_response")
+      .eq("video_id", videoId)
+      .maybeSingle();
+
+    if (!existingRow) {
       await supabase.from("sermon_transcripts").insert({
         video_id: videoId,
         user_id: user.id,
@@ -241,8 +247,8 @@ serve(async (req) => {
 
     if (isPremium) {
       // Phase 1: Grok analyzes the video directly
-      let rawAnalysis = typeof cached?.raw_ai_response === "string" && !detectRefusal(cached.raw_ai_response)
-        ? cached.raw_ai_response
+      let rawAnalysis = !hasTimeRange && typeof existingRow?.raw_ai_response === "string" && !detectRefusal(existingRow.raw_ai_response)
+        ? existingRow.raw_ai_response
         : null;
 
       if (!rawAnalysis) {
