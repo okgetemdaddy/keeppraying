@@ -1201,10 +1201,14 @@ function ActionButtons({
 
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-xs gap-2 text-destructive focus:text-destructive"
+            className={`text-xs gap-2 ${isSharedRecipient ? '' : 'text-destructive focus:text-destructive'}`}
             onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }}
           >
-            <Trash2 className="w-3.5 h-3.5" /> Remove
+            {isSharedRecipient ? (
+              <><BookmarkX className="w-3.5 h-3.5" /> Unbookmark</>
+            ) : (
+              <><Trash2 className="w-3.5 h-3.5" /> Remove</>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
