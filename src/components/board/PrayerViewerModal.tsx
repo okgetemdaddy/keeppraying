@@ -91,6 +91,10 @@ export function PrayerViewerModal({
   const [showComments, setShowComments] = useState(false);
   const [testifying, setTestifying] = useState(false);
 
+  // Creator card styling state
+  const [cardOpacity, setCardOpacity] = useState(100);
+  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
+
   // TTS
   const {
     ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
