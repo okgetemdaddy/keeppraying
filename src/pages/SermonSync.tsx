@@ -86,17 +86,12 @@ export default function SermonSync() {
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [videoId, setVideoId] = useState("");
   const [creatingPlan, setCreatingPlan] = useState(false);
-  const [transcriptSource, setTranscriptSource] = useState<string | null>(null);
-  const [announcements, setAnnouncements] = useState<{ start: number; text: string }[]>([]);
-  const [announcementsDismissed, setAnnouncementsDismissed] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { plans, memberships, createPlan, updateMemberToggles, markDayComplete } = useSermonPlans();
-  const { church, saveAnnouncements } = useUserChurch();
-
   const isValidYouTube = (u: string) =>
     /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/.test(u);
 
