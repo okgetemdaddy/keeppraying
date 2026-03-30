@@ -145,10 +145,11 @@ export default function Prayer() {
   // Compute the card background style — only override when user has changed settings
   const cardBgStyle = (() => {
     const rgb = hexToRgb(cardBgPreset?.bg ?? '#F8F1E3');
-    const alpha = cardOpacity / 100;
+    // Clamp rendered opacity so the card is always visible as a floating element
+    const renderAlpha = Math.max(cardOpacity, 15) / 100;
     // When fully opaque with no preset, let the CSS class handle it
     if (!cardBgPreset && cardOpacity === 100) return {};
-    return { background: `rgba(${rgb}, ${alpha})` };
+    return { background: `rgba(${rgb}, ${renderAlpha})` };
   })();
 
   // Font
