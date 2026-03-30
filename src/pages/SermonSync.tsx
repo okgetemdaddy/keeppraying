@@ -257,15 +257,25 @@ export default function SermonSync() {
     try {
       for (const [day, prayer] of entries) {
         const dayPrayer = (result as PremiumResult).dailyPrayers.find((d) => d.day === day);
+        // Collect all application points from subtopics for this sermon
+        const allAppPoints = (result as PremiumResult).subtopics
+          .flatMap((s) => (s.application_points || []).map((ap) => ({ point: ap, subtopic: s.title })));
+        const appMetadata = JSON.stringify({
+          application_points: allAppPoints,
+          videoId,
+          sermonTitle: result.sermonTitle,
+        });
+
         const { data: card, error: cardErr } = await supabase
           .from("prayer_cards")
           .insert({
             title: `${day} — ${result.sermonTitle}`,
             prayer_text: prayer + (dayPrayer?.verse ? `\n\n📖 ${dayPrayer.verse}` : ""),
-            labels: ["sermon-sync", "daily-prayer", day.toLowerCase()],
+            labels: ["sermon-sync", "daily-prayer", `sermon-${day.toLowerCase()}`],
             created_by: user.id,
             status: "approved",
             source: "community",
+            meditation_essay: appMetadata,
           })
           .select("id")
           .single();

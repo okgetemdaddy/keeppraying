@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import Comments from "@/components/Comments";
 import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
+import { SermonApplicationPoints } from "@/components/board/SermonApplicationPoints";
 import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { FormattedText } from "@/lib/FormattedText";
@@ -599,7 +600,17 @@ export function BoardCard({
                 </div>
               )}
 
-              {/* Comments — large + PUBLIC cards only */}
+              {/* Sermon Application Points — for sermon-sync daily prayer cards */}
+              {card.labels?.includes("sermon-sync") && card.meditation_essay && userId && (
+                <SermonApplicationPoints
+                  meditationEssay={card.meditation_essay}
+                  userId={userId}
+                  accentColor={accentColor}
+                  textColor={textColor}
+                  onRefresh={onRefresh}
+                />
+              )}
+
               {size === "large" && isPublic && (
                 <>
                   <button
