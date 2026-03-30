@@ -79,15 +79,23 @@ function isEmptyPremiumResult(result: Record<string, unknown>): boolean {
 async function getAudioUrl(youtubeUrl: string): Promise<string> {
   console.log("[sermon-sync] Phase 1: Extracting audio URL via cobalt...");
 
-  // Try multiple cobalt instances for redundancy
+  // Ranked by score from instances.cobalt.best — top instances first
   const cobaltInstances = [
-    "https://api.cobalt.tools",
-    "https://cobalt-api.kwiatekmiki.com",
+    "https://cobalt-api.meowing.de",      // 96%
+    "https://cobalt-backend.canine.tools", // 80%
+    "https://kityune.imput.net",           // 76% (official)
+    "https://nachos.imput.net",            // 76% (official)
+    "https://sunny.imput.net",             // 76% (official)
+    "https://blossom.imput.net",           // 76% (official)
+    "https://capi.3kh0.net",              // 72%
   ];
 
   let lastError = "";
   for (const baseUrl of cobaltInstances) {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
+
       const resp = await fetch(`${baseUrl}/`, {
         method: "POST",
         headers: {
@@ -99,27 +107,36 @@ async function getAudioUrl(youtubeUrl: string): Promise<string> {
           downloadMode: "audio",
           audioFormat: "mp3",
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeout);
+
       if (!resp.ok) {
-        lastError = `cobalt ${baseUrl} returned ${resp.status}`;
+        const body = await resp.text().catch(() => "");
+        lastError = `cobalt ${baseUrl} returned ${resp.status}: ${body.substring(0, 120)}`;
         console.warn(`[sermon-sync] ${lastError}`);
         continue;
       }
 
       const data = await resp.json();
       if (data.url) {
-        console.log("[sermon-sync] Got audio URL from cobalt");
+        console.log(`[sermon-sync] Got audio URL from cobalt (${baseUrl})`);
         return data.url;
       }
       if (data.status === "tunnel" || data.status === "redirect") {
-        console.log("[sermon-sync] Got tunnel/redirect URL from cobalt");
+        console.log(`[sermon-sync] Got tunnel/redirect URL from cobalt (${baseUrl})`);
         return data.url;
       }
-      lastError = `cobalt returned unexpected shape: ${JSON.stringify(data).substring(0, 200)}`;
+      lastError = `cobalt ${baseUrl} unexpected response: ${JSON.stringify(data).substring(0, 200)}`;
       console.warn(`[sermon-sync] ${lastError}`);
     } catch (e) {
-      lastError = `cobalt ${baseUrl} error: ${e instanceof Error ? e.message : String(e)}`;
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("aborted")) {
+        lastError = `cobalt ${baseUrl} timed out (10s)`;
+      } else {
+        lastError = `cobalt ${baseUrl} error: ${msg}`;
+      }
       console.warn(`[sermon-sync] ${lastError}`);
     }
   }
