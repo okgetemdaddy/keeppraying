@@ -959,6 +959,19 @@ export function BibleReader() {
             {hideBunchRefs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </Button>
 
+          {/* Cross-translation annotations toggle */}
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleCrossTranslation}
+              className={`h-7 w-7 p-0 transition-colors ${crossTranslation ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              title={crossTranslation ? "Annotations: All translations" : "Annotations: Current translation only"}
+            >
+              <Globe className="h-3.5 w-3.5" />
+            </Button>
+          )}
+
           <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
             <Toggle
               pressed={mode === "verse"}
