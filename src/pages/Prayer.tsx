@@ -136,6 +136,21 @@ export default function Prayer() {
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
   const isOwner = !!(user && card && card.created_by === user.id);
 
+  // Helper: convert hex to "r, g, b" for rgba()
+  const hexToRgb = (hex: string): string => {
+    const h = hex.replace('#', '');
+    return `${parseInt(h.substring(0, 2), 16)}, ${parseInt(h.substring(2, 4), 16)}, ${parseInt(h.substring(4, 6), 16)}`;
+  };
+
+  // Compute the card background style — only override when user has changed settings
+  const cardBgStyle = (() => {
+    const rgb = hexToRgb(cardBgPreset?.bg ?? '#F8F1E3');
+    const alpha = cardOpacity / 100;
+    // When fully opaque with no preset, let the CSS class handle it
+    if (!cardBgPreset && cardOpacity === 100) return {};
+    return { background: `rgba(${rgb}, ${alpha})` };
+  })();
+
   // Font
   const activeFontFamily = card?.text_style
     ? PRAYER_FONTS.find(f => f.family === card.text_style)?.family ?? null
