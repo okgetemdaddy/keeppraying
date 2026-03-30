@@ -105,6 +105,7 @@ export default function Prayer() {
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [timedPhrases, setTimedPhrases] = useState<{ text: string; start: number }[] | null>(null);
 
   // Testify
   const [testifyOpen, setTestifyOpen] = useState(false);
@@ -228,16 +229,24 @@ export default function Prayer() {
     if (ttsLoading || !card) return;
     setTtsLoading(true);
 
-    // Create Audio element immediately during user gesture to satisfy autoplay policy
     const audio = new Audio();
     audioRef.current = audio;
     audio.onended = () => setTtsPlaying(false);
     audio.onerror = () => setTtsPlaying(false);
 
     try {
-      // Check for cached audio first
+      // Check for cached audio
       if ((card as any).audio_url) {
         audio.src = (card as any).audio_url;
+        // Try loading cached phrases JSON
+        try {
+          const phrasesUrl = supabase.storage.from("prayer-audio").getPublicUrl(`${card.id}_phrases.json`).data.publicUrl;
+          const phrasesResp = await fetch(phrasesUrl);
+          if (phrasesResp.ok) {
+            const phrases = await phrasesResp.json();
+            if (Array.isArray(phrases)) setTimedPhrases(phrases);
+          }
+        } catch { /* no cached phrases, use fallback */ }
         await audio.play();
         setTtsPlaying(true);
         setTtsLoading(false);
@@ -253,9 +262,20 @@ export default function Prayer() {
         }
       );
       if (!resp.ok) throw new Error("Could not generate speech");
-      const blob = await resp.blob();
+      const data = await resp.json();
 
-      // Cache to storage
+      // Decode base64 audio to blob
+      const binaryStr = atob(data.audio);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "audio/mpeg" });
+
+      // Set timed phrases if available
+      if (data.timedPhrases && Array.isArray(data.timedPhrases)) {
+        setTimedPhrases(data.timedPhrases);
+      }
+
+      // Cache audio + phrases to storage
       const storagePath = `${card.id}.mp3`;
       const { error: uploadErr } = await supabase.storage
         .from("prayer-audio")
@@ -263,6 +283,11 @@ export default function Prayer() {
       if (!uploadErr) {
         const { data: { publicUrl } } = supabase.storage.from("prayer-audio").getPublicUrl(storagePath);
         await supabase.from("prayer_cards").update({ audio_url: publicUrl } as any).eq("id", card.id);
+      }
+      // Cache phrases JSON
+      if (data.timedPhrases) {
+        const phrasesBlob = new Blob([JSON.stringify(data.timedPhrases)], { type: "application/json" });
+        await supabase.storage.from("prayer-audio").upload(`${card.id}_phrases.json`, phrasesBlob, { contentType: "application/json", upsert: true });
       }
 
       const url = URL.createObjectURL(blob);
@@ -336,6 +361,8 @@ export default function Prayer() {
           setPlaybackRate(r);
           if (audioRef.current) audioRef.current.playbackRate = r;
         }}
+        timedPhrases={timedPhrases}
+        audioRef={audioRef}
       />
       {/* Background */}
       {card.background_url && (
