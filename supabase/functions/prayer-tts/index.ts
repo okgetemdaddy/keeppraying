@@ -29,6 +29,7 @@ serve(async (req) => {
       });
     }
 
+    console.log("[prayer-tts] Calling xAI TTS, text length:", text.trim().length);
     const response = await fetch("https://api.x.ai/v1/tts", {
       method: "POST",
       headers: {
