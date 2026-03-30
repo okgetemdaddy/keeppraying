@@ -69,6 +69,7 @@ export default function SharedPrayerLanding() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [ttsOverlayOpen, setTtsOverlayOpen] = useState(false);
+  const [showPrayer, setShowPrayer] = useState(false);
 
   // Comments
   const [comments, setComments] = useState<Comment[]>([]);
