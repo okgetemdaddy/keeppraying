@@ -461,7 +461,21 @@ export function PrayerViewerModal({
                     <Share2 className="w-5 h-5" />
                   </button>
 
-                  {/* Add to playlist */}
+                   {/* Listen */}
+                   <button
+                     onClick={(e) => { e.stopPropagation(); handleListen(); }}
+                     className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
+                     style={{ color: ttsPlaying ? accentColor : "hsl(215 14% 60%)" }}
+                     aria-label="Listen"
+                   >
+                     {ttsLoading ? (
+                       <Loader2 className="w-5 h-5 animate-spin" />
+                     ) : (
+                       <Volume2 className={`w-5 h-5 ${ttsPlaying ? 'fill-current' : ''}`} />
+                     )}
+                   </button>
+
+                   {/* Add to playlist */}
                   {onAddToPlaylist && (
                     <button
                       onClick={() => onAddToPlaylist(card.id)}
