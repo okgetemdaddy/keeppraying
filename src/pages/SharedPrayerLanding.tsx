@@ -124,6 +124,7 @@ export default function SharedPrayerLanding() {
               id: shareData.prayer_id,
               title: "A Prayer Shared With You",
               prayer_text: "Sign in to read this prayer — it was sent with love.",
+              prayer_type: "personal",
               background_url: null,
               audio_url: null,
               extended_prayer: null,
