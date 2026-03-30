@@ -71,6 +71,23 @@ export default function SharedPrayerLanding() {
   const [ttsOverlayOpen, setTtsOverlayOpen] = useState(false);
   const [showPrayer, setShowPrayer] = useState(false);
 
+  // Record landing page view (once per share) — must be top-level hook
+  const recordLandingView = useCallback(async () => {
+    if (!share) return;
+    if (user) {
+      await supabase
+        .from("prayer_shares")
+        .update({ landing_viewed_at: new Date().toISOString() } as any)
+        .eq("id", share.id)
+        .is("landing_viewed_at", null);
+    } else {
+      const key = `kp_landing_viewed_${share.token || token}`;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, new Date().toISOString());
+      }
+    }
+  }, [share, user, token]);
+
   // Comments
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState("");
