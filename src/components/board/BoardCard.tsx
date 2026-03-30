@@ -292,6 +292,19 @@ export function BoardCard({
     setTogglingPublic(true);
     try {
       if (makePublic) {
+        // Duplicate-to-public check
+        const { data: simData } = await supabase.rpc('check_prayer_similarity', {
+          input_text: card.prayer_text,
+        });
+        if (simData && Array.isArray(simData) && simData.length > 0) {
+          const best = simData[0] as { match_score: number; match_id: string; match_status: string };
+          if (best.match_score > 0.55 && best.match_status === 'approved' && best.match_id !== card.id) {
+            setDuplicateDialog({ matchId: best.match_id });
+            setTogglingPublic(false);
+            return;
+          }
+        }
+
         const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-prayer`, {
           method: "POST",
           headers: {
@@ -321,6 +334,29 @@ export function BoardCard({
       toast({ title: "Failed to update visibility", variant: "destructive" });
     } finally {
       setTogglingPublic(false);
+    }
+  };
+
+  const handleDispute = async () => {
+    if (!duplicateDialog || !userId) return;
+    setDisputeSending(true);
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", userId)
+        .maybeSingle();
+      await supabase.from("contact_submissions").insert({
+        name: profile?.full_name || "User",
+        email: profile?.email || "",
+        message: `Prayer duplicate dispute: My prayer "${card.title || card.id}" was flagged as similar to existing public prayer ${duplicateDialog.matchId}. I believe this is unique and should be allowed to go public.`,
+      });
+      toast({ title: "Message sent to KeepPray.ing — we'll get back to you ASAP 🙏" });
+      setDuplicateDialog(null);
+    } catch {
+      toast({ title: "Failed to send dispute", variant: "destructive" });
+    } finally {
+      setDisputeSending(false);
     }
   };
 
