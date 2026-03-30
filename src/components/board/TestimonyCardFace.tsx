@@ -56,6 +56,9 @@ export function TestimonyCardFace({
   const [userPraised, setUserPraised] = useState(false);
   const [praiseAnimating, setPraiseAnimating] = useState(false);
 
+  // TTS
+  const tts = useTtsPlayer({ cacheId: `testimony_${testimony.id}` });
+
   // Answered date
   const [answeredDate, setAnsweredDate] = useState<Date | undefined>(
     testimony.answered_date ? new Date(testimony.answered_date) : new Date(testimony.created_at)
