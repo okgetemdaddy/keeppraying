@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SacredSpinner from "@/components/SacredSpinner";
+import { PrayedButton } from "@/components/PrayedButton";
 import {
   Volume2, Bookmark, MessageSquare, Send, LogIn, Heart,
-  Loader2, Clock, AlertTriangle, Lock,
+  Loader2, Clock, AlertTriangle, Lock, Flame, Headphones,
+  Shield, Sparkles, BookOpen,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
