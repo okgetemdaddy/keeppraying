@@ -43,6 +43,7 @@ export default function Support() {
   const [searchParams] = useSearchParams();
   const donated = searchParams.get("donated") === "true";
 
+  const location = useLocation();
   const [donationTab, setDonationTab] = useState<"one_time" | "recurring">("one_time");
   const [donating, setDonating] = useState<string | null>(null);
   const [logs, setLogs] = useState<UpdateLog[]>([]);
