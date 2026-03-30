@@ -196,7 +196,7 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
             transition={{ delay: 0.18, duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="fixed z-[59] flex flex-col gap-2.5"
             style={{
-              bottom: "calc(var(--fab-bottom, 5rem) + 16.5rem)",
+              bottom: "calc(var(--fab-bottom, 5rem) + 10.5rem)",
               right: "calc(var(--fab-right, 1rem) + 13rem)",
             }}
           >
