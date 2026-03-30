@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, useScroll, useTransform, useInView, type Variants, AnimatePresence } from "framer-motion";
 import FeatureCarousel from "@/components/FeatureCarousel";
+import FeatureShowcase from "@/components/FeatureShowcase";
 import DailyBreathSection from "@/components/breath/DailyBreathSection";
 import {
   Sparkles, BookOpen, Shield, Heart, ArrowRight, HandMetal, Send, Loader2, Bot,
@@ -469,6 +470,9 @@ export default function Index() {
           </motion.p>
         </motion.div>
       </section>
+
+      {/* ── Feature Showcase ─────────────────────────────────────────────── */}
+      <FeatureShowcase />
 
       {/* ── Lord's Prayer Verse ───────────────────────────────────────────── */}
       <section className="py-20 sm:py-28 bg-gradient-divine relative overflow-hidden">
