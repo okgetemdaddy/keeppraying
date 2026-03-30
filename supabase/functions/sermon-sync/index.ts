@@ -152,8 +152,9 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "grok-4.20-0309-reasoning",
+          temperature: 0.0,
+          max_tokens: 12000,
           messages: [
-            { role: "system", content: "You are a Christian sermon analyst. Return only valid JSON, no markdown fences." },
             { role: "user", content: PREMIUM_PROMPT(youtubeUrl) },
           ],
         }),
