@@ -111,6 +111,28 @@ export default function SermonSync() {
     window.open(`https://www.youtube.com/watch?v=${vid}&t=${seconds}s`, "_blank");
   }, [videoId, url]);
 
+  const PROGRESS_STEPS = [
+    "Checking for captions…",
+    "Downloading sermon audio…",
+    "Transcribing with AI…",
+    "Analyzing sermon content…",
+    "Preparing results…",
+  ];
+
+  const startProgressAnimation = () => {
+    setProgressStep(0);
+    if (progressTimer.current) clearInterval(progressTimer.current);
+    progressTimer.current = setInterval(() => {
+      setProgressStep((prev) => Math.min(prev + 1, PROGRESS_STEPS.length - 1));
+    }, 8000);
+  };
+
+  const stopProgressAnimation = () => {
+    if (progressTimer.current) { clearInterval(progressTimer.current); progressTimer.current = null; }
+  };
+
+  useEffect(() => { return () => stopProgressAnimation(); }, []);
+
   const handleSync = async (mode: "standard" | "premium") => {
     if (!url.trim() || !isValidYouTube(url)) {
       toast({ title: "Invalid URL", description: "Please paste a valid YouTube sermon link.", variant: "destructive" });
@@ -127,12 +149,17 @@ export default function SermonSync() {
     setSelected(new Set());
     setOpenSubtopics(new Set());
     setGeneratedPrayers({});
+    setAnnouncements([]);
+    setAnnouncementsDismissed(false);
+    setTranscriptSource(null);
+    startProgressAnimation();
 
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("No active session");
 
       // Step 1: Fetch transcript
+      setProgressStep(0);
       const transcriptResp = await supabase.functions.invoke("youtube-transcript", {
         body: { youtubeUrl: url },
       });
@@ -140,8 +167,15 @@ export default function SermonSync() {
       if (transcriptResp.error) throw new Error(transcriptResp.error.message || "Transcript fetch failed");
       const transcript = transcriptResp.data;
       setVideoId(transcript.videoId);
+      setTranscriptSource(transcript.source || "captions");
+
+      // Save announcements if returned from AI transcription
+      if (transcript.announcements && Array.isArray(transcript.announcements) && transcript.announcements.length > 0) {
+        setAnnouncements(transcript.announcements);
+      }
 
       // Step 2: Analyze
+      setProgressStep(3);
       const syncResp = await supabase.functions.invoke("sermon-sync", {
         body: {
           transcript: transcript.fullText,
@@ -153,6 +187,7 @@ export default function SermonSync() {
       });
 
       if (syncResp.error) throw new Error(syncResp.error.message || "Analysis failed");
+      setProgressStep(4);
       const data = syncResp.data as SermonResult;
       setResult(data);
 
@@ -170,6 +205,7 @@ export default function SermonSync() {
     } finally {
       setLoading(false);
       setLoadingMode(null);
+      stopProgressAnimation();
     }
   };
 
