@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalCacheWithTTL, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 interface BreathPrayer {
   id: string;
