@@ -612,7 +612,8 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
                         key={event.id}
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-start gap-2.5 rounded-xl px-3 py-2 transition-colors"
+                        onClick={() => event.link && navigate(event.link)}
+                        className={`flex items-start gap-2.5 rounded-xl px-3 py-2 transition-colors ${event.link ? "cursor-pointer hover:brightness-110" : ""}`}
                         style={{ background: config.bg }}
                       >
                         <div className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: config.color }}>
@@ -628,9 +629,14 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
                             </p>
                           )}
                         </div>
-                        <span className="text-[10px] flex-shrink-0" style={{ color: `${textColor}40` }}>
-                          {format(event.date, "h:mm a")}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="text-[10px]" style={{ color: `${textColor}40` }}>
+                            {format(event.date, "h:mm a")}
+                          </span>
+                          {event.link && (
+                            <ChevronRight className="w-3 h-3" style={{ color: `${textColor}30` }} />
+                          )}
+                        </div>
                       </motion.div>
                     );
                   })}
