@@ -822,6 +822,7 @@ interface ActionButtonsProps {
   onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
   userId?: string;
   onRefresh: () => void;
+  onSharePrivately?: () => void;
 }
 
 function ActionButtons({
@@ -830,7 +831,7 @@ function ActionButtons({
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
-  userId, onRefresh,
+  userId, onRefresh, onSharePrivately,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
