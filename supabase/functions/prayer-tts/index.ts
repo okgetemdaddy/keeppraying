@@ -43,9 +43,10 @@ serve(async (req) => {
       }),
     });
 
+    console.log("[prayer-tts] xAI response status:", response.status);
     if (!response.ok) {
       const err = await response.text();
-      console.error("xAI TTS error:", response.status, err);
+      console.error("[prayer-tts] xAI TTS error:", response.status, err);
       return new Response(JSON.stringify({ error: "Failed to generate speech." }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

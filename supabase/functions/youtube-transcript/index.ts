@@ -150,6 +150,7 @@ serve(async (req) => {
     const html = await pageResp.text();
     const captionMatch = html.match(/"captionTracks":\[(\{[^}]*?"baseUrl":"([^"]+)"[^}]*?\})/);
 
+    console.log("[youtube-transcript] captionMatch found:", !!captionMatch?.[2]);
     if (!captionMatch?.[2]) {
       return new Response(JSON.stringify({
         error: "No captions available for this video. Try a sermon that has subtitles or closed captions enabled.",
