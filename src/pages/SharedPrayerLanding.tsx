@@ -332,6 +332,9 @@ export default function SharedPrayerLanding() {
   const isParticipant = user && (user.id === share.sender_id || user.id === share.recipient_id);
   const isSender = user && user.id === share.sender_id;
 
+  // Check if the prayer is publicly accessible (anon could read the real text)
+  const isAccessible = prayer.prayer_text !== "Sign in to read this prayer — it was sent with love.";
+
   // ── UNAUTHENTICATED landing ─────────────────────────────────────────────────
   if (!isAuthenticated) {
     const recipientFirstName = recipient?.full_name?.split(" ")[0] || "friend";
