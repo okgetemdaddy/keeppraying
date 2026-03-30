@@ -26,7 +26,8 @@ const RATE_LABELS: Record<number, string> = {
   0.5: "0.5×", 0.75: "0.75×", 1: "1×", 1.25: "1.25×", 1.5: "1.5×", 1.75: "1.75×", 2: "2×",
 };
 
-const MS_PER_WORD_AT_1X = 150;
+// Default seconds-per-syllable for xAI "sal" voice (~0.18s/syl ≈ 140 wpm)
+const DEFAULT_SEC_PER_SYLLABLE = 0.18;
 
 /* ── helpers ─────────────────────────────────────────────── */
 
