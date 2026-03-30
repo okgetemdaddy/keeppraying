@@ -85,7 +85,19 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
     const audio = new Audio();
     audioRef.current = audio;
     audio.playbackRate = playbackRate;
-    audio.onended = () => setTtsPlaying(false);
+
+    // Self-calibration: record syllable/duration data when audio finishes
+    const textForCalibration = text;
+    audio.onended = () => {
+      setTtsPlaying(false);
+      try {
+        const dur = audio.duration;
+        if (dur && isFinite(dur) && dur > 2) {
+          const syls = countTextSyllables(textForCalibration);
+          recordCalibration(syls, dur);
+        }
+      } catch { /* noop */ }
+    };
     audio.onerror = () => setTtsPlaying(false);
 
     const id = cacheId || options.cacheId;
