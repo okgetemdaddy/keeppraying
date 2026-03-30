@@ -12,6 +12,10 @@ const MESSAGES: { text: string; duration: number }[] = [
   { text: "This will be 1,000× faster next time 🚀", duration: 8000 },
   { text: "God bless your heart 💛", duration: 3000 },
   { text: "It will be worth it ✝️", duration: 4000 },
+  { text: "Really, it only takes this long the first time", duration: 4000 },
+  { text: "Prepare your heart to speak with God", duration: 4000 },
+  { text: "Bear each other's burdens 😌", duration: 5000 },
+  { text: "The Lord Hears Every Prayer. To Jesus be the Glory amen!!!!", duration: 10000 },
 ];
 
 const TtsLoadingPopup = ({ visible }: TtsLoadingPopupProps) => {
