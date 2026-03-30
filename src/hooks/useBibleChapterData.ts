@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { NormalisedVerse } from "@/hooks/useBibleReader";
+import { getIdbCache, setIdbCache, cacheKeys } from "@/lib/localCache";
 
 /* ── Types for user interaction data ── */
 
