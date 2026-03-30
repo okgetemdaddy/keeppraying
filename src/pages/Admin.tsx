@@ -92,6 +92,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "sayings",          label: "Sayings",            icon: Sparkles },
   { id: "welcome",          label: "Welcome Messages",   icon: Bell },
   { id: "audio-cache",      label: "Audio Cache",        icon: Volume2 },
+  { id: "sermon-cache",     label: "Sermon Cache",       icon: Youtube },
 ];
 
 export default function Admin() {
