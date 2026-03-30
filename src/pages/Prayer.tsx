@@ -348,21 +348,91 @@ export default function Prayer() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="prayer-card-premium flex flex-col overflow-hidden"
+            className="relative flex flex-col overflow-hidden rounded-2xl"
+            style={{ background: "transparent" }}
           >
-            <div className="flex flex-col flex-1 p-6 sm:p-8">
+            {/* Inner background layer — only this gets transparency */}
+            <div
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
+                opacity: cardOpacity / 100,
+              }}
+            />
+
+            <div className="relative z-10 flex flex-col flex-1 p-6 sm:p-8">
 
               {/* Header */}
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex-1 min-w-0">
                   {card.title && (
                     <h1 className="font-display text-2xl sm:text-3xl font-bold leading-snug"
-                      style={{ color: "hsl(25 35% 14%)" }}>
+                      style={{ color: cardBgPreset?.text ?? "hsl(25 35% 14%)" }}>
                       {card.title}
                     </h1>
                   )}
                 </div>
-                <SourceBadge source={card.source} status={card.status} />
+                <div className="flex items-center gap-1.5">
+                  <SourceBadge source={card.source} status={card.status} />
+                  {isOwner && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded-lg hover:bg-black/5 transition-colors" title="Card settings">
+                          <MoreVertical className="w-4 h-4" style={{ color: cardBgPreset?.text ?? "hsl(25 18% 56%)" }} />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64 p-3 rounded-xl">
+                        <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                          <SunDim className="w-3.5 h-3.5" /> Card Transparency
+                        </DropdownMenuLabel>
+                        <div className="px-1 py-2">
+                          <Slider
+                            value={[cardOpacity]}
+                            onValueChange={handleOpacityChange}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                            <span>Transparent</span>
+                            <span>{cardOpacity}%</span>
+                            <span>Solid</span>
+                          </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                          <Palette className="w-3.5 h-3.5" /> Card Color
+                        </DropdownMenuLabel>
+                        <div className="flex flex-wrap gap-1.5 px-1 py-2">
+                          {/* Default swatch */}
+                          <button
+                            onClick={() => handleColorChange(null)}
+                            className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                            style={{ background: "#F8F1E3", borderColor: !cardBgPreset ? "hsl(42 75% 40%)" : "hsl(38 22% 85%)" }}
+                            title="Default"
+                          >
+                            {!cardBgPreset && <Check className="w-3 h-3" style={{ color: "#2C2418" }} />}
+                          </button>
+                          {CARD_BG_PRESETS.map(preset => {
+                            const isActive = cardBgPreset?.bg === preset.bg;
+                            return (
+                              <button
+                                key={preset.name}
+                                onClick={() => handleColorChange({ bg: preset.bg, text: preset.text })}
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                                style={{ background: preset.bg, borderColor: isActive ? "hsl(42 75% 40%)" : "hsl(38 22% 85%)" }}
+                                title={preset.name}
+                              >
+                                {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
               </div>
 
               {/* Prayer text */}
