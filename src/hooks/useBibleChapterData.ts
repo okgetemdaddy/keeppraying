@@ -123,13 +123,14 @@ export function useBibleChapterData(
       // ── Fetch C: User notes ──
       const fetchNotes = async (): Promise<UserNote[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let q = supabase
           .from("user_notes")
           .select("id, verse_number, note_content, created_at, updated_at")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossTranslation) q = q.eq("version_id", versionId!);
+        const { data, error } = await q;
         if (error) {
           console.warn("Failed to fetch notes:", error.message);
           return [];
