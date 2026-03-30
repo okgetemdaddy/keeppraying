@@ -136,6 +136,21 @@ export default function Prayer() {
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
   const isOwner = !!(user && card && card.created_by === user.id);
 
+  // Helper: convert hex to "r, g, b" for rgba()
+  const hexToRgb = (hex: string): string => {
+    const h = hex.replace('#', '');
+    return `${parseInt(h.substring(0, 2), 16)}, ${parseInt(h.substring(2, 4), 16)}, ${parseInt(h.substring(4, 6), 16)}`;
+  };
+
+  // Compute the card background style — only override when user has changed settings
+  const cardBgStyle = (() => {
+    const rgb = hexToRgb(cardBgPreset?.bg ?? '#F8F1E3');
+    const alpha = cardOpacity / 100;
+    // When fully opaque with no preset, let the CSS class handle it
+    if (!cardBgPreset && cardOpacity === 100) return {};
+    return { background: `rgba(${rgb}, ${alpha})` };
+  })();
+
   // Font
   const activeFontFamily = card?.text_style
     ? PRAYER_FONTS.find(f => f.family === card.text_style)?.family ?? null
@@ -348,19 +363,10 @@ export default function Prayer() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex flex-col overflow-hidden rounded-2xl"
-            style={{ background: "transparent" }}
+            className="prayer-card-premium flex flex-col"
+            style={cardBgStyle}
           >
-            {/* Inner background layer — only this gets transparency */}
-            <div
-              className="absolute inset-0 rounded-2xl"
-              style={{
-                backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
-                opacity: cardOpacity / 100,
-              }}
-            />
-
-            <div className="relative z-10 flex flex-col flex-1 p-6 sm:p-8">
+            <div className="relative flex flex-col flex-1 p-6 sm:p-8">
 
               {/* Header */}
               <div className="flex items-start justify-between gap-3 mb-4">
@@ -524,8 +530,7 @@ export default function Prayer() {
                 className="flex items-center gap-0.5 pt-4 mt-4 border-t rounded-b-2xl -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 px-6 sm:px-8 pb-4"
                 style={{
                   borderColor: "hsl(38 22% 90%)",
-                  backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
-                  opacity: Math.max(cardOpacity / 100, 0.8),
+                  background: `rgba(${hexToRgb(cardBgPreset?.bg ?? '#F8F1E3')}, ${Math.max(cardOpacity / 100, 0.8)})`,
                 }}
               >
                 {/* Like */}
