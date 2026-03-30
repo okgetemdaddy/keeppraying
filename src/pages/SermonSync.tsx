@@ -23,7 +23,7 @@ import {
 import {
   BookOpen, Loader2, Sparkles, Check, ChevronDown, ChevronUp,
   Church, Youtube, ArrowRight, Heart, Plus, ExternalLink,
-  Play, Crown, RefreshCw, Calendar, Clock, Users, Megaphone, X,
+  Play, Crown, RefreshCw, Calendar, Clock, Users,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
