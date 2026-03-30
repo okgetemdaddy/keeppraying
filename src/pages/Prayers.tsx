@@ -124,6 +124,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [prayedFloat, setPrayedFloat] = useState(false);
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testimonyCount, setTestimonyCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
