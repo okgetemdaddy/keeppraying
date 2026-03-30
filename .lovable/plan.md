@@ -1,36 +1,61 @@
 
 
-## Sermon Sync: Real Transcription Pipeline
+## Private Prayer Sharing System
 
-### The New Architecture
+### Overview
+Enable users to share a private prayer with another platform user via two paths: (1) in-app user search → one-click share → notification, and (2) generate a secure link for SMS/text sharing with a branded landing page for unauthenticated recipients.
 
-```text
-Current:  YouTube URL → AI "watches" video → hopes for the best
-New:      YouTube URL → Extract audio URL → AssemblyAI transcribes → Grok analyzes transcript
+### Database Changes
+
+**New table: `prayer_shares`**
+```sql
+CREATE TABLE public.prayer_shares (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  prayer_id uuid NOT NULL,
+  sender_id uuid NOT NULL,
+  recipient_id uuid,              -- null when shared via link before claim
+  token text NOT NULL DEFAULT encode(gen_random_bytes(16), 'hex'),
+  message text,                    -- optional personal note
+  status text NOT NULL DEFAULT 'pending',  -- pending | viewed | saved
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL DEFAULT now() + interval '30 days',
+  UNIQUE(token)
+);
+
+ALTER TABLE public.prayer_shares ENABLE ROW LEVEL SECURITY;
+
+-- Sender can do everything with their shares
+CREATE POLICY "Senders manage own shares"
+  ON public.prayer_shares FOR ALL TO authenticated
+  USING (auth.uid() = sender_id)
+  WITH CHECK (auth.uid() = sender_id);
+
+-- Recipients can view shares sent to them
+CREATE POLICY "Recipients can view their shares"
+  ON public.prayer_shares FOR SELECT TO authenticated
+  USING (auth.uid() = recipient_id);
+
+-- Recipients can update status (mark viewed/saved)
+CREATE POLICY "Recipients can update share status"
+  ON public.prayer_shares FOR UPDATE TO authenticated
+  USING (auth.uid() = recipient_id);
+
+-- Anyone can read by valid token (for landing page before auth)
+CREATE POLICY "Anyone can read by valid token"
+  ON public.prayer_shares FOR SELECT TO public
+  USING (expires_at > now());
 ```
 
-The current approach asks AI models to "watch" a YouTube video, which is unreliable. The new pipeline gives Grok an actual word-for-word transcript with timestamps, producing dramatically better results.
+**New table: `prayer_share_comments`** (private thread between sender and recipient only)
+```sql
+CREATE TABLE public.prayer_share_comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  share_id uuid NOT NULL REFERENCES prayer_shares(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  text text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-### Critical Constraint: Edge Functions
+ALTER TABLE public.prayer_share_comments ENABLE ROW LEVEL SECURITY;
 
-Edge functions cannot run FFmpeg or yt-dlp — they're serverless with no binary execution. Instead, we use **cobalt.tools API** (free, no auth) to get a direct audio URL from YouTube, then pass that URL straight to AssemblyAI. No file downloading needed.
-
-AssemblyAI transcription is **async** (submit → poll) and takes 1-5 minutes for a sermon. This means the flow must become async on the frontend too.
-
-### Pipeline (3 Phases)
-
-```text
-Phase 1: Audio extraction (cobalt API → audio URL, ~2 seconds)
-Phase 2: Transcription (AssemblyAI submit + poll, 1-5 minutes)
-Phase 3: Grok analysis of transcript (same as today but with real text)
-```
-
-### Changes
-
-**1. Edge function: `supabase/functions/sermon-sync/index.ts`**
-
-Rewrite the core pipeline:
-
-- **Phase 1 — Audio URL**: Call cobalt.tools API (`https://api.cobalt.tools/`) with the YouTube URL. Returns a direct download URL for the audio stream. No API key needed. If cobalt fails, fall back to a secondary service or return a clear error.
-
-- **Phase 2 — AssemblyAI Transcription**: Submit the audio URL to AssemblyAI's `/v2/transcript` endpoint (using `Assembly_Ai` secret). Enable `auto_chapters`, `speaker_labels`, and `audio_intelligence`. Poll `/v2/transcript/{id}` until status is `completed`. Store `full_text` and `raw_segments` (utterances/chapters) in
+-- Only
