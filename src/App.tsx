@@ -33,6 +33,7 @@ import Breathe from "./pages/Breathe";
 import Bible from "./pages/Bible";
 import Profile from "./pages/Profile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
+import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
