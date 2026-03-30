@@ -32,11 +32,7 @@ function cleanCaptionText(text: string): string {
     .trim();
 }
 
-interface Segment {
-  start: number;
-  dur: number;
-  text: string;
-}
+interface Segment { start: number; dur: number; text: string; }
 
 function parseSegments(xml: string): Segment[] {
   const segments: Segment[] = [];
@@ -44,31 +40,21 @@ function parseSegments(xml: string): Segment[] {
   let match;
   while ((match = regex.exec(xml)) !== null) {
     const raw = match[3]
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&apos;/g, "'")
-      .trim();
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'").trim();
     const cleaned = cleanCaptionText(raw);
     if (cleaned) {
-      segments.push({
-        start: parseFloat(match[1]),
-        dur: parseFloat(match[2]),
-        text: cleaned,
-      });
+      segments.push({ start: parseFloat(match[1]), dur: parseFloat(match[2]), text: cleaned });
     }
   }
   return segments;
 }
 
-// Extract caption URL from HTML using two strategies
 function extractCaptionUrlFromHtml(html: string): string | null {
   // Strategy 1: Direct captionTracks regex
   const baseUrlMatch = html.match(/"captionTracks":\s*\[.*?"baseUrl"\s*:\s*"([^"]+)"/s);
   if (baseUrlMatch?.[1]) {
-    console.log("[youtube-transcript] Strategy 1 (regex) matched");
+    console.log("[yt] Strategy: regex captionTracks");
     return baseUrlMatch[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
   }
 
@@ -82,51 +68,102 @@ function extractCaptionUrlFromHtml(html: string): string | null {
         const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
           || tracks.find((t: any) => t.languageCode === "en")
           || tracks[0];
-        console.log("[youtube-transcript] Strategy 2 (playerResponse) matched");
+        console.log("[yt] Strategy: ytInitialPlayerResponse");
         return chosen.baseUrl;
       }
-    } catch (e) {
-      console.log("[youtube-transcript] Strategy 2 parse error:", e);
-    }
+    } catch { /* ignore parse error */ }
   }
 
   return null;
 }
 
-// Innertube API call with a given client config
-async function tryInnertube(videoId: string, clientName: string, clientVersion: string, apiKey?: string): Promise<string | null> {
+function extractInnertubeKey(html: string): string | null {
+  const m = html.match(/"INNERTUBE_API_KEY"\s*:\s*"([^"]+)"/);
+  return m?.[1] || null;
+}
+
+function extractVisitorData(html: string): string | null {
+  const m = html.match(/"visitorData"\s*:\s*"([^"]+)"/);
+  return m?.[1] || null;
+}
+
+interface InnertubeClient {
+  name: string;
+  clientName: string;
+  clientVersion: string;
+  userAgent: string;
+  extraContext?: Record<string, any>;
+}
+
+const INNERTUBE_CLIENTS: InnertubeClient[] = [
+  {
+    name: "ANDROID",
+    clientName: "ANDROID",
+    clientVersion: "19.29.37",
+    userAgent: "com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip",
+    extraContext: { androidSdkVersion: 30, platform: "MOBILE" },
+  },
+  {
+    name: "IOS",
+    clientName: "IOS",
+    clientVersion: "19.29.1",
+    userAgent: "com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X;)",
+    extraContext: { deviceMake: "Apple", deviceModel: "iPhone16,2", platform: "MOBILE" },
+  },
+  {
+    name: "TV_EMBEDDED",
+    clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    clientVersion: "2.0",
+    userAgent: "Mozilla/5.0",
+  },
+  {
+    name: "WEB",
+    clientName: "WEB",
+    clientVersion: "2.20250101.00.00",
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+  },
+];
+
+async function tryInnertube(
+  videoId: string,
+  client: InnertubeClient,
+  apiKey?: string,
+  visitorData?: string,
+): Promise<string | null> {
   try {
     const url = apiKey
       ? `https://www.youtube.com/youtubei/v1/player?key=${apiKey}&prettyPrint=false`
       : "https://www.youtube.com/youtubei/v1/player?prettyPrint=false";
 
-    const body: any = {
-      videoId,
-      context: {
-        client: { clientName, clientVersion, hl: "en" },
-      },
+    const clientObj: any = {
+      clientName: client.clientName,
+      clientVersion: client.clientVersion,
+      hl: "en",
+      ...client.extraContext,
     };
-
-    // Android client needs additional fields
-    if (clientName === "ANDROID") {
-      body.context.client.androidSdkVersion = 30;
-      body.context.client.platform = "MOBILE";
-    }
+    if (visitorData) clientObj.visitorData = visitorData;
 
     const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": "com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip" },
-      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": client.userAgent,
+        "X-YouTube-Client-Name": client.clientName === "ANDROID" ? "3" : client.clientName === "IOS" ? "5" : "1",
+        "X-YouTube-Client-Version": client.clientVersion,
+      },
+      body: JSON.stringify({
+        videoId,
+        context: { client: clientObj },
+        contentCheckOk: true,
+        racyCheckOk: true,
+      }),
     });
 
-    if (!resp.ok) {
-      await resp.text();
-      return null;
-    }
+    if (!resp.ok) { await resp.text(); return null; }
 
     const data = await resp.json();
     const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    console.log(`[youtube-transcript] Innertube ${clientName} tracks:`, tracks?.length ?? 0);
+    console.log(`[yt] Innertube ${client.name}: ${tracks?.length ?? 0} tracks`);
 
     if (Array.isArray(tracks) && tracks.length > 0) {
       const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
@@ -135,56 +172,46 @@ async function tryInnertube(videoId: string, clientName: string, clientVersion: 
       return chosen.baseUrl;
     }
   } catch (e) {
-    console.log(`[youtube-transcript] Innertube ${clientName} error:`, e);
+    console.log(`[yt] Innertube ${client.name} error:`, e);
   }
   return null;
 }
 
-// Direct timedtext API for auto-generated captions
 async function tryDirectTimedtext(videoId: string): Promise<string | null> {
-  try {
-    const url = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&kind=asr&fmt=srv3`;
-    const resp = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-      },
-    });
-    if (!resp.ok) {
-      await resp.text();
-      return null;
-    }
-    const xml = await resp.text();
-    // Check if we got actual caption data (not empty)
-    if (xml.includes("<text start=")) {
-      console.log("[youtube-transcript] Direct timedtext API returned captions");
-      return `__RAW_XML__${xml}`;
-    }
-    console.log("[youtube-transcript] Direct timedtext API returned empty/no captions");
-  } catch (e) {
-    console.log("[youtube-transcript] Direct timedtext error:", e);
+  for (const kind of ["asr", ""]) {
+    try {
+      const params = new URLSearchParams({ v: videoId, lang: "en", fmt: "srv3" });
+      if (kind) params.set("kind", kind);
+      const url = `https://www.youtube.com/api/timedtext?${params}`;
+      const resp = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36" },
+      });
+      if (!resp.ok) { await resp.text(); continue; }
+      const xml = await resp.text();
+      if (xml.includes("<text start=")) {
+        console.log(`[yt] Direct timedtext (kind=${kind}) success`);
+        return `__RAW__${xml}`;
+      }
+    } catch { /* continue */ }
   }
+  console.log("[yt] Direct timedtext: no captions");
   return null;
 }
 
-// Fetch YouTube page HTML with browser-like headers
 async function fetchYouTubeHtml(videoId: string, attempt: number): Promise<string> {
-  const userAgents = [
+  const uas = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Safari/605.1.15",
   ];
-
   const resp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
     headers: {
-      "User-Agent": userAgents[attempt % userAgents.length],
+      "User-Agent": uas[attempt % uas.length],
       "Accept-Language": "en-US,en;q=0.9",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+999; GPS=1",
+      "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+999; SOCS=CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwODA4LjA3X3AxGgJlbiACGgYIgJnPpwY; GPS=1",
     },
   });
-
-  if (!resp.ok) {
-    throw new Error(`YouTube returned ${resp.status}`);
-  }
+  if (!resp.ok) throw new Error(`YouTube returned ${resp.status}`);
   return resp.text();
 }
 
@@ -192,7 +219,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    console.log("[youtube-transcript] Request received, method:", req.method);
+    console.log("[yt] Request received");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -222,7 +249,7 @@ serve(async (req) => {
     }
 
     const videoId = extractVideoId(youtubeUrl);
-    console.log("[youtube-transcript] videoId:", videoId, "url:", youtubeUrl);
+    console.log("[yt] videoId:", videoId);
     if (!videoId) {
       return new Response(JSON.stringify({ error: "Invalid YouTube URL" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -232,84 +259,69 @@ serve(async (req) => {
     // Check cache
     const cutoff = new Date(Date.now() - CACHE_TTL_DAYS * 86400000).toISOString();
     const { data: cached } = await supabase
-      .from("sermon_transcripts")
-      .select("*")
-      .eq("video_id", videoId)
-      .gte("fetched_at", cutoff)
-      .maybeSingle();
+      .from("sermon_transcripts").select("*")
+      .eq("video_id", videoId).gte("fetched_at", cutoff).maybeSingle();
 
-    console.log("[youtube-transcript] cache check:", cached ? "HIT" : "MISS");
-    if (cached && cached.raw_segments && cached.full_text) {
+    if (cached?.raw_segments && cached?.full_text) {
+      console.log("[yt] cache HIT");
       return new Response(JSON.stringify({
-        videoId,
-        videoTitle: cached.video_title || "",
-        raw: cached.raw_segments,
-        fullText: cached.full_text,
-        cached: true,
+        videoId, videoTitle: cached.video_title || "",
+        raw: cached.raw_segments, fullText: cached.full_text, cached: true,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    console.log("[yt] cache MISS");
 
-    // Fetch video title via oEmbed
+    // Fetch video title
     let videoTitle = "";
     try {
-      const oembed = await fetch(
-        `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
-      );
-      if (oembed.ok) {
-        const data = await oembed.json();
-        videoTitle = data.title || "";
-      }
+      const oembed = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+      if (oembed.ok) { videoTitle = (await oembed.json()).title || ""; }
     } catch { /* non-fatal */ }
 
-    // === CAPTION EXTRACTION (multi-strategy with retry) ===
+    // === MULTI-STRATEGY CAPTION EXTRACTION ===
     let captionUrl: string | null = null;
-    let rawXml: string | null = null; // for direct timedtext strategy
+    let rawXml: string | null = null;
 
-    for (let attempt = 0; attempt < 2 && !captionUrl; attempt++) {
+    for (let attempt = 0; attempt < 2 && !captionUrl && !rawXml; attempt++) {
       if (attempt > 0) {
-        console.log("[youtube-transcript] Retry attempt", attempt);
-        await new Promise(r => setTimeout(r, 1000));
+        console.log("[yt] === Retry attempt ===");
+        await new Promise(r => setTimeout(r, 1200));
       }
 
-      // Strategy 1 & 2: HTML-based extraction
+      // HTML-based strategies
+      let apiKey: string | null = null;
+      let visitorData: string | null = null;
       try {
         const html = await fetchYouTubeHtml(videoId, attempt);
-        console.log("[youtube-transcript] Attempt", attempt, "HTML length:", html.length,
-          "has captionTracks:", html.includes("captionTracks"),
-          "has ytInitialPlayerResponse:", html.includes("ytInitialPlayerResponse"));
+        console.log(`[yt] HTML len=${html.length} captionTracks=${html.includes("captionTracks")} ytIPR=${html.includes("ytInitialPlayerResponse")}`);
 
         captionUrl = extractCaptionUrlFromHtml(html);
+        if (captionUrl) break;
+
+        // Extract API key & visitor data for innertube calls
+        apiKey = extractInnertubeKey(html);
+        visitorData = extractVisitorData(html);
+        console.log(`[yt] apiKey=${!!apiKey} visitorData=${!!visitorData}`);
       } catch (e) {
-        console.log("[youtube-transcript] HTML fetch error attempt", attempt, ":", e);
+        console.log("[yt] HTML fetch error:", e);
       }
 
+      // Innertube strategies (try all clients)
+      for (const client of INNERTUBE_CLIENTS) {
+        captionUrl = await tryInnertube(videoId, client, apiKey || undefined, visitorData || undefined);
+        if (captionUrl) break;
+      }
       if (captionUrl) break;
 
-      // Strategy 3: Innertube ANDROID (most permissive for ASR)
-      captionUrl = await tryInnertube(videoId, "ANDROID", "19.29.37");
-      if (captionUrl) break;
-
-      // Strategy 4: Innertube TV_EMBEDDED
-      captionUrl = await tryInnertube(videoId, "TVHTML5_SIMPLY_EMBEDDED_PLAYER", "2.0");
-      if (captionUrl) break;
-
-      // Strategy 5: Innertube WEB
-      captionUrl = await tryInnertube(videoId, "WEB", "2.20250101.00.00");
-      if (captionUrl) break;
-
-      // Strategy 6: Direct timedtext API (targets auto-generated specifically)
+      // Direct timedtext API (targets auto-generated captions)
       const directResult = await tryDirectTimedtext(videoId);
-      if (directResult) {
-        if (directResult.startsWith("__RAW_XML__")) {
-          rawXml = directResult.slice("__RAW_XML__".length);
-        } else {
-          captionUrl = directResult;
-        }
+      if (directResult?.startsWith("__RAW__")) {
+        rawXml = directResult.slice(7);
         break;
       }
     }
 
-    console.log("[youtube-transcript] captionUrl found:", !!captionUrl, "rawXml found:", !!rawXml);
+    console.log("[yt] Final: captionUrl=", !!captionUrl, "rawXml=", !!rawXml);
 
     if (!captionUrl && !rawXml) {
       return new Response(JSON.stringify({
@@ -317,7 +329,6 @@ serve(async (req) => {
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Fetch caption XML (unless we already have it from direct timedtext)
     let xml = rawXml;
     if (!xml && captionUrl) {
       const captionResp = await fetch(captionUrl);
@@ -330,7 +341,6 @@ serve(async (req) => {
     }
 
     const segments = parseSegments(xml!);
-
     if (segments.length < 5) {
       return new Response(JSON.stringify({
         error: "Captions are too short to analyze. This may not be a sermon recording.",
@@ -339,25 +349,17 @@ serve(async (req) => {
 
     const fullText = segments.map((s) => s.text).join(" ");
 
-    // Cache (upsert)
     await supabase.from("sermon_transcripts").upsert({
-      video_id: videoId,
-      video_title: videoTitle,
-      raw_segments: segments,
-      full_text: fullText,
-      fetched_at: new Date().toISOString(),
-      user_id: user.id,
+      video_id: videoId, video_title: videoTitle,
+      raw_segments: segments, full_text: fullText,
+      fetched_at: new Date().toISOString(), user_id: user.id,
     }, { onConflict: "video_id" });
 
     return new Response(JSON.stringify({
-      videoId,
-      videoTitle,
-      raw: segments,
-      fullText,
-      cached: false,
+      videoId, videoTitle, raw: segments, fullText, cached: false,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
-    console.error("youtube-transcript error:", e);
+    console.error("[yt] error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
