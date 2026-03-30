@@ -117,6 +117,7 @@ export default function Board() {
   const navigate = useNavigate();
   const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
   const isMobile = useIsMobile();
+  const { plans: sermonPlans, memberships: sermonMemberships, updateMemberToggles, markDayComplete } = useSermonPlans();
 
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
