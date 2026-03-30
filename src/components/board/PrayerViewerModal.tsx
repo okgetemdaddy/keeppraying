@@ -70,7 +70,13 @@ const THEATER_GLOW_STYLE = `
 }
 `;
 
-/** Theater-mode cinematic prayer reader */
+/** Helper: hex → "r, g, b" */
+function hexToRgb(hex: string): string {
+  const h = hex.replace("#", "");
+  return `${parseInt(h.substring(0, 2), 16)}, ${parseInt(h.substring(2, 4), 16)}, ${parseInt(h.substring(4, 6), 16)}`;
+}
+
+/** Theater-mode cinematic prayer reader — now with floating inner card */
 export function PrayerViewerModal({
   open,
   onClose,
@@ -115,6 +121,20 @@ export function PrayerViewerModal({
     setTestifying(false);
   }, [item.notes, item.id]);
 
+  // Initialize creator card styling from DB
+  useEffect(() => {
+    if (!card) return;
+    const rawOpacity = (card as any).card_opacity;
+    if (rawOpacity != null) setCardOpacity(Math.round(rawOpacity * 100));
+    else setCardOpacity(100);
+    const rawColor = (card as any).card_color;
+    if (rawColor && typeof rawColor === "object" && "bg" in rawColor) {
+      setCardBgPreset(rawColor as { bg: string; text: string });
+    } else {
+      setCardBgPreset(null);
+    }
+  }, [card?.id]);
+
   // Body scroll lock
   useEffect(() => {
     if (open) {
@@ -147,6 +167,35 @@ export function PrayerViewerModal({
     PRAYER_FONTS.find((f) => f.family === card.text_style)?.family ?? null;
 
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+  // Compute card background style (same logic as Prayer.tsx)
+  const cardBgStyle = (() => {
+    const rgb = hexToRgb(cardBgPreset?.bg ?? "#F8F1E3");
+    const alpha = cardOpacity / 100;
+    if (!cardBgPreset && cardOpacity === 100) return {};
+    return { background: `rgba(${rgb}, ${alpha})` };
+  })();
+
+  // Text color for the card
+  const cardTextColor = cardBgPreset?.text ?? "hsl(25 35% 14%)";
+
+  // ── Creator styling handlers ──
+  const opacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleOpacityChange = (val: number[]) => {
+    const v = val[0];
+    setCardOpacity(v);
+    if (opacityTimerRef.current) clearTimeout(opacityTimerRef.current);
+    opacityTimerRef.current = setTimeout(() => {
+      if (!card.id) return;
+      supabase.from("prayer_cards").update({ card_opacity: v / 100 } as any).eq("id", card.id).then();
+    }, 400);
+  };
+
+  const handleColorChange = (preset: { bg: string; text: string } | null) => {
+    setCardBgPreset(preset);
+    if (!card.id) return;
+    supabase.from("prayer_cards").update({ card_color: preset } as any).eq("id", card.id).then();
+  };
 
   // ── Actions ──
   const toggleFavorite = async () => {
@@ -230,25 +279,26 @@ export function PrayerViewerModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-0 md:p-6"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-6"
             onClick={onClose}
           >
+            {/* ── Floating prayer card inside dark theater ── */}
             <motion.div
-              key="prayer-viewer-theater"
+              key="prayer-viewer-card"
               initial={{ opacity: 0, scale: 0.92, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 24 }}
               transition={{ duration: 0.4, type: "spring", stiffness: 260, damping: 28 }}
-              className="w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl overflow-y-auto flex flex-col relative"
+              className="prayer-card-premium w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col relative"
               style={{
-                background: hasImage ? undefined : "white",
+                ...cardBgStyle,
                 animation: "theater-glow 6s ease-in-out infinite",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Background image */}
+              {/* Card-level background image (inside card, NOT full-screen) */}
               {hasImage && (
-                <div className="absolute inset-0 md:rounded-2xl overflow-hidden">
+                <div className="absolute inset-0 rounded-[1.25rem] overflow-hidden">
                   <img
                     src={bgUrl!}
                     alt=""
@@ -259,27 +309,24 @@ export function PrayerViewerModal({
                 </div>
               )}
 
-              {/* White background for non-image cards */}
-              {!hasImage && (
-                <div className="absolute inset-0 md:rounded-2xl bg-white" />
-              )}
-
-              {/* Close button — large, prominent */}
+              {/* Close button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors z-20 bg-white shadow-md"
+                className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full transition-colors z-20 bg-white/90 shadow-md hover:bg-white"
+                style={{ color: "hsl(215 14% 34%)" }}
                 aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              {/* ── Content ── */}
-              <div className={`relative flex-1 p-8 md:p-12 ${hasImage ? "text-white" : ""}`}>
+              {/* ── Card content ── */}
+              <div className="relative flex-1 p-6 md:p-10">
                 {testifying ? (
                   <div className="min-h-[300px]">
                     <button
                       onClick={() => setTestifying(false)}
-                      className={`flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors ${hasImage ? "text-white/70 hover:text-white" : "text-slate-500 hover:text-slate-700"}`}
+                      className={`flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors ${hasImage ? "text-white/70 hover:text-white" : "hover:opacity-70"}`}
+                      style={{ color: hasImage ? undefined : cardTextColor }}
                     >
                       <ArrowLeft className="w-4 h-4" />
                       Back to prayer
@@ -295,215 +342,311 @@ export function PrayerViewerModal({
                   </div>
                 ) : (
                   <>
-                {/* Title */}
-                {card.title && (
-                  <h2 className={`text-xl md:text-2xl font-semibold mb-6 leading-tight ${hasImage ? "text-white" : "text-slate-900"}`}
-                    style={{ fontFamily: '"Playfair Display", serif' }}
-                  >
-                    {card.title}
-                  </h2>
-                )}
-
-                {/* Prayer text — optimized for reading */}
-                <FormattedText
-                  text={card.prayer_text}
-                  className={`text-base md:text-lg leading-[1.85] font-medium mb-8 selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white" : "text-slate-800"}`}
-                  style={{
-                    fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : '"Lora", serif',
-                  }}
-                  indent
-                />
-
-                {/* See less… — closes modal */}
-                <button
-                  onClick={onClose}
-                  className={`text-sm font-semibold transition-colors ${hasImage ? "text-white/60 hover:text-white/90" : "text-slate-400 hover:text-slate-600"}`}
-                >
-                  See less…
-                </button>
-
-                {/* Extended prayer / scripture */}
-                {card.extended_prayer && (
-                  <div className="mt-8 mb-6">
-                    <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${hasImage ? "text-white/60" : "text-slate-400"}`}>
-                      Scripture & Meditation
-                    </h3>
-                    <p
-                      className={`text-sm md:text-base leading-[1.8] italic selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white/85" : "text-slate-600"}`}
-                      style={{ fontFamily: '"Lora", serif' }}
-                    >
-                      {renderWithVerseLinks(card.extended_prayer)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Meditation essay */}
-                {card.meditation_essay && (
-                  <div className="mb-6">
-                    <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${hasImage ? "text-white/60" : "text-slate-400"}`}>
-                      Meditation
-                    </h3>
-                    <p className={`text-sm md:text-base leading-[1.8] selection:bg-amber-100 selection:text-slate-900 ${hasImage ? "text-white/85" : "text-slate-600"}`}>
-                      {card.meditation_essay}
-                    </p>
-                  </div>
-                )}
-
-                {/* Labels */}
-                {card.labels && card.labels.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-6 mt-6">
-                    {card.labels.map((tag) => {
-                      const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
-                      return (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
-                          style={hasImage ? { background: "rgba(255,255,255,0.15)", color: "white" } : { background: palette.bg, color: palette.text }}
-                        >
-                          <Tag className="w-3 h-3" />#{tag}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Status badges */}
-                {(card.status === "ai_generated" || card.status === "pending") && (
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {card.status === "ai_generated" && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-                        style={{ background: `${accentColor}20`, color: accentColor }}>
-                        <Sparkles className="w-3 h-3" />AI Generated
-                      </span>
-                    )}
-                    {card.status === "pending" && isOwner && (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-slate-500 bg-slate-100">
-                        In review
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Notes */}
-                <div className="mb-6 mt-8">
-                  <h3 className={`text-xs font-semibold uppercase tracking-widest mb-3 ${hasImage ? "text-white/60" : "text-slate-400"}`}>
-                    Personal Notes
-                  </h3>
-                  {editingNotes ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Personal notes, reflection…"
-                        rows={3}
-                        className="min-h-[52px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-xl px-4 py-3 text-sm resize-none w-full focus:ring-2 focus:ring-amber-200"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={saveNotes} className="rounded-xl h-8 text-xs bg-slate-900 text-white hover:bg-slate-800">
-                          Save
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }}
-                          className="rounded-xl h-8 text-xs"
-                        >
-                          Cancel
-                        </Button>
+                    {/* Header: Title + Owner three-dot menu */}
+                    <div className="flex items-start justify-between gap-3 mb-6 pr-10">
+                      <div className="flex-1 min-w-0">
+                        {card.title && (
+                          <h2
+                            className="text-xl md:text-2xl font-semibold leading-tight"
+                            style={{
+                              color: hasImage ? "white" : cardTextColor,
+                              fontFamily: '"Playfair Display", serif',
+                            }}
+                          >
+                            {card.title}
+                          </h2>
+                        )}
                       </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setEditingNotes(true)}
-                      className={`min-h-[52px] w-full text-left rounded-xl px-4 py-3 text-sm transition-all ${
-                        hasImage
-                          ? "bg-white/10 text-white/80 hover:bg-white/15"
-                          : "bg-slate-50 text-slate-600 hover:bg-slate-100"
-                      }`}
-                    >
-                      {item.notes ? (
-                        <span className="italic">"{item.notes}"</span>
-                      ) : (
-                        <span className={hasImage ? "text-white/40" : "text-slate-400"}>+ Add notes…</span>
+
+                      {/* Owner three-dot settings menu */}
+                      {isOwner && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="p-1.5 rounded-lg transition-colors"
+                              style={{
+                                color: hasImage ? "white" : cardTextColor,
+                                background: hasImage ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)",
+                              }}
+                              title="Card settings"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-64 p-3 rounded-xl">
+                            <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                              <SunDim className="w-3.5 h-3.5" /> Card Transparency
+                            </DropdownMenuLabel>
+                            <div className="px-1 py-2">
+                              <Slider
+                                value={[cardOpacity]}
+                                onValueChange={handleOpacityChange}
+                                min={0}
+                                max={100}
+                                step={1}
+                                className="w-full"
+                              />
+                              <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                                <span>Transparent</span>
+                                <span>{cardOpacity}%</span>
+                                <span>Solid</span>
+                              </div>
+                            </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                              <Palette className="w-3.5 h-3.5" /> Card Color
+                            </DropdownMenuLabel>
+                            <div className="flex flex-wrap gap-1.5 px-1 py-2">
+                              <button
+                                onClick={() => handleColorChange(null)}
+                                className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                                style={{ background: "#F8F1E3", borderColor: !cardBgPreset ? "hsl(42 75% 40%)" : "hsl(38 22% 85%)" }}
+                                title="Default"
+                              >
+                                {!cardBgPreset && <Check className="w-3 h-3" style={{ color: "#2C2418" }} />}
+                              </button>
+                              {CARD_BG_PRESETS.map((preset) => {
+                                const isActive = cardBgPreset?.bg === preset.bg;
+                                return (
+                                  <button
+                                    key={preset.name}
+                                    onClick={() => handleColorChange({ bg: preset.bg, text: preset.text })}
+                                    className="w-7 h-7 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110"
+                                    style={{ background: preset.bg, borderColor: isActive ? "hsl(42 75% 40%)" : "hsl(38 22% 85%)" }}
+                                    title={preset.name}
+                                  >
+                                    {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
-                    </button>
-                  )}
-                </div>
+                    </div>
 
-                {/* Comments for public prayers */}
-                {isPublic && (
-                  <div className="mb-6">
+                    {/* Prayer text */}
+                    <FormattedText
+                      text={card.prayer_text}
+                      className="text-base md:text-lg leading-[1.85] font-medium mb-8 selection:bg-amber-100 selection:text-slate-900"
+                      style={{
+                        color: hasImage ? "white" : cardTextColor,
+                        fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : '"Lora", serif',
+                      }}
+                      indent
+                    />
+
+                    {/* See less… */}
                     <button
-                      onClick={() => setShowComments((s) => !s)}
-                      className={`text-xs font-semibold transition-colors ${hasImage ? "text-white/70 hover:text-white" : "text-slate-500 hover:text-slate-700"}`}
+                      onClick={onClose}
+                      className="text-sm font-semibold transition-colors"
+                      style={{ color: hasImage ? "rgba(255,255,255,0.5)" : `${cardTextColor}80` }}
                     >
-                      {showComments ? "Hide comments" : "Show comments"}
+                      See less…
                     </button>
-                    {showComments && (
-                      <div className="mt-3">
-                        <Comments prayerId={card.id} />
+
+                    {/* Extended prayer / scripture */}
+                    {card.extended_prayer && (
+                      <div className="mt-8 mb-6">
+                        <h3
+                          className="text-xs font-semibold uppercase tracking-widest mb-3"
+                          style={{ color: hasImage ? "rgba(255,255,255,0.5)" : `${cardTextColor}80` }}
+                        >
+                          Scripture & Meditation
+                        </h3>
+                        <p
+                          className="text-sm md:text-base leading-[1.8] italic selection:bg-amber-100 selection:text-slate-900"
+                          style={{
+                            color: hasImage ? "rgba(255,255,255,0.85)" : cardTextColor,
+                            fontFamily: '"Lora", serif',
+                          }}
+                        >
+                          {renderWithVerseLinks(card.extended_prayer)}
+                        </p>
                       </div>
                     )}
-                  </div>
-                )}
+
+                    {/* Meditation essay */}
+                    {card.meditation_essay && (
+                      <div className="mb-6">
+                        <h3
+                          className="text-xs font-semibold uppercase tracking-widest mb-3"
+                          style={{ color: hasImage ? "rgba(255,255,255,0.5)" : `${cardTextColor}80` }}
+                        >
+                          Meditation
+                        </h3>
+                        <p
+                          className="text-sm md:text-base leading-[1.8] selection:bg-amber-100 selection:text-slate-900"
+                          style={{ color: hasImage ? "rgba(255,255,255,0.85)" : cardTextColor }}
+                        >
+                          {card.meditation_essay}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Labels */}
+                    {card.labels && card.labels.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-6 mt-6">
+                        {card.labels.map((tag) => {
+                          const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
+                          return (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
+                              style={hasImage ? { background: "rgba(255,255,255,0.15)", color: "white" } : { background: palette.bg, color: palette.text }}
+                            >
+                              <Tag className="w-3 h-3" />#{tag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Status badges */}
+                    {(card.status === "ai_generated" || card.status === "pending") && (
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {card.status === "ai_generated" && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+                            style={{ background: `${accentColor}20`, color: accentColor }}>
+                            <Sparkles className="w-3 h-3" />AI Generated
+                          </span>
+                        )}
+                        {card.status === "pending" && isOwner && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                            style={{ background: "hsl(215 14% 93%)", color: "hsl(215 14% 45%)" }}>
+                            In review
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    <div className="mb-6 mt-8">
+                      <h3
+                        className="text-xs font-semibold uppercase tracking-widest mb-3"
+                        style={{ color: hasImage ? "rgba(255,255,255,0.5)" : `${cardTextColor}80` }}
+                      >
+                        Personal Notes
+                      </h3>
+                      {editingNotes ? (
+                        <div className="space-y-3">
+                          <Textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Personal notes, reflection…"
+                            rows={3}
+                            className="min-h-[52px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-xl px-4 py-3 text-sm resize-none w-full focus:ring-2 focus:ring-amber-200"
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={saveNotes} className="rounded-xl h-8 text-xs bg-slate-900 text-white hover:bg-slate-800">
+                              Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }}
+                              className="rounded-xl h-8 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setEditingNotes(true)}
+                          className="min-h-[52px] w-full text-left rounded-xl px-4 py-3 text-sm transition-all"
+                          style={{
+                            background: hasImage ? "rgba(255,255,255,0.1)" : "hsl(215 14% 96%)",
+                            color: hasImage ? "rgba(255,255,255,0.8)" : cardTextColor,
+                          }}
+                        >
+                          {item.notes ? (
+                            <span className="italic">"{item.notes}"</span>
+                          ) : (
+                            <span style={{ opacity: 0.5 }}>+ Add notes…</span>
+                          )}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Comments for public prayers */}
+                    {isPublic && (
+                      <div className="mb-6">
+                        <button
+                          onClick={() => setShowComments((s) => !s)}
+                          className="text-xs font-semibold transition-colors"
+                          style={{ color: hasImage ? "rgba(255,255,255,0.6)" : `${cardTextColor}80` }}
+                        >
+                          {showComments ? "Hide comments" : "Show comments"}
+                        </button>
+                        {showComments && (
+                          <div className="mt-3">
+                            <Comments prayerId={card.id} />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
 
               {/* ── Sticky action footer ── */}
-              <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex items-center justify-between mt-auto z-10">
+              <div
+                className="sticky bottom-0 border-t p-4 flex items-center justify-between mt-auto z-10 rounded-b-[1.25rem]"
+                style={{
+                  background: hasImage ? "rgba(0,0,0,0.6)" : "white",
+                  borderColor: hasImage ? "rgba(255,255,255,0.1)" : "hsl(215 14% 93%)",
+                  backdropFilter: hasImage ? "blur(12px)" : undefined,
+                }}
+              >
                 <div className="flex items-center gap-1">
-                  {/* Prayed */}
                   <PrayedButton prayerId={card.id} userId={userId} accentColor={accentColor} initialCount={card.prayed_count} />
 
-                  {/* Favorite */}
                   <button
                     onClick={toggleFavorite}
-                    className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
-                    style={{ color: item.favorite ? "hsl(0 72% 51%)" : "hsl(215 14% 60%)" }}
+                    className="p-2.5 rounded-xl transition-colors"
+                    style={{ color: item.favorite ? "hsl(0 72% 51%)" : hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 60%)" }}
                     aria-label="Favourite"
                   >
                     <Heart className={`w-5 h-5 ${item.favorite ? "fill-current" : ""}`} />
                   </button>
 
-                  {/* Pin */}
                   <button
                     onClick={togglePin}
-                    className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
-                    style={{ color: item.pinned ? accentColor : "hsl(215 14% 60%)" }}
+                    className="p-2.5 rounded-xl transition-colors"
+                    style={{ color: item.pinned ? accentColor : hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 60%)" }}
                     aria-label="Pin"
                   >
                     <Pin className="w-5 h-5" />
                   </button>
 
-                  {/* Share */}
                   <button
                     onClick={handleShare}
-                    className="p-2.5 rounded-xl transition-colors hover:bg-slate-100 text-slate-400"
+                    className="p-2.5 rounded-xl transition-colors"
+                    style={{ color: hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 60%)" }}
                     aria-label="Share"
                   >
                     <Share2 className="w-5 h-5" />
                   </button>
 
-                   {/* Listen */}
-                   <button
-                     onClick={(e) => { e.stopPropagation(); handleListen(); }}
-                     className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
-                     style={{ color: ttsPlaying ? accentColor : "hsl(215 14% 60%)" }}
-                     aria-label="Listen"
-                   >
-                     {ttsLoading ? (
-                       <Loader2 className="w-5 h-5 animate-spin" />
-                     ) : (
-                       <Volume2 className={`w-5 h-5 ${ttsPlaying ? 'fill-current' : ''}`} />
-                     )}
-                   </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleListen(); }}
+                    className="p-2.5 rounded-xl transition-colors"
+                    style={{ color: ttsPlaying ? accentColor : hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 60%)" }}
+                    aria-label="Listen"
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Volume2 className={`w-5 h-5 ${ttsPlaying ? 'fill-current' : ''}`} />
+                    )}
+                  </button>
 
-                   {/* Add to playlist */}
                   {onAddToPlaylist && (
                     <button
                       onClick={() => onAddToPlaylist(card.id)}
-                      className="p-2.5 rounded-xl transition-colors hover:bg-slate-100 text-slate-400"
+                      className="p-2.5 rounded-xl transition-colors"
+                      style={{ color: hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 60%)" }}
                       aria-label="Add to playlist"
                     >
                       <ListPlus className="w-5 h-5" />
@@ -512,11 +655,14 @@ export function PrayerViewerModal({
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Testify */}
                   {isPublic && (
                     <button
                       onClick={() => setTestifying(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105 bg-amber-50 text-amber-700"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105"
+                      style={{
+                        background: hasImage ? "rgba(255,255,255,0.15)" : "hsl(42 80% 95%)",
+                        color: hasImage ? "white" : "hsl(38 75% 32%)",
+                      }}
                       title="Share your testimony"
                     >
                       <Bird className="w-4 h-4" />
@@ -524,17 +670,16 @@ export function PrayerViewerModal({
                     </button>
                   )}
 
-                  {/* Visibility toggle */}
                   {isOwner && (
                     <div className="flex items-center gap-1.5">
                       {togglingPublic ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                        <Loader2 className="w-4 h-4 animate-spin" style={{ color: hasImage ? "rgba(255,255,255,0.5)" : "hsl(215 14% 60%)" }} />
                       ) : isPrivate ? (
-                        <Lock className="w-4 h-4 text-slate-400" />
+                        <Lock className="w-4 h-4" style={{ color: hasImage ? "rgba(255,255,255,0.5)" : "hsl(215 14% 60%)" }} />
                       ) : (
-                        <Globe className="w-4 h-4 text-slate-500" />
+                        <Globe className="w-4 h-4" style={{ color: hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 50%)" }} />
                       )}
-                      <span className="text-xs text-slate-500 hidden sm:inline">
+                      <span className="text-xs hidden sm:inline" style={{ color: hasImage ? "rgba(255,255,255,0.6)" : "hsl(215 14% 50%)" }}>
                         {isPrivate ? "Private" : card.status === "pending" ? "Review" : "Public"}
                       </span>
                       <Switch
