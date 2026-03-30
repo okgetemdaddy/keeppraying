@@ -933,6 +933,19 @@ function ActionButtons({
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
 
+          {/* Share Privately */}
+          {onSharePrivately && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-xs gap-2"
+                onClick={onSharePrivately}
+              >
+                <Send className="w-3.5 h-3.5" /> Share Privately
+              </DropdownMenuItem>
+            </>
+          )}
+
           {/* Add to playlist */}
           {onAddToPlaylist && item.prayer_cards && (
             <>
