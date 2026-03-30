@@ -46,11 +46,14 @@ function splitIntoLines(text: string): string[] {
 
 function getLineOpacity(distance: number): number {
   if (distance === 0) return 0.95;
-  if (distance === -1) return 0.45;
-  if (distance <= -2) return 0.15;
-  if (distance === 1) return 0.6;
-  if (distance === 2) return 0.35;
-  return 0.15;
+  if (distance === -1) return 0.5;
+  if (distance === -2) return 0.25;
+  if (distance <= -3) return 0.1;
+  if (distance === 1) return 0.65;
+  if (distance === 2) return 0.45;
+  if (distance === 3) return 0.28;
+  if (distance === 4) return 0.15;
+  return 0.08;
 }
 
 export function TtsContemplationOverlay({
