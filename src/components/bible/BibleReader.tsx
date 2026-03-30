@@ -394,6 +394,9 @@ export function BibleReader() {
   // ── Hide bunches toggle ──
   const [hideBunchRefs, setHideBunchRefs] = useState(getHideBunches);
 
+  // ── Cross-translation annotations ──
+  const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
+
   const readingAreaRef = useRef<HTMLDivElement>(null);
 
   // Data hooks
@@ -416,6 +419,7 @@ export function BibleReader() {
     bookUsfm,
     currentChapter?.id,
     verseIds,
+    crossTranslation,
   );
 
   const verses = chapterData?.verses ?? [];
