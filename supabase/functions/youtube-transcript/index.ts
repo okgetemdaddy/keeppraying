@@ -113,6 +113,7 @@ serve(async (req) => {
       .gte("fetched_at", cutoff)
       .maybeSingle();
 
+    console.log("[youtube-transcript] cache check:", cached ? "HIT" : "MISS");
     if (cached && cached.raw_segments && cached.full_text) {
       return new Response(JSON.stringify({
         videoId,
