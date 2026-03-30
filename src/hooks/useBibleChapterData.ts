@@ -65,6 +65,7 @@ export function useBibleChapterData(
   bookUsfm: string | undefined,
   chapterNumber: string | undefined, // e.g. "1"
   verseIds: string[] | undefined,    // e.g. ["GEN.1.1", "GEN.1.2", ...]
+  crossTranslation: boolean = false, // when true, annotations show across all versions
 ) {
   const { user } = useAuth();
 
@@ -76,6 +77,7 @@ export function useBibleChapterData(
       bookUsfm,
       chapterNumber,
       user?.id ?? "anon",
+      crossTranslation ? "cross" : "single",
     ],
     queryFn: async (): Promise<BibleChapterData> => {
       if (!versionId || !bookUsfm || !chapterNumber) {
@@ -103,13 +105,14 @@ export function useBibleChapterData(
       // ── Fetch B: User highlights ──
       const fetchHighlights = async (): Promise<UserHighlight[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let q = supabase
           .from("user_highlights")
           .select("id, verse_number, color, reference_normalized, created_at")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossTranslation) q = q.eq("version_id", versionId!);
+        const { data, error } = await q;
         if (error) {
           console.warn("Failed to fetch highlights:", error.message);
           return [];
@@ -120,13 +123,14 @@ export function useBibleChapterData(
       // ── Fetch C: User notes ──
       const fetchNotes = async (): Promise<UserNote[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let q = supabase
           .from("user_notes")
           .select("id, verse_number, note_content, created_at, updated_at")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossTranslation) q = q.eq("version_id", versionId!);
+        const { data, error } = await q;
         if (error) {
           console.warn("Failed to fetch notes:", error.message);
           return [];
@@ -137,13 +141,14 @@ export function useBibleChapterData(
       // ── Fetch D: User bookmarks ──
       const fetchBookmarks = async (): Promise<UserBookmark[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let q = supabase
           .from("user_bookmarks")
           .select("id, verse_number, created_at")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossTranslation) q = q.eq("version_id", versionId!);
+        const { data, error } = await q;
         if (error) {
           console.warn("Failed to fetch bookmarks:", error.message);
           return [];

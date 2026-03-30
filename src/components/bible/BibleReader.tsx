@@ -13,6 +13,7 @@ import {
   EyeOff,
   AArrowDown,
   AArrowUp,
+  Globe,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -43,6 +44,7 @@ import {
 } from "@/hooks/useBibleChapterData";
 import { useBibleMutations, type ScriptureRef, type CrossBunchItem } from "@/hooks/useBibleMutations";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
 import {
   FloatingToolbar,
   NoteInputPanel,
@@ -392,6 +394,9 @@ export function BibleReader() {
   // ── Hide bunches toggle ──
   const [hideBunchRefs, setHideBunchRefs] = useState(getHideBunches);
 
+  // ── Cross-translation annotations ──
+  const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
+
   const readingAreaRef = useRef<HTMLDivElement>(null);
 
   // Data hooks
@@ -414,6 +419,7 @@ export function BibleReader() {
     bookUsfm,
     currentChapter?.id,
     verseIds,
+    crossTranslation,
   );
 
   const verses = chapterData?.verses ?? [];
@@ -952,6 +958,19 @@ export function BibleReader() {
           >
             {hideBunchRefs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </Button>
+
+          {/* Cross-translation annotations toggle */}
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleCrossTranslation}
+              className={`h-7 w-7 p-0 transition-colors ${crossTranslation ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              title={crossTranslation ? "Annotations: All translations" : "Annotations: Current translation only"}
+            >
+              <Globe className="h-3.5 w-3.5" />
+            </Button>
+          )}
 
           <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
             <Toggle

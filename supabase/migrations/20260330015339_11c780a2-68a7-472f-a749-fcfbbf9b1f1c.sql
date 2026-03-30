@@ -1,0 +1,1 @@
+ALTER TABLE public.board_preferences ADD COLUMN IF NOT EXISTS cross_translation_annotations boolean NOT NULL DEFAULT false;
