@@ -491,6 +491,8 @@ export default function SharedPrayerLanding() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <PrayedButton prayerId={prayer.id} userId={user?.id} initialCount={0} size="md" />
+
             <Button
               onClick={handleListen}
               disabled={ttsLoading}
