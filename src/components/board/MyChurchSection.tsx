@@ -269,7 +269,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
 
                 {/* ── About / Mission with Pastor ── */}
                 {(aboutUs || missionStatement || pastorName) && (
-                  <div className="rounded-2xl p-4 space-y-3" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="about" />
+                    {!minimized.about ? (
+                      <div className="space-y-3 pr-5">
                     {pastorName && (
                       <div className="flex items-center gap-3">
                         {pastorImageUrl ? (
@@ -305,6 +308,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                       <p className="text-[10px] leading-relaxed" style={labelStyle}>
                         <strong>Mission:</strong> {missionStatement}
                       </p>
+                    )}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5" style={labelStyle}>About & Mission</p>
                     )}
                   </div>
                 )}
