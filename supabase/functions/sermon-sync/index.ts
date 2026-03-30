@@ -90,7 +90,7 @@ const STANDARD_PROMPT = (youtubeUrl: string, timeRange: string) => `You are a fa
 
 Watch and analyze this entire YouTube video from start to finish:
 ${youtubeUrl}
-
+${timeRange}
 Analyze the video content directly. Generate the following:
 
 1. **Sermon Notes** — A concise summary of the sermon's key themes (3-5 key points with Scripture references when present). Format as markdown bullet points.
