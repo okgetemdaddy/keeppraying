@@ -616,7 +616,7 @@ function StandardResultView({
 function PremiumResultView({
   result, url, videoId, openSubtopics, toggleSubtopic, jumpToTimestamp,
   generatedPrayers, setGeneratedPrayers, generatingDay, generateDayPrayer,
-  savePremiumPrayers, saving, user, onReset,
+  savePremiumPrayers, saving, user, onReset, onStartPlan, creatingPlan,
 }: {
   result: PremiumResult;
   url: string;
@@ -632,6 +632,8 @@ function PremiumResultView({
   saving: boolean;
   user: unknown;
   onReset: () => void;
+  onStartPlan: () => Promise<void>;
+  creatingPlan: boolean;
 }) {
   const { notifTimes, setNotifTime } = useSermonProgress();
   const TIMES = ["Morning", "Afternoon", "Night"];
