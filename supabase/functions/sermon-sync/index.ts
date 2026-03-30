@@ -130,8 +130,93 @@ async function getYouTubeTranscript(videoId: string): Promise<{
     }
   } catch (_) {}
 
-  // === Tier 2: Innertube player API to get captionTracks ===
-  console.log("[sermon-sync] Tier 2: Trying Innertube player API...");
+  // === Tier 2: Scrape watch page HTML for captionTracks ===
+  console.log("[sermon-sync] Tier 2: Scraping watch page for caption tracks...");
+  try {
+    const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        "User-Agent": UA,
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": "CONSENT=PENDING+999",
+      },
+    });
+    if (watchRes.ok) {
+      const html = await watchRes.text();
+      console.log(`[sermon-sync] Watch page HTML length: ${html.length}`);
+
+      // Extract ytInitialPlayerResponse from HTML
+      const playerMatch = html.match(/var\s+ytInitialPlayerResponse\s*=\s*/);
+      if (playerMatch && playerMatch.index !== undefined) {
+        const start = playerMatch.index + playerMatch[0].length;
+        // Find matching closing brace
+        let depth = 0;
+        let end = start;
+        for (let i = start; i < html.length && i < start + 200000; i++) {
+          if (html[i] === "{") depth++;
+          else if (html[i] === "}") {
+            depth--;
+            if (depth === 0) { end = i + 1; break; }
+          }
+        }
+        if (end > start) {
+          const playerData = JSON.parse(html.substring(start, end));
+          const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+
+          if (Array.isArray(captionTracks) && captionTracks.length > 0) {
+            console.log(`[sermon-sync] Tier 2: Found ${captionTracks.length} caption track(s) from watch page`);
+
+            const track =
+              captionTracks.find((t: any) => t.languageCode === "en") ||
+              captionTracks.find((t: any) => t.languageCode?.startsWith("en")) ||
+              captionTracks[0];
+
+            if (track?.baseUrl) {
+              const separator = track.baseUrl.includes("?") ? "&" : "?";
+              const trackUrl = `${track.baseUrl}${separator}fmt=json3`;
+              console.log(`[sermon-sync] Fetching caption track: lang=${track.languageCode}, kind=${track.kind || "manual"}`);
+
+              const trackRes = await fetch(trackUrl, { headers: { "User-Agent": UA } });
+              if (trackRes.ok) {
+                const trackData = await trackRes.json();
+                const parsed = parseJson3Captions(trackData);
+                if (parsed) {
+                  console.log(`[sermon-sync] Tier 2 success. Text length: ${parsed.text.length}`);
+                  return parsed;
+                }
+              }
+            }
+          } else {
+            console.log("[sermon-sync] Tier 2: No caption tracks in player response (status:", playerData?.playabilityStatus?.status, ")");
+          }
+        }
+      }
+
+      // Also try extracting from ytInitialData or embedded timedtext URLs
+      const timedtextMatch = html.match(/https:\/\/www\.youtube\.com\/api\/timedtext[^"\\]+/g);
+      if (timedtextMatch) {
+        console.log(`[sermon-sync] Tier 2: Found ${timedtextMatch.length} timedtext URL(s) in HTML`);
+        for (const rawUrl of timedtextMatch.slice(0, 3)) {
+          try {
+            const ttUrl = rawUrl.replace(/\\u0026/g, "&") + "&fmt=json3";
+            const ttRes = await fetch(ttUrl, { headers: { "User-Agent": UA } });
+            if (ttRes.ok) {
+              const ttData = await ttRes.json();
+              const parsed = parseJson3Captions(ttData);
+              if (parsed) {
+                console.log(`[sermon-sync] Tier 2 success (timedtext URL). Text length: ${parsed.text.length}`);
+                return parsed;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[sermon-sync] Tier 2 error:", e instanceof Error ? e.message : String(e));
+  }
+
+  // === Tier 2b: Innertube player API ===
+  console.log("[sermon-sync] Tier 2b: Trying Innertube player API...");
   try {
     const playerRes = await fetch("https://www.youtube.com/youtubei/v1/player", {
       method: "POST",
@@ -154,9 +239,8 @@ async function getYouTubeTranscript(videoId: string): Promise<{
       const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
 
       if (Array.isArray(captionTracks) && captionTracks.length > 0) {
-        console.log(`[sermon-sync] Found ${captionTracks.length} caption track(s)`);
+        console.log(`[sermon-sync] Found ${captionTracks.length} caption track(s) via Innertube`);
 
-        // Prefer English, then any track
         const track =
           captionTracks.find((t: any) => t.languageCode === "en") ||
           captionTracks.find((t: any) => t.languageCode?.startsWith("en")) ||
@@ -165,26 +249,21 @@ async function getYouTubeTranscript(videoId: string): Promise<{
         if (track?.baseUrl) {
           const separator = track.baseUrl.includes("?") ? "&" : "?";
           const trackUrl = `${track.baseUrl}${separator}fmt=json3`;
-          console.log(`[sermon-sync] Fetching caption track: lang=${track.languageCode}, kind=${track.kind || "manual"}`);
 
           const trackRes = await fetch(trackUrl, { headers: { "User-Agent": UA } });
           if (trackRes.ok) {
             const trackData = await trackRes.json();
             const parsed = parseJson3Captions(trackData);
             if (parsed) {
-              console.log(`[sermon-sync] Tier 2 success. Text length: ${parsed.text.length}`);
+              console.log(`[sermon-sync] Tier 2b success. Text length: ${parsed.text.length}`);
               return parsed;
             }
           }
         }
-      } else {
-        console.log("[sermon-sync] Tier 2: No caption tracks found in player response");
       }
-    } else {
-      console.warn("[sermon-sync] Tier 2: Player API returned", playerRes.status);
     }
   } catch (e) {
-    console.warn("[sermon-sync] Tier 2 error:", e instanceof Error ? e.message : String(e));
+    console.warn("[sermon-sync] Tier 2b error:", e instanceof Error ? e.message : String(e));
   }
 
   // === Tier 3: Zyla API (paid fallback) ===
