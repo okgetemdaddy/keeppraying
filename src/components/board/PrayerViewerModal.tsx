@@ -1,20 +1,25 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2 } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import Comments from "@/components/Comments";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { PRAYER_FONTS } from "./BoardCard";
+import { PRAYER_FONTS, CARD_BG_PRESETS } from "./BoardCard";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 import { PrayedButton } from "@/components/PrayedButton";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SavedPrayer = Database["public"]["Tables"]["user_saved_prayers"]["Row"] & {
