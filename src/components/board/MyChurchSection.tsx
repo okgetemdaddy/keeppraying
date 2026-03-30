@@ -80,6 +80,13 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const pastorImageUrl = scraped.pastor_image_url as string | null;
   const heroImageUrl = scraped.hero_image_url as string | null;
   const faviconUrl = scraped.favicon_url as string | null;
+  const buildingPhotoUrl = scraped.building_photo_url as string | null;
+
+  // Google Places data
+  const googleMapsUrl = scraped.google_maps_url as string | null;
+  const googleRating = scraped.google_rating as number | null;
+  const googleReviewCount = scraped.google_review_count as number | null;
+  const googlePhotos = Array.isArray(scraped.google_photos) ? scraped.google_photos as string[] : [];
 
   // Use brand colors when available, fallback to theme textColor
   const hasBrand = !!brandPrimary;
@@ -109,6 +116,9 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const denomination = scraped.denomination as string | null;
   const givingUrl = scraped.giving_url as string | null;
   const liveStreamUrl = scraped.live_stream_url as string | null;
+
+  // Hero: prefer website hero, fall back to Google building photo
+  const displayHeroUrl = heroImageUrl || buildingPhotoUrl || null;
 
   const jumpToTimestamp = (videoId: string, seconds: number) => {
     window.open(`https://www.youtube.com/watch?v=${videoId}&t=${seconds}s`, "_blank");
