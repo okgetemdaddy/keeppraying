@@ -133,6 +133,7 @@ export function BoardCard({
   });
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);

@@ -9,7 +9,7 @@ import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SacredSpinner } from "@/components/SacredSpinner";
+import SacredSpinner from "@/components/SacredSpinner";
 import {
   Volume2, Bookmark, MessageSquare, Send, LogIn, Heart,
   Loader2, Clock, AlertTriangle, Lock,
