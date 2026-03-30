@@ -13,7 +13,7 @@ import {
 interface InviteShareModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  type: "family" | "circle";
+  type: "family" | "circle" | "sermon_plan";
   targetId: string;
   targetName: string;
 }
