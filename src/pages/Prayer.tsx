@@ -321,10 +321,19 @@ export default function Prayer() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TtsContemplationOverlay playing={ttsPlaying} onStop={() => {
-        if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-        setTtsPlaying(false);
-      }} />
+      <TtsContemplationOverlay
+        playing={ttsPlaying}
+        onStop={() => {
+          if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+          setTtsPlaying(false);
+        }}
+        text={card?.prayer_text}
+        playbackRate={playbackRate}
+        onPlaybackRateChange={(r) => {
+          setPlaybackRate(r);
+          if (audioRef.current) audioRef.current.playbackRate = r;
+        }}
+      />
       {/* Background */}
       {card.background_url && (
         <div className="fixed inset-0 z-0">

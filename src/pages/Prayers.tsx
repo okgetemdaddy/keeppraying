@@ -268,10 +268,19 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
 
   return (
     <>
-    <TtsContemplationOverlay playing={ttsPlaying} onStop={() => {
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-      setTtsPlaying(false);
-    }} />
+    <TtsContemplationOverlay
+      playing={ttsPlaying}
+      onStop={() => {
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+        setTtsPlaying(false);
+      }}
+      text={card.prayer_text}
+      playbackRate={playbackRate}
+      onPlaybackRateChange={(r) => {
+        setPlaybackRate(r);
+        if (audioRef.current) audioRef.current.playbackRate = r;
+      }}
+    />
     <motion.div
       variants={cardVariants}
       whileHover={collapsed ? {} : { y: -6, scale: 1.015 }}
