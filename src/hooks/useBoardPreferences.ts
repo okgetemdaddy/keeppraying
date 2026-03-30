@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getLocalCache, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 export interface BoardPrefs {
   theme: string;
