@@ -12,6 +12,30 @@ function extractVideoId(url: string): string | null {
   return m?.[1] || null;
 }
 
+function detectRefusal(content: string): boolean {
+  const indicators = [
+    "I cannot", "I don't have the ability", "cannot complete this request",
+    "I'm unable to", "As a language model", "my limitations", "I apologize, but",
+    "I can't access", "I'm not able to", "I do not have access",
+  ];
+  return indicators.some(i => content.toLowerCase().includes(i.toLowerCase()));
+}
+
+function extractJson(raw: string): Record<string, unknown> {
+  if (detectRefusal(raw)) {
+    throw new Error("The AI could not analyze this video. It may be too long, private, or unavailable. Please try a different sermon link.");
+  }
+  const cleaned = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+  // Try direct parse first
+  try { return JSON.parse(cleaned); } catch { /* fall through */ }
+  // Try extracting JSON object from surrounding text
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch { /* fall through */ }
+  }
+  throw new Error("AI returned an unexpected response. Please try again.");
+}
+
 const STANDARD_PROMPT = (youtubeUrl: string) => `You are a faithful Christian ministry assistant. Watch and analyze this entire sermon video from beginning to end — do not skip any section or stop early.
 
 YouTube Video URL: ${youtubeUrl}
@@ -173,8 +197,8 @@ serve(async (req) => {
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "";
-      const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      result = JSON.parse(cleaned);
+      console.log("[sermon-sync] Grok raw (first 200):", content.substring(0, 200));
+      result = extractJson(content);
     } else {
       // Standard: Lovable AI (Gemini)
       const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -213,8 +237,8 @@ serve(async (req) => {
 
       const aiData = await response.json();
       const content = aiData.choices?.[0]?.message?.content || "";
-      const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      result = JSON.parse(cleaned);
+      console.log("[sermon-sync] Gemini raw (first 200):", content.substring(0, 200));
+      result = extractJson(content);
     }
 
     // Cache result
