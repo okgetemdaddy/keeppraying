@@ -45,6 +45,7 @@ function PrayingHandsIcon({ className }: { className?: string }) {
   );
 }
 
+type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
   prayer_cards: PrayerCard | null;
 };
