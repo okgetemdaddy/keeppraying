@@ -234,10 +234,10 @@ export function TtsContemplationOverlay({
               className="relative z-10 mt-10 w-full max-w-[600px] px-6"
               onClick={(e) => e.stopPropagation()}
               style={{
-                height: LINE_HEIGHT * 3,
+                height: LINE_HEIGHT * VISIBLE_LINES,
                 overflow: "hidden",
-                maskImage: "linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)",
+                maskImage: "linear-gradient(transparent 0%, black 8%, black 92%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(transparent 0%, black 8%, black 92%, transparent 100%)",
               }}
             >
               <motion.div
