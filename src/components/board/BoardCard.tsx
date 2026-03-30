@@ -747,6 +747,7 @@ export function BoardCard({
                 userId={userId}
                 onRefresh={onRefresh}
                 onSharePrivately={() => setShareModalOpen(true)}
+                isSharedRecipient={isSharedRecipient}
               />
             </div>
           </div>
