@@ -473,7 +473,7 @@ export default function SermonSync() {
           <Input
             value={url}
             onChange={(e) => { setUrl(e.target.value); setSermonStart(""); setSermonEnd(""); }}
-            placeholder="https://www.youtube.com/watch?v=..."
+            placeholder="Paste any YouTube link…"
             className="rounded-xl"
             onKeyDown={(e) => { if (e.key === "Enter") handleSync("standard"); }}
           />
