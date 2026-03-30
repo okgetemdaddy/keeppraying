@@ -206,7 +206,6 @@ serve(async (req) => {
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const captionUrl = captionMatch[2].replace(/\\u0026/g, "&");
     const captionResp = await fetch(captionUrl);
     if (!captionResp.ok) {
       return new Response(JSON.stringify({ error: "Failed to fetch captions" }), {
