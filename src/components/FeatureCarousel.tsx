@@ -156,7 +156,7 @@ export default function FeatureCarousel() {
           className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
         >
           The adversities every Christian shares are battles to keep reading the Word and to keep praying.
-          Here, we aim to make prayer the fabric of your day.
+          Here, we aim to make both the fabric of your day.
         </motion.p>
       </div>
 
