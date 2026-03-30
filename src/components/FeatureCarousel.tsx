@@ -1,168 +1,134 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft, BookOpen, Sparkles, Shield, Bird, BookMarked, Heart } from "lucide-react";
-
-const SLIDES = [
-  {
-    id: "board",
-    icon: BookOpen,
-    title: "Prayer Board",
-    headline: "Your personal sanctuary to organize and revisit prayers",
-    body: "Save prayers, build playlists, track your journey. A sacred space built around your walk with God.",
-    cta: "Open My Board",
-    href: "/board",
-    gradient: "from-[hsl(150_38%_18%)] via-[hsl(150_32%_22%)] to-[hsl(150_28%_28%)]",
-    accentColor: "hsl(150 38% 56%)",
-    glowColor: "hsl(150 38% 36% / 0.35)",
-    badge: "✦ Organize",
-  },
-  {
-    id: "assistant",
-    icon: Sparkles,
-    title: "PrayerAssist.ing",
-    headline: "Your helpful companion for writing prayers and Bible questions",
-    body: "Struggling to find words? PrayerAssist helps craft Spirit-led prayers, answers scripture questions, and walks alongside you.",
-    cta: "Try PrayerAssist",
-    href: "/assistant",
-    gradient: "from-[hsl(38_65%_16%)] via-[hsl(42_70%_20%)] to-[hsl(45_60%_26%)]",
-    accentColor: "hsl(42 85% 62%)",
-    glowColor: "hsl(42 85% 46% / 0.35)",
-    badge: "✦ AI-Powered",
-  },
-  {
-    id: "war-room",
-    icon: Shield,
-    title: "KeepFight.ing — The War Room",
-    headline: "Immersive prayer space with playlists, themes & ambient music",
-    body: "Enter your war room. Choose a theme, queue your prayers, and pray with full focus in a beautiful, distraction-free sanctuary.",
-    cta: "Enter the War Room",
-    href: "/war-room",
-    gradient: "from-[hsl(220_45%_14%)] via-[hsl(240_38%_18%)] to-[hsl(260_30%_22%)]",
-    accentColor: "hsl(220 80% 70%)",
-    glowColor: "hsl(220 70% 60% / 0.30)",
-    badge: "✦ Immersive",
-  },
-  {
-    id: "testify",
-    icon: Bird,
-    title: "Testify",
-    headline: "Read, be encouraged, and share your own story of answered prayer",
-    body: "God answers prayer. Read how He's moved in the lives of real believers — and when you're ready, share your own testimony.",
-    cta: "Read Testimonies",
-    href: "/testify",
-    gradient: "from-[hsl(25_45%_16%)] via-[hsl(30_40%_20%)] to-[hsl(35_38%_26%)]",
-    accentColor: "hsl(38 80% 65%)",
-    glowColor: "hsl(38 75% 50% / 0.30)",
-    badge: "✦ Community",
-  },
-  {
-    id: "blog",
-    icon: BookMarked,
-    title: "KeepGrow.ing",
-    headline: "Daily encouragement and growth in faith",
-    body: "Devotionals, reflections, and articles crafted to strengthen your walk. Fresh content to keep your faith alive and growing.",
-    cta: "Read the Blog",
-    href: "/blog",
-    gradient: "from-[hsl(160_38%_15%)] via-[hsl(165_33%_19%)] to-[hsl(155_28%_25%)]",
-    accentColor: "hsl(155 50% 55%)",
-    glowColor: "hsl(155 45% 40% / 0.30)",
-    badge: "✦ Grow",
-  },
-  {
-    id: "community",
-    icon: Heart,
-    title: "Spread Love",
-    headline: "Like, comment, save, and share a prayer with anyone in the world",
-    body: "KeepPray.ing is a living community. Encourage others by hearting their prayers, sharing them with friends, and praying together across the globe.",
-    cta: "Browse Prayers",
-    href: "/prayers",
-    gradient: "from-[hsl(355_45%_16%)] via-[hsl(0_40%_20%)] to-[hsl(10_38%_26%)]",
-    accentColor: "hsl(0 72% 68%)",
-    glowColor: "hsl(0 72% 55% / 0.28)",
-    badge: "✦ Together",
-  },
-];
+import { motion } from "framer-motion";
 
 export default function FeatureCarousel() {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [direction, setDirection] = useState<1 | -1>(1);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const touchStartX = useRef<number | null>(null);
-
-  const go = useCallback((next: number, dir?: 1 | -1) => {
-    const d = dir ?? (next > current ? 1 : -1);
-    setDirection(d);
-    setCurrent((next + SLIDES.length) % SLIDES.length);
-  }, [current]);
-
-  const goNext = useCallback(() => go(current + 1, 1), [go, current]);
-  const goPrev = useCallback(() => go(current - 1, -1), [go, current]);
-
-  useEffect(() => {
-    if (paused) return;
-    timerRef.current = setInterval(goNext, 5500);
-    return () => clearInterval(timerRef.current);
-  }, [paused, goNext]);
-
-  const slide = SLIDES[current];
-
-  const variants = {
-    enter: (d: number) => ({ opacity: 0, x: d * 40, scale: 0.98 }),
-    center: { opacity: 1, x: 0, scale: 1 },
-    exit: (d: number) => ({ opacity: 0, x: d * -40, scale: 0.98 }),
-  };
-
   return (
-    <section
-      className="relative overflow-hidden"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
-      onTouchEnd={e => {
-        if (touchStartX.current === null) return;
-        const dx = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(dx) > 44) dx < 0 ? goNext() : goPrev();
-        touchStartX.current = null;
-      }}
-    >
-      {/* Intro tagline */}
-      <div className="relative z-10 pt-16 pb-0 text-center px-4">
+    <section className="relative overflow-hidden py-24 sm:py-32 md:py-40">
+      {/* Soft radial backdrop */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage:
+          "radial-gradient(ellipse at 50% 0%, hsl(42 85% 46% / 0.06) 0%, transparent 55%), radial-gradient(ellipse at 50% 100%, hsl(150 38% 26% / 0.04) 0%, transparent 55%)",
+      }} />
+
+      {/* Thin decorative gold line top */}
+      <motion.div
+        className="absolute top-12 left-1/2 -translate-x-1/2 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+        initial={{ width: 0 }}
+        whileInView={{ width: "60%" }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      />
+
+      <div className="container mx-auto px-6 sm:px-8 max-w-5xl relative z-10">
+        {/* Kicker */}
         <motion.p
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.65 }}
-          className="text-xs uppercase tracking-widest text-muted-foreground mb-3"
+          transition={{ duration: 0.7 }}
+          className="text-center text-[10px] sm:text-xs font-bold uppercase tracking-[0.35em] text-primary/60 mb-8 sm:mb-10"
         >
-          Built for believers
+          ✦&ensp;Built for believers&ensp;✦
         </motion.p>
-        <motion.h2
-          initial={{ opacity: 0, y: 16 }}
+
+        {/* Main declaration — large typographic hero */}
+        <div className="text-center space-y-2 sm:space-y-3">
+          <motion.h2
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight text-foreground"
+          >
+            Everything your
+          </motion.h2>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight"
+          >
+            <span className="bg-gradient-to-r from-primary via-[hsl(35_82%_54%)] to-primary bg-clip-text text-transparent">
+              prayer life
+            </span>{" "}
+            <span className="text-foreground">needs</span>
+          </motion.h2>
+        </div>
+
+        {/* Decorative cross divider */}
+        <motion.div
+          className="flex items-center justify-center gap-4 my-10 sm:my-14"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+        >
+          <div className="h-px flex-1 max-w-[80px] sm:max-w-[120px] bg-gradient-to-r from-transparent to-border" />
+          <motion.span
+            className="text-primary/40 text-lg"
+            animate={{ opacity: [0.3, 0.6, 0.3] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            ✟
+          </motion.span>
+          <div className="h-px flex-1 max-w-[80px] sm:max-w-[120px] bg-gradient-to-l from-transparent to-border" />
+        </motion.div>
+
+        {/* Sub-declaration — the mission statement */}
+        <motion.div
+          className="max-w-3xl mx-auto text-center space-y-6"
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.7, delay: 0.05 }}
-          className="font-display text-3xl sm:text-4xl font-bold mb-2"
+          transition={{ duration: 0.8, delay: 0.3 }}
         >
-          Everything your prayer life needs
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.18 }}
-          className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto leading-relaxed"
-        >
-          The adversities every Christian shares are battles to keep reading the Word and to keep praying.
-          Here, we aim to make both the fabric of your day.
-        </motion.p>
+          <p className="font-serif text-lg sm:text-xl md:text-2xl leading-relaxed text-foreground/80 italic">
+            The adversities every Christian shares are battles{" "}
+            <span className="not-italic font-semibold text-foreground">
+              to keep reading the Word
+            </span>{" "}
+            and{" "}
+            <span className="not-italic font-semibold text-foreground">
+              to keep praying.
+            </span>
+          </p>
+
+          <motion.p
+            className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.45 }}
+          >
+            Here, we aim to make{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10 bg-gradient-to-r from-[hsl(150_38%_26%)] to-[hsl(150_32%_42%)] bg-clip-text text-transparent">
+                both
+              </span>
+              {/* Underline accent */}
+              <motion.span
+                className="absolute bottom-0 left-0 right-0 h-[3px] rounded-full bg-gradient-to-r from-primary/60 to-[hsl(150_38%_26%_/_0.5)]"
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.7, ease: "easeOut" }}
+                style={{ transformOrigin: "left" }}
+              />
+            </span>{" "}
+            the fabric of your day.
+          </motion.p>
+        </motion.div>
       </div>
 
-
-
-
+      {/* Thin decorative gold line bottom */}
+      <motion.div
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"
+        initial={{ width: 0 }}
+        whileInView={{ width: "40%" }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
+      />
     </section>
   );
 }
