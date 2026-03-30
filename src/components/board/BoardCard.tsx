@@ -34,6 +34,17 @@ import {
   DropdownMenuSubTrigger, DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 
+function PrayingHandsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2C12 2 9 5.5 9 9v4l-2 3v3h10v-3l-2-3V9c0-3.5-3-7-3-7z" />
+      <path d="M9 13H7.5a1.5 1.5 0 0 0 0 3H9" />
+      <path d="M15 13h1.5a1.5 1.5 0 0 1 0 3H15" />
+      <line x1="9" y1="19" x2="15" y2="19" />
+    </svg>
+  );
+}
+
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
   prayer_cards: PrayerCard | null;
@@ -126,6 +137,11 @@ export function BoardCard({
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [prayed, setPrayed] = useState(false);
+  const [prayedCount, setPrayedCount] = useState(0);
+  const [prayAnim, setPrayAnim] = useState(false);
+  const [prayedFloat, setPrayedFloat] = useState(false);
+  const prayedCooldownRef = useRef(false);
   const [flipped, setFlipped] = useState(false);
   const lastTapRef = useRef(0);
   const [overlayOpacity, setOverlayOpacity] = useState(
@@ -189,7 +205,7 @@ export function BoardCard({
       .then();
   }, [userId, item.id]);
 
-  // Check if user has a testimony for this prayer
+  // Check if user has a testimony + prayed state for this prayer
   useEffect(() => {
     if (!userId || !item.prayer_cards?.id) return;
     supabase
@@ -204,6 +220,10 @@ export function BoardCard({
           setUserTestimony(data);
         }
       });
+    // Check prayed state
+    supabase.from("prayed_actions").select("id").eq("prayer_id", item.prayer_cards.id).eq("user_id", userId).maybeSingle()
+      .then(({ data }) => setPrayed(!!data));
+    setPrayedCount(item.prayer_cards.prayed_count || 0);
   }, [userId, item.prayer_cards?.id]);
 
   // Check if this prayer was shared to the current user via secure link
@@ -740,6 +760,51 @@ export function BoardCard({
 
             {/* Action buttons */}
             <div className="flex items-center gap-0.5">
+              {/* Prayed button */}
+              <div className="relative">
+                <AnimatePresence>
+                  {prayedFloat && (
+                    <motion.span
+                      key="prayed-float"
+                      initial={{ opacity: 1, y: 0, x: "-50%" }}
+                      animate={{ opacity: 0, y: -28 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 1.1, ease: "easeOut" }}
+                      className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
+                      style={{ color: accentColor }}
+                    >
+                      🙏 Prayed
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                <motion.button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!userId) return;
+                    if (prayedCooldownRef.current) return;
+                    prayedCooldownRef.current = true;
+                    setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
+                    setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
+                    if (prayed) {
+                      await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
+                      setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
+                    } else {
+                      await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
+                      setPrayed(true); setPrayedCount(c => c + 1);
+                      setPrayedFloat(true); setTimeout(() => setPrayedFloat(false), 1200);
+                    }
+                  }}
+                  animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
+                  transition={{ duration: 0.35 }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                  style={{ color: prayed ? accentColor : `${textColor}55` }}
+                  title="I prayed this"
+                >
+                  <PrayingHandsIcon className="w-3.5 h-3.5" />
+                  {prayedCount > 0 && <span>{prayedCount}</span>}
+                </motion.button>
+              </div>
+
               {isPublic && (
                 <button
                   onClick={() => setFlipped(true)}

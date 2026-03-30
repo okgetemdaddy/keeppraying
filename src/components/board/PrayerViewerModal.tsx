@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PRAYER_FONTS } from "./BoardCard";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import { PrayedButton } from "@/components/PrayedButton";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SavedPrayer = Database["public"]["Tables"]["user_saved_prayers"]["Row"] & {
@@ -443,6 +444,9 @@ export function PrayerViewerModal({
               {/* ── Sticky action footer ── */}
               <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex items-center justify-between mt-auto z-10">
                 <div className="flex items-center gap-1">
+                  {/* Prayed */}
+                  <PrayedButton prayerId={card.id} userId={userId} accentColor={accentColor} initialCount={card.prayed_count} />
+
                   {/* Favorite */}
                   <button
                     onClick={toggleFavorite}
