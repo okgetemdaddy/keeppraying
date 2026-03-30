@@ -90,6 +90,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "contacts",         label: "Contact",           icon: Mail },
   { id: "sayings",          label: "Sayings",            icon: Sparkles },
   { id: "welcome",          label: "Welcome Messages",   icon: Bell },
+  { id: "audio-cache",      label: "Audio Cache",        icon: Volume2 },
 ];
 
 export default function Admin() {
