@@ -1509,6 +1509,82 @@ export type Database = {
           },
         ]
       }
+      prayer_share_comments: {
+        Row: {
+          created_at: string
+          id: string
+          share_id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          share_id: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          share_id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_share_comments_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prayer_shares: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          message: string | null
+          prayer_id: string
+          recipient_id: string | null
+          sender_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          prayer_id: string
+          recipient_id?: string | null
+          sender_id: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          message?: string | null
+          prayer_id?: string
+          recipient_id?: string | null
+          sender_id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prayer_shares_prayer_id_fkey"
+            columns: ["prayer_id"]
+            isOneToOne: false
+            referencedRelation: "prayer_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prayer_standby: {
         Row: {
           expires_at: string | null
