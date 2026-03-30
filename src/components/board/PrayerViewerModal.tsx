@@ -85,6 +85,20 @@ export function PrayerViewerModal({
   const [showComments, setShowComments] = useState(false);
   const [testifying, setTestifying] = useState(false);
 
+  // TTS
+  const {
+    ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
+    timedPhrases, audioRef, playbackRate, changePlaybackRate,
+  } = useTtsPlayer({ cacheId: card?.id, audioUrl: card?.audio_url });
+
+  const handleListen = useCallback(() => {
+    if (!card) return;
+    const text = card.extended_prayer
+      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+      : card.prayer_text;
+    toggleTts(text, card.id);
+  }, [card, toggleTts]);
+
   useEffect(() => {
     setNotes(item.notes || "");
     setEditingNotes(false);
