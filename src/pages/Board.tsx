@@ -583,6 +583,9 @@ export default function Board() {
           </motion.div>
         )}
 
+        {/* ── My Church Section ──────────────────────────────────── */}
+        <MyChurchSection textColor={textColor} />
+
         {/* ── Bible Annotations (highlights, notes, bookmarks) ───── */}
         <BoardBibleAnnotations textColor={textColor} />
 
