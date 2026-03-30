@@ -447,6 +447,22 @@ export default function SermonSync() {
               saving={saving}
               user={user}
               onReset={() => { setResult(null); setUrl(""); }}
+              creatingPlan={creatingPlan}
+              onStartPlan={async () => {
+                if (!result || !user) return;
+                setCreatingPlan(true);
+                try {
+                  const dailyPrompts = result.mode === "premium"
+                    ? (result as PremiumResult).dailyPrayers
+                    : [];
+                  await createPlan(result.sermonTitle, videoId, dailyPrompts);
+                  toast({ title: "Week of Prayer created! 🙏", description: "Invite your church members to join." });
+                } catch {
+                  toast({ title: "Could not create plan", variant: "destructive" });
+                } finally {
+                  setCreatingPlan(false);
+                }
+              }}
             />
           )}
         </AnimatePresence>
