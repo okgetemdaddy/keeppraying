@@ -1,36 +1,43 @@
 
 
-## Teleprompter Captions with Progressive Visibility
+## TTS Loading Popup Above Speaker Button
 
 ### What We're Building
 
-Replace the static scrollable caption block with a **teleprompter-style auto-scrolling caption** system where:
-- Only **~3 lines** are visible at a time in a fixed-height window
-- The **current line** being spoken is brightest (full opacity gold/cream)
-- **Already-spoken lines** above fade out as they scroll up and away
-- **Upcoming lines** start dim and **gradually brighten** as their turn approaches — the next line is fairly visible, two lines ahead is dimmer, three lines ahead is very faint
-- Lines auto-advance on a timer estimated from word count, adjusted by `playbackRate`
-- Smooth `translateY` scrolling with framer-motion spring transitions
-- Top and bottom CSS `mask-image` gradient for soft edge fading
+A small floating popup that appears directly above the speaker/listen button when TTS is loading, with a two-phase message sequence:
 
-### Single File Change
+1. **Phase 1** (immediate): "Some prayers take time to load" — fades in, then fades out after ~2s
+2. **Phase 2** (2.5s delay): "Warming up the vocal cords…" — fades in where the first message was
+3. **Dismiss**: The entire popup instantly disappears the moment `ttsPlaying` becomes true (audio ready)
 
-**`src/components/TtsContemplationOverlay.tsx`**
+### Approach
 
-1. Add `useState`, `useEffect`, `useRef`, `useMemo` imports
-2. **Split text into lines** — break on sentence boundaries (`. ` / `! ` / `? `) or every ~10 words, whichever comes first
-3. **Timer-driven auto-advance** — estimate ~150ms per word at 1× speed; divide total estimated duration by line count to get ms-per-line interval. Recalculate when `playbackRate` changes. Reset `currentLineIndex` to 0 when `playing` becomes true.
-4. **Replace the `<ScrollArea>` caption block** with a fixed-height container (~90px, 3 lines) using `overflow: hidden` and `maskImage: linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)`
-5. **Render all lines** inside a `motion.div` that animates `y: -currentLineIndex * lineHeight` with a smooth spring
-6. **Opacity per line** based on distance from `currentLineIndex`:
-   - `distance === 0` (current): opacity `0.95` — brightest
-   - `distance === -1` (just spoken): opacity `0.45`
-   - `distance <= -2` (past): opacity `0.15`
-   - `distance === +1` (next up): opacity `0.6` — fairly visible, brightening
-   - `distance === +2`: opacity `0.35`
-   - `distance >= +3`: opacity `0.15` — barely visible
-   - Each line uses `motion.p` with `animate={{ opacity }}` and a 0.6s ease transition so brightness changes feel gentle
-7. Current line also gets a subtle `scale: 1.02` to emphasize it
+Create a small reusable component `TtsLoadingPopup` and add it to both `Prayer.tsx` and `Prayers.tsx` next to the speaker button.
 
-### No other files change — props remain the same.
+### New File: `src/components/TtsLoadingPopup.tsx`
+
+- Props: `visible: boolean` (bound to `ttsLoading && !ttsPlaying`)
+- Internal state machine with `useEffect` timers:
+  - On `visible` becoming true → show message 1, start 2s fade-out timer
+  - After fade-out → 0.5s gap → fade in message 2 at 2.5s total
+  - On `visible` becoming false → instantly unmount (no exit animation)
+- Styled as a small pill/tooltip with a subtle downward-pointing caret, positioned `absolute bottom-full mb-2` relative to the button wrapper
+- Warm gold/cream tones matching the prayer card aesthetic
+- Uses `framer-motion` `AnimatePresence` for fade transitions between the two messages
+
+### Changes to `src/pages/Prayer.tsx` (lines ~511-530)
+
+- Wrap the Listen button in a `relative` container (like the Prayed button already is)
+- Add `<TtsLoadingPopup visible={ttsLoading && !ttsPlaying} />` above the button
+
+### Changes to `src/pages/Prayers.tsx` (lines ~459-479)
+
+- Same pattern: wrap Listen button in `relative` div, add `<TtsLoadingPopup />`
+
+### Technical Details
+
+- Timer cleanup on unmount / `visible` change to prevent stale state
+- `whitespace-nowrap` to keep messages on one line
+- Popup has `pointer-events-none` so it doesn't interfere with button clicks
+- Subtle `backdrop-blur` and semi-transparent warm background
 
