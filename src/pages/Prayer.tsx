@@ -25,7 +25,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { TestifyBack } from "@/components/board/TestifyBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SiteNav } from "@/components/SiteNav";
-import { PRAYER_FONTS } from "@/components/board/BoardCard";
+import { PRAYER_FONTS, CARD_BG_PRESETS } from "@/components/board/BoardCard";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 
