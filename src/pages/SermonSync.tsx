@@ -117,7 +117,7 @@ export default function SermonSync() {
     if (progressTimer.current) clearInterval(progressTimer.current);
     progressTimer.current = setInterval(() => {
       setProgressStep((prev) => Math.min(prev + 1, PROGRESS_STEPS.length - 1));
-    }, 8000);
+    }, 6000);
   };
 
   const stopProgressAnimation = () => {
