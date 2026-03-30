@@ -337,7 +337,7 @@ export default function Support() {
                   <p className="text-xs text-muted-foreground mb-1">
                     {new Date(log.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                   </p>
-                  <p className="text-sm text-foreground/90 leading-relaxed">{log.description} Backend works we just need users now for it all to come alive.</p>
+                  <p className="text-sm text-foreground/90 leading-relaxed">{log.description}</p>
                 </div>
               </motion.div>
             ))}
