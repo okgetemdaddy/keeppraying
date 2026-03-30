@@ -101,11 +101,16 @@ export default function SermonSync() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { plans, memberships, createPlan, updateMemberToggles, markDayComplete } = useSermonPlans();
-  const isValidYouTube = (u: string) =>
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/.test(u);
+  const isValidYouTube = (u: string) => {
+    const trimmed = u.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return true;
+    return /(?:(?:www\.|m\.|music\.)?youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/.test(trimmed);
+  };
 
   const extractVideoId = (u: string) => {
-    const m = u.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
+    const trimmed = u.trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+    const m = trimmed.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/|\/shorts\/|\/live\/)([a-zA-Z0-9_-]{11})/);
     return m?.[1] || "";
   };
 
