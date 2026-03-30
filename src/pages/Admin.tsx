@@ -20,7 +20,7 @@ import {
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
   Pencil, Save, XCircle, Scroll, Trash2, Shield, Activity, Settings, LayoutDashboard,
   ChevronRight, TrendingUp, Heart, MessageSquare, Star, Bell, LogOut, Menu, ChevronDown,
-  BookText, Flag, Flame, Crown, Wind,
+  BookText, Flag, Flame, Crown, Wind, Volume2,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
@@ -28,6 +28,7 @@ import AIEnrichPanel from "@/components/AIEnrichPanel";
 import PrayerRequestsInbox from "@/components/admin/PrayerRequestsInbox";
 import SayingsTab from "@/components/admin/SayingsTab";
 import WelcomeMessagesTab from "@/components/admin/WelcomeMessagesTab";
+import AudioCacheTab from "@/components/admin/AudioCacheTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
