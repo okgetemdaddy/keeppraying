@@ -357,7 +357,7 @@ serve(async (req) => {
           max_tokens: 8000,
           messages: [
             { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
-            { role: "user", content: STANDARD_PROMPT(youtubeUrl) },
+            { role: "user", content: STANDARD_PROMPT(youtubeUrl, timeRangeInstruction) },
           ],
         }),
       });
