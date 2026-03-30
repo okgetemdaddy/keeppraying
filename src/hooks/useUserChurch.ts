@@ -78,10 +78,31 @@ export function useUserChurch() {
       if (resp.error) throw new Error(resp.error.message);
       const result = resp.data;
       setChurch(result.church as Church);
-      toast({ title: "My Church saved! ⛪", description: result.scraped ? "Church info has been populated." : "Church saved." });
+      setLocalCache(cacheKeys.church(user.id), { church: result.church as Church, announcements });
+      toast({ title: "My Church saved! ⛪", description: result.scraped ? "Church info has been populated from their website." : "Church saved." });
       return result.church as Church;
     } catch (e) {
       toast({ title: "Setup failed", description: e instanceof Error ? e.message : "Try again.", variant: "destructive" });
+      return null;
+    }
+  };
+
+  /** Re-scrape the current church website to refresh all info */
+  const refreshChurch = async () => {
+    if (!user || !church?.website_url) return null;
+    try {
+      const resp = await supabase.functions.invoke("scrape-church-info", {
+        body: { churchName: church.name, websiteUrl: church.website_url },
+      });
+      if (resp.error) throw new Error(resp.error.message);
+      const result = resp.data;
+      const updatedChurch = result.church as Church;
+      setChurch(updatedChurch);
+      setLocalCache(cacheKeys.church(user.id), { church: updatedChurch, announcements });
+      toast({ title: "Church info refreshed! ⛪", description: "Latest details pulled from the website." });
+      return updatedChurch;
+    } catch (e) {
+      toast({ title: "Refresh failed", description: e instanceof Error ? e.message : "Try again.", variant: "destructive" });
       return null;
     }
   };
@@ -110,5 +131,5 @@ export function useUserChurch() {
     }
   };
 
-  return { church, announcements, loading, setupChurch, saveAnnouncements, refetch: fetchChurch };
+  return { church, announcements, loading, setupChurch, refreshChurch, saveAnnouncements, refetch: fetchChurch };
 }
