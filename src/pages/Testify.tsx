@@ -245,6 +245,26 @@ function StandaloneTestimonyCard({
                 </button>
               )}
 
+              {/* Listen */}
+              <div className="relative">
+                <TtsLoadingPopup visible={tts.ttsLoading && !tts.ttsPlaying} />
+                <motion.button
+                  onClick={(e) => { e.stopPropagation(); tts.toggleTts(testimony.body, `testimony_${testimony.id}`); }}
+                  whileTap={{ scale: 0.85 }}
+                  title={tts.ttsPlaying ? "Stop reading" : "Listen"}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40 active:scale-95"
+                  style={{ color: tts.ttsPlaying ? "hsl(42 75% 40%)" : "hsl(25 18% 58%)" }}
+                >
+                  {tts.ttsLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : tts.ttsPlaying ? (
+                    <VolumeX className="w-3.5 h-3.5" />
+                  ) : (
+                    <Volume2 className="w-3.5 h-3.5" />
+                  )}
+                </motion.button>
+              </div>
+
               <div className="flex-1" />
 
               {/* See the Prayer button — opens sheet */}
