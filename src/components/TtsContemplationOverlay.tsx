@@ -1,7 +1,7 @@
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pause } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TtsContemplationOverlayProps {
   playing: boolean;
@@ -15,9 +15,66 @@ const RATE_LABELS: Record<number, string> = {
   0.5: "0.5×", 0.75: "0.75×", 1: "1×", 1.25: "1.25×", 1.5: "1.5×", 1.75: "1.75×", 2: "2×",
 };
 
+const LINE_HEIGHT = 30;
+const MS_PER_WORD_AT_1X = 150;
+
+function splitIntoLines(text: string): string[] {
+  // Split on sentence boundaries first, then break long sentences into ~10-word chunks
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  const lines: string[] = [];
+  for (const sentence of sentences) {
+    const words = sentence.split(/\s+/);
+    if (words.length <= 12) {
+      lines.push(sentence.trim());
+    } else {
+      for (let i = 0; i < words.length; i += 10) {
+        lines.push(words.slice(i, i + 10).join(" "));
+      }
+    }
+  }
+  return lines;
+}
+
+function getLineOpacity(distance: number): number {
+  if (distance === 0) return 0.95;
+  if (distance === -1) return 0.45;
+  if (distance <= -2) return 0.15;
+  if (distance === 1) return 0.6;
+  if (distance === 2) return 0.35;
+  return 0.15;
+}
+
 export function TtsContemplationOverlay({
   playing, onStop, text, playbackRate = 1, onPlaybackRateChange,
 }: TtsContemplationOverlayProps) {
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+
+  const lines = useMemo(() => (text ? splitIntoLines(text) : []), [text]);
+
+  // Reset on play
+  useEffect(() => {
+    if (playing) setCurrentLineIndex(0);
+  }, [playing]);
+
+  // Auto-advance timer
+  useEffect(() => {
+    if (!playing || lines.length === 0) return;
+
+    // Estimate ms per line based on word count of each line
+    const totalWords = lines.reduce((sum, l) => sum + l.split(/\s+/).length, 0);
+    const totalMs = (totalWords * MS_PER_WORD_AT_1X) / playbackRate;
+    const msPerLine = totalMs / lines.length;
+
+    const interval = setInterval(() => {
+      setCurrentLineIndex((prev) => {
+        if (prev >= lines.length - 1) return prev;
+        return prev + 1;
+      });
+    }, msPerLine);
+
+    return () => clearInterval(interval);
+  }, [playing, lines, playbackRate]);
+
   return (
     <AnimatePresence>
       {playing && (
@@ -104,29 +161,55 @@ export function TtsContemplationOverlay({
             </div>
           </motion.div>
 
-          {/* Captions */}
-          {text && (
+          {/* Teleprompter captions */}
+          {lines.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
               className="relative z-10 mt-10 w-full max-w-[600px] px-6"
               onClick={(e) => e.stopPropagation()}
+              style={{
+                height: LINE_HEIGHT * 3,
+                overflow: "hidden",
+                maskImage: "linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)",
+              }}
             >
-              <ScrollArea className="max-h-[30vh]">
-                <p
-                  className="text-center whitespace-pre-line select-none"
-                  style={{
-                    fontFamily: "'Inter', system-ui, sans-serif",
-                    fontSize: "17px",
-                    lineHeight: 1.75,
-                    color: "hsla(42,40%,90%,0.82)",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {text}
-                </p>
-              </ScrollArea>
+              <motion.div
+                animate={{ y: -currentLineIndex * LINE_HEIGHT }}
+                transition={{ type: "spring", stiffness: 120, damping: 20 }}
+              >
+                {lines.map((line, i) => {
+                  const distance = i - currentLineIndex;
+                  const opacity = getLineOpacity(distance);
+                  const isCurrent = distance === 0;
+
+                  return (
+                    <motion.p
+                      key={i}
+                      animate={{
+                        opacity,
+                        scale: isCurrent ? 1.02 : 1,
+                      }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                      className="text-center select-none"
+                      style={{
+                        fontFamily: "'Inter', system-ui, sans-serif",
+                        fontSize: "17px",
+                        lineHeight: `${LINE_HEIGHT}px`,
+                        color: "hsla(42,40%,90%,1)",
+                        letterSpacing: "0.01em",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {line}
+                    </motion.p>
+                  );
+                })}
+              </motion.div>
             </motion.div>
           )}
 
