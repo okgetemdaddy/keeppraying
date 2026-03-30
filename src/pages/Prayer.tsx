@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SiteNav } from "@/components/SiteNav";
 import { PRAYER_FONTS } from "@/components/board/BoardCard";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 
@@ -100,12 +101,19 @@ export default function Prayer() {
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
 
-  // TTS
-  const [ttsLoading, setTtsLoading] = useState(false);
-  const [ttsPlaying, setTtsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [timedPhrases, setTimedPhrases] = useState<{ text: string; start: number }[] | null>(null);
+  // TTS — use shared hook
+  const {
+    ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
+    timedPhrases, audioRef, playbackRate, changePlaybackRate,
+  } = useTtsPlayer({ cacheId: id, audioUrl: card?.audio_url });
+
+  const handleListen = useCallback(() => {
+    if (!card) return;
+    const text = card.extended_prayer
+      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+      : card.prayer_text;
+    toggleTts(text, card.id);
+  }, [card, toggleTts]);
 
   // Testify
   const [testifyOpen, setTestifyOpen] = useState(false);
@@ -221,86 +229,6 @@ export default function Prayer() {
     }
   };
 
-  const toggleTts = async () => {
-    if (ttsPlaying && audioRef.current) {
-      audioRef.current.pause(); audioRef.current.currentTime = 0;
-      setTtsPlaying(false); return;
-    }
-    if (ttsLoading || !card) return;
-    setTtsLoading(true);
-
-    const audio = new Audio();
-    audioRef.current = audio;
-    audio.onended = () => setTtsPlaying(false);
-    audio.onerror = () => setTtsPlaying(false);
-
-    try {
-      // Check for cached audio
-      if ((card as any).audio_url) {
-        audio.src = (card as any).audio_url;
-        // Try loading cached phrases JSON
-        try {
-          const phrasesUrl = supabase.storage.from("prayer-audio").getPublicUrl(`${card.id}_phrases.json`).data.publicUrl;
-          const phrasesResp = await fetch(phrasesUrl);
-          if (phrasesResp.ok) {
-            const phrases = await phrasesResp.json();
-            if (Array.isArray(phrases)) setTimedPhrases(phrases);
-          }
-        } catch { /* no cached phrases, use fallback */ }
-        await audio.play();
-        setTtsPlaying(true);
-        setTtsLoading(false);
-        return;
-      }
-
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prayer-tts`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-          body: JSON.stringify({ text: card.prayer_text }),
-        }
-      );
-      if (!resp.ok) throw new Error("Could not generate speech");
-      const data = await resp.json();
-
-      // Decode base64 audio to blob
-      const binaryStr = atob(data.audio);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-      const blob = new Blob([bytes], { type: "audio/mpeg" });
-
-      // Set timed phrases if available
-      if (data.timedPhrases && Array.isArray(data.timedPhrases)) {
-        setTimedPhrases(data.timedPhrases);
-      }
-
-      // Cache audio + phrases to storage
-      const storagePath = `${card.id}.mp3`;
-      const { error: uploadErr } = await supabase.storage
-        .from("prayer-audio")
-        .upload(storagePath, blob, { contentType: "audio/mpeg", upsert: true });
-      if (!uploadErr) {
-        const { data: { publicUrl } } = supabase.storage.from("prayer-audio").getPublicUrl(storagePath);
-        await supabase.from("prayer_cards").update({ audio_url: publicUrl } as any).eq("id", card.id);
-      }
-      // Cache phrases JSON
-      if (data.timedPhrases) {
-        const phrasesBlob = new Blob([JSON.stringify(data.timedPhrases)], { type: "application/json" });
-        await supabase.storage.from("prayer-audio").upload(`${card.id}_phrases.json`, phrasesBlob, { contentType: "application/json", upsert: true });
-      }
-
-      const url = URL.createObjectURL(blob);
-      audio.src = url;
-      audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
-      await audio.play();
-      setTtsPlaying(true);
-    } catch {
-      toast({ title: "Could not read prayer", variant: "destructive" });
-    } finally {
-      setTtsLoading(false);
-    }
-  };
 
   const handleAddToPlaylist = async (playlistId: string | "new") => {
     if (!user || !card) return;
@@ -349,18 +277,12 @@ export default function Prayer() {
     <div className="min-h-screen bg-background">
       <TtsContemplationOverlay
         playing={ttsPlaying}
-        onStop={() => {
-          if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-          setTtsPlaying(false);
-        }}
-        onPause={() => { if (audioRef.current) audioRef.current.pause(); }}
-        onResume={() => { if (audioRef.current) audioRef.current.play(); }}
-        text={card?.prayer_text}
+        onStop={stopTts}
+        onPause={pauseTts}
+        onResume={resumeTts}
+        text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
         playbackRate={playbackRate}
-        onPlaybackRateChange={(r) => {
-          setPlaybackRate(r);
-          if (audioRef.current) audioRef.current.playbackRate = r;
-        }}
+        onPlaybackRateChange={changePlaybackRate}
         timedPhrases={timedPhrases}
         audioRef={audioRef}
       />
@@ -542,7 +464,7 @@ export default function Prayer() {
                 <div className="relative">
                   <TtsLoadingPopup visible={ttsLoading && !ttsPlaying} />
                   <motion.button
-                    onClick={toggleTts}
+                    onClick={handleListen}
                     whileTap={{ scale: 0.85 }}
                     title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
                     className="p-2 rounded-xl transition-all hover:bg-accent/60"

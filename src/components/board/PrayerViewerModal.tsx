@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2 } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
@@ -12,6 +12,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PRAYER_FONTS } from "./BoardCard";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SavedPrayer = Database["public"]["Tables"]["user_saved_prayers"]["Row"] & {
@@ -82,6 +84,20 @@ export function PrayerViewerModal({
   const [togglingPublic, setTogglingPublic] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [testifying, setTestifying] = useState(false);
+
+  // TTS
+  const {
+    ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
+    timedPhrases, audioRef, playbackRate, changePlaybackRate,
+  } = useTtsPlayer({ cacheId: card?.id, audioUrl: card?.audio_url });
+
+  const handleListen = useCallback(() => {
+    if (!card) return;
+    const text = card.extended_prayer
+      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+      : card.prayer_text;
+    toggleTts(text, card.id);
+  }, [card, toggleTts]);
 
   useEffect(() => {
     setNotes(item.notes || "");
@@ -185,6 +201,17 @@ export function PrayerViewerModal({
   return (
     <>
       <style>{THEATER_GLOW_STYLE}</style>
+      <TtsContemplationOverlay
+        playing={ttsPlaying}
+        onStop={stopTts}
+        onPause={pauseTts}
+        onResume={resumeTts}
+        text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
+        playbackRate={playbackRate}
+        onPlaybackRateChange={changePlaybackRate}
+        timedPhrases={timedPhrases}
+        audioRef={audioRef}
+      />
       <AnimatePresence>
         {open && (
           <motion.div
@@ -445,7 +472,21 @@ export function PrayerViewerModal({
                     <Share2 className="w-5 h-5" />
                   </button>
 
-                  {/* Add to playlist */}
+                   {/* Listen */}
+                   <button
+                     onClick={(e) => { e.stopPropagation(); handleListen(); }}
+                     className="p-2.5 rounded-xl transition-colors hover:bg-slate-100"
+                     style={{ color: ttsPlaying ? accentColor : "hsl(215 14% 60%)" }}
+                     aria-label="Listen"
+                   >
+                     {ttsLoading ? (
+                       <Loader2 className="w-5 h-5 animate-spin" />
+                     ) : (
+                       <Volume2 className={`w-5 h-5 ${ttsPlaying ? 'fill-current' : ''}`} />
+                     )}
+                   </button>
+
+                   {/* Add to playlist */}
                   {onAddToPlaylist && (
                     <button
                       onClick={() => onAddToPlaylist(card.id)}
