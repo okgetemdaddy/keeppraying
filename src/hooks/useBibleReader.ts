@@ -63,15 +63,20 @@ export function useBibleVersions() {
   return useQuery<BibleVersion[]>({
     queryKey: ["bible", "versions"],
     queryFn: async () => {
-      // Fetch public list + NIV (licensed, not in public list) concurrently
-      const [listRes, nivRes] = await Promise.all([
+      // Fetch public list + NIV & NIrV (licensed, not in public list) concurrently
+      const [listRes, nivRes, nirvRes] = await Promise.all([
         fetchBible<{ data: BibleVersion[] }>("/bibles?language_ranges[]=en"),
         fetchBible<BibleVersion>("/bibles/111").catch(() => null),
+        fetchBible<BibleVersion>("/bibles/110").catch(() => null),
       ]);
       const versions = listRes.data;
       // Inject NIV if not already present
       if (nivRes && !versions.some((v) => v.id === 111)) {
         versions.unshift(nivRes);
+      }
+      // Inject NIrV if not already present
+      if (nirvRes && !versions.some((v) => v.id === 110)) {
+        versions.push(nirvRes);
       }
       return versions;
     },
