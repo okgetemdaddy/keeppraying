@@ -53,12 +53,12 @@ serve(async (req) => {
       });
     }
 
-    const audioBuffer = await response.arrayBuffer();
-    return new Response(audioBuffer, {
+    return new Response(response.body, {
       headers: {
         ...corsHeaders,
         "Content-Type": "audio/mpeg",
         "Cache-Control": "private, max-age=3600",
+        "Transfer-Encoding": "chunked",
       },
     });
   } catch (e) {
