@@ -52,7 +52,7 @@ export function useBoardPreferences() {
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          setPrefs({
+          const fresh: BoardPrefs = {
             theme: data.theme ?? DEFAULTS.theme,
             animations_enabled: data.animations_enabled ?? DEFAULTS.animations_enabled,
             sound_id: data.sound_id ?? null,
@@ -66,7 +66,9 @@ export function useBoardPreferences() {
             calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
             calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
             atmosphere_id: (data as any).atmosphere_id ?? DEFAULTS.atmosphere_id,
-          });
+          };
+          setPrefs(fresh);
+          setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);
         }
         setLoaded(true);
       });
