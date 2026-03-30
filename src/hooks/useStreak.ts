@@ -32,12 +32,13 @@ export function useStreak() {
     if (data) {
       const prev = streak.currentStreak;
       const next = (data as any).current_streak ?? 0;
-      setStreak({
+      const fresh: StreakData = {
         currentStreak: next,
         longestStreak: (data as any).longest_streak ?? 0,
         lastPrayedDate: (data as any).last_prayed_date ?? null,
-      });
-      // Check if we just hit a milestone
+      };
+      setStreak(fresh);
+      setLocalCache(cacheKeys.streak(user!.id), fresh);
       if (next > prev && MILESTONES.includes(next)) {
         setMilestone(next);
       }

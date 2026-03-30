@@ -78,6 +78,8 @@ export function useBoardPreferences() {
     setPrefs(prev => {
       const next = { ...prev, ...updates };
       if (!user) return next;
+      // Write-through to local cache immediately
+      setLocalCache(cacheKeys.boardPrefs(user.id), next);
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
         supabase

@@ -44,8 +44,10 @@ export function useUserChurch() {
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
-      setChurch(data as Church | null);
+      const churchData = data as Church | null;
+      setChurch(churchData);
 
+      let annData: ChurchAnnouncement[] = [];
       if (data) {
         const { data: ann } = await supabase
           .from("church_announcements")
@@ -54,8 +56,10 @@ export function useUserChurch() {
           .eq("church_id", data.id)
           .order("created_at", { ascending: false })
           .limit(20);
-        setAnnouncements((ann || []) as ChurchAnnouncement[]);
+        annData = (ann || []) as ChurchAnnouncement[];
+        setAnnouncements(annData);
       }
+      setLocalCache(cacheKeys.church(user!.id), { church: churchData, announcements: annData });
     } catch (e) {
       console.error("Failed to fetch church:", e);
     } finally {
