@@ -113,7 +113,7 @@ export default function SharedPrayerLanding() {
         // Fetch prayer
         const { data: prayerData } = await supabase
           .from("prayer_cards")
-          .select("id, title, prayer_text, background_url, audio_url, extended_prayer")
+          .select("id, title, prayer_text, prayer_type, background_url, audio_url, extended_prayer")
           .eq("id", shareData.prayer_id)
           .single();
 
