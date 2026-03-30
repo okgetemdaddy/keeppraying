@@ -192,8 +192,8 @@ export default function InviteLanding() {
     );
   }
 
-  const Icon = type === "family" ? Home : Users;
-  const typeLabel = type === "family" ? "Family Prayer Room" : "Prayer Circle";
+  const Icon = type === "family" ? Home : type === "sermon_plan" ? Church : Users;
+  const typeLabel = type === "family" ? "Family Prayer Room" : type === "sermon_plan" ? "Week of Prayer" : "Prayer Circle";
 
   return (
     <div className="min-h-screen bg-background">
