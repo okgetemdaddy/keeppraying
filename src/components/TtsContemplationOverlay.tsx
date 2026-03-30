@@ -156,7 +156,7 @@ export function TtsContemplationOverlay({
     }
   }, [currentLineIndex]);
 
-  const handleTogglePause = useCallback((e: React.MouseEvent) => {
+  const handleTogglePause = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     if (paused) { setPaused(false); onResume?.(); }
     else { setPaused(true); onPause?.(); }
