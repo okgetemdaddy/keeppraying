@@ -471,6 +471,9 @@ export default function Index() {
         </motion.div>
       </section>
 
+      {/* ── Feature Showcase ─────────────────────────────────────────────── */}
+      <FeatureShowcase />
+
       {/* ── Lord's Prayer Verse ───────────────────────────────────────────── */}
       <section className="py-20 sm:py-28 bg-gradient-divine relative overflow-hidden">
         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 30% 50%, hsl(42 85% 46% / 0.12) 0%, transparent 60%), radial-gradient(circle at 70% 50%, hsl(150 38% 26% / 0.08) 0%, transparent 60%)" }} />
