@@ -1,86 +1,64 @@
 
 
-## Update Premium Grok Prompt to Match Grok's Own Recommendations
+## Two-Phase Sermon Analysis: Save Raw AI Response, Then Parse for UI
 
-### What Grok told you
-Grok recommends a specific prompt structure that produces richer, more accurate results — including a full service outline, detailed sermon timestamps with time ranges, illustrations, and practical language. It also recommends `temperature: 0.0` and `max_tokens: 12000`.
+### Problem
+Currently, the edge function forces Grok to return structured JSON directly. Grok is a reasoning model — it's better at natural language analysis than rigid JSON output. This causes refusals ("I cannot...") and malformed JSON. The user wants Grok to do what it does best (analyze the sermon freely), save that raw response, then use a second AI pass to extract the structured data the UI needs.
 
-### The constraint
-The frontend (`SermonSync.tsx`) renders premium results using a specific JSON structure: `sermonTitle`, `mainScripture`, `overallMessage`, `subtopics[]`, and `dailyPrayers[]`. We must keep JSON output, but we can adopt Grok's recommended prompt tone and instructions.
+### Architecture
+
+```text
+Phase 1: Grok analyzes sermon → raw text saved to DB
+Phase 2: Gemini reads raw text → extracts structured JSON → returned to frontend
+```
 
 ### Plan
 
-**File: `supabase/functions/sermon-sync/index.ts`**
+**1. Add `raw_ai_response` column to `sermon_transcripts` table**
+- New nullable text column to store Grok's full natural-language sermon breakdown
+- Migration: `ALTER TABLE sermon_transcripts ADD COLUMN raw_ai_response text;`
 
-1. **Replace `PREMIUM_PROMPT`** — Adopt Grok's recommended prompt style (thorough analysis, precise timestamps, warm encouraging tone, full service breakdown) but wrap it in a JSON output requirement so the frontend still works. The new prompt will:
-   - Use Grok's identity framing: "You are Grok 4.20 Reasoning, an expert at creating clean, highly usable, timestamped church service and sermon outlines from full YouTube videos"
-   - Ask for the full service analysis with precise timestamps from captions/transcript
-   - Request illustrations, personal stories, key applications, closing challenge
-   - Keep the JSON schema the frontend expects
-   - Add a `serviceOutline` field (array of service sections with timestamps) — new data the frontend can optionally render later
+**2. Update Premium Prompt (remove JSON requirement)**
+- Remove the entire JSON schema instruction from `PREMIUM_PROMPT`
+- Let Grok respond naturally with its full detailed sermon analysis (timestamps, subtopics, illustrations, applications, daily prayers, service outline)
+- Keep the instruction to analyze the full video, use real Scripture, derive everything from the sermon
 
-2. **Update Grok API call parameters** — Add `temperature: 0.0` and `max_tokens: 12000` per Grok's recommendations for maximum consistency and no cutoff.
+**3. Change premium flow in `sermon-sync/index.ts` to two phases**
 
-3. **Update system prompt** — Remove the generic system message; Grok's recommended prompt already sets the role/identity inline.
+Phase 1 — Grok call:
+- Send the natural-language prompt to Grok
+- Check for refusal
+- Save raw response text to `sermon_transcripts.raw_ai_response`
+- Save video metadata (title extracted from response if possible)
 
-### New premium prompt (approximate)
+Phase 2 — Gemini extraction call:
+- Send the saved raw text to Gemini (via Lovable AI gateway) with a structured extraction prompt:
+  *"Extract the following JSON structure from this sermon analysis..."* (with the existing JSON schema)
+- Parse the JSON response
+- Save to `premium_result` as before
+- Return to frontend
 
-```typescript
-const PREMIUM_PROMPT = (youtubeUrl: string) => `You are Grok 4.20 Reasoning, an expert at creating clean, highly usable, timestamped church service and sermon outlines from full YouTube videos.
+**4. Update cache logic**
+- When checking cache, still check `premium_result` first (if populated, return it)
+- If `raw_ai_response` exists but `premium_result` is null, re-run Phase 2 only (skip the Grok call)
+- This means clearing `premium_result` in admin triggers a re-parse without re-calling Grok
 
-Analyze the complete video here: ${youtubeUrl}
+**5. Frontend — no changes needed**
+- The frontend still receives the same `PremiumResult` JSON shape
+- All existing UI components continue working unchanged
 
-Create a professional, detailed breakdown. Make the timestamps as precise as possible using the video's captions/transcript. Include: illustrations used by the pastor, main teaching points, personal stories, key applications, and the closing challenge/prayer. Use warm, encouraging, practical language. Match the level of detail and formatting from previous high-quality responses you have given on church services.
+### Files Changed
+- `supabase/functions/sermon-sync/index.ts` — two-phase flow, updated prompt, Gemini extraction step
+- One database migration — add `raw_ai_response` column
 
-All content must be derived directly from what was actually preached — do not invent or add content beyond what was taught. Only use real Scripture references.
+### Technical Details
 
-Return valid JSON (no markdown fences) in this exact structure:
-{
-  "sermonTitle": "string",
-  "mainScripture": "string (primary Bible passage)",
-  "overallMessage": "string (2-3 sentence summary)",
-  "serviceOutline": [
-    { "section": "string (e.g. Worship Set, Announcements, Sermon)", "start": "HH:MM:SS", "end": "HH:MM:SS" }
-  ],
-  "subtopics": [
-    {
-      "title": "string",
-      "explanation": "string (2-4 sentences)",
-      "illustration": "string or null (only if pastor actually used one)",
-      "application_points": ["practical takeaway"],
-      "supporting_verses": ["verse reference"],
-      "timestamp_seconds": number_or_null
-    }
-  ],
-  "dailyPrayers": [
-    { "day": "Monday", "prompt": "prayer direction", "verse": "verse reference" }
-  ]
-}
-
-Include 4-7 subtopics and 6 daily prayers (Monday–Saturday).`;
+The Gemini extraction prompt will be something like:
+```
+Extract structured data from this sermon analysis into valid JSON. 
+Do not add information — only extract what is present.
+{schema here}
 ```
 
-### API call changes
-
-```typescript
-body: JSON.stringify({
-  model: "grok-4.20-0309-reasoning",
-  temperature: 0.0,
-  max_tokens: 12000,
-  messages: [
-    { role: "user", content: PREMIUM_PROMPT(youtubeUrl) },
-  ],
-}),
-```
-
-- Removes the separate system message (identity is in the prompt itself per Grok's recommendation)
-- Adds `temperature: 0.0` for consistency
-- Adds `max_tokens: 12000` to prevent cutoff
-
-### Frontend impact
-- No breaking changes — all existing fields (`sermonTitle`, `mainScripture`, `overallMessage`, `subtopics`, `dailyPrayers`) are preserved
-- New `serviceOutline` field is additive — the UI won't break, it just won't render it yet (can be added later)
-
-### Files changed
-- `supabase/functions/sermon-sync/index.ts` only
+This uses `google/gemini-2.5-flash` (already used for standard mode) — fast, cheap, excellent at structured extraction from text. Grok handles the hard part (watching/analyzing the video), Gemini handles the easy part (formatting into JSON).
 
