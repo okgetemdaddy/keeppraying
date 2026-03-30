@@ -1,73 +1,72 @@
 
 
-## Analysis: What to Cache Locally on User's Device
+## Upgrade My Church: Visual Identity Extraction
 
-After reviewing the full codebase — every hook, page, and data flow — here is what I recommend storing on the user's device using localStorage or IndexedDB for instant load times and reduced server load.
+### Problem
+The current scrape only extracts text data. The My Church section uses generic board theme colors and has no visual identity — no logo, no pastor photo, no church brand colors. It looks the same for every church.
 
-### Current local storage usage
-The app already uses localStorage for small flags (bunch awareness, multi-select tips, cooldown timestamps, cross-translation toggle, theme snapshots). Audio TTS is now cached in IndexedDB. But several high-impact, frequently-accessed datasets are fetched fresh from the server on every page load.
+### Strategy: Two-Pass Extraction
 
----
+The edge function already fetches the raw HTML. We'll extract visual assets programmatically from the HTML first (images, CSS colors, meta tags), then pass that structured data to Grok for intelligent identification.
 
-### Recommended Local Caching Additions
+```text
+Pass 1 (Programmatic):
+  HTML → extract all <img> srcs, og:image, favicon
+       → extract meta theme-color, CSS custom properties, inline bg colors
+       → resolve all relative URLs to absolute
 
-**Priority 1 — High impact, loaded on every session**
+Pass 2 (Grok):
+  Cleaned HTML + image URL list + color candidates
+  → Grok identifies: which image is the logo, which is the pastor
+  → Grok confirms/refines color palette
+  → Grok produces rich structured summary
+```
 
-| Data | Current behavior | Why cache locally |
-|---|---|---|
-| **Board preferences** (`useBoardPreferences`) | Fetches from DB on every Board load | Theme, colors, atmosphere — rarely changes. Cache in localStorage, sync in background. Eliminates the "flash of default theme" on load. |
-| **User profile / streak** (`useStreak`) | Fetches from `profiles` table every load | Streak counter, longest streak, last prayed date — changes at most once/day. Show cached value instantly, update in background. |
-| **Saved prayer cards** (Board page) | Fetches all saved prayers + stats on every Board visit | The user's personal board is their home screen. Cache the card list in IndexedDB (can be large), show instantly, then refresh in background. |
-| **User's church info** (`useUserChurch`) | Fetches church + announcements every load | Church name/address/details rarely change. Cache in localStorage. |
+### Changes
 
-**Priority 2 — Frequently accessed, slow to load**
+**1. Edge function: `supabase/functions/scrape-church-info/index.ts`**
 
-| Data | Current behavior | Why cache locally |
-|---|---|---|
-| **Bible chapter text** (`useBibleChapterData`) | Fetches verses via edge function proxy every chapter view | Bible text is immutable. Cache fetched chapters in IndexedDB keyed by `versionId:book:chapter`. Huge speedup for re-reads and offline use. |
-| **User highlights/notes/bookmarks** (Bible) | Fetched per chapter from DB | Cache alongside chapter data. Show cached, refresh in background. |
-| **Sayings** (`useSayingsCycle`) | Fetches all active sayings on every page load | Rarely updated by admin. Cache in localStorage with a 24-hour TTL. |
-| **Breath prayers** (`useBreathPrayers`) | Fetches 50 prayers on every Breathe page load | Content changes infrequently. Cache in localStorage/IndexedDB with background refresh. |
+Add a pre-processing step before the Grok call:
 
-**Priority 3 — Nice to have**
+- **Image extraction**: Parse all `<img>` tags, `<link rel="icon">`, `<meta property="og:image">`, CSS `background-image` URLs. Resolve relative URLs to absolute using the website's base URL. Deduplicate. Pass the list (up to ~50 URLs) to Grok.
 
-| Data | Current behavior | Why cache locally |
-|---|---|---|
-| **Sermon plans** (`useSermonPlans`) | Fetches plans + memberships each load | Cache plan data, update on sync. |
-| **Notifications** (`useNotifications`) | Fetches 50 notifications each load | Cache list, use realtime channel for new ones only. |
+- **Color extraction**: Parse `<meta name="theme-color">`, CSS custom properties (`--primary`, `--brand`, etc.), inline `background-color` and `color` styles. Extract hex/rgb values. Pass as color candidates to Grok.
 
----
+- **Updated Grok prompt** adds these fields to the JSON output:
+  - `logo_url`: The church's main logo image URL (Grok picks from the extracted image list)
+  - `pastor_image_url`: Pastor/staff photo URL if identifiable
+  - `hero_image_url`: A prominent hero/banner image
+  - `color_palette`: `{ primary, secondary, accent, background, text }` — hex values representing the church's brand colors
+  - `favicon_url`: Favicon/icon URL
 
-### Implementation Approach
+- **Increase HTML slice** from 50KB to handle more content for image/color extraction
 
-Create a generic local cache utility: `src/lib/localCache.ts`
+**2. UI: `src/components/board/MyChurchSection.tsx`**
 
-- **localStorage** for small JSON data (<100KB): board prefs, streak, church, sayings, breath prayers
-- **IndexedDB** (extend existing `keeppraying-audio` DB or create `keeppraying-data`) for larger data: saved prayer cards, Bible chapters + annotations
+Complete visual redesign of the church card using the extracted brand identity:
 
-Each cached item uses a **stale-while-revalidate** pattern:
-1. Read from local cache instantly → render UI
-2. Fetch from server in background
-3. If server data differs, update local cache + UI
-4. Store a `cachedAt` timestamp for optional TTL
+- **Church-branded header**: Use `color_palette.primary` as accent color for the section header, borders, and badges
+- **Logo display**: Show `logo_url` as a small rounded logo next to the church name
+- **Pastor card**: If `pastor_image_url` exists, show a small avatar with pastor name/title
+- **Hero image**: If `hero_image_url` exists, show as a subtle background or banner at the top of the section
+- **Dynamic theming**: Cards within the My Church section use `color_palette.primary` for accents, `color_palette.secondary` for backgrounds — making each church's section feel uniquely theirs
+- **Social links**: Style with church brand colors instead of generic white/transparent
+- **Give Online / Live Stream buttons**: Use church primary color
 
-### Changes Summary
+- Fallback: If no color palette was extracted, fall back to the existing `textColor`-based styling
 
-1. **New file: `src/lib/localCache.ts`** — Generic get/set/clear helpers for localStorage (small data) and IndexedDB (large data), with TTL support
-2. **Update `useBoardPreferences`** — Read from localStorage first, write-through on save
-3. **Update `useStreak`** — Show cached streak instantly, background refresh
-4. **Update `useSayingsCycle`** — Cache sayings list with 24h TTL
-5. **Update `useUserChurch`** — Cache church info in localStorage
-6. **Update `useBibleChapterData`** — Cache chapter verses in IndexedDB (immutable content, no TTL needed)
-7. **Update Board page fetch** — Cache saved prayer card list in IndexedDB, stale-while-revalidate
-8. **Update `useBreathPrayers`** — Cache in localStorage with 1h TTL
+**3. Hook: `src/hooks/useUserChurch.ts`**
 
-### Technical details
+No structural changes needed — `scraped_data` already stores arbitrary JSON. The new fields (`logo_url`, `color_palette`, etc.) flow through automatically.
 
-- Stale-while-revalidate means the user always sees *something* instantly — no spinners on repeat visits
-- Background syncs keep data fresh without blocking UI
-- localStorage limit is ~5MB per origin — sufficient for prefs, streak, sayings, church
-- IndexedDB has no practical limit — suitable for Bible chapters and prayer card lists
-- All caches are keyed by user ID to support multi-account scenarios
-- Realtime subscriptions (streak, notifications) still work and update the local cache when events arrive
+### Technical Details
+
+- Image URL resolution uses `new URL(src, websiteUrl)` to handle relative paths
+- Color regex: `/(?:#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|hsl\([^)]+\))/g`
+- Images are not downloaded/stored — we just reference the church's own hosted URLs. This means they load from the church's CDN (fast, no storage cost, always current)
+- Grok sees the image URLs as text and uses `alt` attributes, `class` names, and surrounding context to identify which is the logo vs. pastor photo
+- The color palette makes each church section feel like a branded mini-site within the prayer board
+
+### Result
+Each user's My Church section becomes a beautiful, church-branded card showing their church's actual logo, colors, pastor photo, and rich formatted info — making it feel like their church's own corner of the app.
 
