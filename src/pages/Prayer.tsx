@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { SiteNav } from "@/components/SiteNav";
 import { PRAYER_FONTS } from "@/components/board/BoardCard";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 
