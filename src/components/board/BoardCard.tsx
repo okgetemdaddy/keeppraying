@@ -190,6 +190,21 @@ export function BoardCard({
       });
   }, [userId, item.prayer_cards?.id]);
 
+  // Check if this prayer was shared to the current user via secure link
+  useEffect(() => {
+    if (!userId || !item.prayer_cards?.id) return;
+    if (item.prayer_cards.created_by === userId) return; // owner, skip
+    supabase
+      .from("prayer_shares")
+      .select("id")
+      .eq("prayer_id", item.prayer_cards.id)
+      .eq("recipient_id", userId)
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setIsSharedRecipient(true);
+      });
+  }, [userId, item.prayer_cards?.id, item.prayer_cards?.created_by]);
+
   if (!card) return null;
 
   const isOwner = !!(userId && card.created_by === userId);
