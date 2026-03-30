@@ -127,7 +127,7 @@ export function TtsContemplationOverlay({
       }
     };
 
-    const interval = setInterval(poll, 80);
+    const interval = setInterval(poll, 40);
     return () => clearInterval(interval);
   }, [playing, hasTimedPhrases, timedPhrases, audioRef, isSeeking]);
 
