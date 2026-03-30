@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalCacheWithTTL, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 const FALLBACK_SAYINGS = [
   "God answers prayer",
