@@ -916,6 +916,19 @@ export function BoardCard({
         </DialogContent>
       </Dialog>
 
+      {/* TTS Contemplation Overlay */}
+      <TtsContemplationOverlay
+        playing={ttsPlaying}
+        onStop={stopTts}
+        onPause={pauseTts}
+        onResume={resumeTts}
+        text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
+        playbackRate={playbackRate}
+        onPlaybackRateChange={changePlaybackRate}
+        timedPhrases={timedPhrases}
+        audioRef={audioRef}
+      />
+
     </div>
   );
 }
