@@ -101,12 +101,19 @@ export default function Prayer() {
   const [scriptureOpen, setScriptureOpen] = useState(false);
   const [labelsOpen, setLabelsOpen] = useState(false);
 
-  // TTS
-  const [ttsLoading, setTtsLoading] = useState(false);
-  const [ttsPlaying, setTtsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [timedPhrases, setTimedPhrases] = useState<{ text: string; start: number }[] | null>(null);
+  // TTS — use shared hook
+  const {
+    ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
+    timedPhrases, audioRef, playbackRate, changePlaybackRate,
+  } = useTtsPlayer({ cacheId: id, audioUrl: card?.audio_url });
+
+  const handleListen = useCallback(() => {
+    if (!card) return;
+    const text = card.extended_prayer
+      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+      : card.prayer_text;
+    toggleTts(text, card.id);
+  }, [card, toggleTts]);
 
   // Testify
   const [testifyOpen, setTestifyOpen] = useState(false);
