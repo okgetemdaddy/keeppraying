@@ -8,8 +8,8 @@ const corsHeaders = {
 };
 
 const CACHE_TTL_DAYS = 30;
-const CHUNK_DURATION_SEC = 600; // 10 minutes per chunk
-const MAX_AUDIO_BYTES = 20 * 1024 * 1024; // 20MB cap
+const CHUNK_DURATION_SEC = 600;
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 
 function extractVideoId(url: string): string | null {
   const m = url.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
@@ -82,7 +82,6 @@ async function fetchWatchPage(videoId: string): Promise<string> {
   return resp.text();
 }
 
-// ── Innertube player API ──
 async function getInnertubePlayerData(videoId: string): Promise<any> {
   const body = {
     videoId,
@@ -100,26 +99,107 @@ async function getInnertubePlayerData(videoId: string): Promise<any> {
   return resp.json();
 }
 
-// ── Get audio stream URL from innertube ──
 function getAudioStreamUrl(playerData: any): { url: string; contentLength: number; approxDuration: number } | null {
   const formats = playerData?.streamingData?.adaptiveFormats;
   if (!Array.isArray(formats)) return null;
-
-  // Pick lowest bitrate audio-only stream
   const audioFormats = formats
     .filter((f: any) => f.mimeType?.startsWith("audio/") && f.url)
     .sort((a: any, b: any) => (a.bitrate || 999999) - (b.bitrate || 999999));
-
   if (audioFormats.length === 0) return null;
   const chosen = audioFormats[0];
   const contentLength = parseInt(chosen.contentLength || "0", 10);
   const approxDuration = parseInt(chosen.approxDurationMs || "0", 10) / 1000;
-
   console.log(`[yt] Audio stream: ${chosen.mimeType}, bitrate=${chosen.bitrate}, size=${contentLength}, dur=${approxDuration}s`);
   return { url: chosen.url, contentLength, approxDuration };
 }
 
-// ── Download audio chunk via byte-range ──
+// ── Zyla Labs API fallback for audio URL ──
+async function fetchAudioViaZyla(
+  videoId: string,
+  zylaApiKey: string,
+): Promise<{ url: string; approxDuration: number }> {
+  console.log(`[yt] Fetching audio via Zyla Labs for ${videoId}`);
+
+  const resp = await fetch(
+    `https://zylalabs.com/api/1106/youtube+download+and+info+api/1145/download?id=${videoId}`,
+    {
+      headers: {
+        "Authorization": `Bearer ${zylaApiKey}`,
+      },
+      signal: AbortSignal.timeout(30000),
+    },
+  );
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    console.error(`[yt] Zyla API error ${resp.status}:`, errText.slice(0, 500));
+    throw new Error(`Zyla API failed: ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  console.log(`[yt] Zyla response keys:`, Object.keys(data));
+
+  // Zyla returns various format links — find audio-only or lowest quality
+  // The response structure has adaptiveFormats or similar
+  let audioUrl: string | null = null;
+  let duration = 0;
+
+  // Try to get duration from videoDetails
+  if (data.videoDetails?.lengthSeconds) {
+    duration = parseInt(data.videoDetails.lengthSeconds, 10);
+  }
+
+  // Look for audio in adaptiveFormats
+  if (Array.isArray(data.adaptiveFormats)) {
+    const audioFormats = data.adaptiveFormats
+      .filter((f: any) => f.mimeType?.startsWith("audio/") && f.url)
+      .sort((a: any, b: any) => (a.bitrate || 999999) - (b.bitrate || 999999));
+    if (audioFormats.length > 0) {
+      audioUrl = audioFormats[0].url;
+      if (!duration && audioFormats[0].approxDurationMs) {
+        duration = parseInt(audioFormats[0].approxDurationMs, 10) / 1000;
+      }
+      console.log(`[yt] Zyla audio from adaptiveFormats: bitrate=${audioFormats[0].bitrate}`);
+    }
+  }
+
+  // Try streamingData.adaptiveFormats pattern
+  if (!audioUrl && data.streamingData?.adaptiveFormats) {
+    const audioFormats = data.streamingData.adaptiveFormats
+      .filter((f: any) => f.mimeType?.startsWith("audio/") && f.url)
+      .sort((a: any, b: any) => (a.bitrate || 999999) - (b.bitrate || 999999));
+    if (audioFormats.length > 0) {
+      audioUrl = audioFormats[0].url;
+      if (!duration && audioFormats[0].approxDurationMs) {
+        duration = parseInt(audioFormats[0].approxDurationMs, 10) / 1000;
+      }
+      console.log(`[yt] Zyla audio from streamingData: bitrate=${audioFormats[0].bitrate}`);
+    }
+  }
+
+  // Try formats array (combined audio+video, less ideal but works)
+  if (!audioUrl && Array.isArray(data.formats)) {
+    const withAudio = data.formats.filter((f: any) => f.url && f.mimeType?.includes("audio"));
+    if (withAudio.length > 0) {
+      audioUrl = withAudio[0].url;
+      console.log(`[yt] Zyla audio from formats (combined stream)`);
+    }
+  }
+
+  // Last resort: look for any download link in the response
+  if (!audioUrl && data.link) {
+    audioUrl = data.link;
+    console.log(`[yt] Zyla audio from direct link`);
+  }
+
+  if (!audioUrl) {
+    console.error(`[yt] Zyla response had no audio URL. Full response:`, JSON.stringify(data).slice(0, 1000));
+    throw new Error("Zyla API returned no audio download URL");
+  }
+
+  return { url: audioUrl, approxDuration: duration || 2400 }; // default 40min if unknown
+}
+
 async function downloadAudioChunk(
   streamUrl: string,
   startByte: number,
@@ -136,7 +216,37 @@ async function downloadAudioChunk(
   return new Uint8Array(await resp.arrayBuffer());
 }
 
-// ── AI Transcription via Grok ──
+// Download full audio (for Zyla URLs that may not support byte-range)
+async function downloadFullAudio(url: string): Promise<Uint8Array> {
+  console.log(`[yt] Downloading full audio file...`);
+  const resp = await fetch(url, {
+    signal: AbortSignal.timeout(120000), // 2 min timeout for large files
+  });
+  if (!resp.ok) {
+    await resp.text();
+    throw new Error(`Full audio download failed: ${resp.status}`);
+  }
+  const buf = new Uint8Array(await resp.arrayBuffer());
+  console.log(`[yt] Downloaded ${buf.length} bytes of audio`);
+  return buf;
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function toBase64(data: Uint8Array): string {
+  let binary = "";
+  const CHUNK_SIZE = 32768;
+  for (let j = 0; j < data.length; j += CHUNK_SIZE) {
+    const slice = data.subarray(j, j + CHUNK_SIZE);
+    binary += String.fromCharCode(...slice);
+  }
+  return btoa(binary);
+}
+
 async function transcribeWithGrok(
   audioBase64: string,
   chunkIndex: number,
@@ -209,7 +319,6 @@ Return ONLY valid JSON, no markdown fencing, no explanation.`;
   const data = await resp.json();
   const content = data.choices?.[0]?.message?.content || "";
 
-  // Parse JSON from response (handle potential markdown fencing)
   const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   try {
     const parsed = JSON.parse(jsonStr);
@@ -223,30 +332,22 @@ Return ONLY valid JSON, no markdown fencing, no explanation.`;
   }
 }
 
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-// ── Main AI transcription pipeline ──
-async function aiTranscribe(
-  videoId: string,
+// ── AI transcription using innertube byte-range chunks ──
+async function aiTranscribeInnertube(
   playerData: any,
   grokApiKey: string,
 ): Promise<{ segments: Segment[]; announcements: Announcement[] }> {
   const audioStream = getAudioStreamUrl(playerData);
-  if (!audioStream) throw new Error("No audio stream available for this video");
+  if (!audioStream) throw new Error("No innertube audio stream available");
 
   const totalDuration = audioStream.approxDuration;
   const totalBytes = Math.min(audioStream.contentLength, MAX_AUDIO_BYTES);
   const bytesPerSecond = audioStream.contentLength / totalDuration;
 
-  // Calculate chunks
   const chunkCount = Math.ceil(totalDuration / CHUNK_DURATION_SEC);
-  const actualChunks = Math.min(chunkCount, 6); // Max 6 chunks (60 min)
+  const actualChunks = Math.min(chunkCount, 6);
 
-  console.log(`[yt] AI transcription: ${actualChunks} chunks, total duration=${totalDuration}s`);
+  console.log(`[yt] Innertube AI transcription: ${actualChunks} chunks, duration=${totalDuration}s`);
 
   const allSegments: Segment[] = [];
   const allAnnouncements: Announcement[] = [];
@@ -254,7 +355,6 @@ async function aiTranscribe(
   for (let i = 0; i < actualChunks; i++) {
     const offsetSeconds = i * CHUNK_DURATION_SEC;
     const chunkDuration = Math.min(CHUNK_DURATION_SEC, totalDuration - offsetSeconds);
-
     const startByte = Math.floor(offsetSeconds * bytesPerSecond);
     const endByte = Math.min(
       Math.floor((offsetSeconds + chunkDuration) * bytesPerSecond),
@@ -262,37 +362,67 @@ async function aiTranscribe(
     );
 
     console.log(`[yt] Downloading chunk ${i + 1}/${actualChunks}: bytes ${startByte}-${endByte}`);
-
     const audioData = await downloadAudioChunk(audioStream.url, startByte, endByte);
-
-    // Convert to base64
-    let base64 = "";
-    const CHUNK_SIZE = 32768;
-    for (let j = 0; j < audioData.length; j += CHUNK_SIZE) {
-      const slice = audioData.subarray(j, j + CHUNK_SIZE);
-      base64 += String.fromCharCode(...slice);
-    }
-    base64 = btoa(base64);
+    const base64 = toBase64(audioData);
 
     console.log(`[yt] Transcribing chunk ${i + 1}/${actualChunks} with Grok (${audioData.length} bytes)`);
-
-    const result = await transcribeWithGrok(
-      base64,
-      i,
-      actualChunks,
-      offsetSeconds,
-      chunkDuration,
-      grokApiKey,
-    );
-
+    const result = await transcribeWithGrok(base64, i, actualChunks, offsetSeconds, chunkDuration, grokApiKey);
     allSegments.push(...result.segments);
     allAnnouncements.push(...result.announcements);
   }
 
-  // Sort by start time
   allSegments.sort((a, b) => a.start - b.start);
   allAnnouncements.sort((a, b) => a.start - b.start);
+  return { segments: allSegments, announcements: allAnnouncements };
+}
 
+// ── AI transcription using Zyla-sourced full audio ──
+async function aiTranscribeZyla(
+  videoId: string,
+  zylaApiKey: string,
+  grokApiKey: string,
+): Promise<{ segments: Segment[]; announcements: Announcement[] }> {
+  const { url: audioUrl, approxDuration } = await fetchAudioViaZyla(videoId, zylaApiKey);
+
+  // Download full audio
+  const fullAudio = await downloadFullAudio(audioUrl);
+
+  // Cap at MAX_AUDIO_BYTES
+  const audioToProcess = fullAudio.length > MAX_AUDIO_BYTES
+    ? fullAudio.subarray(0, MAX_AUDIO_BYTES)
+    : fullAudio;
+
+  // Calculate chunks based on estimated duration
+  const totalDuration = approxDuration;
+  const chunkCount = Math.ceil(totalDuration / CHUNK_DURATION_SEC);
+  const actualChunks = Math.min(chunkCount, 6);
+  const bytesPerSecond = audioToProcess.length / totalDuration;
+
+  console.log(`[yt] Zyla AI transcription: ${actualChunks} chunks, duration=${totalDuration}s, audio=${audioToProcess.length} bytes`);
+
+  const allSegments: Segment[] = [];
+  const allAnnouncements: Announcement[] = [];
+
+  for (let i = 0; i < actualChunks; i++) {
+    const offsetSeconds = i * CHUNK_DURATION_SEC;
+    const chunkDuration = Math.min(CHUNK_DURATION_SEC, totalDuration - offsetSeconds);
+    const startByte = Math.floor(offsetSeconds * bytesPerSecond);
+    const endByte = Math.min(
+      Math.floor((offsetSeconds + chunkDuration) * bytesPerSecond),
+      audioToProcess.length - 1,
+    );
+
+    const chunkData = audioToProcess.subarray(startByte, endByte + 1);
+    const base64 = toBase64(chunkData);
+
+    console.log(`[yt] Zyla chunk ${i + 1}/${actualChunks}: ${chunkData.length} bytes, offset=${offsetSeconds}s`);
+    const result = await transcribeWithGrok(base64, i, actualChunks, offsetSeconds, chunkDuration, grokApiKey);
+    allSegments.push(...result.segments);
+    allAnnouncements.push(...result.announcements);
+  }
+
+  allSegments.sort((a, b) => a.start - b.start);
+  allAnnouncements.sort((a, b) => a.start - b.start);
   return { segments: allSegments, announcements: allAnnouncements };
 }
 
@@ -372,7 +502,6 @@ serve(async (req) => {
       console.log("[yt] Watch page error:", e);
     }
 
-    // Try innertube if watch page failed
     if (!captionUrl) {
       playerData = await getInnertubePlayerData(videoId);
       if (playerData) {
@@ -422,24 +551,45 @@ serve(async (req) => {
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Get player data if we don't have it yet
-    if (!playerData) {
-      playerData = await getInnertubePlayerData(videoId);
-    }
-    if (!playerData) {
-      return new Response(JSON.stringify({
-        error: "Could not access video data. The video may be private or restricted.",
-      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Step 3a: Try innertube audio stream first
+    let transcriptionResult: { segments: Segment[]; announcements: Announcement[] } | null = null;
+
+    if (playerData) {
+      try {
+        console.log("[yt] Trying innertube audio stream...");
+        transcriptionResult = await aiTranscribeInnertube(playerData, grokApiKey);
+      } catch (e) {
+        console.log("[yt] Innertube audio failed:", e instanceof Error ? e.message : e);
+      }
     }
 
-    const { segments, announcements } = await aiTranscribe(videoId, playerData, grokApiKey);
+    // Step 3b: Fall back to Zyla Labs API
+    if (!transcriptionResult || transcriptionResult.segments.length < 3) {
+      const zylaApiKey = Deno.env.get("ZYLA_API_KEY");
+      if (!zylaApiKey) {
+        return new Response(JSON.stringify({
+          error: "No captions or audio stream available, and Zyla API is not configured.",
+        }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-    if (segments.length < 3) {
+      try {
+        console.log("[yt] Trying Zyla Labs audio fallback...");
+        transcriptionResult = await aiTranscribeZyla(videoId, zylaApiKey, grokApiKey);
+      } catch (e) {
+        console.error("[yt] Zyla audio fallback failed:", e instanceof Error ? e.message : e);
+        return new Response(JSON.stringify({
+          error: `AI transcription failed: ${e instanceof Error ? e.message : "Unknown error"}. This video may not have accessible audio.`,
+        }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    if (!transcriptionResult || transcriptionResult.segments.length < 3) {
       return new Response(JSON.stringify({
         error: "AI transcription produced too few segments. The audio may not contain spoken sermon content.",
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const { segments, announcements } = transcriptionResult;
     const fullText = segments.map((s) => s.text).join(" ");
 
     await supabase.from("sermon_transcripts").upsert({
