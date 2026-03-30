@@ -14,11 +14,15 @@ import {
   Pencil,
   Trash2,
   Check,
+  Globe,
+  Info,
 } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
 
 /* ── Types ── */
 interface HighlightRow {
