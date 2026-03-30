@@ -5,18 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Daniel – deep, authoritative, passionate voice
-const VOICE_ID = "onwK4e9ZLuTAKqWW03F9";
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
-    if (!ELEVENLABS_API_KEY) {
-      return new Response(JSON.stringify({ error: "ElevenLabs API key not configured." }), {
+    const XAI_SPEAKER_KEY = Deno.env.get("XAi_Speaker");
+    if (!XAI_SPEAKER_KEY) {
+      return new Response(JSON.stringify({ error: "xAI Speaker API key not configured." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -30,31 +27,22 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`,
-      {
-        method: "POST",
-        headers: {
-          "xi-api-key": ELEVENLABS_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: text.trim().slice(0, 5000),
-          model_id: "eleven_multilingual_v2",
-          voice_settings: {
-            stability: 0.38,       // expressive, emotionally varied
-            similarity_boost: 0.85, // stay true to the voice character
-            style: 0.62,           // passionate, dramatic delivery
-            use_speaker_boost: true,
-            speed: 0.92,           // slightly slower for gravitas
-          },
-        }),
-      }
-    );
+    const response = await fetch("https://api.x.ai/v1/tts", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${XAI_SPEAKER_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: text.trim().slice(0, 15000),
+        voice_id: "sal",
+        language: "en",
+      }),
+    });
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("ElevenLabs error:", response.status, err);
+      console.error("xAI TTS error:", response.status, err);
       return new Response(JSON.stringify({ error: "Failed to generate speech." }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
