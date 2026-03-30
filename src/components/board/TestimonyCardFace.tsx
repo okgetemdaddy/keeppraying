@@ -310,6 +310,26 @@ export function TestimonyCardFace({
             <Share2 className="w-3.5 h-3.5" />
           </button>
 
+          {/* Listen */}
+          <div className="relative">
+            <TtsLoadingPopup visible={tts.ttsLoading && !tts.ttsPlaying} />
+            <motion.button
+              onClick={() => tts.toggleTts(testimony.body, `testimony_${testimony.id}`)}
+              whileTap={{ scale: 0.85 }}
+              title={tts.ttsPlaying ? "Stop reading" : "Listen"}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs transition-all hover:bg-accent/40"
+              style={{ color: tts.ttsPlaying ? accentColor : subtleText }}
+            >
+              {tts.ttsLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : tts.ttsPlaying ? (
+                <VolumeX className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </motion.button>
+          </div>
+
           <div className="flex-1" />
 
           {/* Back to Prayer */}
@@ -323,5 +343,6 @@ export function TestimonyCardFace({
         </div>
       </div>
     </div>
+    </>
   );
 }
