@@ -44,6 +44,7 @@ interface PremiumSubtopic {
   title: string;
   explanation: string;
   illustration?: string | null;
+  application_points?: string[];
   supporting_verses: string[];
   timestamp_seconds?: number | null;
 }
