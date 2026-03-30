@@ -82,9 +82,9 @@ export default function SharedPrayerLanding() {
     toggleTts, stopTts, pauseTts, resumeTts, changePlaybackRate,
   } = useTtsPlayer({ cacheId: prayer?.id, audioUrl: prayer?.audio_url });
 
-  // Fetch share data
+  // Fetch share data — re-run when auth state settles or changes
   useEffect(() => {
-    if (!token) return;
+    if (!token || authLoading) return;
     (async () => {
       setLoading(true);
       try {
@@ -161,7 +161,7 @@ export default function SharedPrayerLanding() {
         setLoading(false);
       }
     })();
-  }, [token]);
+  }, [token, user, authLoading]);
 
   // Claim share if user is logged in and share has no recipient
   useEffect(() => {
