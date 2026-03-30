@@ -38,6 +38,8 @@ import { ThemeSanctuaryModal } from "@/components/board/ThemeSanctuaryModal";
 import { AtmosphereCanvas } from "@/components/board/AtmosphereCanvas";
 import { BoardVerseBunchesSection } from "@/components/board/BoardVerseBunchesSection";
 import { BoardBibleAnnotations } from "@/components/board/BoardBibleAnnotations";
+import { useSermonPlans } from "@/hooks/useSermonPlans";
+import { PlanProgressCard } from "@/components/sermon/PlanProgressCard";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
