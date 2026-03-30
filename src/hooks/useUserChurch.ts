@@ -31,9 +31,10 @@ interface ChurchAnnouncement {
 export function useUserChurch() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [church, setChurch] = useState<Church | null>(null);
-  const [announcements, setAnnouncements] = useState<ChurchAnnouncement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = user ? getLocalCache<{ church: Church | null; announcements: ChurchAnnouncement[] }>(cacheKeys.church(user.id)) : null;
+  const [church, setChurch] = useState<Church | null>(cached?.church ?? null);
+  const [announcements, setAnnouncements] = useState<ChurchAnnouncement[]>(cached?.announcements ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   const fetchChurch = useCallback(async () => {
     if (!user) { setLoading(false); return; }
