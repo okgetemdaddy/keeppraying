@@ -136,9 +136,12 @@ serve(async (req) => {
       }
     } catch { /* non-fatal */ }
 
-    // Fetch captions
+    // Fetch captions — try multiple extraction strategies
     const pageResp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "en" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
     });
 
     if (!pageResp.ok) {
@@ -148,16 +151,71 @@ serve(async (req) => {
     }
 
     const html = await pageResp.text();
-    const captionMatch = html.match(/"captionTracks":\[(\{[^}]*?"baseUrl":"([^"]+)"[^}]*?\})/);
+    console.log("[youtube-transcript] HTML length:", html.length,
+      "has captionTracks:", html.includes("captionTracks"),
+      "has ytInitialPlayerResponse:", html.includes("ytInitialPlayerResponse"));
 
-    console.log("[youtube-transcript] captionMatch found:", !!captionMatch?.[2]);
-    if (!captionMatch?.[2]) {
+    // Strategy 1: Direct captionTracks regex
+    let captionUrl: string | null = null;
+    const baseUrlMatch = html.match(/"captionTracks":\s*\[.*?"baseUrl"\s*:\s*"([^"]+)"/s);
+    if (baseUrlMatch?.[1]) {
+      captionUrl = baseUrlMatch[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
+      console.log("[youtube-transcript] Strategy 1 matched");
+    }
+
+    // Strategy 2: Parse ytInitialPlayerResponse
+    if (!captionUrl) {
+      const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script)/s);
+      if (playerMatch) {
+        try {
+          const pd = JSON.parse(playerMatch[1]);
+          const tracks = pd?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+          if (Array.isArray(tracks) && tracks.length > 0) {
+            const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
+              || tracks.find((t: any) => t.languageCode === "en")
+              || tracks[0];
+            captionUrl = chosen.baseUrl;
+            console.log("[youtube-transcript] Strategy 2 matched");
+          }
+        } catch (e) { console.log("[youtube-transcript] Strategy 2 parse error:", e); }
+      }
+    }
+
+    // Strategy 3: YouTube innertube API (most reliable for server-side)
+    if (!captionUrl) {
+      console.log("[youtube-transcript] Trying innertube API...");
+      try {
+        const innerResp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            videoId,
+            context: {
+              client: { clientName: "WEB", clientVersion: "2.20250101.00.00", hl: "en" },
+            },
+          }),
+        });
+        if (innerResp.ok) {
+          const innerData = await innerResp.json();
+          const tracks = innerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+          console.log("[youtube-transcript] Innertube tracks:", tracks?.length ?? 0);
+          if (Array.isArray(tracks) && tracks.length > 0) {
+            const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
+              || tracks.find((t: any) => t.languageCode === "en")
+              || tracks[0];
+            captionUrl = chosen.baseUrl;
+          }
+        }
+      } catch (e) { console.log("[youtube-transcript] Innertube error:", e); }
+    }
+
+    console.log("[youtube-transcript] captionUrl found:", !!captionUrl);
+    if (!captionUrl) {
       return new Response(JSON.stringify({
         error: "No captions available for this video. Try a sermon that has subtitles or closed captions enabled.",
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const captionUrl = captionMatch[2].replace(/\\u0026/g, "&");
     const captionResp = await fetch(captionUrl);
     if (!captionResp.ok) {
       return new Response(JSON.stringify({ error: "Failed to fetch captions" }), {
