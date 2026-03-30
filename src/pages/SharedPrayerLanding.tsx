@@ -372,8 +372,28 @@ export default function SharedPrayerLanding() {
       },
     ];
 
+    // Record landing page view (once per share)
+    const recordLandingView = useCallback(async () => {
+      if (!share) return;
+      if (user) {
+        // Auth user — record in DB
+        await supabase
+          .from("prayer_shares")
+          .update({ landing_viewed_at: new Date().toISOString() } as any)
+          .eq("id", share.id)
+          .is("landing_viewed_at", null);
+      } else {
+        // Anon — record in localStorage
+        const key = `kp_landing_viewed_${share.token || token}`;
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, new Date().toISOString());
+        }
+      }
+    }, [share, user, token]);
+
     // Handler for CTA
     const handleCta = () => {
+      recordLandingView();
       if (isAccessible) {
         // Public prayer — fade landing, reveal prayer
         setShowPrayer(true);
