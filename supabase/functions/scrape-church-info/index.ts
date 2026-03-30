@@ -107,7 +107,7 @@ ${html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "").replace(/<style[^>]*>[\s
             "Authorization": `Bearer ${grokApiKey}`,
           },
           body: JSON.stringify({
-            model: "grok-4.20-reasoning",
+            model: "grok-4.20-0309-reasoning",
             messages: [{ role: "user", content: prompt }],
             temperature: 0.2,
           }),
