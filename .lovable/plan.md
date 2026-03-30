@@ -1,58 +1,63 @@
 
 
-## Scope the Transparency Slider to the Prayer Card Only
+## Fix: Restore Prayer Card Background + Three-Dot Menu Visibility
 
-The transparency slider and color presets must only affect the `prayer-card-premium` card element on `/prayer/:id` — not the page background, not the fixed background image, not the nav bar.
+### Problem
+The last edit removed the `prayer-card-premium` class from the card wrapper and set `background: "transparent"`, which stripped away the white/parchment card background, border, shadow, and glassmorphism effects. The card text now sits directly on the background image with no visible card.
 
-### How it works
+The three-dot menu also only shows for `isOwner` (creator), which may be why it's not visible on this particular card.
 
-**File: `src/pages/Prayer.tsx`**
+### Fix — `src/pages/Prayer.tsx`
 
-The page structure is:
-1. Fixed background image (line 290-300) — **untouched**
-2. `relative z-10` content wrapper (line 302) — **untouched**
-3. `motion.div.prayer-card-premium` (line 311-316) — **this is the target**
+**1. Restore `prayer-card-premium` class on the `motion.div` wrapper (line 351)**
 
-**Implementation:**
+Remove the inline `style={{ background: "transparent" }}` and bring back the `prayer-card-premium` class. The inner absolute background layer approach was wrong — it removed the card's identity.
 
-1. **Add DB migration** — two columns on `prayer_cards`:
-   ```sql
-   ALTER TABLE public.prayer_cards
-     ADD COLUMN card_opacity real DEFAULT 1.0,
-     ADD COLUMN card_color jsonb DEFAULT NULL;
-   ```
+**2. Use rgba background on the card itself for transparency control**
 
-2. **Add imports** to `Prayer.tsx`:
-   - `MoreVertical`, `SunDim`, `Check`, `Palette` from lucide
-   - `Slider` from `@/components/ui/slider`
-   - `DropdownMenu` components
-   - `CARD_BG_PRESETS` from `@/components/board/BoardCard`
+Instead of a separate inner div with opacity, apply the transparency directly to the card's background color using `rgba`. This keeps the card's border, shadow, and `::before` highlight intact while making just the fill color transparent.
 
-3. **Add state**: `cardOpacity` (0-100), `cardBgPreset`, `isOwner`
+- When `cardOpacity` is 100: card looks normal (solid parchment or preset color)
+- When slider is lowered: card background becomes see-through, background image shows through
+- Text, border, shadow all remain fully visible
 
-4. **Restructure the `prayer-card-premium` div only**:
-   - Make the `motion.div` wrapper `position: relative; overflow: hidden; background: transparent`
-   - Add an **inner** absolute-positioned background layer inside the card:
-     ```tsx
-     <div className="absolute inset-0 rounded-2xl" style={{
-       backgroundColor: cardBgPreset?.bg ?? '#F8F1E3',
-       opacity: cardOpacity / 100,
-     }} />
-     ```
-   - All text content sits above this layer via `relative z-10` — stays fully opaque
-   - Footer action bar gets its own background with `opacity: Math.max(cardOpacity / 100, 0.8)`
+The `motion.div` will get:
+```tsx
+className="prayer-card-premium flex flex-col"
+style={{
+  background: `rgba(${r}, ${g}, ${b}, ${cardOpacity / 100})`,
+}}
+```
 
-   The page background, fixed image, nav, and everything outside the card remain completely unaffected.
+Where `r,g,b` comes from the selected preset color or default parchment (#F8F1E3 = 248,241,227).
 
-5. **Three-dot menu** — positioned in the card header next to `SourceBadge`, only visible to `isOwner`:
-   - Card Transparency slider (0-100%)
-   - Card Color presets (8 swatches + default)
+**3. Remove the inner absolute background div** (lines 354-361) — no longer needed.
 
-6. **Persistence**:
-   - Owner saves to `prayer_cards.card_opacity` and `prayer_cards.card_color`
-   - Non-owners see creator styling read-only
-   - Board cards remain independently controlled via `user_saved_prayers`
+**4. Keep `relative z-10` wrapper for content** (line 363) but remove the z-10 since we no longer have an inner bg layer to sit above.
 
-### Key constraint
-The slider **only** controls the opacity of the card's inner background layer. The fixed page background image, the gradient overlay on the background image, the nav bar, and all text remain at full opacity.
+**5. Footer action bar** — add its own background with `Math.max(cardOpacity / 100, 0.8)` opacity so it stays legible.
+
+**6. Three-dot menu** — show for all logged-in users who have saved the prayer (`isOwner || saved`), not just owners. Owners save to `prayer_cards`, non-owners who've saved can adjust for their session. (Or keep owner-only per original spec — but the user needs to be the owner to see it.)
+
+### Helper: hex-to-rgb utility
+
+Add a small helper to convert hex/preset colors to rgb values for the rgba() background:
+```ts
+function hexToRgb(hex: string): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
+}
+```
+
+Default parchment: `hexToRgb('#F8F1E3')` = `"248, 241, 227"`.
+
+### Summary of changes
+- Single file: `src/pages/Prayer.tsx`
+- Restore `prayer-card-premium` class on the card wrapper
+- Control transparency via `rgba()` background instead of a separate opacity div
+- Keep text, border, shadow fully opaque at all slider values
+- Three-dot menu remains positioned in header next to SourceBadge
 
