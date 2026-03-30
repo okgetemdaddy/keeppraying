@@ -134,17 +134,19 @@ If you can identify approximate timestamps, include them, but do not force or fa
 
 Use warm, encouraging, practical language. All content must come from the video — do not invent or embellish.`;
 
-const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `Extract structured data from the sermon analysis below into the exact JSON schema requested. Do not add information that is not present in the analysis. If a field cannot be determined, use null or an empty array.
+const GEMINI_EXTRACTION_PROMPT = (rawAnalysis: string) => `You are extracting structured sermon data from a raw AI analysis. The analysis may be informal, use markdown, or have varying formats. Extract every piece of information you can find — even partial data is valuable.
 
 --- SERMON ANALYSIS START ---
 ${rawAnalysis}
 --- SERMON ANALYSIS END ---
 
-Return valid JSON only in this exact shape:
+Extract ALL available information into this JSON shape. Use the actual content from the analysis — do not return empty/null if there is data present. If you find sermon points, themes, or teachings, map them to subtopics. If you find any prayer-related content, map it to dailyPrayers.
+
+Return valid JSON only:
 {
-  "sermonTitle": "string",
+  "sermonTitle": "string (use main topic/theme if no explicit title)",
   "mainScripture": "string or null",
-  "overallMessage": "string",
+  "overallMessage": "string (summarize the main teaching)",
   "serviceOutline": [
     { "section": "string", "start": "HH:MM:SS or null", "end": "HH:MM:SS or null" }
   ],
@@ -163,7 +165,7 @@ Return valid JSON only in this exact shape:
   ]
 }
 
-Use null for any timestamp or field you cannot determine from the analysis.`;
+Use null for any timestamp or field you truly cannot determine from the analysis.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
