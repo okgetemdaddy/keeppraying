@@ -219,17 +219,18 @@ async function getYouTubeTranscript(videoId: string): Promise<{
     console.warn("[sermon-sync] Tier 2 error:", e instanceof Error ? e.message : String(e));
   }
 
-  // === Tier 2b: Innertube player API ===
-  console.log("[sermon-sync] Tier 2b: Trying Innertube player API...");
+  // === Tier 2b: Innertube ANDROID client (most permissive, no login required) ===
+  console.log("[sermon-sync] Tier 2b: Trying Innertube ANDROID client...");
   try {
-    const playerRes = await fetch("https://www.youtube.com/youtubei/v1/player", {
+    const playerRes = await fetch("https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "User-Agent": UA },
+      headers: { "Content-Type": "application/json", "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11) gzip" },
       body: JSON.stringify({
         context: {
           client: {
-            clientName: "WEB",
-            clientVersion: "2.20250301.01.00",
+            clientName: "ANDROID",
+            clientVersion: "19.09.37",
+            androidSdkVersion: 30,
             hl: "en",
             gl: "US",
           },
@@ -243,7 +244,7 @@ async function getYouTubeTranscript(videoId: string): Promise<{
       const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
 
       if (Array.isArray(captionTracks) && captionTracks.length > 0) {
-        console.log(`[sermon-sync] Found ${captionTracks.length} caption track(s) via Innertube`);
+        console.log(`[sermon-sync] Tier 2b ANDROID: Found ${captionTracks.length} caption track(s)`);
 
         const track =
           captionTracks.find((t: any) => t.languageCode === "en") ||
@@ -259,52 +260,73 @@ async function getYouTubeTranscript(videoId: string): Promise<{
             const trackData = await trackRes.json();
             const parsed = parseJson3Captions(trackData);
             if (parsed) {
-              console.log(`[sermon-sync] Tier 2b success. Text length: ${parsed.text.length}`);
+              console.log(`[sermon-sync] Tier 2b ANDROID success. Text length: ${parsed.text.length}`);
               return parsed;
             }
           }
         }
+      } else {
+        console.log("[sermon-sync] Tier 2b ANDROID: No caption tracks (status:", playerData?.playabilityStatus?.status, ")");
       }
     }
   } catch (e) {
-    console.warn("[sermon-sync] Tier 2b error:", e instanceof Error ? e.message : String(e));
+    console.warn("[sermon-sync] Tier 2b ANDROID error:", e instanceof Error ? e.message : String(e));
   }
 
-  // === Tier 3: Zyla API (paid fallback) ===
-  const ZYLA_KEY = Deno.env.get("ZYLA_API_KEY");
-  if (ZYLA_KEY) {
-    console.log("[sermon-sync] Tier 3: Trying Zyla API...");
-    try {
-      const zylaRes = await fetch(
-        `https://zylalabs.com/api/5765/youtube+transcriptor+api/7094/transcript?video_id=${videoId}`,
-        { headers: { "Authorization": `Bearer ${ZYLA_KEY}` } }
-      );
-      if (zylaRes.ok) {
-        const zylaData = await zylaRes.json();
-        if (Array.isArray(zylaData)) {
-          const timed = zylaData.map((seg: any) => ({
-            offset: Math.round((seg.start || seg.offset || 0) * 1000),
-            duration: Math.round((seg.duration || 0) * 1000),
-            text: (seg.text || "").replace(/\n/g, " "),
-          }));
-          const text = timed.map((s) => s.text).join(" ").replace(/\s+/g, " ").trim();
-          if (text.length > 50) {
-            console.log(`[sermon-sync] Tier 3 success. Text length: ${text.length}`);
-            return { text, timed };
-          }
-        } else if (zylaData?.transcript) {
-          const text = typeof zylaData.transcript === "string" ? zylaData.transcript : JSON.stringify(zylaData.transcript);
-          if (text.length > 50) {
-            console.log(`[sermon-sync] Tier 3 success (text only). Text length: ${text.length}`);
-            return { text, timed: [] };
+  // === Tier 2c: Innertube TVHTML5 embedded player (no auth required) ===
+  console.log("[sermon-sync] Tier 2c: Trying Innertube TVHTML5_SIMPLY_EMBEDDED_PLAYER...");
+  try {
+    const playerRes = await fetch("https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "User-Agent": UA },
+      body: JSON.stringify({
+        context: {
+          client: {
+            clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+            clientVersion: "2.0",
+            hl: "en",
+            gl: "US",
+          },
+          thirdParty: {
+            embedUrl: "https://www.google.com",
+          },
+        },
+        videoId,
+      }),
+    });
+
+    if (playerRes.ok) {
+      const playerData = await playerRes.json();
+      const captionTracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+
+      if (Array.isArray(captionTracks) && captionTracks.length > 0) {
+        console.log(`[sermon-sync] Tier 2c TVHTML5: Found ${captionTracks.length} caption track(s)`);
+
+        const track =
+          captionTracks.find((t: any) => t.languageCode === "en") ||
+          captionTracks.find((t: any) => t.languageCode?.startsWith("en")) ||
+          captionTracks[0];
+
+        if (track?.baseUrl) {
+          const separator = track.baseUrl.includes("?") ? "&" : "?";
+          const trackUrl = `${track.baseUrl}${separator}fmt=json3`;
+
+          const trackRes = await fetch(trackUrl, { headers: { "User-Agent": UA } });
+          if (trackRes.ok) {
+            const trackData = await trackRes.json();
+            const parsed = parseJson3Captions(trackData);
+            if (parsed) {
+              console.log(`[sermon-sync] Tier 2c TVHTML5 success. Text length: ${parsed.text.length}`);
+              return parsed;
+            }
           }
         }
       } else {
-        console.warn("[sermon-sync] Tier 3: Zyla returned", zylaRes.status);
+        console.log("[sermon-sync] Tier 2c TVHTML5: No caption tracks (status:", playerData?.playabilityStatus?.status, ")");
       }
-    } catch (e) {
-      console.warn("[sermon-sync] Tier 3 error:", e instanceof Error ? e.message : String(e));
     }
+  } catch (e) {
+    console.warn("[sermon-sync] Tier 2c TVHTML5 error:", e instanceof Error ? e.message : String(e));
   }
 
   throw new Error("Could not extract transcript. This video may not have captions available. Please try a different sermon link.");
