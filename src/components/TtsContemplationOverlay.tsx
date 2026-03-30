@@ -270,8 +270,8 @@ export function TtsContemplationOverlay({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="relative w-full max-w-[640px] mx-auto px-6 pb-4 flex flex-col gap-3"
-            style={{ zIndex: 2, paddingBottom: "max(env(safe-area-inset-bottom, 16px), 24px)" }}
+            className="relative w-full max-w-[640px] mx-auto px-6 flex flex-col gap-3 shrink-0"
+            style={{ zIndex: 2, paddingBottom: "max(env(safe-area-inset-bottom, 24px), 32px)" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Audio scrubber */}
@@ -302,16 +302,16 @@ export function TtsContemplationOverlay({
             <div className="flex items-center gap-4">
               <motion.button
                 onClick={handleTogglePause}
-                className="flex items-center justify-center w-12 h-12 rounded-full shrink-0"
+                className="flex items-center justify-center w-14 h-14 rounded-full shrink-0"
                 style={{
-                  background: "radial-gradient(circle, hsla(42,50%,50%,0.18) 0%, hsla(42,40%,30%,0.06) 100%)",
-                  border: "1.5px solid hsla(42,50%,55%,0.3)",
+                  background: "radial-gradient(circle, hsla(42,50%,50%,0.25) 0%, hsla(42,40%,30%,0.1) 100%)",
+                  border: "2px solid hsla(42,50%,55%,0.45)",
                   backdropFilter: "blur(6px)",
                 }}
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
               >
-                <IconComponent className="w-5 h-5" style={{ color: "hsla(42,60%,70%,0.9)" }} />
+                <IconComponent className="w-6 h-6" style={{ color: "hsla(42,60%,70%,0.95)" }} />
               </motion.button>
 
               <div className="flex-1 flex items-center gap-3">
@@ -332,15 +332,19 @@ export function TtsContemplationOverlay({
               </div>
             </div>
 
-            {/* Tap hint */}
-            <motion.p
-              className="text-[11px] font-medium tracking-[0.15em] uppercase select-none text-center"
-              style={{ color: "hsla(42,40%,65%,0.4)" }}
-              animate={{ opacity: [0.25, 0.5, 0.25] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            {/* Stop button */}
+            <motion.button
+              onClick={onStop}
+              className="w-full py-2.5 rounded-full text-[13px] font-semibold tracking-[0.12em] uppercase select-none"
+              style={{
+                background: "hsla(42,30%,25%,0.2)",
+                border: "1px solid hsla(42,40%,50%,0.25)",
+                color: "hsla(42,40%,65%,0.7)",
+              }}
+              whileTap={{ scale: 0.97 }}
             >
-              Tap anywhere to stop
-            </motion.p>
+              Stop &amp; Close
+            </motion.button>
           </motion.div>
         </motion.div>
       )}
