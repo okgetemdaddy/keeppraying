@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Church, MapPin, Phone, Mail, Clock, ChevronDown, ChevronUp, Play,
   Globe, RefreshCw, Heart, Users, ExternalLink, Facebook, Instagram, Youtube,
-  Twitter, Music, Video, Sparkles, Star, Navigation, ImageIcon,
+  Twitter, Music, Video, Sparkles, Star, Navigation, ImageIcon, Minus, Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const [churchUrl, setChurchUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [minimized, setMinimized] = useState<Record<string, boolean>>({});
+
+  const toggleMin = (key: string) =>
+    setMinimized((prev) => ({ ...prev, [key]: !prev[key] }));
 
   if (loading) return null;
 
@@ -128,6 +132,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const bodyStyle = { color: `${textColor}80` };
   const headStyle = { color: `${textColor}90` };
   const iconStyle = { color: hasBrand ? primaryColor : `${textColor}60` };
+
+  /** Minimize toggle for upper-right of each card */
+  const MinBtn = ({ id }: { id: string }) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); toggleMin(id); }}
+      className="absolute top-2 right-2 p-0.5 rounded-full hover:bg-white/10 transition-colors z-10"
+      title={minimized[id] ? "Expand" : "Minimize"}
+    >
+      {minimized[id]
+        ? <Plus className="w-3 h-3" style={{ color: `${textColor}50` }} />
+        : <Minus className="w-3 h-3" style={{ color: `${textColor}50` }} />}
+    </button>
+  );
 
   return (
     <div className="mb-6">
@@ -252,7 +269,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
 
                 {/* ── About / Mission with Pastor ── */}
                 {(aboutUs || missionStatement || pastorName) && (
-                  <div className="rounded-2xl p-4 space-y-3" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="about" />
+                    {!minimized.about ? (
+                      <div className="space-y-3 pr-5">
                     {pastorName && (
                       <div className="flex items-center gap-3">
                         {pastorImageUrl ? (
@@ -289,11 +309,18 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         <strong>Mission:</strong> {missionStatement}
                       </p>
                     )}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5" style={labelStyle}>About & Mission</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Contact & Details ── */}
-                <div className="rounded-2xl p-4 space-y-2" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
+                <div className="rounded-2xl p-4 relative" style={{ background: cardBg, backdropFilter: "blur(8px)" }}>
+                  <MinBtn id="contact" />
+                  {!minimized.contact ? (
+                    <div className="space-y-2 pr-5">
                   {church.address && (
                     <div className="flex items-start gap-2">
                       <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={iconStyle} />
@@ -337,11 +364,18 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                       </a>
                     </div>
                   )}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] pr-5" style={labelStyle}>Contact & Details</p>
+                  )}
                 </div>
 
                 {/* ── Google Building Photos Gallery ── */}
                 {googlePhotos.length > 1 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="photos" />
+                    {!minimized.photos ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       <ImageIcon className="w-3 h-3" /> Photos
                     </p>
@@ -353,12 +387,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         />
                       ))}
                     </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5 flex items-center gap-1" style={labelStyle}><ImageIcon className="w-3 h-3" /> Photos</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Service Times ── */}
                 {serviceTimes.length > 0 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="services" />
+                    {!minimized.services ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       <Clock className="w-3 h-3" /> Service Times
                     </p>
@@ -375,12 +416,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         </div>
                       ))}
                     </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5 flex items-center gap-1" style={labelStyle}><Clock className="w-3 h-3" /> Service Times</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Social Media ── */}
                 {socialEntries.length > 0 && (
-                  <div className="rounded-2xl p-4" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="socials" />
+                    {!minimized.socials ? (
+                      <div className="pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       Connect
                     </p>
@@ -399,6 +447,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         </a>
                       ))}
                     </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5" style={labelStyle}>Connect</p>
+                    )}
                   </div>
                 )}
 
@@ -424,7 +476,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
 
                 {/* ── Ministries ── */}
                 {ministries.length > 0 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="ministries" />
+                    {!minimized.ministries ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       <Users className="w-3 h-3" /> Ministries
                     </p>
@@ -437,12 +492,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         </span>
                       ))}
                     </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5 flex items-center gap-1" style={labelStyle}><Users className="w-3 h-3" /> Ministries</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Values ── */}
                 {values.length > 0 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="values" />
+                    {!minimized.values ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       <Star className="w-3 h-3" /> Core Values
                     </p>
@@ -454,12 +516,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         </span>
                       ))}
                     </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5 flex items-center gap-1" style={labelStyle}><Star className="w-3 h-3" /> Core Values</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Unique Features ── */}
                 {uniqueFeatures.length > 0 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="unique" />
+                    {!minimized.unique ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       <Sparkles className="w-3 h-3" /> What Makes Us Unique
                     </p>
@@ -469,12 +538,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         <p className="text-xs" style={bodyStyle}>{f}</p>
                       </div>
                     ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5 flex items-center gap-1" style={labelStyle}><Sparkles className="w-3 h-3" /> What Makes Us Unique</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Events ── */}
                 {events.length > 0 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="events" />
+                    {!minimized.events ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: hasBrand ? primaryColor : `${textColor}50` }}>
                       Upcoming Events
                     </p>
@@ -492,12 +568,19 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         )}
                       </div>
                     ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5" style={labelStyle}>Upcoming Events</p>
+                    )}
                   </div>
                 )}
 
                 {/* ── Sermon Announcements ── */}
                 {announcements.length > 0 && (
-                  <div className="rounded-2xl p-4 space-y-2" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                  <div className="rounded-2xl p-4 relative" style={{ background: subtleBg, backdropFilter: "blur(8px)" }}>
+                    <MinBtn id="announcements" />
+                    {!minimized.announcements ? (
+                      <div className="space-y-2 pr-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider" style={labelStyle}>
                       Sermon Announcements
                     </p>
@@ -522,6 +605,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
                         </div>
                       </div>
                     ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] pr-5" style={labelStyle}>Sermon Announcements</p>
+                    )}
                   </div>
                 )}
               </>
