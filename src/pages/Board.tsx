@@ -436,6 +436,30 @@ export default function Board() {
       {/* Main content */}
       <div className={`relative container mx-auto px-4 ${isMobile ? "py-4" : "py-8"} pb-32 max-w-5xl`}>
 
+        {/* ── Active Sermon Prayer Plans ──────────────────────── */}
+        {sermonPlans.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <h3 className="text-sm font-display font-bold flex items-center gap-2" style={{ color: textColor }}>
+              <Church className="w-4 h-4" /> Week of Prayer
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {sermonPlans.map((plan) => {
+                const mem = sermonMemberships.find((m) => m.plan_id === plan.id);
+                if (!mem) return null;
+                return (
+                  <PlanProgressCard
+                    key={plan.id}
+                    plan={plan}
+                    membership={mem}
+                    onToggle={updateMemberToggles}
+                    onMarkDay={markDayComplete}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── Sort / Filter / Layout controls ──────────────────────── */}
         {!loading && saved.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-5">
