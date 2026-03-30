@@ -13,13 +13,14 @@ const MILESTONES = [7, 30, 100, 365];
 
 export function useStreak() {
   const { user } = useAuth();
-  const [streak, setStreak] = useState<StreakData>({
+  const cached = user ? getLocalCache<StreakData>(cacheKeys.streak(user.id)) : null;
+  const [streak, setStreak] = useState<StreakData>(cached ?? {
     currentStreak: 0,
     longestStreak: 0,
     lastPrayedDate: null,
   });
   const [milestone, setMilestone] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cached);
 
   const fetchStreak = useCallback(async () => {
     if (!user) return;
