@@ -959,6 +959,9 @@ interface ActionButtonsProps {
   onRefresh: () => void;
   onSharePrivately?: () => void;
   isSharedRecipient?: boolean;
+  onListen?: () => void;
+  ttsLoading?: boolean;
+  ttsPlaying?: boolean;
 }
 
 function ActionButtons({
@@ -968,6 +971,7 @@ function ActionButtons({
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
   userId, onRefresh, onSharePrivately, isSharedRecipient,
+  onListen, ttsLoading: listenLoading, ttsPlaying: listenPlaying,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
