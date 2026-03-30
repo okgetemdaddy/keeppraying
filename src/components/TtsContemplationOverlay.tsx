@@ -25,6 +25,7 @@ const RATE_LABELS: Record<number, string> = {
 };
 
 const LINE_HEIGHT = 30;
+const VISIBLE_LINES = 6;
 const MS_PER_WORD_AT_1X = 150;
 
 function splitIntoLines(text: string): string[] {
@@ -45,11 +46,14 @@ function splitIntoLines(text: string): string[] {
 
 function getLineOpacity(distance: number): number {
   if (distance === 0) return 0.95;
-  if (distance === -1) return 0.45;
-  if (distance <= -2) return 0.15;
-  if (distance === 1) return 0.6;
-  if (distance === 2) return 0.35;
-  return 0.15;
+  if (distance === -1) return 0.5;
+  if (distance === -2) return 0.25;
+  if (distance <= -3) return 0.1;
+  if (distance === 1) return 0.65;
+  if (distance === 2) return 0.45;
+  if (distance === 3) return 0.28;
+  if (distance === 4) return 0.15;
+  return 0.08;
 }
 
 export function TtsContemplationOverlay({
@@ -77,14 +81,14 @@ export function TtsContemplationOverlay({
 
   // ── Timeupdate-driven sync (when timedPhrases available) ────────────────────
   useEffect(() => {
-    if (!playing || !hasTimedPhrases || !audioRef?.current) return;
+    if (!playing || !hasTimedPhrases) return;
 
-    const audio = audioRef.current;
     const phrases = timedPhrases!;
 
     const handleTimeUpdate = () => {
+      const audio = audioRef?.current;
+      if (!audio) return;
       const t = audio.currentTime;
-      // Find the last phrase whose start <= currentTime
       let idx = 0;
       for (let i = phrases.length - 1; i >= 0; i--) {
         if (phrases[i].start <= t) {
@@ -95,8 +99,11 @@ export function TtsContemplationOverlay({
       setCurrentLineIndex(idx);
     };
 
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+    // Use an interval to poll currentTime — more reliable than timeupdate
+    // since the audio element may be set on the ref after this effect runs.
+    const interval = setInterval(handleTimeUpdate, 80);
+
+    return () => clearInterval(interval);
   }, [playing, hasTimedPhrases, timedPhrases, audioRef]);
 
   // ── Fallback: word-count interval timer (no timedPhrases) ───────────────────
@@ -227,10 +234,10 @@ export function TtsContemplationOverlay({
               className="relative z-10 mt-10 w-full max-w-[600px] px-6"
               onClick={(e) => e.stopPropagation()}
               style={{
-                height: LINE_HEIGHT * 3,
+                height: LINE_HEIGHT * VISIBLE_LINES,
                 overflow: "hidden",
-                maskImage: "linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)",
-                WebkitMaskImage: "linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)",
+                maskImage: "linear-gradient(transparent 0%, black 8%, black 92%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(transparent 0%, black 8%, black 92%, transparent 100%)",
               }}
             >
               <motion.div
