@@ -97,6 +97,7 @@ serve(async (req) => {
     }
 
     const videoId = extractVideoId(youtubeUrl);
+    console.log("[youtube-transcript] videoId:", videoId, "url:", youtubeUrl);
     if (!videoId) {
       return new Response(JSON.stringify({ error: "Invalid YouTube URL" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
