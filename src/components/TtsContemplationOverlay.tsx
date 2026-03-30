@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { countTextSyllables, getCalibrationRate } from "@/lib/syllables";
 
 export interface TimedPhrase {
   text: string;
