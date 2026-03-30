@@ -22,6 +22,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import { SiteNav } from "@/components/SiteNav";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
 
