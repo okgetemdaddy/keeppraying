@@ -749,6 +749,51 @@ export function BoardCard({
 
             {/* Action buttons */}
             <div className="flex items-center gap-0.5">
+              {/* Prayed button */}
+              <div className="relative">
+                <AnimatePresence>
+                  {prayedFloat && (
+                    <motion.span
+                      key="prayed-float"
+                      initial={{ opacity: 1, y: 0, x: "-50%" }}
+                      animate={{ opacity: 0, y: -28 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 1.1, ease: "easeOut" }}
+                      className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
+                      style={{ color: accentColor }}
+                    >
+                      🙏 Prayed
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+                <motion.button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!userId) return;
+                    if (prayedCooldownRef.current) return;
+                    prayedCooldownRef.current = true;
+                    setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
+                    setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
+                    if (prayed) {
+                      await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
+                      setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
+                    } else {
+                      await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
+                      setPrayed(true); setPrayedCount(c => c + 1);
+                      setPrayedFloat(true); setTimeout(() => setPrayedFloat(false), 1200);
+                    }
+                  }}
+                  animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
+                  transition={{ duration: 0.35 }}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                  style={{ color: prayed ? accentColor : `${textColor}55` }}
+                  title="I prayed this"
+                >
+                  <PrayingHandsIcon className="w-3.5 h-3.5" />
+                  {prayedCount > 0 && <span>{prayedCount}</span>}
+                </motion.button>
+              </div>
+
               {isPublic && (
                 <button
                   onClick={() => setFlipped(true)}
