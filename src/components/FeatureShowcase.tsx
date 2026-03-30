@@ -546,7 +546,7 @@ export default function FeatureShowcase() {
         </div>
       </div>
 
-      <ProgressDots activeIndex={activeIndex} />
+      
     </section>
   );
 }
