@@ -1552,6 +1552,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          landing_viewed_at: string | null
           message: string | null
           prayer_id: string
           recipient_id: string | null
@@ -1563,6 +1564,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          landing_viewed_at?: string | null
           message?: string | null
           prayer_id: string
           recipient_id?: string | null
@@ -1574,6 +1576,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          landing_viewed_at?: string | null
           message?: string | null
           prayer_id?: string
           recipient_id?: string | null
