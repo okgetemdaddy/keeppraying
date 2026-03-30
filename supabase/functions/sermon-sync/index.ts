@@ -290,6 +290,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
+          max_tokens: 8000,
           messages: [
             { role: "system", content: "You extract structured sermon data and return only valid JSON." },
             { role: "user", content: GEMINI_EXTRACTION_PROMPT(rawAnalysis) },
