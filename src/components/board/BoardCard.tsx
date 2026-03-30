@@ -600,7 +600,17 @@ export function BoardCard({
                 </div>
               )}
 
-              {/* Comments — large + PUBLIC cards only */}
+              {/* Sermon Application Points — for sermon-sync daily prayer cards */}
+              {card.labels?.includes("sermon-sync") && card.meditation_essay && userId && (
+                <SermonApplicationPoints
+                  meditationEssay={card.meditation_essay}
+                  userId={userId}
+                  accentColor={accentColor}
+                  textColor={textColor}
+                  onRefresh={onRefresh}
+                />
+              )}
+
               {size === "large" && isPublic && (
                 <>
                   <button
