@@ -1,60 +1,47 @@
 
 
-## Use Zyla Labs API for Audio Download + Fix AI Transcription
+## Simplify Sermon Sync: Send YouTube URL Directly to AI
 
-### Problem
-The current AI transcription fallback fails because innertube's `getAudioStreamUrl()` returns no audio stream for many videos. The function never reaches Grok.
-
-### Solution
-Add Zyla Labs "YouTube Download and Info API" as the audio source when innertube fails. This gives us a reliable download URL for the audio, which we then send to Grok for transcription.
-
-### Fallback Chain
-
-```text
-YouTube URL
-  │
-  ├─ Step 1: Caption extraction (existing, keep)
-  │   └─ Found? → Parse XML → done
-  │
-  ├─ Step 2: Innertube audio stream (existing, keep as first try)
-  │   └─ Audio stream URL? → Download → Grok → done
-  │
-  └─ Step 3: Zyla Labs API (NEW fallback)
-      └─ Call download endpoint → get audio URL → Download → Grok → done
-```
+### The Insight
+Instead of a complex 3-tier transcript extraction pipeline (captions → innertube → Zyla → Grok audio transcription), we send the YouTube URL straight to the AI model with a master prompt. The AI analyzes the video content and returns the structured sermon breakdown directly.
 
 ### Changes
 
-**1. Add `ZYLA_API_KEY` secret**
-- Prompt user to add their Zyla Labs API key
+**1. Delete `supabase/functions/youtube-transcript/index.ts`**
+- Remove the entire edge function — all caption extraction, innertube audio, Zyla fallback, Grok audio transcription code
 
-**2. Update `supabase/functions/youtube-transcript/index.ts`**
+**2. Rewrite `supabase/functions/sermon-sync/index.ts`**
+- Accept `{ youtubeUrl, mode }` instead of `{ transcript, rawSegments, videoTitle, videoId, mode }`
+- Extract videoId from the URL server-side
+- **Standard mode (Gemini)**: Send YouTube URL + master prompt to Lovable AI gateway requesting sermon notes, 4 prayer prompts with timestamp estimates, labels, and verses
+- **Premium mode (Grok)**: Send YouTube URL + master prompt to Grok API requesting full breakdown: subtopics with explanations, illustrations, application points, timestamp estimates, 6 daily prayers
+- Both modes ask the AI to estimate timestamps based on sermon flow (e.g. "this topic likely appears around the 15-minute mark") for Jump To links
+- Cache results in `sermon_transcripts` table as before
+- Return the same JSON shapes the UI already expects
 
-Add a new function `fetchAudioViaZyla(videoId, zylaApiKey)` that:
-- Calls `GET https://zylalabs.com/api/1106/youtube+download+and+info+api/download?id={videoId}` with `Authorization: Bearer {key}`
-- Extracts the audio download URL from the response
-- Returns the URL and estimated duration
+**3. Update `src/pages/SermonSync.tsx`**
+- Remove the two-step flow (youtube-transcript → sermon-sync)
+- Single call: `supabase.functions.invoke("sermon-sync", { body: { youtubeUrl: url, mode } })`
+- Remove `transcriptSource` state, announcements from AI transcription, and transcript-related progress steps
+- Simplify progress steps to: "Sending to AI…" → "Analyzing sermon…" → "Preparing results…"
+- Keep all result rendering (StandardResultView, PremiumResultView) exactly as-is
 
-Update the Step 3 fallback logic:
-- First try innertube `getAudioStreamUrl()` (current behavior)
-- If that returns null, call `fetchAudioViaZyla()` to get an audio URL
-- Download the audio from whatever URL we got
-- For long sermons, chunk the audio and process each chunk through Grok sequentially
-- Merge all chunks with offset-corrected timestamps
+**4. Clean up unused code**
+- Remove `useUserChurch` announcements integration from SermonSync (announcements came from transcript extraction)
+- Remove Zyla-related imports/state
+- Remove progress steps referencing "captions" and "audio downloading"
 
-**3. Fix the audio download for Zyla URLs**
-- Zyla returns a direct MP3/audio URL — download it fully (no byte-range needed for the Zyla path)
-- For large files, still chunk by time offset when sending to Grok
-- Convert audio bytes to base64 for each chunk before sending to Grok
+### What stays the same
+- All UI components (StandardResultView, PremiumResultView) — no changes
+- The JSON response shapes (SermonResult types)
+- Jump To links (AI provides estimated timestamps, opens YouTube at `?t=Xs`)
+- Week of Prayer plan creation
+- Prayer saving to board
+- sermon-generate-prayer edge function
 
-### Technical Details
-
-- Zyla API auth: `Authorization: Bearer {ZYLA_API_KEY}`
-- The API returns download links for the video; we pick the audio-only option
-- 25,000 calls on Basic plan — more than sufficient for sermon usage
-- The rest of the pipeline (Grok transcription, chunking, announcements extraction, caching) stays identical
-- No client-side changes needed — same response shape
-
-### Secret Required
-- `ZYLA_API_KEY` — user already has an account and API key from Zyla Labs
+### Technical Note
+- Gemini models can process YouTube video URLs when included in prompts
+- Grok can analyze content from URLs via its web-aware capabilities  
+- If the AI can't access the video directly, it will use the video title and any available metadata — still far simpler than our current broken pipeline
+- Timestamps will be AI-estimated rather than caption-precise, but this is acceptable since the current pipeline wasn't working anyway
 
