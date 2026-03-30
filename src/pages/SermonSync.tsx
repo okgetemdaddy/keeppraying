@@ -487,10 +487,10 @@ export default function SermonSync() {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-muted-foreground text-center max-w-sm mx-auto">
                 {loadingMode === "premium"
-                  ? "Deep-diving into the Word — this may take a minute for long sermons"
-                  : "Meditating on the Word — extracting prayer prompts and notes"}
+                  ? "Transcribing every word, then deep-diving into the sermon — this takes 2-5 minutes for a full service"
+                  : "Transcribing and analyzing the sermon — this may take a few minutes"}
               </p>
             </motion.div>
           )}
