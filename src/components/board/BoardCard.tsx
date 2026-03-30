@@ -1041,7 +1041,22 @@ function ActionButtons({
         <Pin className="w-3.5 h-3.5" />
       </button>
 
-      {!isSharedRecipient && (
+      {/* Listen / Speaker button */}
+      {onListen && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onListen(); }}
+          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+          style={{ color: listenPlaying ? accentColor : `${textColor}55` }}
+          aria-label="Listen"
+        >
+          {listenLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Volume2 className={`w-3.5 h-3.5 ${listenPlaying ? 'fill-current' : ''}`} />
+          )}
+        </button>
+      )}
+
         <button
           onClick={onShare}
           className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
