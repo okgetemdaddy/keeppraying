@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette, ExternalLink } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
@@ -210,9 +210,27 @@ export function PrayerViewerModal({
     onUpdate(item.id, { pinned: newVal });
   };
 
-  const handleShare = () => {
-    const url = `${window.location.origin}/prayer/${card.id}`;
-    navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
+  const handleShare = async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("prayer_shares")
+        .insert({
+          prayer_id: card.id,
+          sender_id: userId,
+          recipient_id: null,
+          status: "pending",
+        } as any)
+        .select("token")
+        .single();
+      if (error) throw error;
+      const link = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-prayer-preview?token=${(data as any).token}`;
+      await navigator.clipboard.writeText(link);
+      toast({ title: "Secure link copied! 🔗" });
+    } catch {
+      const url = `${window.location.origin}/prayer/${card.id}`;
+      navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
+    }
   };
 
   const saveNotes = async () => {
@@ -420,6 +438,14 @@ export function PrayerViewerModal({
                                 );
                               })}
                             </div>
+                            <DropdownMenuSeparator />
+                            {/* Open Prayer Page */}
+                            <button
+                              onClick={() => window.open(`/prayer/${card.id}`, '_blank')}
+                              className="flex items-center gap-2 w-full px-2 py-1.5 text-xs rounded-md transition-colors hover:bg-accent"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" /> Open Prayer Page
+                            </button>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}

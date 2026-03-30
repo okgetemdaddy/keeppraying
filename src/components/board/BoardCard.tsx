@@ -287,10 +287,29 @@ export function BoardCard({
     onUpdate(item.id, { card_size: s } as Partial<SavedPrayer & { card_size: CardSize }>);
   };
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/prayer/${card.id}`;
-    navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("prayer_shares")
+        .insert({
+          prayer_id: card.id,
+          sender_id: userId,
+          recipient_id: null,
+          status: "pending",
+        } as any)
+        .select("token")
+        .single();
+      if (error) throw error;
+      const link = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-prayer-preview?token=${(data as any).token}`;
+      await navigator.clipboard.writeText(link);
+      toast({ title: "Secure link copied! 🔗" });
+    } catch {
+      // Fallback to direct link
+      const url = `${window.location.origin}/prayer/${card.id}`;
+      navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
+    }
   };
 
   const pickFont = (family: string) => {
@@ -1173,6 +1192,16 @@ function ActionButtons({
                 <Send className="w-3.5 h-3.5" /> Share Privately
               </DropdownMenuItem>
             </>
+          )}
+
+          {/* Open Prayer Page */}
+          {item.prayer_cards && (
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => window.open(`/prayer/${item.prayer_cards!.id}`, '_blank')}
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open Prayer Page
+            </DropdownMenuItem>
           )}
 
           {/* Add to playlist */}
