@@ -783,6 +783,9 @@ export default function Admin() {
               {/* ── AUDIO CACHE ── */}
               {activeTab === "audio-cache" && <AudioCacheTab />}
 
+              {/* ── SERMON CACHE ── */}
+              {activeTab === "sermon-cache" && <SermonCacheTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
