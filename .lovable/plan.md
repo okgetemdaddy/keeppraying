@@ -1,63 +1,65 @@
 
 
-## Fix: Restore Prayer Card Background + Three-Dot Menu Visibility
+## Rich Link Previews + Landing Page Flow Fix
 
 ### Problem
-The last edit removed the `prayer-card-premium` class from the card wrapper and set `background: "transparent"`, which stripped away the white/parchment card background, border, shadow, and glassmorphism effects. The card text now sits directly on the background image with no visible card.
+1. **No rich link preview**: When shared via iMessage/WhatsApp, the link shows generic site OG tags because the SPA can't serve dynamic meta tags to crawlers.
+2. **Landing page CTA broken**: The "Sign In" button links to `/auth?redirect=...` but `Auth.tsx` reads `sessionStorage("kp_post_login")`, not query params — so the redirect back to the prayer never happens.
+3. **Public vs private distinction**: Public prayers should show "See Prayer" (no auth needed), private should show "Sign In to See Your Prayer".
 
-The three-dot menu also only shows for `isOwner` (creator), which may be why it's not visible on this particular card.
+### Changes
 
-### Fix — `src/pages/Prayer.tsx`
+#### 1. New edge function: `supabase/functions/og-prayer-preview/index.ts`
 
-**1. Restore `prayer-card-premium` class on the `motion.div` wrapper (line 351)**
+Serves dynamic HTML with OG meta tags for messaging app crawlers, then redirects humans to the SPA.
 
-Remove the inline `style={{ background: "transparent" }}` and bring back the `prayer-card-premium` class. The inner absolute background layer approach was wrong — it removed the card's identity.
+- Accepts `?token=<share_token>`
+- Queries `prayer_shares` → `prayer_cards` → sender `profiles` using service role
+- Returns HTML with:
+  - `og:title`: "{SenderName} shared a prayer with you"
+  - `og:description`: "A prayer shared with love on KeepPray.ing" (no prayer text preview — respects privacy)
+  - `og:image`: prayer `background_url` if available, else a default OG image (site logo/brand)
+  - `og:url`: canonical SPA URL
+  - `twitter:card`: `summary_large_image`
+  - `<meta http-equiv="refresh" content="0;url=...">` + JS redirect to `/shared-prayer/${token}`
+- If token invalid/expired: redirect to homepage
 
-**2. Use rgba background on the card itself for transparency control**
+#### 2. Update share link in `SharePrayerModal.tsx` (line 137)
 
-Instead of a separate inner div with opacity, apply the transparency directly to the card's background color using `rgba`. This keeps the card's border, shadow, and `::before` highlight intact while making just the fill color transparent.
-
-- When `cardOpacity` is 100: card looks normal (solid parchment or preset color)
-- When slider is lowered: card background becomes see-through, background image shows through
-- Text, border, shadow all remain fully visible
-
-The `motion.div` will get:
-```tsx
-className="prayer-card-premium flex flex-col"
-style={{
-  background: `rgba(${r}, ${g}, ${b}, ${cardOpacity / 100})`,
-}}
-```
-
-Where `r,g,b` comes from the selected preset color or default parchment (#F8F1E3 = 248,241,227).
-
-**3. Remove the inner absolute background div** (lines 354-361) — no longer needed.
-
-**4. Keep `relative z-10` wrapper for content** (line 363) but remove the z-10 since we no longer have an inner bg layer to sit above.
-
-**5. Footer action bar** — add its own background with `Math.max(cardOpacity / 100, 0.8)` opacity so it stays legible.
-
-**6. Three-dot menu** — show for all logged-in users who have saved the prayer (`isOwner || saved`), not just owners. Owners save to `prayer_cards`, non-owners who've saved can adjust for their session. (Or keep owner-only per original spec — but the user needs to be the owner to see it.)
-
-### Helper: hex-to-rgb utility
-
-Add a small helper to convert hex/preset colors to rgb values for the rgba() background:
+Change from:
 ```ts
-function hexToRgb(hex: string): string {
-  const h = hex.replace('#', '');
-  const r = parseInt(h.substring(0, 2), 16);
-  const g = parseInt(h.substring(2, 4), 16);
-  const b = parseInt(h.substring(4, 6), 16);
-  return `${r}, ${g}, ${b}`;
-}
+const link = `${window.location.origin}/shared-prayer/${token}`;
+```
+to:
+```ts
+const link = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-prayer-preview?token=${token}`;
 ```
 
-Default parchment: `hexToRgb('#F8F1E3')` = `"248, 241, 227"`.
+#### 3. Fix redirect after sign-in in `SharedPrayerLanding.tsx`
 
-### Summary of changes
-- Single file: `src/pages/Prayer.tsx`
-- Restore `prayer-card-premium` class on the card wrapper
-- Control transparency via `rgba()` background instead of a separate opacity div
-- Keep text, border, shadow fully opaque at all slider values
-- Three-dot menu remains positioned in header next to SourceBadge
+The sticky CTA currently links to `/auth?redirect=...` but Auth.tsx doesn't read query params. Fix: set `sessionStorage` before navigating.
 
+Change the sign-in link from a `<Link>` to an `onClick` handler that:
+```ts
+sessionStorage.setItem("kp_post_login", JSON.stringify({ path: `/shared-prayer/${token}` }));
+navigate("/auth");
+```
+
+#### 4. Public vs Private prayer distinction in `SharedPrayerLanding.tsx`
+
+The prayer data is already fetched (via the anon RLS policy from the previous migration). Check `prayer.prayer_text` — if it loaded with real content (not the placeholder), the prayer is accessible.
+
+- **Public/accessible prayer (anon can read it)**: Bottom CTA says **"See Prayer"** and instead of navigating to auth, it scrolls/fades to reveal the full prayer inline (or navigates to `/prayer/${prayer.id}`)
+- **Private prayer (prayer is placeholder)**: Bottom CTA says **"Sign In to See Your Prayer"** with the sessionStorage redirect flow
+
+Add a `const isAccessible = prayer.prayer_text !== "Sign in to read this prayer — it was sent with love."` check to distinguish.
+
+For the public flow: the landing page fades out with a `motion.div` exit animation and reveals the full prayer content underneath — same authenticated prayer view but without needing auth.
+
+#### 5. Add `prayer_type` to the fetch query
+
+In `SharedPrayerLanding.tsx` line 114, add `prayer_type` to the select so we can check if it's a community (public) prayer vs personal (private).
+
+### Files changed
+- **New**: `supabase/functions/og-prayer-preview/index.ts`
+- **Edit**: `src/components/SharePrayerModal.tsx`
