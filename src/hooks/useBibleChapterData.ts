@@ -141,13 +141,14 @@ export function useBibleChapterData(
       // ── Fetch D: User bookmarks ──
       const fetchBookmarks = async (): Promise<UserBookmark[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let q = supabase
           .from("user_bookmarks")
           .select("id, verse_number, created_at")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossTranslation) q = q.eq("version_id", versionId!);
+        const { data, error } = await q;
         if (error) {
           console.warn("Failed to fetch bookmarks:", error.message);
           return [];
