@@ -142,6 +142,17 @@ function StandaloneTestimonyCard({
 
   return (
     <>
+      <TtsContemplationOverlay
+        playing={tts.ttsPlaying}
+        onStop={tts.stopTts}
+        onPause={tts.pauseTts}
+        onResume={tts.resumeTts}
+        text={testimony.body}
+        playbackRate={tts.playbackRate}
+        onPlaybackRateChange={tts.changePlaybackRate}
+        timedPhrases={tts.timedPhrases}
+        audioRef={tts.audioRef}
+      />
       {/* 2.5D wrapper — perspective on the parent */}
       <div style={{ perspective: "1000px" }} className="h-full">
         <motion.div
