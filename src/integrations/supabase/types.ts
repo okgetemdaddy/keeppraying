@@ -1546,6 +1546,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sermon_transcripts: {
+        Row: {
+          analysis_result: Json | null
+          fetched_at: string
+          full_text: string | null
+          id: string
+          premium_result: Json | null
+          raw_segments: Json | null
+          user_id: string | null
+          video_id: string
+          video_title: string | null
+        }
+        Insert: {
+          analysis_result?: Json | null
+          fetched_at?: string
+          full_text?: string | null
+          id?: string
+          premium_result?: Json | null
+          raw_segments?: Json | null
+          user_id?: string | null
+          video_id: string
+          video_title?: string | null
+        }
+        Update: {
+          analysis_result?: Json | null
+          fetched_at?: string
+          full_text?: string | null
+          id?: string
+          premium_result?: Json | null
+          raw_segments?: Json | null
+          user_id?: string | null
+          video_id?: string
+          video_title?: string | null
+        }
+        Relationships: []
+      }
       site_logs: {
         Row: {
           created_at: string
