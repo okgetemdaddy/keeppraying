@@ -129,6 +129,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testimonyCount, setTestimonyCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [timedPhrases, setTimedPhrases] = useState<{ text: string; start: number }[] | null>(null);
   const { toast } = useToast();
   const isTruncated = card.prayer_text.length > PRAYER_CHAR_LIMIT;
 
