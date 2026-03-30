@@ -29,6 +29,7 @@ import PrayerRequestsInbox from "@/components/admin/PrayerRequestsInbox";
 import SayingsTab from "@/components/admin/SayingsTab";
 import WelcomeMessagesTab from "@/components/admin/WelcomeMessagesTab";
 import AudioCacheTab from "@/components/admin/AudioCacheTab";
+import SermonCacheTab from "@/components/admin/SermonCacheTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
