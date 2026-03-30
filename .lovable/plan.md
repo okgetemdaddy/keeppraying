@@ -1,72 +1,74 @@
 
 
-## Upgrade My Church: Visual Identity Extraction
+## Enrich My Church with Google Places API
 
 ### Problem
-The current scrape only extracts text data. The My Church section uses generic board theme colors and has no visual identity — no logo, no pastor photo, no church brand colors. It looks the same for every church.
+The website scrape often misses service hours, physical address, and building photos because many church websites bury this info in JavaScript-rendered content or don't include it at all. Google Maps has this data reliably for nearly every church.
 
-### Strategy: Two-Pass Extraction
-
-The edge function already fetches the raw HTML. We'll extract visual assets programmatically from the HTML first (images, CSS colors, meta tags), then pass that structured data to Grok for intelligent identification.
+### Strategy: Add "Pass 0" — Google Places lookup
 
 ```text
+Pass 0 (Google Places):
+  Church name + website URL → Text Search → Place Details
+  → address, hours, phone, photos, rating, Google Maps URL
+
 Pass 1 (Programmatic):
-  HTML → extract all <img> srcs, og:image, favicon
-       → extract meta theme-color, CSS custom properties, inline bg colors
-       → resolve all relative URLs to absolute
+  HTML → images, colors, meta tags (existing)
 
 Pass 2 (Grok):
-  Cleaned HTML + image URL list + color candidates
-  → Grok identifies: which image is the logo, which is the pastor
-  → Grok confirms/refines color palette
-  → Grok produces rich structured summary
+  HTML + images + colors + Google Places data
+  → Grok merges all sources into the richest possible profile
 ```
+
+### Prerequisite: Google Places API Key
+You'll need a Google Cloud API key with the **Places API (New)** enabled. This gives us:
+- Formatted address with lat/lng
+- Opening hours (service times for churches)
+- Up to 10 place photos (building exterior, interior)
+- Phone number, website, Google Maps link
+- Rating and review count
+
+I'll need to ask you to add a `GOOGLE_PLACES_API_KEY` secret before this can work.
 
 ### Changes
 
 **1. Edge function: `supabase/functions/scrape-church-info/index.ts`**
 
-Add a pre-processing step before the Grok call:
+Add a Google Places lookup before the existing scrape passes:
 
-- **Image extraction**: Parse all `<img>` tags, `<link rel="icon">`, `<meta property="og:image">`, CSS `background-image` URLs. Resolve relative URLs to absolute using the website's base URL. Deduplicate. Pass the list (up to ~50 URLs) to Grok.
-
-- **Color extraction**: Parse `<meta name="theme-color">`, CSS custom properties (`--primary`, `--brand`, etc.), inline `background-color` and `color` styles. Extract hex/rgb values. Pass as color candidates to Grok.
-
-- **Updated Grok prompt** adds these fields to the JSON output:
-  - `logo_url`: The church's main logo image URL (Grok picks from the extracted image list)
-  - `pastor_image_url`: Pastor/staff photo URL if identifiable
-  - `hero_image_url`: A prominent hero/banner image
-  - `color_palette`: `{ primary, secondary, accent, background, text }` — hex values representing the church's brand colors
-  - `favicon_url`: Favicon/icon URL
-
-- **Increase HTML slice** from 50KB to handle more content for image/color extraction
+- **Text Search** using church name (+ city from website URL if parseable) to find the Google Place ID
+- **Place Details** to get: `formatted_address`, `opening_hours.weekday_text`, `formatted_phone_number`, `photos[]`, `url` (Google Maps link), `rating`
+- **Photo URLs** constructed from photo references: `https://places.googleapis.com/v1/{name}/media?maxWidthPx=800&key=...`
+- Pass all Google data into the Grok prompt as an additional section so Grok can merge website-scraped data with Google-verified data (preferring Google for address/hours/phone when available)
+- Add new fields to scraped_data: `google_maps_url`, `google_rating`, `google_photos[]`, `building_photo_url` (first exterior photo)
 
 **2. UI: `src/components/board/MyChurchSection.tsx`**
 
-Complete visual redesign of the church card using the extracted brand identity:
+- Show `building_photo_url` (from Google) as hero image if no website hero was found
+- Display Google-verified service hours with day/time formatting
+- Show Google Maps link button alongside the address
+- Show Google rating badge if available
+- Show a small Google-sourced building photo gallery (1-3 photos) if available
 
-- **Church-branded header**: Use `color_palette.primary` as accent color for the section header, borders, and badges
-- **Logo display**: Show `logo_url` as a small rounded logo next to the church name
-- **Pastor card**: If `pastor_image_url` exists, show a small avatar with pastor name/title
-- **Hero image**: If `hero_image_url` exists, show as a subtle background or banner at the top of the section
-- **Dynamic theming**: Cards within the My Church section use `color_palette.primary` for accents, `color_palette.secondary` for backgrounds — making each church's section feel uniquely theirs
-- **Social links**: Style with church brand colors instead of generic white/transparent
-- **Give Online / Live Stream buttons**: Use church primary color
+**3. Grok prompt update**
 
-- Fallback: If no color palette was extracted, fall back to the existing `textColor`-based styling
+Add a new section to the prompt:
+```
+## GOOGLE PLACES DATA
+Address: ...
+Phone: ...
+Hours: Sunday 9:00 AM – 12:00 PM, ...
+Photos: [url1, url2, ...]
+Google Maps: ...
+Rating: 4.8 (120 reviews)
+```
 
-**3. Hook: `src/hooks/useUserChurch.ts`**
-
-No structural changes needed — `scraped_data` already stores arbitrary JSON. The new fields (`logo_url`, `color_palette`, etc.) flow through automatically.
+Tell Grok: "For address, phone, and service times, prefer Google Places data when available as it's more reliable. Use the Google building photo as `building_photo_url`. Merge website and Google data for the most complete profile."
 
 ### Technical Details
 
-- Image URL resolution uses `new URL(src, websiteUrl)` to handle relative paths
-- Color regex: `/(?:#[0-9a-fA-F]{3,8}|rgb\([^)]+\)|hsl\([^)]+\))/g`
-- Images are not downloaded/stored — we just reference the church's own hosted URLs. This means they load from the church's CDN (fast, no storage cost, always current)
-- Grok sees the image URLs as text and uses `alt` attributes, `class` names, and surrounding context to identify which is the logo vs. pastor photo
-- The color palette makes each church section feel like a branded mini-site within the prayer board
-
-### Result
-Each user's My Church section becomes a beautiful, church-branded card showing their church's actual logo, colors, pastor photo, and rich formatted info — making it feel like their church's own corner of the app.
+- Google Places API (New) pricing: ~$0.017 per Text Search + $0.017 per Place Details = ~$0.034 per church lookup (very cheap, one-time per church)
+- Photos are served via Google's CDN — no storage needed, fast loading
+- The photo URL format for Places API (New): `https://places.googleapis.com/v1/{photo.name}/media?maxWidthPx=800&key=KEY`
+- Falls back gracefully if no Google key is set — existing scrape still works
 
