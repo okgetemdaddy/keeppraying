@@ -121,8 +121,23 @@ export default function Board() {
   const isMobile = useIsMobile();
   const { plans: sermonPlans, memberships: sermonMemberships, updateMemberToggles, markDayComplete } = useSermonPlans();
 
+  // Stale-while-revalidate: show cached board instantly
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
+  const boardCacheInitialized = useRef(false);
+
+  // Hydrate from IndexedDB on mount (non-blocking)
+  useEffect(() => {
+    if (!user || boardCacheInitialized.current) return;
+    boardCacheInitialized.current = true;
+    (async () => {
+      const cached = await getIdbCache<SavedPrayer[]>(cacheKeys.savedPrayers(user.id));
+      if (cached && cached.length > 0) {
+        setSaved(cached);
+        setLoading(false);
+      }
+    })();
+  }, [user]);
   const [addOpen, setAddOpen] = useState(false);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testifyBody, setTestifyBody] = useState("");
