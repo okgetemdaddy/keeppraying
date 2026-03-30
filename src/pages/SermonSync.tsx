@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useSermonProgress } from "@/hooks/useSermonProgress";
 import { SiteNav } from "@/components/SiteNav";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from "react-markdown";
