@@ -131,6 +131,11 @@ export default function Prayer() {
   const [userPlaylists, setUserPlaylists] = useState<{ id: string; name: string; prayer_ids: string[] | null }[]>([]);
   const [savingPlaylist, setSavingPlaylist] = useState(false);
 
+  // Card transparency + color (creator-owned)
+  const [cardOpacity, setCardOpacity] = useState(100);
+  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
+  const isOwner = !!(user && card && card.created_by === user.id);
+
   // Font
   const activeFontFamily = card?.text_style
     ? PRAYER_FONTS.find(f => f.family === card.text_style)?.family ?? null
