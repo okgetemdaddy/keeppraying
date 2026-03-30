@@ -1,135 +1,60 @@
 
 
-## AI Audio Transcription Fallback + Church Announcements + "My Church" Board Section
+## Use Zyla Labs API for Audio Download + Fix AI Transcription
 
-This is a large feature spanning edge functions, database tables, a new board section, and UI updates. Here's the full plan:
+### Problem
+The current AI transcription fallback fails because innertube's `getAudioStreamUrl()` returns no audio stream for many videos. The function never reaches Grok.
 
-### 1. Revert & Simplify `youtube-transcript` Edge Function
+### Solution
+Add Zyla Labs "YouTube Download and Info API" as the audio source when innertube fails. This gives us a reliable download URL for the audio, which we then send to Grok for transcription.
 
-Keep the existing multi-strategy caption extraction as the **primary path** (it works for videos with real captions). Add a new **AI audio transcription fallback** when all caption strategies fail.
+### Fallback Chain
 
-**AI Fallback Flow:**
-- Use innertube `/youtubei/v1/player` to get `streamingData.adaptiveFormats`
-- Pick lowest-bitrate audio stream (~50kbps opus/mp4a)
-- Download audio in chunks (~10 min each) to handle full-length sermons
-- Send each chunk to **Grok** (`grok-4.20-reasoning` via `api.x.ai`) with a timestamp-aware prompt
-- Merge all chunk results with offset-corrected timestamps
-- Return the same `Segment[]` format with `source: "ai-transcription"`
-
-**Grok Transcription Prompt — Key Instructions:**
-- Disregard all music, worship songs, instrumental sections
-- Skip pre-sermon filler (welcome greetings, "we're getting started", tech checks)
-- **Separate church announcements** from the sermon body — return them as a distinct `announcements` array
-- Transcribe the sermon content with timestamps (~15-30s segments)
-- Each segment gets a `start` (seconds from video start) and `dur` field for Jump-to support
-
-**Response shape update** (backward compatible):
-```json
-{
-  "videoId": "...",
-  "videoTitle": "...",
-  "raw": [{ "start": 0, "dur": 15, "text": "..." }],
-  "fullText": "...",
-  "source": "captions" | "ai-transcription",
-  "announcements": [{ "start": 120, "text": "..." }]  // NEW — only from AI path
-}
+```text
+YouTube URL
+  │
+  ├─ Step 1: Caption extraction (existing, keep)
+  │   └─ Found? → Parse XML → done
+  │
+  ├─ Step 2: Innertube audio stream (existing, keep as first try)
+  │   └─ Audio stream URL? → Download → Grok → done
+  │
+  └─ Step 3: Zyla Labs API (NEW fallback)
+      └─ Call download endpoint → get audio URL → Download → Grok → done
 ```
 
-### 2. Add Loading Progress UI in `SermonSync.tsx`
+### Changes
 
-Replace the simple spinner with a **multi-step progress indicator** when AI transcription is active:
+**1. Add `ZYLA_API_KEY` secret**
+- Prompt user to add their Zyla Labs API key
 
-Steps shown to user:
-1. "Checking for captions..." 
-2. "Downloading sermon audio..." 
-3. "Transcribing with AI (chunk 1 of N)..."
-4. "Analyzing sermon content..."
+**2. Update `supabase/functions/youtube-transcript/index.ts`**
 
-Implementation: The edge function returns progress via the existing response (not streaming). On the client side, use a timed animation that cycles through the steps over ~40s to give the user a sense of progress. The progress bar uses the existing `Progress` component.
+Add a new function `fetchAudioViaZyla(videoId, zylaApiKey)` that:
+- Calls `GET https://zylalabs.com/api/1106/youtube+download+and+info+api/download?id={videoId}` with `Authorization: Bearer {key}`
+- Extracts the audio download URL from the response
+- Returns the URL and estimated duration
 
-### 3. New Database Table: `user_churches`
+Update the Step 3 fallback logic:
+- First try innertube `getAudioStreamUrl()` (current behavior)
+- If that returns null, call `fetchAudioViaZyla()` to get an audio URL
+- Download the audio from whatever URL we got
+- For long sermons, chunk the audio and process each chunk through Grok sequentially
+- Merge all chunks with offset-corrected timestamps
 
-```sql
-CREATE TABLE public.user_churches (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  name text NOT NULL,
-  website_url text,
-  address text,
-  phone text,
-  email text,
-  scraped_data jsonb DEFAULT '{}'::jsonb,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(user_id)
-);
-ALTER TABLE public.user_churches ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own church" ON public.user_churches FOR ALL
-  TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
+**3. Fix the audio download for Zyla URLs**
+- Zyla returns a direct MP3/audio URL — download it fully (no byte-range needed for the Zyla path)
+- For large files, still chunk by time offset when sending to Grok
+- Convert audio bytes to base64 for each chunk before sending to Grok
 
-### 4. New Database Table: `church_announcements`
+### Technical Details
 
-```sql
-CREATE TABLE public.church_announcements (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  church_id uuid NOT NULL REFERENCES public.user_churches(id) ON DELETE CASCADE,
-  video_id text NOT NULL,
-  video_title text,
-  announcement_text text NOT NULL,
-  timestamp_seconds integer,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.church_announcements ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage own announcements" ON public.church_announcements FOR ALL
-  TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-```
+- Zyla API auth: `Authorization: Bearer {ZYLA_API_KEY}`
+- The API returns download links for the video; we pick the audio-only option
+- 25,000 calls on Basic plan — more than sufficient for sermon usage
+- The rest of the pipeline (Grok transcription, chunking, announcements extraction, caching) stays identical
+- No client-side changes needed — same response shape
 
-### 5. New Edge Function: `scrape-church-info`
-
-When a user sets up their church (enters church name + website URL):
-- Fetch the church website HTML
-- Send it to Grok with a prompt: "Extract church name, address, phone, email, service times, and any upcoming events from this website"
-- Store the structured result in `user_churches.scraped_data`
-- Return the extracted info to the client
-
-### 6. Update `SermonSync.tsx` — Auto-Save Announcements
-
-When the transcript response includes `announcements`:
-- Show a dismissible card: "We found church announcements in this sermon"
-- List each announcement with its timestamp (clickable Jump-to)
-- "Save to My Church" button — prompts user to create/select their church if not set up yet, then saves announcements to `church_announcements`
-
-### 7. New Board Section: "My Church" on `Board.tsx`
-
-Add a collapsible section on the Prayer Board (between existing sections):
-- **Header**: Church name (e.g., "Grace Community Church") with a Church icon
-- **Info cards**: Address, phone, email, service times (from scraped data)
-- **Announcements feed**: Recent announcements from synced sermons, each with:
-  - The announcement text
-  - Source video title + Jump-to timestamp link
-  - Date added
-- **Setup flow**: If no church configured, show a "Set up My Church" card with name + website URL inputs
-
-### 8. Files Changed Summary
-
-| File | Change |
-|------|--------|
-| `supabase/functions/youtube-transcript/index.ts` | Add AI audio fallback with Grok, announcements extraction |
-| `supabase/functions/scrape-church-info/index.ts` | **New** — scrape church website for contact/event info |
-| `src/pages/SermonSync.tsx` | Add progress loader, announcements card, church save flow |
-| `src/pages/Board.tsx` | Add "My Church" section |
-| `src/components/board/MyChurchSection.tsx` | **New** — church info + announcements display |
-| `src/hooks/useUserChurch.ts` | **New** — hook for church CRUD + announcements |
-| Migration | Create `user_churches` and `church_announcements` tables with RLS |
-
-### Technical Notes
-
-- **GROK_API_KEY** is already configured as a secret
-- Audio download from YouTube: use innertube to get streaming URLs, download via byte-range requests for chunking
-- Grok audio input: send as base64 `input_audio` content part
-- Edge function timeout: ~60s max — for very long sermons (60+ min), process up to 6 sequential chunks
-- Cached AI transcriptions go into `sermon_transcripts` same as captions — repeat requests are instant
-- Church website scraping is a one-time setup action, not per-sermon
+### Secret Required
+- `ZYLA_API_KEY` — user already has an account and API key from Zyla Labs
 
