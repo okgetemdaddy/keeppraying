@@ -8,7 +8,9 @@ const corsHeaders = {
 };
 
 function extractVideoId(url: string): string | null {
-  const m = url.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
+  const trimmed = url.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) return trimmed;
+  const m = trimmed.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/|\/shorts\/|\/live\/)([a-zA-Z0-9_-]{11})/);
   return m?.[1] || null;
 }
 
