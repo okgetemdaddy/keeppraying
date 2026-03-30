@@ -37,8 +37,10 @@ const DEFAULTS: BoardPrefs = {
 
 export function useBoardPreferences() {
   const { user } = useAuth();
-  const [prefs, setPrefs] = useState<BoardPrefs>(DEFAULTS);
-  const [loaded, setLoaded] = useState(false);
+  // Stale-while-revalidate: show cached prefs instantly
+  const cached = user ? getLocalCache<BoardPrefs>(cacheKeys.boardPrefs(user.id)) : null;
+  const [prefs, setPrefs] = useState<BoardPrefs>(cached ?? DEFAULTS);
+  const [loaded, setLoaded] = useState(!!cached);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
