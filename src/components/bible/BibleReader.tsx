@@ -471,8 +471,9 @@ export function BibleReader() {
   // Auto-select BSB & first book
   useEffect(() => {
     if (versions?.length && !versionId) {
+      const niv = versions.find((v) => v.abbreviation === "NIV" || v.localized_abbreviation === "NIV");
       const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
-      setVersionId(bsb ? bsb.id : versions[0].id);
+      setVersionId(niv ? niv.id : bsb ? bsb.id : versions[0].id);
     }
   }, [versions, versionId]);
 
