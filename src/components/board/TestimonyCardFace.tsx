@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Share2, CalendarIcon, ChevronDown, Send } from "lucide-react";
+import { BookOpen, Share2, CalendarIcon, ChevronDown, Send, Volume2, VolumeX, Loader2 } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 
 interface Verse {
   ref: string;
