@@ -12,6 +12,14 @@ function extractVideoId(url: string): string | null {
   return m?.[1] || null;
 }
 
+function formatTimeRange(start?: string, end?: string): string {
+  if (!start && !end) return "";
+  const parts: string[] = [];
+  if (start) parts.push(`from ${start}`);
+  if (end) parts.push(`to ${end}`);
+  return `\n\nIMPORTANT: Only analyze the portion of the video ${parts.join(" ")}. Ignore everything outside this range (worship, announcements, offering, altar calls, etc.). Focus exclusively on the sermon content within this time window.`;
+}
+
 function detectRefusal(content: string): boolean {
   const head = content.trimStart().slice(0, 220).toLowerCase();
   const indicators = [
