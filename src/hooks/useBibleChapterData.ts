@@ -105,13 +105,14 @@ export function useBibleChapterData(
       // ── Fetch B: User highlights ──
       const fetchHighlights = async (): Promise<UserHighlight[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let q = supabase
           .from("user_highlights")
           .select("id, verse_number, color, reference_normalized, created_at")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossTranslation) q = q.eq("version_id", versionId!);
+        const { data, error } = await q;
         if (error) {
           console.warn("Failed to fetch highlights:", error.message);
           return [];
