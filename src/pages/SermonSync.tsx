@@ -118,8 +118,10 @@ export default function SermonSync() {
   }, [videoId, url]);
 
   const PROGRESS_STEPS = [
-    "Sending to AI…",
-    "Analyzing sermon content…",
+    "Extracting audio…",
+    "Transcribing sermon…",
+    "Still transcribing — hang tight…",
+    "Analyzing with AI…",
     "Preparing results…",
   ];
 
@@ -128,7 +130,7 @@ export default function SermonSync() {
     if (progressTimer.current) clearInterval(progressTimer.current);
     progressTimer.current = setInterval(() => {
       setProgressStep((prev) => Math.min(prev + 1, PROGRESS_STEPS.length - 1));
-    }, 6000);
+    }, 30000);
   };
 
   const stopProgressAnimation = () => {
