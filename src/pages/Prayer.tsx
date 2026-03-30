@@ -19,6 +19,7 @@ import { TestifyBack } from "@/components/board/TestifyBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SiteNav } from "@/components/SiteNav";
 import { PRAYER_FONTS } from "@/components/board/BoardCard";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 
