@@ -136,9 +136,12 @@ serve(async (req) => {
       }
     } catch { /* non-fatal */ }
 
-    // Fetch captions
+    // Fetch captions — try multiple extraction strategies
     const pageResp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-      headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "en" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
     });
 
     if (!pageResp.ok) {
@@ -148,10 +151,56 @@ serve(async (req) => {
     }
 
     const html = await pageResp.text();
-    const captionMatch = html.match(/"captionTracks":\[(\{[^}]*?"baseUrl":"([^"]+)"[^}]*?\})/);
 
-    console.log("[youtube-transcript] captionMatch found:", !!captionMatch?.[2]);
-    if (!captionMatch?.[2]) {
+    // Strategy 1: Direct captionTracks regex (multiple patterns)
+    let captionUrl: string | null = null;
+
+    const patterns = [
+      /"captionTracks":\s*\[\s*\{[^}]*?"baseUrl"\s*:\s*"([^"]+)"/,
+      /"captionTracks":\[(\{.*?\})\]/s,
+      /playerCaptionsTracklistRenderer.*?"captionTracks":\s*\[.*?"baseUrl"\s*:\s*"([^"]+)"/s,
+    ];
+
+    for (const pattern of patterns) {
+      const m = html.match(pattern);
+      if (m) {
+        if (m[1]?.startsWith("http") || m[1]?.startsWith("\\u0026") || m[1]?.includes("timedtext")) {
+          captionUrl = m[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
+          break;
+        }
+        // Pattern 2 returns a JSON object — parse baseUrl from it
+        try {
+          const cleaned = m[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
+          const obj = JSON.parse(cleaned);
+          if (obj.baseUrl) {
+            captionUrl = obj.baseUrl.replace(/\\u0026/g, "&");
+          }
+        } catch { /* not valid JSON, continue */ }
+        if (captionUrl) break;
+      }
+    }
+
+    // Strategy 2: Extract from ytInitialPlayerResponse JSON blob
+    if (!captionUrl) {
+      const playerRespMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script)/s);
+      if (playerRespMatch) {
+        try {
+          const playerData = JSON.parse(playerRespMatch[1]);
+          const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+          if (Array.isArray(tracks) && tracks.length > 0) {
+            // Prefer English, then any auto-generated, then first available
+            const en = tracks.find((t: any) => t.languageCode === "en" && !t.kind);
+            const enAuto = tracks.find((t: any) => t.languageCode === "en");
+            const first = tracks[0];
+            const chosen = en || enAuto || first;
+            captionUrl = chosen.baseUrl;
+          }
+        } catch { /* parse failed */ }
+      }
+    }
+
+    console.log("[youtube-transcript] captionUrl found:", !!captionUrl);
+    if (!captionUrl) {
       return new Response(JSON.stringify({
         error: "No captions available for this video. Try a sermon that has subtitles or closed captions enabled.",
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
