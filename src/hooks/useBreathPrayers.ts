@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalCacheWithTTL, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 interface BreathPrayer {
   id: string;
@@ -16,8 +17,9 @@ interface BreathPrayer {
 }
 
 export function useBreathPrayers() {
-  const [prayers, setPrayers] = useState<BreathPrayer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = getLocalCacheWithTTL<BreathPrayer[]>(cacheKeys.breathPrayers(), 60 * 60 * 1000);
+  const [prayers, setPrayers] = useState<BreathPrayer[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -28,7 +30,9 @@ export function useBreathPrayers() {
       .in("status", ["approved", "ai_generated"])
       .order("created_at", { ascending: false })
       .limit(50) as any);
-    setPrayers((data as BreathPrayer[]) || []);
+    const results = (data as BreathPrayer[]) || [];
+    setPrayers(results);
+    setLocalCache(cacheKeys.breathPrayers(), results);
     setLoading(false);
   }, []);
 

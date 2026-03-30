@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getLocalCache, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 interface Church {
   id: string;
@@ -30,9 +31,10 @@ interface ChurchAnnouncement {
 export function useUserChurch() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [church, setChurch] = useState<Church | null>(null);
-  const [announcements, setAnnouncements] = useState<ChurchAnnouncement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = user ? getLocalCache<{ church: Church | null; announcements: ChurchAnnouncement[] }>(cacheKeys.church(user.id)) : null;
+  const [church, setChurch] = useState<Church | null>(cached?.church ?? null);
+  const [announcements, setAnnouncements] = useState<ChurchAnnouncement[]>(cached?.announcements ?? []);
+  const [loading, setLoading] = useState(!cached);
 
   const fetchChurch = useCallback(async () => {
     if (!user) { setLoading(false); return; }
@@ -42,8 +44,10 @@ export function useUserChurch() {
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
-      setChurch(data as Church | null);
+      const churchData = data as Church | null;
+      setChurch(churchData);
 
+      let annData: ChurchAnnouncement[] = [];
       if (data) {
         const { data: ann } = await supabase
           .from("church_announcements")
@@ -52,8 +56,10 @@ export function useUserChurch() {
           .eq("church_id", data.id)
           .order("created_at", { ascending: false })
           .limit(20);
-        setAnnouncements((ann || []) as ChurchAnnouncement[]);
+        annData = (ann || []) as ChurchAnnouncement[];
+        setAnnouncements(annData);
       }
+      setLocalCache(cacheKeys.church(user!.id), { church: churchData, announcements: annData });
     } catch (e) {
       console.error("Failed to fetch church:", e);
     } finally {

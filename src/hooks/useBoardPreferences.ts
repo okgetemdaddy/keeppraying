@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getLocalCache, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 export interface BoardPrefs {
   theme: string;
@@ -36,8 +37,10 @@ const DEFAULTS: BoardPrefs = {
 
 export function useBoardPreferences() {
   const { user } = useAuth();
-  const [prefs, setPrefs] = useState<BoardPrefs>(DEFAULTS);
-  const [loaded, setLoaded] = useState(false);
+  // Stale-while-revalidate: show cached prefs instantly
+  const cached = user ? getLocalCache<BoardPrefs>(cacheKeys.boardPrefs(user.id)) : null;
+  const [prefs, setPrefs] = useState<BoardPrefs>(cached ?? DEFAULTS);
+  const [loaded, setLoaded] = useState(!!cached);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ export function useBoardPreferences() {
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          setPrefs({
+          const fresh: BoardPrefs = {
             theme: data.theme ?? DEFAULTS.theme,
             animations_enabled: data.animations_enabled ?? DEFAULTS.animations_enabled,
             sound_id: data.sound_id ?? null,
@@ -63,7 +66,9 @@ export function useBoardPreferences() {
             calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
             calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
             atmosphere_id: (data as any).atmosphere_id ?? DEFAULTS.atmosphere_id,
-          });
+          };
+          setPrefs(fresh);
+          setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);
         }
         setLoaded(true);
       });
@@ -73,6 +78,8 @@ export function useBoardPreferences() {
     setPrefs(prev => {
       const next = { ...prev, ...updates };
       if (!user) return next;
+      // Write-through to local cache immediately
+      setLocalCache(cacheKeys.boardPrefs(user.id), next);
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
         supabase

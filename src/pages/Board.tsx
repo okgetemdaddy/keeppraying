@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { getIdbCache, setIdbCache, cacheKeys } from "@/lib/localCache";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -120,8 +121,23 @@ export default function Board() {
   const isMobile = useIsMobile();
   const { plans: sermonPlans, memberships: sermonMemberships, updateMemberToggles, markDayComplete } = useSermonPlans();
 
+  // Stale-while-revalidate: show cached board instantly
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
   const [loading, setLoading] = useState(true);
+  const boardCacheInitialized = useRef(false);
+
+  // Hydrate from IndexedDB on mount (non-blocking)
+  useEffect(() => {
+    if (!user || boardCacheInitialized.current) return;
+    boardCacheInitialized.current = true;
+    (async () => {
+      const cached = await getIdbCache<SavedPrayer[]>(cacheKeys.savedPrayers(user.id));
+      if (cached && cached.length > 0) {
+        setSaved(cached);
+        setLoading(false);
+      }
+    })();
+  }, [user]);
   const [addOpen, setAddOpen] = useState(false);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testifyBody, setTestifyBody] = useState("");
@@ -209,11 +225,14 @@ export default function Board() {
         .eq("user_id", user.id),
     ]);
 
-    setSaved((data || []) as SavedPrayer[]);
+    const freshSaved = (data || []) as SavedPrayer[];
+    setSaved(freshSaved);
     setTotalPrayed(prayedCount || 0);
     setTotalLiked(likedCount || 0);
     setTotalTestimonies(testiCount || 0);
     setLoading(false);
+    // Write-through to IndexedDB
+    void setIdbCache(cacheKeys.savedPrayers(user.id), freshSaved);
   }, [user]);
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);

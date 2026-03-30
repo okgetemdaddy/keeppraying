@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getLocalCache, setLocalCache, cacheKeys } from "@/lib/localCache";
 
 export interface StreakData {
   currentStreak: number;
@@ -12,13 +13,14 @@ const MILESTONES = [7, 30, 100, 365];
 
 export function useStreak() {
   const { user } = useAuth();
-  const [streak, setStreak] = useState<StreakData>({
+  const cached = user ? getLocalCache<StreakData>(cacheKeys.streak(user.id)) : null;
+  const [streak, setStreak] = useState<StreakData>(cached ?? {
     currentStreak: 0,
     longestStreak: 0,
     lastPrayedDate: null,
   });
   const [milestone, setMilestone] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!cached);
 
   const fetchStreak = useCallback(async () => {
     if (!user) return;
@@ -30,12 +32,13 @@ export function useStreak() {
     if (data) {
       const prev = streak.currentStreak;
       const next = (data as any).current_streak ?? 0;
-      setStreak({
+      const fresh: StreakData = {
         currentStreak: next,
         longestStreak: (data as any).longest_streak ?? 0,
         lastPrayedDate: (data as any).last_prayed_date ?? null,
-      });
-      // Check if we just hit a milestone
+      };
+      setStreak(fresh);
+      setLocalCache(cacheKeys.streak(user!.id), fresh);
       if (next > prev && MILESTONES.includes(next)) {
         setMilestone(next);
       }
