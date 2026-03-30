@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSermonPlans } from "@/hooks/useSermonPlans";
-import { useUserChurch } from "@/hooks/useUserChurch";
+
 import { WeekOfPrayerPanel } from "@/components/sermon/WeekOfPrayerPanel";
 import VerseLink from "@/components/VerseLink";
 import { supabase } from "@/integrations/supabase/client";
