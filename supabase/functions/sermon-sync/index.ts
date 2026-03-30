@@ -44,18 +44,27 @@ Return valid JSON (no markdown fences):
   ]
 }`;
 
-const PREMIUM_PROMPT = (youtubeUrl: string) => `Grok, watch this entire sermon video from beginning to end — do not skip any section or stop early — and give me a full sermon overview with timestamps: ${youtubeUrl}
+const PREMIUM_PROMPT = (youtubeUrl: string) => `You are Grok 4.20 Reasoning, an expert at creating clean, highly usable, timestamped church service and sermon outlines from full YouTube videos.
 
-Return the overview as valid JSON in this structure:
+Analyze the complete video here: ${youtubeUrl}
+
+Create a professional, detailed breakdown. Make the timestamps as precise as possible using the video's captions/transcript. Include: illustrations used by the pastor, main teaching points, personal stories, key applications, and the closing challenge/prayer. Use warm, encouraging, practical language. Match the level of detail and formatting from previous high-quality responses you have given on church services.
+
+All content must be derived directly from what was actually preached — do not invent or add content beyond what was taught. Only use real Scripture references.
+
+Return valid JSON (no markdown fences) in this exact structure:
 {
   "sermonTitle": "string",
   "mainScripture": "string (primary Bible passage)",
   "overallMessage": "string (2-3 sentence summary)",
+  "serviceOutline": [
+    { "section": "string (e.g. Worship Set, Announcements, Sermon)", "start": "HH:MM:SS", "end": "HH:MM:SS" }
+  ],
   "subtopics": [
     {
       "title": "string",
-      "explanation": "string",
-      "illustration": "string or null (only if the pastor actually used one)",
+      "explanation": "string (2-4 sentences)",
+      "illustration": "string or null (only if pastor actually used one)",
       "application_points": ["practical takeaway"],
       "supporting_verses": ["verse reference"],
       "timestamp_seconds": number_or_null
@@ -66,7 +75,7 @@ Return the overview as valid JSON in this structure:
   ]
 }
 
-Include 4-7 subtopics and 6 daily prayers (Monday–Saturday). All subtopics, application points, and daily prayers must be derived directly from what the pastor actually preached in the sermon — review the entire video from start to finish and do not invent or add content beyond what was taught. Only use real Scripture references.`;
+Include 4-7 subtopics and 6 daily prayers (Monday–Saturday).`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -143,8 +152,9 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "grok-4.20-0309-reasoning",
+          temperature: 0.0,
+          max_tokens: 12000,
           messages: [
-            { role: "system", content: "You are a Christian sermon analyst. Return only valid JSON, no markdown fences." },
             { role: "user", content: PREMIUM_PROMPT(youtubeUrl) },
           ],
         }),
