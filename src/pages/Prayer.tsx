@@ -105,6 +105,7 @@ export default function Prayer() {
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [timedPhrases, setTimedPhrases] = useState<{ text: string; start: number }[] | null>(null);
 
   // Testify
   const [testifyOpen, setTestifyOpen] = useState(false);
