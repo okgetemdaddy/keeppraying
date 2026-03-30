@@ -1057,6 +1057,7 @@ function ActionButtons({
         </button>
       )}
 
+      {!isSharedRecipient && (
         <button
           onClick={onShare}
           className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
