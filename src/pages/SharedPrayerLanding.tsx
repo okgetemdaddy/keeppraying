@@ -34,6 +34,7 @@ interface PrayerData {
   id: string;
   title: string | null;
   prayer_text: string;
+  prayer_type: string;
   background_url: string | null;
   audio_url: string | null;
   extended_prayer: string | null;
