@@ -1712,6 +1712,7 @@ export type Database = {
           full_text: string | null
           id: string
           premium_result: Json | null
+          raw_ai_response: string | null
           raw_segments: Json | null
           user_id: string | null
           video_id: string
@@ -1723,6 +1724,7 @@ export type Database = {
           full_text?: string | null
           id?: string
           premium_result?: Json | null
+          raw_ai_response?: string | null
           raw_segments?: Json | null
           user_id?: string | null
           video_id: string
@@ -1734,6 +1736,7 @@ export type Database = {
           full_text?: string | null
           id?: string
           premium_result?: Json | null
+          raw_ai_response?: string | null
           raw_segments?: Json | null
           user_id?: string | null
           video_id?: string
