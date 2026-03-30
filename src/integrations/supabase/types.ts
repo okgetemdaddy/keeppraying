@@ -399,6 +399,47 @@ export type Database = {
         }
         Relationships: []
       }
+      church_announcements: {
+        Row: {
+          announcement_text: string
+          church_id: string
+          created_at: string
+          id: string
+          timestamp_seconds: number | null
+          user_id: string
+          video_id: string
+          video_title: string | null
+        }
+        Insert: {
+          announcement_text: string
+          church_id: string
+          created_at?: string
+          id?: string
+          timestamp_seconds?: number | null
+          user_id: string
+          video_id: string
+          video_title?: string | null
+        }
+        Update: {
+          announcement_text?: string
+          church_id?: string
+          created_at?: string
+          id?: string
+          timestamp_seconds?: number | null
+          user_id?: string
+          video_id?: string
+          video_title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "church_announcements_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "user_churches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circle_homework: {
         Row: {
           circle_id: string
@@ -2027,6 +2068,45 @@ export type Database = {
           user_id?: string
           verse_number?: number
           version_id?: number
+        }
+        Relationships: []
+      }
+      user_churches: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          scraped_data: Json | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          scraped_data?: Json | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          scraped_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
         }
         Relationships: []
       }

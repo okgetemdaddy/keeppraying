@@ -1,12 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSermonPlans } from "@/hooks/useSermonPlans";
+import { useUserChurch } from "@/hooks/useUserChurch";
 import { WeekOfPrayerPanel } from "@/components/sermon/WeekOfPrayerPanel";
 import VerseLink from "@/components/VerseLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { useSermonProgress } from "@/hooks/useSermonProgress";
 import { SiteNav } from "@/components/SiteNav";
@@ -21,7 +23,7 @@ import {
 import {
   BookOpen, Loader2, Sparkles, Check, ChevronDown, ChevronUp,
   Church, Youtube, ArrowRight, Heart, Plus, ExternalLink,
-  Play, Crown, RefreshCw, Calendar, Clock, Users,
+  Play, Crown, RefreshCw, Calendar, Clock, Users, Megaphone, X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -84,10 +86,16 @@ export default function SermonSync() {
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [videoId, setVideoId] = useState("");
   const [creatingPlan, setCreatingPlan] = useState(false);
+  const [transcriptSource, setTranscriptSource] = useState<string | null>(null);
+  const [announcements, setAnnouncements] = useState<{ start: number; text: string }[]>([]);
+  const [announcementsDismissed, setAnnouncementsDismissed] = useState(false);
+  const [progressStep, setProgressStep] = useState(0);
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { plans, memberships, createPlan, updateMemberToggles, markDayComplete } = useSermonPlans();
+  const { church, saveAnnouncements } = useUserChurch();
 
   const isValidYouTube = (u: string) =>
     /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/.test(u);
@@ -102,6 +110,28 @@ export default function SermonSync() {
     if (!vid) return;
     window.open(`https://www.youtube.com/watch?v=${vid}&t=${seconds}s`, "_blank");
   }, [videoId, url]);
+
+  const PROGRESS_STEPS = [
+    "Checking for captions…",
+    "Downloading sermon audio…",
+    "Transcribing with AI…",
+    "Analyzing sermon content…",
+    "Preparing results…",
+  ];
+
+  const startProgressAnimation = () => {
+    setProgressStep(0);
+    if (progressTimer.current) clearInterval(progressTimer.current);
+    progressTimer.current = setInterval(() => {
+      setProgressStep((prev) => Math.min(prev + 1, PROGRESS_STEPS.length - 1));
+    }, 8000);
+  };
+
+  const stopProgressAnimation = () => {
+    if (progressTimer.current) { clearInterval(progressTimer.current); progressTimer.current = null; }
+  };
+
+  useEffect(() => { return () => stopProgressAnimation(); }, []);
 
   const handleSync = async (mode: "standard" | "premium") => {
     if (!url.trim() || !isValidYouTube(url)) {
@@ -119,12 +149,17 @@ export default function SermonSync() {
     setSelected(new Set());
     setOpenSubtopics(new Set());
     setGeneratedPrayers({});
+    setAnnouncements([]);
+    setAnnouncementsDismissed(false);
+    setTranscriptSource(null);
+    startProgressAnimation();
 
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) throw new Error("No active session");
 
       // Step 1: Fetch transcript
+      setProgressStep(0);
       const transcriptResp = await supabase.functions.invoke("youtube-transcript", {
         body: { youtubeUrl: url },
       });
@@ -132,8 +167,15 @@ export default function SermonSync() {
       if (transcriptResp.error) throw new Error(transcriptResp.error.message || "Transcript fetch failed");
       const transcript = transcriptResp.data;
       setVideoId(transcript.videoId);
+      setTranscriptSource(transcript.source || "captions");
+
+      // Save announcements if returned from AI transcription
+      if (transcript.announcements && Array.isArray(transcript.announcements) && transcript.announcements.length > 0) {
+        setAnnouncements(transcript.announcements);
+      }
 
       // Step 2: Analyze
+      setProgressStep(3);
       const syncResp = await supabase.functions.invoke("sermon-sync", {
         body: {
           transcript: transcript.fullText,
@@ -145,6 +187,7 @@ export default function SermonSync() {
       });
 
       if (syncResp.error) throw new Error(syncResp.error.message || "Analysis failed");
+      setProgressStep(4);
       const data = syncResp.data as SermonResult;
       setResult(data);
 
@@ -162,6 +205,7 @@ export default function SermonSync() {
     } finally {
       setLoading(false);
       setLoadingMode(null);
+      stopProgressAnimation();
     }
   };
 
@@ -387,24 +431,106 @@ export default function SermonSync() {
           )}
         </motion.div>
 
-        {/* Loading state */}
+        {/* Loading state with progress */}
         <AnimatePresence>
           {loading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center py-12 space-y-4"
+              className="py-12 space-y-6"
             >
               <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-              <p className="verse-text text-sm">
-                {loadingMode === "premium" ? "Deep-diving into the Word…" : "Meditating on the Word…"}
-              </p>
-              <p className="text-xs text-muted-foreground">
+
+              <div className="max-w-md mx-auto space-y-3">
+                <Progress value={((progressStep + 1) / PROGRESS_STEPS.length) * 100} className="h-2" />
+                <div className="space-y-2">
+                  {PROGRESS_STEPS.map((step, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{
+                        opacity: i <= progressStep ? 1 : 0.3,
+                        x: 0,
+                      }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      {i < progressStep ? (
+                        <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      ) : i === progressStep ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border border-muted-foreground/30 flex-shrink-0" />
+                      )}
+                      <span className={i <= progressStep ? "text-foreground" : "text-muted-foreground"}>
+                        {step}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
                 {loadingMode === "premium"
-                  ? "Extracting subtopics, illustrations, and daily prayer prompts"
-                  : "Extracting prayer prompts and sermon notes"}
+                  ? "Deep-diving into the Word — this may take a minute for long sermons"
+                  : "Meditating on the Word — extracting prayer prompts and notes"}
               </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Announcements Card */}
+        <AnimatePresence>
+          {announcements.length > 0 && !announcementsDismissed && !loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="prayer-card rounded-2xl p-5 space-y-3 border-2 border-primary/20"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-primary" />
+                  <h3 className="font-display text-sm font-bold text-foreground">Church Announcements Found</h3>
+                </div>
+                <button onClick={() => setAnnouncementsDismissed(true)} className="text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                We detected {announcements.length} announcement{announcements.length !== 1 ? "s" : ""} in this sermon.
+              </p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {announcements.map((ann, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <button
+                      onClick={() => jumpToTimestamp(ann.start)}
+                      className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors flex-shrink-0 mt-0.5"
+                    >
+                      <Play className="w-2 h-2" /> {Math.floor(ann.start / 60)}:{(ann.start % 60).toString().padStart(2, "0")}
+                    </button>
+                    <p className="text-foreground/80">{ann.text}</p>
+                  </div>
+                ))}
+              </div>
+              {church ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl gap-2 text-xs"
+                  onClick={() => {
+                    saveAnnouncements(announcements, videoId, result?.sermonTitle || "");
+                    setAnnouncementsDismissed(true);
+                  }}
+                >
+                  <Church className="w-3 h-3" /> Save to {church.name}
+                </Button>
+              ) : (
+                <p className="text-[10px] text-muted-foreground">
+                  Set up "My Church" on your Board to save announcements.
+                </p>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

@@ -8,6 +8,8 @@ const corsHeaders = {
 };
 
 const CACHE_TTL_DAYS = 30;
+const CHUNK_DURATION_SEC = 600; // 10 minutes per chunk
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024; // 20MB cap
 
 function extractVideoId(url: string): string | null {
   const m = url.match(/(?:v=|youtu\.be\/|\/embed\/|\/v\/)([a-zA-Z0-9_-]{11})/);
@@ -25,6 +27,7 @@ function cleanCaptionText(text: string): string {
 }
 
 interface Segment { start: number; dur: number; text: string; }
+interface Announcement { start: number; text: string; }
 
 function parseSegments(xml: string): Segment[] {
   const segments: Segment[] = [];
@@ -42,7 +45,6 @@ function parseSegments(xml: string): Segment[] {
   return segments;
 }
 
-// Pick best English caption track from array
 function pickCaptionUrl(tracks: any[]): string | null {
   if (!Array.isArray(tracks) || tracks.length === 0) return null;
   const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
@@ -51,123 +53,25 @@ function pickCaptionUrl(tracks: any[]): string | null {
   return chosen?.baseUrl || null;
 }
 
-// Strategy: Extract from watch page HTML
 function extractFromHtml(html: string): string | null {
-  // Try direct regex on captionTracks
   const baseUrlMatch = html.match(/"captionTracks":\s*\[.*?"baseUrl"\s*:\s*"([^"]+)"/s);
   if (baseUrlMatch?.[1]) {
-    console.log("[yt] HTML: regex captionTracks matched");
     return baseUrlMatch[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
   }
-
-  // Try parsing ytInitialPlayerResponse
   const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script)/s);
   if (playerMatch) {
     try {
       const pd = JSON.parse(playerMatch[1]);
-      const url = pickCaptionUrl(pd?.captions?.playerCaptionsTracklistRenderer?.captionTracks);
-      if (url) { console.log("[yt] HTML: ytInitialPlayerResponse matched"); return url; }
+      return pickCaptionUrl(pd?.captions?.playerCaptionsTracklistRenderer?.captionTracks);
     } catch { /* ignore */ }
   }
   return null;
 }
 
-// Strategy: Extract from embed page HTML
-async function tryEmbedPage(videoId: string): Promise<string | null> {
-  try {
-    const resp = await fetch(`https://www.youtube.com/embed/${videoId}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+999",
-      },
-    });
-    if (!resp.ok) { await resp.text(); return null; }
-    const html = await resp.text();
-    console.log(`[yt] Embed page len=${html.length} hasCaptionTracks=${html.includes("captionTracks")}`);
-
-    // Embed page stores player data differently
-    const captionMatch = html.match(/"captions"\s*:\s*(\{.+?"captionTracks"\s*:\s*\[.+?\]\s*\})/s);
-    if (captionMatch) {
-      try {
-        // Need to find the full captions object
-        const fullMatch = html.match(/"playerCaptionsTracklistRenderer"\s*:\s*\{[^}]*"captionTracks"\s*:\s*(\[.+?\])/s);
-        if (fullMatch) {
-          const tracks = JSON.parse(fullMatch[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"'));
-          const url = pickCaptionUrl(tracks);
-          if (url) { console.log("[yt] Embed page: captionTracks matched"); return url; }
-        }
-      } catch { /* ignore */ }
-    }
-
-    // Try the same regex approach as watch page
-    return extractFromHtml(html);
-  } catch (e) {
-    console.log("[yt] Embed page error:", e);
-    return null;
-  }
-}
-
-// Strategy: Innertube API
-async function tryInnertube(videoId: string, clientName: string, clientVersion: string, label: string): Promise<string | null> {
-  try {
-    const body: any = {
-      videoId,
-      context: { client: { clientName, clientVersion, hl: "en" } },
-      contentCheckOk: true,
-      racyCheckOk: true,
-    };
-
-    const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!resp.ok) { await resp.text(); return null; }
-    const data = await resp.json();
-    const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    console.log(`[yt] Innertube ${label}: ${tracks?.length ?? 0} tracks`);
-    return pickCaptionUrl(tracks);
-  } catch (e) {
-    console.log(`[yt] Innertube ${label} error:`, String(e).slice(0, 100));
-    return null;
-  }
-}
-
-// Strategy: Direct timedtext API for auto-generated captions
-async function tryDirectTimedtext(videoId: string): Promise<string | null> {
-  for (const kind of ["asr", ""]) {
-    try {
-      const params = new URLSearchParams({ v: videoId, lang: "en", fmt: "srv3" });
-      if (kind) params.set("kind", kind);
-      const resp = await fetch(`https://www.youtube.com/api/timedtext?${params}`, {
-        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-        signal: AbortSignal.timeout(5000),
-      });
-      if (!resp.ok) { await resp.text(); continue; }
-      const xml = await resp.text();
-      if (xml.includes("<text start=")) {
-        console.log(`[yt] Direct timedtext (kind=${kind}) success, len=${xml.length}`);
-        return `__XML__${xml}`;
-      }
-    } catch { /* continue */ }
-  }
-  console.log("[yt] Direct timedtext: no captions");
-  return null;
-}
-
-// Fetch watch page with consent cookies
-async function fetchWatchPage(videoId: string, attempt: number): Promise<string> {
-  const uas = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-  ];
-  // Add bpctr parameter to help bypass bot detection
+async function fetchWatchPage(videoId: string): Promise<string> {
   const resp = await fetch(`https://www.youtube.com/watch?v=${videoId}&bpctr=9999999999&has_verified=1`, {
     headers: {
-      "User-Agent": uas[attempt % uas.length],
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+999; SOCS=CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwODA4LjA3X3AxGgJlbiACGgYIgJnPpwY",
@@ -176,6 +80,220 @@ async function fetchWatchPage(videoId: string, attempt: number): Promise<string>
   });
   if (!resp.ok) throw new Error(`YouTube returned ${resp.status}`);
   return resp.text();
+}
+
+// ── Innertube player API ──
+async function getInnertubePlayerData(videoId: string): Promise<any> {
+  const body = {
+    videoId,
+    context: { client: { clientName: "WEB", clientVersion: "2.20250101.00.00", hl: "en" } },
+    contentCheckOk: true,
+    racyCheckOk: true,
+  };
+  const resp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!resp.ok) { await resp.text(); return null; }
+  return resp.json();
+}
+
+// ── Get audio stream URL from innertube ──
+function getAudioStreamUrl(playerData: any): { url: string; contentLength: number; approxDuration: number } | null {
+  const formats = playerData?.streamingData?.adaptiveFormats;
+  if (!Array.isArray(formats)) return null;
+
+  // Pick lowest bitrate audio-only stream
+  const audioFormats = formats
+    .filter((f: any) => f.mimeType?.startsWith("audio/") && f.url)
+    .sort((a: any, b: any) => (a.bitrate || 999999) - (b.bitrate || 999999));
+
+  if (audioFormats.length === 0) return null;
+  const chosen = audioFormats[0];
+  const contentLength = parseInt(chosen.contentLength || "0", 10);
+  const approxDuration = parseInt(chosen.approxDurationMs || "0", 10) / 1000;
+
+  console.log(`[yt] Audio stream: ${chosen.mimeType}, bitrate=${chosen.bitrate}, size=${contentLength}, dur=${approxDuration}s`);
+  return { url: chosen.url, contentLength, approxDuration };
+}
+
+// ── Download audio chunk via byte-range ──
+async function downloadAudioChunk(
+  streamUrl: string,
+  startByte: number,
+  endByte: number,
+): Promise<Uint8Array> {
+  const resp = await fetch(streamUrl, {
+    headers: { Range: `bytes=${startByte}-${endByte}` },
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!resp.ok && resp.status !== 206) {
+    await resp.text();
+    throw new Error(`Audio download failed: ${resp.status}`);
+  }
+  return new Uint8Array(await resp.arrayBuffer());
+}
+
+// ── AI Transcription via Grok ──
+async function transcribeWithGrok(
+  audioBase64: string,
+  chunkIndex: number,
+  totalChunks: number,
+  offsetSeconds: number,
+  chunkDurationSec: number,
+  grokApiKey: string,
+): Promise<{ segments: Segment[]; announcements: Announcement[] }> {
+  const startTime = formatTime(offsetSeconds);
+  const endTime = formatTime(offsetSeconds + chunkDurationSec);
+
+  const prompt = `You are transcribing audio from a church sermon video. This is chunk ${chunkIndex + 1} of ${totalChunks}, covering approximately ${startTime} to ${endTime} of the video.
+
+CRITICAL INSTRUCTIONS:
+1. DISREGARD all music, worship songs, instrumental sections, and singing — do NOT transcribe these
+2. SKIP pre-sermon filler (welcome greetings, "we're getting started", sound checks, tech issues)
+3. SEPARATE church announcements from the sermon body
+4. Transcribe the actual sermon teaching content with timestamps
+
+Your response MUST be valid JSON with this exact structure:
+{
+  "segments": [
+    { "start": <seconds from video start as number>, "dur": <duration in seconds as number>, "text": "<transcribed text>" }
+  ],
+  "announcements": [
+    { "start": <seconds from video start as number>, "text": "<announcement text>" }
+  ]
+}
+
+Rules for segments:
+- Each segment should be ~15-30 seconds of speech
+- The "start" value must be relative to the ORIGINAL VIDEO start (add ${offsetSeconds} to chunk-relative times)
+- Include ALL spoken sermon content — do not summarize or skip sections
+- Clean up filler words (um, uh, you know)
+- Announcements about church events, services, volunteer needs go in the "announcements" array, NOT in segments
+
+Return ONLY valid JSON, no markdown fencing, no explanation.`;
+
+  const resp = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${grokApiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-4.20-reasoning",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "input_audio",
+              input_audio: { data: audioBase64, format: "wav" },
+            },
+          ],
+        },
+      ],
+      temperature: 0.3,
+    }),
+    signal: AbortSignal.timeout(120000),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    console.error(`[yt] Grok transcription error ${resp.status}:`, errText.slice(0, 300));
+    throw new Error(`Grok transcription failed: ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  const content = data.choices?.[0]?.message?.content || "";
+
+  // Parse JSON from response (handle potential markdown fencing)
+  const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return {
+      segments: Array.isArray(parsed.segments) ? parsed.segments : [],
+      announcements: Array.isArray(parsed.announcements) ? parsed.announcements : [],
+    };
+  } catch (e) {
+    console.error("[yt] Failed to parse Grok response:", jsonStr.slice(0, 500));
+    throw new Error("Failed to parse AI transcription response");
+  }
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+// ── Main AI transcription pipeline ──
+async function aiTranscribe(
+  videoId: string,
+  playerData: any,
+  grokApiKey: string,
+): Promise<{ segments: Segment[]; announcements: Announcement[] }> {
+  const audioStream = getAudioStreamUrl(playerData);
+  if (!audioStream) throw new Error("No audio stream available for this video");
+
+  const totalDuration = audioStream.approxDuration;
+  const totalBytes = Math.min(audioStream.contentLength, MAX_AUDIO_BYTES);
+  const bytesPerSecond = audioStream.contentLength / totalDuration;
+
+  // Calculate chunks
+  const chunkCount = Math.ceil(totalDuration / CHUNK_DURATION_SEC);
+  const actualChunks = Math.min(chunkCount, 6); // Max 6 chunks (60 min)
+
+  console.log(`[yt] AI transcription: ${actualChunks} chunks, total duration=${totalDuration}s`);
+
+  const allSegments: Segment[] = [];
+  const allAnnouncements: Announcement[] = [];
+
+  for (let i = 0; i < actualChunks; i++) {
+    const offsetSeconds = i * CHUNK_DURATION_SEC;
+    const chunkDuration = Math.min(CHUNK_DURATION_SEC, totalDuration - offsetSeconds);
+
+    const startByte = Math.floor(offsetSeconds * bytesPerSecond);
+    const endByte = Math.min(
+      Math.floor((offsetSeconds + chunkDuration) * bytesPerSecond),
+      audioStream.contentLength - 1,
+    );
+
+    console.log(`[yt] Downloading chunk ${i + 1}/${actualChunks}: bytes ${startByte}-${endByte}`);
+
+    const audioData = await downloadAudioChunk(audioStream.url, startByte, endByte);
+
+    // Convert to base64
+    let base64 = "";
+    const CHUNK_SIZE = 32768;
+    for (let j = 0; j < audioData.length; j += CHUNK_SIZE) {
+      const slice = audioData.subarray(j, j + CHUNK_SIZE);
+      base64 += String.fromCharCode(...slice);
+    }
+    base64 = btoa(base64);
+
+    console.log(`[yt] Transcribing chunk ${i + 1}/${actualChunks} with Grok (${audioData.length} bytes)`);
+
+    const result = await transcribeWithGrok(
+      base64,
+      i,
+      actualChunks,
+      offsetSeconds,
+      chunkDuration,
+      grokApiKey,
+    );
+
+    allSegments.push(...result.segments);
+    allAnnouncements.push(...result.announcements);
+  }
+
+  // Sort by start time
+  allSegments.sort((a, b) => a.start - b.start);
+  allAnnouncements.sort((a, b) => a.start - b.start);
+
+  return { segments: allSegments, announcements: allAnnouncements };
 }
 
 serve(async (req) => {
@@ -229,7 +347,8 @@ serve(async (req) => {
       console.log("[yt] cache HIT");
       return new Response(JSON.stringify({
         videoId, videoTitle: cached.video_title || "",
-        raw: cached.raw_segments, fullText: cached.full_text, cached: true,
+        raw: cached.raw_segments, fullText: cached.full_text,
+        cached: true, source: "captions",
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     console.log("[yt] cache MISS");
@@ -241,73 +360,83 @@ serve(async (req) => {
       if (oembed.ok) { videoTitle = (await oembed.json()).title || ""; }
     } catch { /* non-fatal */ }
 
-    // === MULTI-STRATEGY CAPTION EXTRACTION ===
+    // ── STEP 1: Try caption extraction ──
     let captionUrl: string | null = null;
-    let rawXml: string | null = null;
+    let playerData: any = null;
 
-    for (let attempt = 0; attempt < 2 && !captionUrl && !rawXml; attempt++) {
-      if (attempt > 0) {
-        console.log("[yt] === Retry attempt ===");
-        await new Promise(r => setTimeout(r, 1500));
-      }
+    try {
+      const html = await fetchWatchPage(videoId);
+      console.log(`[yt] Watch page len=${html.length} hasCaptions=${html.includes("captionTracks")}`);
+      captionUrl = extractFromHtml(html);
+    } catch (e) {
+      console.log("[yt] Watch page error:", e);
+    }
 
-      // 1. Watch page HTML
-      try {
-        const html = await fetchWatchPage(videoId, attempt);
-        console.log(`[yt] Watch page len=${html.length} hasCaptions=${html.includes("captionTracks")}`);
-        captionUrl = extractFromHtml(html);
-      } catch (e) {
-        console.log("[yt] Watch page error:", e);
-      }
-      if (captionUrl) break;
-
-      // 2. Embed page (less restricted by bot detection)
-      captionUrl = await tryEmbedPage(videoId);
-      if (captionUrl) break;
-
-      // 3. Innertube WEB (most compatible from server)
-      captionUrl = await tryInnertube(videoId, "WEB", "2.20250101.00.00", "WEB");
-      if (captionUrl) break;
-
-      // 4. Innertube WEB_EMBEDDED_PLAYER
-      captionUrl = await tryInnertube(videoId, "WEB_EMBEDDED_PLAYER", "1.20250101.00.00", "WEB_EMBED");
-      if (captionUrl) break;
-
-      // 5. Innertube TVHTML5
-      captionUrl = await tryInnertube(videoId, "TVHTML5", "7.20250101.00.00", "TVHTML5");
-      if (captionUrl) break;
-
-      // 6. Direct timedtext API (targets auto-generated ASR captions)
-      const directResult = await tryDirectTimedtext(videoId);
-      if (directResult?.startsWith("__XML__")) {
-        rawXml = directResult.slice(7);
-        break;
+    // Try innertube if watch page failed
+    if (!captionUrl) {
+      playerData = await getInnertubePlayerData(videoId);
+      if (playerData) {
+        const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+        captionUrl = pickCaptionUrl(tracks || []);
+        console.log(`[yt] Innertube captions: ${tracks?.length ?? 0} tracks, url=${!!captionUrl}`);
       }
     }
 
-    console.log("[yt] Final: captionUrl=", !!captionUrl, "rawXml=", !!rawXml);
-
-    if (!captionUrl && !rawXml) {
-      return new Response(JSON.stringify({
-        error: "No captions available for this video. Try a sermon that has subtitles or closed captions enabled.",
-      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    let xml = rawXml;
-    if (!xml && captionUrl) {
+    // ── STEP 2: If captions found, parse them ──
+    if (captionUrl) {
+      console.log("[yt] Using caption-based transcription");
       const captionResp = await fetch(captionUrl);
       if (!captionResp.ok) {
         return new Response(JSON.stringify({ error: "Failed to fetch captions" }), {
           status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      xml = await captionResp.text();
+      const xml = await captionResp.text();
+      const segments = parseSegments(xml);
+      if (segments.length < 5) {
+        return new Response(JSON.stringify({
+          error: "Captions are too short to analyze. This may not be a sermon recording.",
+        }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const fullText = segments.map((s) => s.text).join(" ");
+
+      await supabase.from("sermon_transcripts").upsert({
+        video_id: videoId, video_title: videoTitle,
+        raw_segments: segments, full_text: fullText,
+        fetched_at: new Date().toISOString(), user_id: user.id,
+      }, { onConflict: "video_id" });
+
+      return new Response(JSON.stringify({
+        videoId, videoTitle, raw: segments, fullText, cached: false, source: "captions",
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const segments = parseSegments(xml!);
-    if (segments.length < 5) {
+    // ── STEP 3: AI audio transcription fallback ──
+    console.log("[yt] No captions found, attempting AI audio transcription");
+
+    const grokApiKey = Deno.env.get("GROK_API_KEY");
+    if (!grokApiKey) {
       return new Response(JSON.stringify({
-        error: "Captions are too short to analyze. This may not be a sermon recording.",
+        error: "No captions available and AI transcription is not configured.",
+      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Get player data if we don't have it yet
+    if (!playerData) {
+      playerData = await getInnertubePlayerData(videoId);
+    }
+    if (!playerData) {
+      return new Response(JSON.stringify({
+        error: "Could not access video data. The video may be private or restricted.",
+      }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const { segments, announcements } = await aiTranscribe(videoId, playerData, grokApiKey);
+
+    if (segments.length < 3) {
+      return new Response(JSON.stringify({
+        error: "AI transcription produced too few segments. The audio may not contain spoken sermon content.",
       }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -320,8 +449,11 @@ serve(async (req) => {
     }, { onConflict: "video_id" });
 
     return new Response(JSON.stringify({
-      videoId, videoTitle, raw: segments, fullText, cached: false,
+      videoId, videoTitle, raw: segments, fullText,
+      cached: false, source: "ai-transcription",
+      announcements,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
   } catch (e) {
     console.error("[yt] error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
