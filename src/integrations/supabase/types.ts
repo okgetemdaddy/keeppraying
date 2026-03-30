@@ -1549,6 +1549,121 @@ export type Database = {
         }
         Relationships: []
       }
+      sermon_plan_encouragements: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string
+          plan_id: string
+          to_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string
+          plan_id: string
+          to_user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string
+          plan_id?: string
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sermon_plan_encouragements_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "sermon_prayer_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sermon_plan_members: {
+        Row: {
+          accountability_enabled: boolean
+          completed_days: Json
+          encouragement_enabled: boolean
+          id: string
+          joined_at: string
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          accountability_enabled?: boolean
+          completed_days?: Json
+          encouragement_enabled?: boolean
+          id?: string
+          joined_at?: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          accountability_enabled?: boolean
+          completed_days?: Json
+          encouragement_enabled?: boolean
+          id?: string
+          joined_at?: string
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sermon_plan_members_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "sermon_prayer_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sermon_prayer_plans: {
+        Row: {
+          accountability_enabled: boolean
+          created_at: string
+          created_by: string
+          daily_prompts: Json
+          encouragement_enabled: boolean
+          id: string
+          reminder_time: string
+          sermon_title: string
+          starts_on: string
+          updated_at: string
+          video_id: string | null
+        }
+        Insert: {
+          accountability_enabled?: boolean
+          created_at?: string
+          created_by: string
+          daily_prompts?: Json
+          encouragement_enabled?: boolean
+          id?: string
+          reminder_time?: string
+          sermon_title: string
+          starts_on?: string
+          updated_at?: string
+          video_id?: string | null
+        }
+        Update: {
+          accountability_enabled?: boolean
+          created_at?: string
+          created_by?: string
+          daily_prompts?: Json
+          encouragement_enabled?: boolean
+          id?: string
+          reminder_time?: string
+          sermon_title?: string
+          starts_on?: string
+          updated_at?: string
+          video_id?: string | null
+        }
+        Relationships: []
+      }
       sermon_transcripts: {
         Row: {
           analysis_result: Json | null
@@ -2177,6 +2292,10 @@ export type Database = {
       }
       is_group_member: {
         Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_sermon_plan_member: {
+        Args: { _plan_id: string; _user_id: string }
         Returns: boolean
       }
       show_limit: { Args: never; Returns: number }
