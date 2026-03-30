@@ -139,6 +139,9 @@ export function BoardCard({
   const [hasTestimony, setHasTestimony] = useState(false);
   const [userTestimony, setUserTestimony] = useState<any>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [isSharedRecipient, setIsSharedRecipient] = useState(false);
+  const [duplicateDialog, setDuplicateDialog] = useState<{ matchId: string } | null>(null);
+  const [disputeSending, setDisputeSending] = useState(false);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
