@@ -544,6 +544,9 @@ export function BoardCard({
                 onRefresh={onRefresh}
                 onSharePrivately={() => setShareModalOpen(true)}
                 isSharedRecipient={isSharedRecipient}
+                onListen={handleListen}
+                ttsLoading={ttsLoading}
+                ttsPlaying={ttsPlaying}
               />
             </div>
           )}
