@@ -86,11 +86,11 @@ export default function FeatureCarousel() {
           <p className="font-serif text-lg sm:text-xl md:text-2xl leading-relaxed text-foreground/80 italic">
             The adversities every Christian shares are battles{" "}
             <span className="not-italic font-semibold text-foreground">
-              to keep reading the Word
+              to Keep Reading the Word
             </span>{" "}
             and{" "}
             <span className="not-italic font-semibold text-foreground">
-              to keep praying.
+              to Keep Praying.
             </span>
           </p>
 
