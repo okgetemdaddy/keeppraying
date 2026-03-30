@@ -104,6 +104,10 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
         { data: familyPrayers },
         { data: circleMemberships },
         { data: familyMemberships },
+        { data: sermonMemberships },
+        { data: bibleHighlights },
+        { data: bibleNotes },
+        { data: bibleBookmarks },
       ] = await Promise.all([
         supabase.from("prayer_cards").select("id, title, prayer_text, created_at")
           .eq("created_by", user.id)
@@ -130,12 +134,25 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
         supabase.from("family_room_prayers").select("id, created_at, room_id")
           .eq("shared_by", user.id)
           .gte("created_at", rangeStart).lte("created_at", rangeEnd),
-        // Fetch circle memberships + circle schedule
         supabase.from("accountability_circle_members").select("circle_id, accountability_circles(id, name, schedule)")
           .eq("user_id", user.id),
-        // Fetch family memberships + family room schedule
         supabase.from("family_room_members").select("room_id, family_rooms(id, name, schedule)")
           .eq("user_id", user.id),
+        // Sermon plan memberships with plan details
+        supabase.from("sermon_plan_members").select("plan_id, sermon_prayer_plans(id, sermon_title, starts_on, daily_prompts)")
+          .eq("user_id", user.id) as any,
+        // Bible highlights
+        supabase.from("user_highlights").select("id, book_usfm, chapter_number, verse_number, color, created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", rangeStart).lte("created_at", rangeEnd),
+        // Bible notes
+        supabase.from("user_notes").select("id, book_usfm, chapter_number, verse_number, note_content, created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", rangeStart).lte("created_at", rangeEnd),
+        // Bible bookmarks
+        supabase.from("user_bookmarks").select("id, book_usfm, chapter_number, verse_number, created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", rangeStart).lte("created_at", rangeEnd),
       ]);
 
       const mapped: CalendarEvent[] = [];
