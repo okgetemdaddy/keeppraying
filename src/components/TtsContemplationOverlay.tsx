@@ -25,6 +25,7 @@ const RATE_LABELS: Record<number, string> = {
 };
 
 const LINE_HEIGHT = 30;
+const VISIBLE_LINES = 6;
 const MS_PER_WORD_AT_1X = 150;
 
 function splitIntoLines(text: string): string[] {
