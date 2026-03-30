@@ -34,7 +34,17 @@ import {
   DropdownMenuSubTrigger, DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 
-type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
+function PrayingHandsIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2C12 2 9 5.5 9 9v4l-2 3v3h10v-3l-2-3V9c0-3.5-3-7-3-7z" />
+      <path d="M9 13H7.5a1.5 1.5 0 0 0 0 3H9" />
+      <path d="M15 13h1.5a1.5 1.5 0 0 1 0 3H15" />
+      <line x1="9" y1="19" x2="15" y2="19" />
+    </svg>
+  );
+}
+
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
   prayer_cards: PrayerCard | null;
 };

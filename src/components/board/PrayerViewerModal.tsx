@@ -443,6 +443,9 @@ export function PrayerViewerModal({
               {/* ── Sticky action footer ── */}
               <div className="sticky bottom-0 bg-white border-t border-slate-100 p-4 flex items-center justify-between mt-auto z-10">
                 <div className="flex items-center gap-1">
+                  {/* Prayed */}
+                  <PrayedButton prayerId={card.id} userId={userId} accentColor={accentColor} initialCount={card.prayed_count} />
+
                   {/* Favorite */}
                   <button
                     onClick={toggleFavorite}
