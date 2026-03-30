@@ -345,7 +345,42 @@ serve(async (req) => {
       result = extractJson(geminiContent);
 
       if (isEmptyPremiumResult(result)) {
-        throw new Error("Premium analysis returned no sermon details. Please try again.");
+        console.log("[sermon-sync] Empty premium result. Raw Grok analysis:", rawAnalysis.substring(0, 800));
+        // Retry: fall back to standard Gemini direct analysis of the video
+        console.log("[sermon-sync] Falling back to standard Gemini direct analysis...");
+        const fallbackResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            max_tokens: 8000,
+            messages: [
+              { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
+              { role: "user", content: STANDARD_PROMPT(youtubeUrl, timeRangeInstruction) },
+            ],
+          }),
+        });
+        if (fallbackResp.ok) {
+          const fbData = await fallbackResp.json();
+          const fbContent = fbData.choices?.[0]?.message?.content || "";
+          console.log("[sermon-sync] Fallback raw (first 200):", fbContent.substring(0, 200));
+          const fbResult = extractJson(fbContent);
+          // Convert standard result shape to premium-compatible
+          result = {
+            ...fbResult,
+            mainScripture: (fbResult as Record<string, unknown>).mainScripture || null,
+            overallMessage: (fbResult as Record<string, unknown>).sermonNotes || (fbResult as Record<string, unknown>).overallMessage || "",
+            subtopics: (fbResult as Record<string, unknown>).subtopics || [],
+            dailyPrayers: (fbResult as Record<string, unknown>).dailyPrayers || [],
+          };
+        }
+
+        if (isEmptyPremiumResult(result) && !(result as Record<string, unknown>).sermonNotes) {
+          throw new Error("Could not extract sermon details from this video. Please try a different sermon or adjust the time range.");
+        }
       }
     } else {
       // Standard: Gemini analyzes the video directly
