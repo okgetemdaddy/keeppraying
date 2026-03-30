@@ -335,6 +335,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
+          max_tokens: 8000,
           messages: [
             { role: "system", content: "You are a Christian sermon analysis assistant. Return only valid JSON, no markdown fences." },
             { role: "user", content: STANDARD_PROMPT(youtubeUrl) },
