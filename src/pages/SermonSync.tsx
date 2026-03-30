@@ -607,7 +607,7 @@ function PremiumResultView({
   user: unknown;
   onReset: () => void;
 }) {
-  const notifTimes = getNotifTimes();
+  const { notifTimes, setNotifTime } = useSermonProgress();
   const TIMES = ["Morning", "Afternoon", "Night"];
 
   return (
