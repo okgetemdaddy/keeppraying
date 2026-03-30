@@ -18,8 +18,10 @@ import {
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
   SunDim, ImagePlus, ImageOff, Send, BookmarkX, AlertTriangle,
-  ExternalLink,
+  ExternalLink, Volume2,
 } from "lucide-react";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 import { SharePrayerModal } from "@/components/SharePrayerModal";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -142,6 +144,20 @@ export function BoardCard({
   const [isSharedRecipient, setIsSharedRecipient] = useState(false);
   const [duplicateDialog, setDuplicateDialog] = useState<{ matchId: string } | null>(null);
   const [disputeSending, setDisputeSending] = useState(false);
+
+  // TTS player
+  const {
+    ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
+    timedPhrases, audioRef, playbackRate, changePlaybackRate,
+  } = useTtsPlayer({ cacheId: card?.id, audioUrl: card?.audio_url });
+
+  const handleListen = useCallback(() => {
+    if (!card) return;
+    const text = card.extended_prayer
+      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+      : card.prayer_text;
+    toggleTts(text, card.id);
+  }, [card, toggleTts]);
 
   // Font picker state
   const [pendingFont, setPendingFont] = useState<string | null>(null);
@@ -528,6 +544,9 @@ export function BoardCard({
                 onRefresh={onRefresh}
                 onSharePrivately={() => setShareModalOpen(true)}
                 isSharedRecipient={isSharedRecipient}
+                onListen={handleListen}
+                ttsLoading={ttsLoading}
+                ttsPlaying={ttsPlaying}
               />
             </div>
           )}
@@ -748,6 +767,9 @@ export function BoardCard({
                 onRefresh={onRefresh}
                 onSharePrivately={() => setShareModalOpen(true)}
                 isSharedRecipient={isSharedRecipient}
+                onListen={handleListen}
+                ttsLoading={ttsLoading}
+                ttsPlaying={ttsPlaying}
               />
             </div>
           </div>
@@ -900,6 +922,19 @@ export function BoardCard({
         </DialogContent>
       </Dialog>
 
+      {/* TTS Contemplation Overlay */}
+      <TtsContemplationOverlay
+        playing={ttsPlaying}
+        onStop={stopTts}
+        onPause={pauseTts}
+        onResume={resumeTts}
+        text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
+        playbackRate={playbackRate}
+        onPlaybackRateChange={changePlaybackRate}
+        timedPhrases={timedPhrases}
+        audioRef={audioRef}
+      />
+
     </div>
   );
 }
@@ -930,6 +965,9 @@ interface ActionButtonsProps {
   onRefresh: () => void;
   onSharePrivately?: () => void;
   isSharedRecipient?: boolean;
+  onListen?: () => void;
+  ttsLoading?: boolean;
+  ttsPlaying?: boolean;
 }
 
 function ActionButtons({
@@ -939,6 +977,7 @@ function ActionButtons({
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
   userId, onRefresh, onSharePrivately, isSharedRecipient,
+  onListen, ttsLoading: listenLoading, ttsPlaying: listenPlaying,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1007,6 +1046,22 @@ function ActionButtons({
       >
         <Pin className="w-3.5 h-3.5" />
       </button>
+
+      {/* Listen / Speaker button */}
+      {onListen && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onListen(); }}
+          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+          style={{ color: listenPlaying ? accentColor : `${textColor}55` }}
+          aria-label="Listen"
+        >
+          {listenLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Volume2 className={`w-3.5 h-3.5 ${listenPlaying ? 'fill-current' : ''}`} />
+          )}
+        </button>
+      )}
 
       {!isSharedRecipient && (
         <button
