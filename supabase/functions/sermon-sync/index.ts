@@ -137,7 +137,11 @@ async function getYouTubeTranscript(videoId: string): Promise<{
       headers: {
         "User-Agent": UA,
         "Accept-Language": "en-US,en;q=0.9",
-        "Cookie": "CONSENT=PENDING+999",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
       },
     });
     if (watchRes.ok) {
