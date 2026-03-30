@@ -57,6 +57,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  useActivityLogger(); // auto-tracks page views & sessions
   return (
     <>
       <Toaster />
