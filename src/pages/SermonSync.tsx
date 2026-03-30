@@ -161,7 +161,7 @@ export default function SermonSync() {
 
       setProgressStep(0);
       const syncResp = await supabase.functions.invoke("sermon-sync", {
-        body: { youtubeUrl: url, mode },
+        body: { youtubeUrl: url, mode, sermonStart: sermonStart || undefined, sermonEnd: sermonEnd || undefined },
       });
 
       if (syncResp.error) throw new Error(syncResp.error.message || "Analysis failed");
