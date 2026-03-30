@@ -28,9 +28,47 @@ function extractJson(raw: string): Record<string, unknown> {
     throw new Error("The AI could not analyze this sermon. Please try another sermon link.");
   }
   const cleaned = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+
+  // Try direct parse first
   try { return JSON.parse(cleaned); } catch { /* fall through */ }
+
+  // Try extracting JSON object
   const match = cleaned.match(/\{[\s\S]*\}/);
-  if (match) { try { return JSON.parse(match[0]); } catch { /* fall through */ } }
+  if (match) {
+    try { return JSON.parse(match[0]); } catch { /* fall through */ }
+
+    // Fix common truncation/formatting issues
+    let fixed = match[0]
+      .replace(/,\s*}/g, "}") // trailing commas in objects
+      .replace(/,\s*]/g, "]") // trailing commas in arrays
+      .replace(/[\x00-\x1F\x7F]/g, (c) => c === "\n" || c === "\t" ? c : ""); // control chars
+
+    // Fix truncated JSON by closing open brackets/braces
+    const openBraces = (fixed.match(/{/g) || []).length;
+    const closeBraces = (fixed.match(/}/g) || []).length;
+    const openBrackets = (fixed.match(/\[/g) || []).length;
+    const closeBrackets = (fixed.match(/\]/g) || []).length;
+
+    if (openBraces > closeBraces || openBrackets > closeBrackets) {
+      // Truncate to last complete value (last comma or colon+value)
+      const lastGoodComma = fixed.lastIndexOf(",");
+      const lastGoodBrace = fixed.lastIndexOf("}");
+      const lastGoodBracket = fixed.lastIndexOf("]");
+      const cutPoint = Math.max(lastGoodComma, lastGoodBrace, lastGoodBracket);
+      if (cutPoint > fixed.length * 0.5) {
+        fixed = fixed.substring(0, cutPoint);
+        // Remove trailing partial key-value
+        fixed = fixed.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, "");
+        // Close remaining open structures
+        for (let i = 0; i < openBrackets - (fixed.match(/\]/g) || []).length; i++) fixed += "]";
+        for (let i = 0; i < openBraces - (fixed.match(/}/g) || []).length; i++) fixed += "}";
+      }
+    }
+
+    try { return JSON.parse(fixed); } catch { /* fall through */ }
+  }
+
+  console.error("[sermon-sync] Failed to parse AI response. First 500 chars:", raw.substring(0, 500));
   throw new Error("AI returned an unexpected response. Please try again.");
 }
 
