@@ -151,52 +151,62 @@ serve(async (req) => {
     }
 
     const html = await pageResp.text();
+    console.log("[youtube-transcript] HTML length:", html.length,
+      "has captionTracks:", html.includes("captionTracks"),
+      "has ytInitialPlayerResponse:", html.includes("ytInitialPlayerResponse"));
 
-    // Strategy 1: Direct captionTracks regex (multiple patterns)
+    // Strategy 1: Direct captionTracks regex
     let captionUrl: string | null = null;
+    const baseUrlMatch = html.match(/"captionTracks":\s*\[.*?"baseUrl"\s*:\s*"([^"]+)"/s);
+    if (baseUrlMatch?.[1]) {
+      captionUrl = baseUrlMatch[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
+      console.log("[youtube-transcript] Strategy 1 matched");
+    }
 
-    const patterns = [
-      /"captionTracks":\s*\[\s*\{[^}]*?"baseUrl"\s*:\s*"([^"]+)"/,
-      /"captionTracks":\[(\{.*?\})\]/s,
-      /playerCaptionsTracklistRenderer.*?"captionTracks":\s*\[.*?"baseUrl"\s*:\s*"([^"]+)"/s,
-    ];
-
-    for (const pattern of patterns) {
-      const m = html.match(pattern);
-      if (m) {
-        if (m[1]?.startsWith("http") || m[1]?.startsWith("\\u0026") || m[1]?.includes("timedtext")) {
-          captionUrl = m[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
-          break;
-        }
-        // Pattern 2 returns a JSON object — parse baseUrl from it
+    // Strategy 2: Parse ytInitialPlayerResponse
+    if (!captionUrl) {
+      const playerMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script)/s);
+      if (playerMatch) {
         try {
-          const cleaned = m[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"');
-          const obj = JSON.parse(cleaned);
-          if (obj.baseUrl) {
-            captionUrl = obj.baseUrl.replace(/\\u0026/g, "&");
+          const pd = JSON.parse(playerMatch[1]);
+          const tracks = pd?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+          if (Array.isArray(tracks) && tracks.length > 0) {
+            const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
+              || tracks.find((t: any) => t.languageCode === "en")
+              || tracks[0];
+            captionUrl = chosen.baseUrl;
+            console.log("[youtube-transcript] Strategy 2 matched");
           }
-        } catch { /* not valid JSON, continue */ }
-        if (captionUrl) break;
+        } catch (e) { console.log("[youtube-transcript] Strategy 2 parse error:", e); }
       }
     }
 
-    // Strategy 2: Extract from ytInitialPlayerResponse JSON blob
+    // Strategy 3: YouTube innertube API (most reliable for server-side)
     if (!captionUrl) {
-      const playerRespMatch = html.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});\s*(?:var|<\/script)/s);
-      if (playerRespMatch) {
-        try {
-          const playerData = JSON.parse(playerRespMatch[1]);
-          const tracks = playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+      console.log("[youtube-transcript] Trying innertube API...");
+      try {
+        const innerResp = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            videoId,
+            context: {
+              client: { clientName: "WEB", clientVersion: "2.20250101.00.00", hl: "en" },
+            },
+          }),
+        });
+        if (innerResp.ok) {
+          const innerData = await innerResp.json();
+          const tracks = innerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+          console.log("[youtube-transcript] Innertube tracks:", tracks?.length ?? 0);
           if (Array.isArray(tracks) && tracks.length > 0) {
-            // Prefer English, then any auto-generated, then first available
-            const en = tracks.find((t: any) => t.languageCode === "en" && !t.kind);
-            const enAuto = tracks.find((t: any) => t.languageCode === "en");
-            const first = tracks[0];
-            const chosen = en || enAuto || first;
+            const chosen = tracks.find((t: any) => t.languageCode === "en" && !t.kind)
+              || tracks.find((t: any) => t.languageCode === "en")
+              || tracks[0];
             captionUrl = chosen.baseUrl;
           }
-        } catch { /* parse failed */ }
-      }
+        }
+      } catch (e) { console.log("[youtube-transcript] Innertube error:", e); }
     }
 
     console.log("[youtube-transcript] captionUrl found:", !!captionUrl);
