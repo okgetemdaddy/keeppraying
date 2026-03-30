@@ -482,28 +482,6 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[number]; in
   );
 }
 
-/* ─── Progress Dots (desktop sidebar) ─────────────────────────────────── */
-
-function ProgressDots({ activeIndex }: { activeIndex: number }) {
-  return (
-    <div className="hidden xl:flex fixed right-8 top-1/2 -translate-y-1/2 flex-col gap-2.5 z-40">
-      {FEATURES.map((f, i) => (
-        <a key={f.id} href={`#feature-${f.id}`} className="group/dot flex items-center gap-2" title={f.title}>
-          <span className={`block rounded-full transition-all duration-300 ${
-            i === activeIndex
-              ? "w-3 h-3 bg-primary shadow-md"
-              : "w-2 h-2 bg-muted-foreground/25 hover:bg-muted-foreground/50"
-          }`} />
-          <span className={`text-[10px] tracking-wide font-body transition-opacity duration-200 ${
-            i === activeIndex ? "opacity-70 text-foreground" : "opacity-0 group-hover/dot:opacity-50 text-muted-foreground"
-          }`}>
-            {f.title}
-          </span>
-        </a>
-      ))}
-    </div>
-  );
-}
 
 /* ─── Main Component ──────────────────────────────────────────────────── */
 
@@ -568,7 +546,7 @@ export default function FeatureShowcase() {
         </div>
       </div>
 
-      <ProgressDots activeIndex={activeIndex} />
+      
     </section>
   );
 }
