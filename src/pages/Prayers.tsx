@@ -22,6 +22,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import { SiteNav } from "@/components/SiteNav";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'] & { source?: string };
 
@@ -264,6 +265,11 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
 
   return (
+    <>
+    <TtsContemplationOverlay playing={ttsPlaying} onStop={() => {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+      setTtsPlaying(false);
+    }} />
     <motion.div
       variants={cardVariants}
       whileHover={collapsed ? {} : { y: -6, scale: 1.015 }}
@@ -550,6 +556,7 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
         </AnimatePresence>
       </div>
     </motion.div>
+    </>
   );
 }
 

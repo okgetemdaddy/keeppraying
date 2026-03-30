@@ -19,6 +19,7 @@ import { TestifyBack } from "@/components/board/TestifyBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SiteNav } from "@/components/SiteNav";
 import { PRAYER_FONTS } from "@/components/board/BoardCard";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 
@@ -315,6 +316,10 @@ export default function Prayer() {
 
   return (
     <div className="min-h-screen bg-background">
+      <TtsContemplationOverlay playing={ttsPlaying} onStop={() => {
+        if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+        setTtsPlaying(false);
+      }} />
       {/* Background */}
       {card.background_url && (
         <div className="fixed inset-0 z-0">
