@@ -11,7 +11,7 @@ const MESSAGES: { text: string; duration: number }[] = [
   { text: "Warming up the vocal cords…", duration: 4000 },
   { text: "This will be 1,000× faster next time 🚀", duration: 8000 },
   { text: "God bless your heart 💛", duration: 3000 },
-  { text: "Oh… Oh… get ready, here we go!", duration: 4000 },
+  { text: "It will be worth it ✝️", duration: 4000 },
 ];
 
 const TtsLoadingPopup = ({ visible }: TtsLoadingPopupProps) => {
