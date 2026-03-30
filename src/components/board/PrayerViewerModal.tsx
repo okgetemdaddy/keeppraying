@@ -210,9 +210,27 @@ export function PrayerViewerModal({
     onUpdate(item.id, { pinned: newVal });
   };
 
-  const handleShare = () => {
-    const url = `${window.location.origin}/prayer/${card.id}`;
-    navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
+  const handleShare = async () => {
+    if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from("prayer_shares")
+        .insert({
+          prayer_id: card.id,
+          sender_id: userId,
+          recipient_id: null,
+          status: "pending",
+        } as any)
+        .select("token")
+        .single();
+      if (error) throw error;
+      const link = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/og-prayer-preview?token=${(data as any).token}`;
+      await navigator.clipboard.writeText(link);
+      toast({ title: "Secure link copied! 🔗" });
+    } catch {
+      const url = `${window.location.origin}/prayer/${card.id}`;
+      navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
+    }
   };
 
   const saveNotes = async () => {

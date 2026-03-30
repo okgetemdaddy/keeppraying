@@ -1194,6 +1194,16 @@ function ActionButtons({
             </>
           )}
 
+          {/* Open Prayer Page */}
+          {item.prayer_cards && (
+            <DropdownMenuItem
+              className="text-xs gap-2"
+              onClick={() => window.open(`/prayer/${item.prayer_cards!.id}`, '_blank')}
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open Prayer Page
+            </DropdownMenuItem>
+          )}
+
           {/* Add to playlist */}
           {onAddToPlaylist && item.prayer_cards && (
             <>
