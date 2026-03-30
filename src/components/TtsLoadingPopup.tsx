@@ -7,7 +7,7 @@ interface TtsLoadingPopupProps {
 
 const MESSAGES: { text: string; duration: number }[] = [
   { text: "Some prayers take time to load", duration: 4000 },
-  { text: "Clearing throat… 🤭", duration: 4000 },
+  { text: "Clearing my throat… 🤭", duration: 4000 },
   { text: "Warming up the vocal cords…", duration: 4000 },
   { text: "This will be 1,000× faster next time 🚀", duration: 8000 },
   { text: "God bless your heart 💛", duration: 3000 },
