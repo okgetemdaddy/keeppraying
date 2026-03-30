@@ -397,15 +397,51 @@ export default function SermonSync() {
 
           {/* Video preview */}
           {previewVideoId && !loading && !result && (
-            <div className="rounded-xl overflow-hidden border border-border aspect-video">
-              <iframe
-                src={`https://www.youtube.com/embed/${previewVideoId}`}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title="Sermon preview"
-              />
-            </div>
+            <>
+              <div className="rounded-xl overflow-hidden border border-border aspect-video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${previewVideoId}${sermonStart ? `?start=${timeToSeconds(sermonStart) ?? 0}` : ""}${sermonEnd ? `${sermonStart ? "&" : "?"}end=${timeToSeconds(sermonEnd) ?? 0}` : ""}`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Sermon preview"
+                />
+              </div>
+
+              {/* Sermon time range selector */}
+              <div className="space-y-3 p-4 rounded-xl bg-muted/50 border border-border">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Sermon Time Range
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Set the start and end time so AI focuses only on the sermon portion
+                </p>
+                <div className="flex gap-3">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-xs text-muted-foreground">Starts at</label>
+                    <Input
+                      value={sermonStart}
+                      onChange={(e) => setSermonStart(e.target.value)}
+                      placeholder="00:15:00"
+                      className="rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                  <div className="flex items-end pb-1">
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <label className="text-xs text-muted-foreground">Ends at</label>
+                    <Input
+                      value={sermonEnd}
+                      onChange={(e) => setSermonEnd(e.target.value)}
+                      placeholder="01:15:00"
+                      className="rounded-lg text-sm font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </motion.div>
 

@@ -189,8 +189,10 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { youtubeUrl, mode } = body;
-    console.log("[sermon-sync] mode:", mode, "url:", youtubeUrl);
+    const { youtubeUrl, mode, sermonStart, sermonEnd } = body;
+    const timeRangeInstruction = formatTimeRange(sermonStart, sermonEnd);
+    const hasTimeRange = !!(sermonStart || sermonEnd);
+    console.log("[sermon-sync] mode:", mode, "url:", youtubeUrl, "range:", sermonStart, "-", sermonEnd);
 
     if (!youtubeUrl || typeof youtubeUrl !== "string") {
       return new Response(JSON.stringify({ error: "youtubeUrl is required" }), {
