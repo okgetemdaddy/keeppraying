@@ -150,6 +150,7 @@ export function BoardBibleAnnotations({ textColor }: { textColor: string }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { highlights, bookmarks, notes } = useBibleAnnotations();
+  const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
   const [expandedSection, setExpandedSection] = useState<"highlights" | "bookmarks" | "notes" | null>(null);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editNoteContent, setEditNoteContent] = useState("");
