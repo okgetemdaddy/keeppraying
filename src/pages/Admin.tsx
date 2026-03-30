@@ -778,6 +778,9 @@ export default function Admin() {
               {/* ── WELCOME MESSAGES ── */}
               {activeTab === "welcome" && <WelcomeMessagesTab />}
 
+              {/* ── AUDIO CACHE ── */}
+              {activeTab === "audio-cache" && <AudioCacheTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
