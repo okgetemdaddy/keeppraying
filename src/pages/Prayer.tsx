@@ -225,12 +225,17 @@ export default function Prayer() {
     }
     if (ttsLoading || !card) return;
     setTtsLoading(true);
+
+    // Create Audio element immediately during user gesture to satisfy autoplay policy
+    const audio = new Audio();
+    audioRef.current = audio;
+    audio.onended = () => setTtsPlaying(false);
+    audio.onerror = () => setTtsPlaying(false);
+
     try {
       // Check for cached audio first
       if ((card as any).audio_url) {
-        const audio = new Audio((card as any).audio_url);
-        audioRef.current = audio;
-        audio.onended = () => setTtsPlaying(false);
+        audio.src = (card as any).audio_url;
         await audio.play();
         setTtsPlaying(true);
         setTtsLoading(false);
@@ -259,8 +264,7 @@ export default function Prayer() {
       }
 
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
+      audio.src = url;
       audio.onended = () => { setTtsPlaying(false); URL.revokeObjectURL(url); };
       await audio.play();
       setTtsPlaying(true);
