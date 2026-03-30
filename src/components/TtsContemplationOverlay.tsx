@@ -133,17 +133,45 @@ export function TtsContemplationOverlay({
     return () => clearInterval(interval);
   }, [playing, hasTimedPhrases, timedPhrases, audioRef, isSeeking]);
 
-  // ── Fallback: word-count timer (no timedPhrases) ──
+  // ── Fallback: syllable-based timer (no timedPhrases) ──
   useEffect(() => {
     if (!playing || paused || lines.length === 0 || hasTimedPhrases) return;
-    const totalWords = lines.reduce((sum, l) => sum + l.split(/\s+/).length, 0);
-    const totalMs = (totalWords * MS_PER_WORD_AT_1X) / playbackRate;
-    const msPerLine = totalMs / lines.length;
+
+    // Use actual audio duration if available, otherwise estimate via syllables
+    const audioDur = audioRef?.current?.duration;
+    const calibratedRate = getCalibrationRate() ?? DEFAULT_SEC_PER_SYLLABLE;
+
+    const lineSyllables = lines.map(l => countTextSyllables(l));
+    const totalSyl = lineSyllables.reduce((a, b) => a + b, 0);
+
+    const totalSec = (audioDur && isFinite(audioDur)) ? audioDur : totalSyl * calibratedRate;
+    const secPerSyl = totalSec / Math.max(totalSyl, 1);
+
+    // Compute start times for each line
+    const starts: number[] = [];
+    let cursor = 0;
+    for (let i = 0; i < lines.length; i++) {
+      starts.push(cursor);
+      cursor += lineSyllables[i] * secPerSyl;
+    }
+
+    // Poll audio.currentTime to advance lines
     const interval = setInterval(() => {
-      setCurrentLineIndex(prev => (prev >= lines.length - 1 ? prev : prev + 1));
-    }, msPerLine);
+      const now = audioRef?.current?.currentTime;
+      if (now == null) {
+        // No audio ref — advance by elapsed wall-clock time
+        setCurrentLineIndex(prev => (prev >= lines.length - 1 ? prev : prev + 1));
+        return;
+      }
+      const adjustedNow = now; // playbackRate already handled by audio element
+      let idx = 0;
+      for (let i = starts.length - 1; i >= 0; i--) {
+        if (starts[i] <= adjustedNow) { idx = i; break; }
+      }
+      setCurrentLineIndex(idx);
+    }, 50);
     return () => clearInterval(interval);
-  }, [playing, paused, lines, playbackRate, hasTimedPhrases]);
+  }, [playing, paused, lines, playbackRate, hasTimedPhrases, audioRef]);
 
   // ── Scroll the active line into the center of the viewport ──
   useEffect(() => {
