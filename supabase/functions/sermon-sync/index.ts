@@ -237,8 +237,8 @@ serve(async (req) => {
 
       const aiData = await response.json();
       const content = aiData.choices?.[0]?.message?.content || "";
-      const cleaned = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-      result = JSON.parse(cleaned);
+      console.log("[sermon-sync] Gemini raw (first 200):", content.substring(0, 200));
+      result = extractJson(content);
     }
 
     // Cache result
