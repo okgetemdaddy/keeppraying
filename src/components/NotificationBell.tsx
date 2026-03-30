@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 const TYPE_ICONS: Record<string, string> = {
   standby_response: "🙏",
   prayer_shared: "📖",
+  prayer_share: "💌",
   streak_milestone: "🔥",
   group_prayer: "👥",
   family_prayer: "🏠",
