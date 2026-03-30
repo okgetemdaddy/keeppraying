@@ -83,9 +83,11 @@ export default function SermonSync() {
   const [generatedPrayers, setGeneratedPrayers] = useState<Record<string, string>>({});
   const [generatingDay, setGeneratingDay] = useState<string | null>(null);
   const [videoId, setVideoId] = useState("");
+  const [creatingPlan, setCreatingPlan] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { plans, memberships, createPlan, updateMemberToggles, markDayComplete } = useSermonPlans();
 
   const isValidYouTube = (u: string) =>
     /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/.test(u);
