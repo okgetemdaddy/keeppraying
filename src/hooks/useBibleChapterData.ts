@@ -87,9 +87,13 @@ export function useBibleChapterData(
 
       const chapterNum = parseInt(chapterNumber, 10);
 
-      // ── Fetch A: Chapter verses from YouVersion proxy ──
+      // ── Fetch A: Chapter verses — check IndexedDB first (immutable content) ──
       const fetchVerses = async (): Promise<NormalisedVerse[]> => {
         if (!verseIds?.length) return [];
+        const idbKey = cacheKeys.bibleChapter(versionId!, bookUsfm!, chapterNumber!);
+        const cached = await getIdbCache<NormalisedVerse[]>(idbKey);
+        if (cached && cached.length > 0) return cached;
+
         const results = await Promise.all(
           verseIds.map(async (passageId) => {
             const res = await fetchBible<PassageResponse>(
@@ -100,7 +104,10 @@ export function useBibleChapterData(
             return { number: num, text: res.content };
           }),
         );
-        return results.sort((a, b) => a.number - b.number);
+        const sorted = results.sort((a, b) => a.number - b.number);
+        // Bible text is immutable — cache permanently
+        void setIdbCache(idbKey, sorted);
+        return sorted;
       };
 
       // ── Fetch B: User highlights ──
