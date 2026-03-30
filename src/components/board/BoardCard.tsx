@@ -194,7 +194,7 @@ export function BoardCard({
       .then();
   }, [userId, item.id]);
 
-  // Check if user has a testimony for this prayer
+  // Check if user has a testimony + prayed state for this prayer
   useEffect(() => {
     if (!userId || !item.prayer_cards?.id) return;
     supabase
@@ -209,6 +209,10 @@ export function BoardCard({
           setUserTestimony(data);
         }
       });
+    // Check prayed state
+    supabase.from("prayed_actions").select("id").eq("prayer_id", item.prayer_cards.id).eq("user_id", userId).maybeSingle()
+      .then(({ data }) => setPrayed(!!data));
+    setPrayedCount(item.prayer_cards.prayed_count || 0);
   }, [userId, item.prayer_cards?.id]);
 
   // Check if this prayer was shared to the current user via secure link
