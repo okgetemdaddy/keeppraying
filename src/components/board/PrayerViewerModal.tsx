@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2 } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
@@ -12,6 +12,8 @@ import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PRAYER_FONTS } from "./BoardCard";
+import { useTtsPlayer } from "@/hooks/useTtsPlayer";
+import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 
 type PrayerCard = Database["public"]["Tables"]["prayer_cards"]["Row"];
 type SavedPrayer = Database["public"]["Tables"]["user_saved_prayers"]["Row"] & {
