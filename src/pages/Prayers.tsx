@@ -265,6 +265,11 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
   const textClass = TEXT_STYLE_CLASSES[card.text_style || "classic"] || TEXT_STYLE_CLASSES.classic;
 
   return (
+    <>
+    <TtsContemplationOverlay playing={ttsPlaying} onStop={() => {
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
+      setTtsPlaying(false);
+    }} />
     <motion.div
       variants={cardVariants}
       whileHover={collapsed ? {} : { y: -6, scale: 1.015 }}
