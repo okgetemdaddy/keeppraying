@@ -314,7 +314,29 @@ export default function SermonSync() {
           </Link>
         </motion.div>
 
-        {/* YouTube input */}
+        {/* Active Week of Prayer Plans */}
+        {plans.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              My Prayer Plans
+            </h2>
+            {plans.map((plan) => {
+              const mem = memberships.find((m) => m.plan_id === plan.id);
+              if (!mem) return null;
+              return (
+                <WeekOfPrayerPanel
+                  key={plan.id}
+                  plan={plan}
+                  membership={mem}
+                  onToggle={updateMemberToggles}
+                  onMarkDay={markDayComplete}
+                />
+              );
+            })}
+          </div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
