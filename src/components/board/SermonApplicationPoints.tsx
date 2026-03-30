@@ -2,10 +2,11 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSermonProgress } from "@/hooks/useSermonProgress";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Target, Sparkles, PenLine, BookOpen, PartyPopper,
+  Target, Sparkles, PenLine, PartyPopper,
   ChevronDown, ChevronUp, Loader2, Check,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ type ApplyAction = "generate" | "write" | "existing" | "walking";
 interface SermonApplicationPointsProps {
   meditationEssay: string;
   userId: string;
+  cardId: string;
   accentColor: string;
   textColor: string;
   onRefresh: () => void;
@@ -33,34 +35,19 @@ interface SermonApplicationPointsProps {
 export function SermonApplicationPoints({
   meditationEssay,
   userId,
+  cardId,
   accentColor,
   textColor,
   onRefresh,
 }: SermonApplicationPointsProps) {
   const { toast } = useToast();
+  const { markPointCompleted, isPointCompleted } = useSermonProgress();
   const [expanded, setExpanded] = useState(false);
   const [activePoint, setActivePoint] = useState<number | null>(null);
   const [activeAction, setActiveAction] = useState<ApplyAction | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generatedPrayer, setGeneratedPrayer] = useState("");
   const [userPrayer, setUserPrayer] = useState("");
-  const [completedPoints, setCompletedPoints] = useState<Set<number>>(() => {
-    try {
-      const saved = localStorage.getItem("sermon-app-completed");
-      return new Set(saved ? JSON.parse(saved) : []);
-    } catch { return new Set(); }
-  });
-
-  const markCompleted = useCallback((idx: number) => {
-    setCompletedPoints((prev) => {
-      const next = new Set(prev);
-      next.add(idx);
-      localStorage.setItem("sermon-app-completed", JSON.stringify([...next]));
-      return next;
-    });
-    setActivePoint(null);
-    setActiveAction(null);
-  }, []);
 
   let meta: SermonAppMeta;
   try {
@@ -70,6 +57,12 @@ export function SermonApplicationPoints({
   }
 
   if (!meta.application_points?.length) return null;
+
+  const handleMarkCompleted = (idx: number) => {
+    markPointCompleted(cardId, idx);
+    setActivePoint(null);
+    setActiveAction(null);
+  };
 
   const handleGenerate = async (point: AppPoint) => {
     setGenerating(true);
@@ -111,7 +104,7 @@ export function SermonApplicationPoints({
         user_id: userId,
         prayer_id: card.id,
       });
-      markCompleted(pointIdx);
+      handleMarkCompleted(pointIdx);
       toast({ title: "Prayer saved! 🙏", description: "Application prayer added to your Board." });
       setGeneratedPrayer("");
       setUserPrayer("");
@@ -144,7 +137,7 @@ export function SermonApplicationPoints({
           >
             <div className="space-y-2 pt-2">
               {meta.application_points.map((ap, idx) => {
-                const isCompleted = completedPoints.has(idx);
+                const isCompleted = isPointCompleted(cardId, idx);
                 const isActive = activePoint === idx;
 
                 return (
@@ -198,7 +191,7 @@ export function SermonApplicationPoints({
                                 <PenLine className="w-3.5 h-3.5" /> Write my own prayer
                               </button>
                               <button
-                                onClick={() => { markCompleted(idx); toast({ title: "🙌 Praise God!", description: "Keep walking it out!" }); }}
+                                onClick={() => { handleMarkCompleted(idx); toast({ title: "🙌 Praise God!", description: "Keep walking it out!" }); }}
                                 className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium transition-colors"
                                 style={{ background: `${textColor}06`, color: `${textColor}80` }}
                               >
