@@ -231,11 +231,15 @@ Return valid JSON:
     const cleanedContent = content.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
     const result = JSON.parse(cleanedContent);
 
-    // Resolve timestamps
-    if (result.prayers && segments.length > 0) {
+    // Resolve timestamps and clean up keywords
+    if (result.prayers) {
       for (const p of result.prayers) {
-        const keywords = p.timestamp_keywords || [p.title];
-        p.timestamp_seconds = findTimestamp(segments, keywords);
+        if (segments.length > 0) {
+          const keywords = p.timestamp_keywords || [p.title];
+          p.timestamp_seconds = findTimestamp(segments, keywords);
+        } else {
+          p.timestamp_seconds = null;
+        }
         delete p.timestamp_keywords;
       }
     }
