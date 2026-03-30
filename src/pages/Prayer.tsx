@@ -464,7 +464,7 @@ export default function Prayer() {
                 <div className="relative">
                   <TtsLoadingPopup visible={ttsLoading && !ttsPlaying} />
                   <motion.button
-                    onClick={toggleTts}
+                    onClick={handleListen}
                     whileTap={{ scale: 0.85 }}
                     title={ttsPlaying ? "Stop reading" : "Listen to prayer"}
                     className="p-2 rounded-xl transition-all hover:bg-accent/60"
