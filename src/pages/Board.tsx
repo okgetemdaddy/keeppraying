@@ -225,11 +225,14 @@ export default function Board() {
         .eq("user_id", user.id),
     ]);
 
-    setSaved((data || []) as SavedPrayer[]);
+    const freshSaved = (data || []) as SavedPrayer[];
+    setSaved(freshSaved);
     setTotalPrayed(prayedCount || 0);
     setTotalLiked(likedCount || 0);
     setTotalTestimonies(testiCount || 0);
     setLoading(false);
+    // Write-through to IndexedDB
+    void setIdbCache(cacheKeys.savedPrayers(user.id), freshSaved);
   }, [user]);
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);
