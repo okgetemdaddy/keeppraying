@@ -49,6 +49,10 @@ export function MyChurchSection({ textColor }: MyChurchSectionProps) {
   const [churchUrl, setChurchUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [minimized, setMinimized] = useState<Record<string, boolean>>({});
+
+  const toggleMin = (key: string) =>
+    setMinimized((prev) => ({ ...prev, [key]: !prev[key] }));
 
   if (loading) return null;
 
