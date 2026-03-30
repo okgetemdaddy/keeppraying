@@ -77,6 +77,7 @@ export function useBibleChapterData(
       bookUsfm,
       chapterNumber,
       user?.id ?? "anon",
+      crossTranslation ? "cross" : "single",
     ],
     queryFn: async (): Promise<BibleChapterData> => {
       if (!versionId || !bookUsfm || !chapterNumber) {
