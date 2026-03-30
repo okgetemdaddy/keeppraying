@@ -252,6 +252,34 @@ export function BoardBibleAnnotations({ textColor }: { textColor: string }) {
         </span>
       </div>
 
+      {/* Cross-translation toggle — detailed version */}
+      <div
+        className="flex items-center justify-between rounded-xl px-4 py-3 mb-4"
+        style={{ background: "rgba(255,255,255,0.08)" }}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <Globe
+            className="h-4 w-4 shrink-0"
+            style={{ color: crossTranslation ? textColor : `${textColor}60` }}
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-medium" style={{ color: textColor }}>
+              Cross-translation annotations
+            </p>
+            <p className="text-[0.65rem] leading-tight mt-0.5" style={{ color: `${textColor}60` }}>
+              {crossTranslation
+                ? "Your highlights, bookmarks, and notes appear across all Bible translations."
+                : "Annotations are only visible in the translation where they were created."}
+            </p>
+          </div>
+        </div>
+        <Switch
+          checked={crossTranslation}
+          onCheckedChange={toggleCrossTranslation}
+          className="shrink-0 ml-3"
+        />
+      </div>
+
       {/* Category tabs */}
       <div className="flex gap-2 mb-4">
         {sections
