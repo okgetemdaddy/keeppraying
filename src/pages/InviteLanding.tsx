@@ -8,7 +8,7 @@ import SacredSpinner from "@/components/SacredSpinner";
 import { Button } from "@/components/ui/button";
 import VerseLink from "@/components/VerseLink";
 import {
-  Home, Users, Heart, BookOpen, Shield, Sparkles, Loader2, CheckCircle2, AlertCircle,
+  Home, Users, Heart, BookOpen, Shield, Sparkles, Loader2, CheckCircle2, AlertCircle, Church,
 } from "lucide-react";
 
 export default function InviteLanding() {
