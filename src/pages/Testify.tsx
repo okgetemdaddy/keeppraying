@@ -86,6 +86,9 @@ function StandaloneTestimonyCard({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [praiseAnimating, setPraiseAnimating] = useState(false);
 
+  // TTS
+  const tts = useTtsPlayer({ cacheId: `testimony_${testimony.id}` });
+
   const TRUNCATE_AT = 480;
   const isLong = testimony.body.length > TRUNCATE_AT;
   const displayBody = expanded || !isLong ? testimony.body : testimony.body.slice(0, TRUNCATE_AT);
