@@ -221,8 +221,7 @@ export function TtsContemplationOverlay({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="relative flex-1 w-full max-w-[640px] mx-auto px-5 pt-12"
-              onClick={(e) => e.stopPropagation()}
+              className="relative flex-1 min-h-0 w-full max-w-[640px] mx-auto px-5 pt-10"
               style={{ zIndex: 1 }}
             >
               <div
