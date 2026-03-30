@@ -221,6 +221,7 @@ serve(async (req) => {
 
     // Cache result
     const cacheField = isPremium ? "premium_result" : "analysis_result";
+    const videoTitle = (result.sermonTitle as string) || (result.sermon_title as string) || null;
     const { data: existing } = await supabase
       .from("sermon_transcripts")
       .select("id")
@@ -230,11 +231,13 @@ serve(async (req) => {
     if (existing) {
       await supabase.from("sermon_transcripts").update({
         [cacheField]: result,
+        ...(videoTitle ? { video_title: videoTitle } : {}),
       }).eq("video_id", videoId);
     } else {
       await supabase.from("sermon_transcripts").insert({
         video_id: videoId,
         user_id: user.id,
+        video_title: videoTitle,
         [cacheField]: result,
       });
     }
