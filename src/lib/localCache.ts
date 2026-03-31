@@ -162,4 +162,5 @@ export const cacheKeys = {
     `kp:bible:${versionId}:${book}:${chapter}`,
   bibleAnnotations: (uid: string, book: string, chapter: string) =>
     `kp:bibleAnnot:${uid}:${book}:${chapter}`,
+  biblePosition: (uid: string) => `kp:biblePos:${uid}`,
 };

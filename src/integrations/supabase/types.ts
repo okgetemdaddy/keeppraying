@@ -264,6 +264,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bible_reading_position: {
+        Row: {
+          book_usfm: string
+          chapter_idx: number
+          mode: string
+          scroll_top: number
+          updated_at: string
+          user_id: string
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          chapter_idx?: number
+          mode?: string
+          scroll_top?: number
+          updated_at?: string
+          user_id: string
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          chapter_idx?: number
+          mode?: string
+          scroll_top?: number
+          updated_at?: string
+          user_id?: string
+          version_id?: number
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           author_id: string | null

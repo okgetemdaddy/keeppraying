@@ -49,6 +49,7 @@ import {
 import { useBibleMutations, type ScriptureRef, type CrossBunchItem } from "@/hooks/useBibleMutations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
+import { useBiblePosition, type BiblePosition } from "@/hooks/useBiblePosition";
 import {
   FloatingToolbar,
   NoteInputPanel,
@@ -374,6 +375,10 @@ export function BibleReader() {
   const [bookUsfm, setBookUsfm] = useState<string | undefined>(undefined);
   const [chapterIdx, setChapterIdx] = useState<number>(0);
   const [mode, setMode] = useState<ReadingMode>("verse");
+  const [positionLoaded, setPositionLoaded] = useState(false);
+
+  // ── Position persistence ──
+  const { loadPosition, savePosition } = useBiblePosition(user?.id);
 
   // ── Cross-book selection state ──
   const [crossSelections, setCrossSelections] = useState<SelectedVerse[]>([]);
@@ -503,23 +508,78 @@ export function BibleReader() {
   const canPrev = chapterIdx > 0;
   const canNext = chapterIdx < totalChapters - 1;
 
-  // Auto-select BSB (Berean Standard Bible) as default — NIV is not available via the API
+  // ── Load saved position on mount ──
   useEffect(() => {
-    if (versions?.length && !versionId) {
-      // Prefer NIV, then BSB, then first available
+    if (positionLoaded) return;
+    if (!user?.id) {
+      setPositionLoaded(true);
+      return;
+    }
+    loadPosition().then((pos) => {
+      if (pos) {
+        setVersionId(pos.versionId);
+        setBookUsfm(pos.bookUsfm);
+        setChapterIdx(pos.chapterIdx);
+        setMode(pos.mode);
+        savedScrollRef.current = pos.scrollTop;
+      }
+      setPositionLoaded(true);
+    });
+  }, [user?.id, positionLoaded, loadPosition]);
+
+  const savedScrollRef = useRef<number>(0);
+
+  // ── Auto-select defaults only when no saved position ──
+  useEffect(() => {
+    if (versions?.length && !versionId && positionLoaded) {
       const niv = versions.find((v) => v.id === 111);
       const bsb = versions.find((v) => v.abbreviation === "BSB" || v.localized_abbreviation === "BSB");
       setVersionId(niv?.id ?? bsb?.id ?? versions[0].id);
     }
-  }, [versions, versionId]);
+  }, [versions, versionId, positionLoaded]);
 
   useEffect(() => {
-    if (index?.books?.length && !bookUsfm) {
+    if (index?.books?.length && !bookUsfm && positionLoaded) {
       setBookUsfm(index.books[0].id);
       setChapterIdx(0);
     }
-  }, [index, bookUsfm]);
+  }, [index, bookUsfm, positionLoaded]);
 
+  // ── Persist position on change ──
+  useEffect(() => {
+    if (!user?.id || !versionId || !bookUsfm || !positionLoaded) return;
+    savePosition({ versionId, bookUsfm, chapterIdx, mode, scrollTop: 0 });
+  }, [user?.id, versionId, bookUsfm, chapterIdx, mode, positionLoaded, savePosition]);
+
+  // ── Restore scroll after verses load ──
+  useEffect(() => {
+    if (hasVerses && savedScrollRef.current > 0 && readingAreaRef.current) {
+      const scrollTarget = savedScrollRef.current;
+      savedScrollRef.current = 0;
+      requestAnimationFrame(() => {
+        readingAreaRef.current?.scrollTo({ top: scrollTarget });
+      });
+    }
+  }, [hasVerses]);
+
+  // ── Save scroll position on scroll (debounced) ──
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (!user?.id || !versionId || !bookUsfm || !positionLoaded) return;
+    const area = readingAreaRef.current;
+    if (!area) return;
+    const onScroll = () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        savePosition({ versionId, bookUsfm, chapterIdx, mode, scrollTop: area.scrollTop });
+      }, 1500);
+    };
+    area.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      area.removeEventListener("scroll", onScroll);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, [user?.id, versionId, bookUsfm, chapterIdx, mode, positionLoaded, savePosition]);
   // Clear transient UI on chapter change (NOT selections)
   useEffect(() => {
     setToolbarPos(null);
