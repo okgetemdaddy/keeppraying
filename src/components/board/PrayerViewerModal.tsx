@@ -179,8 +179,10 @@ export function PrayerViewerModal({
     return { background: `rgba(${rgb}, ${alpha})` };
   })();
 
-  // Text color for the card
+  // Text color for the card — uses textShade slider when image is present
+  const imageTextColor = `rgb(${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)})`;
   const cardTextColor = cardBgPreset?.text ?? "hsl(25 35% 14%)";
+  const effectiveTextColor = hasImage ? imageTextColor : cardTextColor;
 
   // ── Creator styling handlers ──
   const opacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
