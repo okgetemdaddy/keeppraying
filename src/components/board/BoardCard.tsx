@@ -129,6 +129,9 @@ export function BoardCard({
   themeVars,
   onAddToPlaylist,
   onOpenViewer,
+  captionModeTts = true,
+  captionModeRecorded = true,
+  defaultCardLayout = "standard",
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
