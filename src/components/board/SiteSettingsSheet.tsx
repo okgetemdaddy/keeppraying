@@ -1,4 +1,4 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle, ResponsiveSheetDescription as SheetDescription } from "@/components/ui/responsive-sheet";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";

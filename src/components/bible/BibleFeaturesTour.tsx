@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  ResponsiveSheet as Sheet,
+  ResponsiveSheetContent as SheetContent,
+  ResponsiveSheetHeader as SheetHeader,
+  ResponsiveSheetTitle as SheetTitle,
+  ResponsiveSheetDescription as SheetDescription,
+} from "@/components/ui/responsive-sheet";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 
 const FEATURES = [

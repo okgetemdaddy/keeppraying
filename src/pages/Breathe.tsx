@@ -11,7 +11,7 @@ import { useBreathPrayers, useDailyBreath } from "@/hooks/useBreathPrayers";
 import { motion, type Variants } from "framer-motion";
 import { Wind, Plus, Loader2, Sparkles, Search, FolderPlus } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, ResponsiveDialogHeader as DialogHeader, ResponsiveDialogTitle as DialogTitle, ResponsiveDialogDescription as DialogDescription } from "@/components/ui/responsive-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const pageVariants: Variants = {
