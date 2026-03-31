@@ -36,6 +36,9 @@ const DEFAULTS: BoardPrefs = {
   calendar_text: "#2C2418",
   calendar_accent: "#B85C38",
   atmosphere_id: "warm-parchment",
+  caption_mode_tts: true,
+  caption_mode_recorded: true,
+  default_card_layout: "standard",
 };
 
 export function useBoardPreferences() {
