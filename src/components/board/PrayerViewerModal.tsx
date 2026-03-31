@@ -415,6 +415,58 @@ export function PrayerViewerModal({
                                 <span>Dark</span>
                               </div>
                             </div>
+                            {hasImage && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                                  <ImageIcon className="w-3.5 h-3.5" /> Image Dimmer
+                                </DropdownMenuLabel>
+                                <div className="px-1 py-2">
+                                  <Slider
+                                    value={[imageBrightness]}
+                                    onValueChange={(val) => setImageBrightness(val[0])}
+                                    min={20}
+                                    max={150}
+                                    step={1}
+                                    className="w-full"
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                                    <span>Darker</span>
+                                    <span>{imageBrightness}%</span>
+                                    <span>Lighter</span>
+                                  </div>
+                                </div>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                                  <Type className="w-3.5 h-3.5" /> Text Color
+                                </DropdownMenuLabel>
+                                <div className="px-1 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-black border border-border" />
+                                    <Slider
+                                      value={[textShade]}
+                                      onValueChange={(val) => setTextShade(val[0])}
+                                      min={0}
+                                      max={100}
+                                      step={1}
+                                      className="flex-1"
+                                    />
+                                    <div className="w-4 h-4 rounded-full bg-white border border-border" />
+                                  </div>
+                                  <div className="text-center text-[10px] text-muted-foreground mt-1">
+                                    <span
+                                      className="inline-block px-2 py-0.5 rounded"
+                                      style={{
+                                        color: `rgb(${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)})`,
+                                        background: textShade > 50 ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.15)',
+                                      }}
+                                    >
+                                      Preview
+                                    </span>
+                                  </div>
+                                </div>
+                              </>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
                               <Palette className="w-3.5 h-3.5" /> Card Color
