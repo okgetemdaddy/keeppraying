@@ -413,6 +413,9 @@ export function BibleReader() {
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
 
+  // ── Bible Search dialog ──
+  const [searchOpen, setSearchOpen] = useState(false);
+
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
   const toggleFocusMode = useCallback(() => {
