@@ -1,20 +1,23 @@
 
 
-## Persistent 30-Day Sessions + Auto-Redirect to Prayer Station
+## Make Support Price Cards Compact — 4 Per Row
 
-### What changes
+### Changes in `src/pages/Support.tsx`
 
-**1. Index page (`src/pages/Index.tsx`)**
-- Add a redirect at the top of the component: if `user` is logged in, `navigate('/board')` immediately
-- Unauthenticated visitors still see the landing page as-is
+**1. Remove descriptions from tier data (lines 21-31)**
+- Delete the `description` property from all items in `ONE_TIME_TIERS` and `RECURRING_TIERS`
 
-**2. Auth page (`src/pages/Auth.tsx`)**
-- After successful sign-in, redirect to `/board` instead of `/` (if not already doing so)
+**2. Update grid to 4 columns (line 269)**
+- Change `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4` → `grid-cols-2 sm:grid-cols-4 gap-3`
 
-**3. Session duration**
-- The Supabase client file is auto-generated and cannot be edited. However, the session already persists via `persistSession: true` + `autoRefreshToken: true`, which keeps users signed in as long as the refresh token is valid. The default Supabase refresh token lifetime is 30 days, so **no code change is needed** for session persistence — it already lasts ~30 days by default.
+**3. Shrink card content (lines 280-303)**
+- Remove the description `<p>` element (line 287)
+- Reduce icon container: `w-12 h-12` → `w-9 h-9`, icon: `w-6 h-6` → `w-4 h-4`
+- Reduce padding: `p-6` → `p-3`
+- Reduce gap: `gap-4` → `gap-2`
+- Make button smaller: add `size="sm"`
+- Keep label text and price text sizes as-is
 
 ### Files changed
-1. `src/pages/Index.tsx` — add `useEffect` redirect to `/board` when user is authenticated
-2. `src/pages/Auth.tsx` — ensure post-login redirect goes to `/board`
+1. `src/pages/Support.tsx`
 
