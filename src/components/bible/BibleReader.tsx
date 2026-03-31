@@ -411,6 +411,7 @@ export function BibleReader() {
   });
   const pendingTourVerse = useRef<{ verseNumber: number; event: React.MouseEvent } | null>(null);
 
+  const readingAreaRef = useRef<HTMLDivElement>(null);
   // Data hooks
   const { data: versions, isLoading: versionsLoading } = useBibleVersions();
   const { data: index, isLoading: indexLoading } = useBibleIndex(versionId);
