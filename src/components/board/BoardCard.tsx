@@ -10,6 +10,7 @@ import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
 import { SermonApplicationPoints } from "@/components/board/SermonApplicationPoints";
 import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
+import { VoiceWaveformPlayer } from "@/components/board/VoiceWaveformPlayer";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { FormattedText } from "@/lib/FormattedText";
 import type { Database } from "@/integrations/supabase/types";
