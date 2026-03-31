@@ -274,11 +274,25 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
         labels: ["voice-prayer"],
         status: "private",
         created_by: user.id,
-      }).select("id").single();
+      } as any).select("id").single();
 
       if (error) throw error;
 
       if (card?.id) {
+        // Upload voice audio blob if available
+        if (audioBlobRef.current) {
+          const path = `voice_${card.id}.webm`;
+          const { error: uploadErr } = await supabase.storage
+            .from("prayer-audio")
+            .upload(path, audioBlobRef.current, { upsert: true, contentType: "audio/webm" });
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage.from("prayer-audio").getPublicUrl(path);
+            await supabase.from("prayer_cards")
+              .update({ voice_audio_url: urlData.publicUrl } as any)
+              .eq("id", card.id);
+          }
+        }
+
         await supabase.from("user_saved_prayers").insert({
           user_id: user.id,
           prayer_id: card.id,
@@ -291,6 +305,7 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       setState("idle");
       setRefined(null);
       setTranscript("");
+      audioBlobRef.current = null;
     } catch {
       toast({ title: "Failed to save", variant: "destructive" });
     } finally {
