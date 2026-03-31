@@ -1,46 +1,41 @@
 
 
-# Fix Horizontal Side-Scrolling on Mobile
+# One-Time Auto-Redirect to /board
 
-## Root Cause
+## Problem
+The logo links to `/`. The Index page unconditionally redirects logged-in users to `/board`. So clicking the logo always bounces them back to `/board` — they can never see the landing page.
 
-There is **no global `overflow-x: hidden`** on `html` or `body`. Multiple pages use framer-motion animations with horizontal transforms (e.g. `initial={{ x: -20 }}`) that momentarily push content beyond the viewport width, triggering horizontal scroll on mobile. The Support page's update log timeline is one clear offender (`x: -20`), but this affects 12+ files across the app.
+## Fix
+Use `sessionStorage` to ensure the auto-redirect only fires once per browser session.
 
-## Fix Strategy
+### File: `src/pages/Index.tsx` (lines ~360-364)
 
-A single, global CSS fix plus one targeted cleanup:
-
-### 1. Add `overflow-x: hidden` to `html` and `body` in `src/index.css`
-
-In the `@layer base` section, add:
-
-```css
-html, body {
-  overflow-x: hidden;
-}
+Change the existing redirect effect from:
+```tsx
+useEffect(() => {
+  if (!loading && user) {
+    navigate("/board", { replace: true });
+  }
+}, [user, loading, navigate]);
 ```
 
-This is the standard mobile-first approach — it prevents any element (animations, wide cards, absolute-positioned dropdowns) from causing horizontal scroll. This single line fixes every page at once.
-
-### 2. (Optional cleanup) Constrain the root wrapper
-
-Add `overflow-x: hidden` to the root `#root` div as a belt-and-suspenders measure:
-
-```css
-#root {
-  overflow-x: hidden;
-}
+To:
+```tsx
+useEffect(() => {
+  if (!loading && user) {
+    const key = "kp_board_redirected";
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      navigate("/board", { replace: true });
+    }
+  }
+}, [user, loading, navigate]);
 ```
 
-### Why not fix each animation individually?
+This means:
+- **First visit** (login, opening the app) → auto-redirect to `/board` ✓
+- **Clicking the logo after that** → shows the landing page `/` ✓
+- **New browser session** → redirects again ✓
 
-There are 70+ framer-motion instances with `x` translations across 12 files. Fixing them one-by-one is fragile — any new animation could re-introduce the bug. The global CSS fix is the correct architectural approach and is used by virtually every production mobile web app.
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `src/index.css` | Add `overflow-x: hidden` to `html`, `body`, and `#root` |
-
-One file, three lines. Fixes all pages globally.
+One file, ~3 lines changed.
 
