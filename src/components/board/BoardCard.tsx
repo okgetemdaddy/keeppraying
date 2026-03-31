@@ -494,7 +494,27 @@ export function BoardCard({
               </h3>
             )}
 
-            {/* Prayer text — with optional custom font */}
+            {/* Voice waveform player for voice-recorded prayers */}
+            {(card as any).voice_audio_url && (
+              <div className="my-2">
+                <VoiceWaveformPlayer
+                  audioUrl={(card as any).voice_audio_url}
+                  large={defaultCardLayout === "voice-visual"}
+                  accentColor={accentColor}
+                  onPlay={captionModeRecorded ? () => {
+                    // Open caption mode instead of inline play
+                    const text = card.extended_prayer
+                      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+                      : card.prayer_text;
+                    toggleTts(text, card.id);
+                    return true;
+                  } : undefined}
+                />
+              </div>
+            )}
+
+            {/* Prayer text — with optional custom font (hidden in voice-visual mode for voice cards) */}
+            {!(defaultCardLayout === "voice-visual" && (card as any).voice_audio_url) && (
             <div className="select-none" onClick={(e) => {
               const now = Date.now();
               if (now - lastTapRef.current < 350) {
