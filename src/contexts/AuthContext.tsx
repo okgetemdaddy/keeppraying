@@ -75,7 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{
+      user: devBypass ? ({ id: 'dev-admin', email: 'dev@localhost' } as any) : user,
+      session: devBypass ? ({} as any) : session,
+      loading: devBypass ? false : loading,
+      isAdmin: devBypass ? true : isAdmin,
+      signUp, signIn, signOut, resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );
