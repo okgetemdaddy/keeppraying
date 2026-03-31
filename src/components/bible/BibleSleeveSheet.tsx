@@ -118,6 +118,9 @@ export function BibleSleeveSheet({
               Welcome to <span className="text-primary font-semibold">Your Bible Sleeve</span>
             </span>
           </SheetTitle>
+          <p className="text-[0.65rem] text-muted-foreground/60 italic mt-1.5 tracking-wide">
+            All is saved automatically ✓
+          </p>
         </SheetHeader>
 
         <ScrollArea className="flex-1 px-5 py-4">
