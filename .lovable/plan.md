@@ -1,23 +1,24 @@
 
 
-## Make Support Price Cards Compact — 4 Per Row
+## Dev-Only 5-Tap Admin Bypass
 
-### Changes in `src/pages/Support.tsx`
+When in Lovable preview/dev mode (`import.meta.env.DEV`), tapping the hero title 5 times sets a dev bypass flag and navigates straight to `/admin` — no login required.
 
-**1. Remove descriptions from tier data (lines 21-31)**
-- Delete the `description` property from all items in `ONE_TIME_TIERS` and `RECURRING_TIERS`
+### How it works
 
-**2. Update grid to 4 columns (line 269)**
-- Change `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4` → `grid-cols-2 sm:grid-cols-4 gap-3`
+1. **`src/pages/Index.tsx`** — Add a tap counter on the hero `<h1>`. After 5 taps within 3 seconds, if `import.meta.env.DEV` is true, set `sessionStorage.setItem('DEV_ADMIN_BYPASS', 'true')` and navigate to `/admin`.
 
-**3. Shrink card content (lines 280-303)**
-- Remove the description `<p>` element (line 287)
-- Reduce icon container: `w-12 h-12` → `w-9 h-9`, icon: `w-6 h-6` → `w-4 h-4`
-- Reduce padding: `p-6` → `p-3`
-- Reduce gap: `gap-4` → `gap-2`
-- Make button smaller: add `size="sm"`
-- Keep label text and price text sizes as-is
+2. **`src/contexts/AuthContext.tsx`** — In dev mode, check for the `DEV_ADMIN_BYPASS` flag. If set, override `isAdmin` to `true` and provide a synthetic user object so all auth-gated UI works without a real session.
+
+3. **`src/App.tsx`** — `AdminRoute` already reads `isAdmin` from context, so it will automatically allow access when the bypass is active.
+
+### Security
+
+- All bypass logic is gated behind `import.meta.env.DEV` — completely stripped from production builds by Vite's tree-shaking.
+- Only works in Lovable preview URLs and local dev.
+- DB mutations that require a real session will still fail (RLS), but page navigation and UI are fully accessible.
 
 ### Files changed
-1. `src/pages/Support.tsx`
+1. `src/pages/Index.tsx`
+2. `src/contexts/AuthContext.tsx`
 
