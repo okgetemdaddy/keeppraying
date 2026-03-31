@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent } from "@/components/ui/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { Lamp, Check, ChevronDown, Palette, Undo2, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";

@@ -15,8 +15,8 @@ import {
   ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle, ResponsiveSheetDescription as SheetDescription,
 } from "@/components/ui/responsive-sheet";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
-} from "@/components/ui/dialog";
+  ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, ResponsiveDialogHeader as DialogHeader, ResponsiveDialogTitle as DialogTitle, ResponsiveDialogDescription as DialogDescription,
+} from "@/components/ui/responsive-dialog";
 import {
   Search, X, Loader2, Share2, Flag, MessageCircle,
   ChevronDown, Bird, ArrowRight, BookOpen, Volume2, VolumeX,

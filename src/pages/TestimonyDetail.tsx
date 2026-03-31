@@ -7,12 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  ResponsiveDialog as Dialog,
+  ResponsiveDialogContent as DialogContent,
+  ResponsiveDialogHeader as DialogHeader,
+  ResponsiveDialogTitle as DialogTitle,
+  ResponsiveDialogDescription as DialogDescription,
+} from "@/components/ui/responsive-dialog";
 import { Loader2, BookOpen, ArrowRight, Share2, Flag } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 
