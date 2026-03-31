@@ -142,50 +142,50 @@ export function useBibleSearch(availableBooks?: string[]) {
 
         // Notes search
         dbPromises.push(
-          supabase
-            .from("user_notes")
-            .select("id, verse_number, note_content, book_usfm, chapter_number, version_id")
-            .eq("user_id", user.id)
-            .ilike("note_content", `%${debouncedQuery}%`)
-            .limit(5)
-            .then(({ data }) => {
-              (data ?? []).forEach((n: any) => {
-                results.push({
-                  type: "note",
-                  id: n.id,
-                  snippet: n.note_content?.slice(0, 80) + (n.note_content?.length > 80 ? "…" : ""),
-                  bookUsfm: n.book_usfm,
-                  chapterNumber: n.chapter_number,
-                  verseNumber: n.verse_number,
-                  versionId: n.version_id,
-                });
+          (async () => {
+            const { data } = await supabase
+              .from("user_notes")
+              .select("id, verse_number, note_content, book_usfm, chapter_number, version_id")
+              .eq("user_id", user.id)
+              .ilike("note_content", `%${debouncedQuery}%`)
+              .limit(5);
+            (data ?? []).forEach((n: any) => {
+              results.push({
+                type: "note",
+                id: n.id,
+                snippet: n.note_content?.slice(0, 80) + (n.note_content?.length > 80 ? "…" : ""),
+                bookUsfm: n.book_usfm,
+                chapterNumber: n.chapter_number,
+                verseNumber: n.verse_number,
+                versionId: n.version_id,
               });
-            }),
+            });
+          })(),
         );
 
         // Verse bunches search
         dbPromises.push(
-          supabase
-            .from("verse_bunches")
-            .select("id, bunch_name, description, verse_count, first_book_usfm, first_chapter, first_verse, first_version_id")
-            .eq("user_id", user.id)
-            .ilike("bunch_name", `%${debouncedQuery}%`)
-            .limit(5)
-            .then(({ data }) => {
-              (data ?? []).forEach((b: any) => {
-                results.push({
-                  type: "bunch",
-                  id: b.id,
-                  bunchName: b.bunch_name,
-                  description: b.description,
-                  verseCount: b.verse_count ?? 0,
-                  firstBookUsfm: b.first_book_usfm,
-                  firstChapter: b.first_chapter,
-                  firstVerse: b.first_verse,
-                  firstVersionId: b.first_version_id,
-                });
+          (async () => {
+            const { data } = await supabase
+              .from("verse_bunches")
+              .select("id, bunch_name, description, verse_count, first_book_usfm, first_chapter, first_verse, first_version_id")
+              .eq("user_id", user.id)
+              .ilike("bunch_name", `%${debouncedQuery}%`)
+              .limit(5);
+            (data ?? []).forEach((b: any) => {
+              results.push({
+                type: "bunch",
+                id: b.id,
+                bunchName: b.bunch_name,
+                description: b.description,
+                verseCount: b.verse_count ?? 0,
+                firstBookUsfm: b.first_book_usfm,
+                firstChapter: b.first_chapter,
+                firstVerse: b.first_verse,
+                firstVersionId: b.first_version_id,
               });
-            }),
+            });
+          })(),
         );
 
         await Promise.all(dbPromises);
