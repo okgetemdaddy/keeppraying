@@ -958,9 +958,7 @@ export function BibleReader() {
       const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(chapter)) ?? 0;
       setChapterIdx(Math.max(chIdx, 0));
       if (verse) {
-        setTimeout(() => {
-          document.getElementById(`verse-${verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 500);
+        pendingScrollVerseRef.current = verse;
       }
     },
     [index],
