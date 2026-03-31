@@ -1,24 +1,44 @@
 
 
-## Dev-Only 5-Tap Admin Bypass
+## Bible Reader: Mobile Toolbar + "Bible Sleeve" Side Sheet + First-Click Tour + Suggestion Form
 
-When in Lovable preview/dev mode (`import.meta.env.DEV`), tapping the hero title 5 times sets a dev bypass flag and navigates straight to `/admin` — no login required.
+### Overview
 
-### How it works
+Three interconnected changes: (1) mobile verse toolbar becomes a bottom sheet instead of a floating div, (2) a slide-out "Bible Sleeve" sheet accessible via a left-arrow button contains all Bible settings/features/annotations, and (3) a first-click feature tour sheet with suggestion flow.
 
-1. **`src/pages/Index.tsx`** — Add a tap counter on the hero `<h1>`. After 5 taps within 3 seconds, if `import.meta.env.DEV` is true, set `sessionStorage.setItem('DEV_ADMIN_BYPASS', 'true')` and navigate to `/admin`.
+---
 
-2. **`src/contexts/AuthContext.tsx`** — In dev mode, check for the `DEV_ADMIN_BYPASS` flag. If set, override `isAdmin` to `true` and provide a synthetic user object so all auth-gated UI works without a real session.
+### 1. Mobile Floating Toolbar → Bottom Sheet
 
-3. **`src/App.tsx`** — `AdminRoute` already reads `isAdmin` from context, so it will automatically allow access when the bypass is active.
+**File: `src/components/bible/FloatingToolbar.tsx`**
 
-### Security
+- Detect `isMobile` (already imported)
+- On mobile, wrap the toolbar content in a `Sheet` (side="bottom") instead of the floating `motion.div`
+- The sheet auto-opens when `selectedVerses.length > 0` and closes on dismiss
+- Same color swatches, bookmark, note, bunch buttons — just laid out in a wider bottom sheet with more breathing room
+- Desktop keeps the current floating toolbar unchanged
 
-- All bypass logic is gated behind `import.meta.env.DEV` — completely stripped from production builds by Vite's tree-shaking.
-- Only works in Lovable preview URLs and local dev.
-- DB mutations that require a real session will still fail (RLS), but page navigation and UI are fully accessible.
+### 2. "Your Bible Sleeve" — Left Slide-Out Sheet
 
-### Files changed
-1. `src/pages/Index.tsx`
-2. `src/contexts/AuthContext.tsx`
+**New file: `src/components/bible/BibleSleeveSheet.tsx`**
 
+A Sheet (side="left") triggered by a left-arrow `←` button in the Bible toolbar area. Contains:
+
+- **Header**: "Hello, [user first name or 'friend']! Welcome to Your Bible Sleeve"
+- **Sections** (gracefully designed with icons, dividers):
+  - **Text Size** — slider (same as current popover, duplicated here)
+  - **Reading Mode** — verse/paragraph toggle
+  - **Cross-Translation** — globe toggle with explanation
+  - **Hide/Show Bunches** — eye toggle
+  - **Your Highlights** — list of highlighted verses grouped by color, clickable to navigate
+  - **Your Bookmarks** — list of bookmarked verses, clickable
+  - **Your Notes** — list of notes with previews, clickable
+  - **Your Verse Bunches** — full list of all bunches (replaces the top strip for previous bunches), each clickable to navigate
+- Data comes from existing queries (`useBibleChapterData`, `useUserVerseBunches`) — passed as props
+
+**File: `src/components/bible/BibleReader.tsx`**
+
+- Add a `←` (ChevronLeft or ArrowLeft) button at the left side of the toolbar
+- On click, opens the Bible Sleeve sheet
+- **Verse Bunch strip at top**: only shows the most recently created/active bunch (not all bunches). All bunches accessible in the Sleeve.
+- Move text size popover,
