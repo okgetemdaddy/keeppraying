@@ -341,8 +341,11 @@ export type Database = {
           calendar_accent: string | null
           calendar_bg: string | null
           calendar_text: string | null
+          caption_mode_recorded: boolean
+          caption_mode_tts: boolean
           created_at: string
           cross_translation_annotations: boolean
+          default_card_layout: string
           id: string
           sound_id: string | null
           sound_volume: number
@@ -362,8 +365,11 @@ export type Database = {
           calendar_accent?: string | null
           calendar_bg?: string | null
           calendar_text?: string | null
+          caption_mode_recorded?: boolean
+          caption_mode_tts?: boolean
           created_at?: string
           cross_translation_annotations?: boolean
+          default_card_layout?: string
           id?: string
           sound_id?: string | null
           sound_volume?: number
@@ -383,8 +389,11 @@ export type Database = {
           calendar_accent?: string | null
           calendar_bg?: string | null
           calendar_text?: string | null
+          caption_mode_recorded?: boolean
+          caption_mode_tts?: boolean
           created_at?: string
           cross_translation_annotations?: boolean
+          default_card_layout?: string
           id?: string
           sound_id?: string | null
           sound_volume?: number
@@ -1286,6 +1295,7 @@ export type Database = {
           title: string | null
           updated_at: string
           views: number
+          voice_audio_url: string | null
         }
         Insert: {
           audio_url?: string | null
@@ -1310,6 +1320,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           views?: number
+          voice_audio_url?: string | null
         }
         Update: {
           audio_url?: string | null
@@ -1334,6 +1345,7 @@ export type Database = {
           title?: string | null
           updated_at?: string
           views?: number
+          voice_audio_url?: string | null
         }
         Relationships: []
       }
