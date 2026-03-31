@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette, ExternalLink } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette, ExternalLink, ImageIcon, Type } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
@@ -100,6 +100,8 @@ export function PrayerViewerModal({
   // Creator card styling state
   const [cardOpacity, setCardOpacity] = useState(100);
   const [backdropDim, setBackdropDim] = useState(80);
+  const [imageBrightness, setImageBrightness] = useState(100);
+  const [textShade, setTextShade] = useState(100); // 0=black, 100=white
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
 
   // TTS
@@ -177,8 +179,10 @@ export function PrayerViewerModal({
     return { background: `rgba(${rgb}, ${alpha})` };
   })();
 
-  // Text color for the card
+  // Text color for the card — uses textShade slider when image is present
+  const imageTextColor = `rgb(${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)})`;
   const cardTextColor = cardBgPreset?.text ?? "hsl(25 35% 14%)";
+  const effectiveTextColor = hasImage ? imageTextColor : cardTextColor;
 
   // ── Creator styling handlers ──
   const opacityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -323,9 +327,10 @@ export function PrayerViewerModal({
                     src={bgUrl!}
                     alt=""
                     className="w-full h-full object-cover"
+                    style={{ filter: `brightness(${imageBrightness / 100})` }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
                 </div>
               )}
 
@@ -369,7 +374,7 @@ export function PrayerViewerModal({
                           <h2
                             className="text-xl md:text-2xl font-semibold leading-tight"
                             style={{
-                              color: hasImage ? "white" : cardTextColor,
+                              color: effectiveTextColor,
                               fontFamily: '"Playfair Display", serif',
                             }}
                           >
@@ -385,7 +390,7 @@ export function PrayerViewerModal({
                             <button
                               className="p-1.5 rounded-lg transition-colors"
                               style={{
-                                color: hasImage ? "white" : cardTextColor,
+                                color: effectiveTextColor,
                                 background: hasImage ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)",
                               }}
                               title="Card settings"
@@ -412,6 +417,58 @@ export function PrayerViewerModal({
                                 <span>Dark</span>
                               </div>
                             </div>
+                            {hasImage && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                                  <ImageIcon className="w-3.5 h-3.5" /> Image Dimmer
+                                </DropdownMenuLabel>
+                                <div className="px-1 py-2">
+                                  <Slider
+                                    value={[imageBrightness]}
+                                    onValueChange={(val) => setImageBrightness(val[0])}
+                                    min={20}
+                                    max={150}
+                                    step={1}
+                                    className="w-full"
+                                  />
+                                  <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                                    <span>Darker</span>
+                                    <span>{imageBrightness}%</span>
+                                    <span>Lighter</span>
+                                  </div>
+                                </div>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
+                                  <Type className="w-3.5 h-3.5" /> Text Color
+                                </DropdownMenuLabel>
+                                <div className="px-1 py-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-black border border-border" />
+                                    <Slider
+                                      value={[textShade]}
+                                      onValueChange={(val) => setTextShade(val[0])}
+                                      min={0}
+                                      max={100}
+                                      step={1}
+                                      className="flex-1"
+                                    />
+                                    <div className="w-4 h-4 rounded-full bg-white border border-border" />
+                                  </div>
+                                  <div className="text-center text-[10px] text-muted-foreground mt-1">
+                                    <span
+                                      className="inline-block px-2 py-0.5 rounded"
+                                      style={{
+                                        color: `rgb(${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)}, ${Math.round(textShade * 2.55)})`,
+                                        background: textShade > 50 ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.15)',
+                                      }}
+                                    >
+                                      Preview
+                                    </span>
+                                  </div>
+                                </div>
+                              </>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
                               <Palette className="w-3.5 h-3.5" /> Card Color
@@ -458,7 +515,7 @@ export function PrayerViewerModal({
                       text={card.prayer_text}
                       className="text-base md:text-lg leading-[1.85] font-medium mb-8 selection:bg-amber-100 selection:text-slate-900"
                       style={{
-                        color: hasImage ? "white" : cardTextColor,
+                        color: effectiveTextColor,
                         fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : '"Lora", serif',
                       }}
                       indent
