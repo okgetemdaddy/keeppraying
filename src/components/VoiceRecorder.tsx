@@ -56,6 +56,11 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const transcriptRef = useRef("");
 
+  // MediaRecorder for actual audio capture
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioBlobRef = useRef<Blob | null>(null);
+
   // Process offline queue on mount + listen for reconnect
   useEffect(() => {
     if (!user) return;
@@ -132,6 +137,23 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     setRefined(null);
     transcriptRef.current = "";
     setElapsed(0);
+    audioBlobRef.current = null;
+    audioChunksRef.current = [];
+
+    // Start MediaRecorder in parallel
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm" });
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        audioBlobRef.current = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+    }).catch(() => {
+      // If mic access denied, we still have speech recognition
+    });
 
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
 
@@ -148,6 +170,11 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = undefined;
+    }
+    // Stop MediaRecorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
     }
 
     if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
@@ -247,11 +274,25 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
         labels: ["voice-prayer"],
         status: "private",
         created_by: user.id,
-      }).select("id").single();
+      } as any).select("id").single();
 
       if (error) throw error;
 
       if (card?.id) {
+        // Upload voice audio blob if available
+        if (audioBlobRef.current) {
+          const path = `voice_${card.id}.webm`;
+          const { error: uploadErr } = await supabase.storage
+            .from("prayer-audio")
+            .upload(path, audioBlobRef.current, { upsert: true, contentType: "audio/webm" });
+          if (!uploadErr) {
+            const { data: urlData } = supabase.storage.from("prayer-audio").getPublicUrl(path);
+            await supabase.from("prayer_cards")
+              .update({ voice_audio_url: urlData.publicUrl } as any)
+              .eq("id", card.id);
+          }
+        }
+
         await supabase.from("user_saved_prayers").insert({
           user_id: user.id,
           prayer_id: card.id,
@@ -264,6 +305,7 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       setState("idle");
       setRefined(null);
       setTranscript("");
+      audioBlobRef.current = null;
     } catch {
       toast({ title: "Failed to save", variant: "destructive" });
     } finally {
@@ -278,9 +320,14 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       recognitionRef.current = null;
     }
     if (timerRef.current) clearInterval(timerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
     setState("idle");
     setTranscript("");
     setRefined(null);
+    audioBlobRef.current = null;
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;

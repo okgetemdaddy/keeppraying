@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { StandbyToggle } from "@/components/StandbyToggle";
 import {
-  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp, BookMarked,
+  PlusCircle, Users, Home, ListMusic, BookOpen, Wind, Search, X, Lamp, BookMarked, Settings,
 } from "lucide-react";
 
 /* ── Incense smoke keyframes (pure CSS) ────────────────────────────────────── */
@@ -42,6 +42,8 @@ interface PrayerStationHeroProps {
   onSearchChange: (q: string) => void;
   /* Theme Sanctuary */
   onOpenThemeSanctuary: () => void;
+  /* Site Settings */
+  onOpenSettings?: () => void;
 }
 
 export function PrayerStationHero({
@@ -54,6 +56,7 @@ export function PrayerStationHero({
   searchQuery,
   onSearchChange,
   onOpenThemeSanctuary,
+  onOpenSettings,
 }: PrayerStationHeroProps) {
   const { user } = useAuth();
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
@@ -122,7 +125,21 @@ export function PrayerStationHero({
         </div>
 
         {/* Theme Sanctuary trigger — top right */}
-        <div className="absolute top-3 right-3 z-20">
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="p-2.5 rounded-full transition-all hover:scale-110 active:scale-95"
+              style={{
+                background: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+              }}
+              title="Site Settings"
+            >
+              <Settings className="w-4 h-4" style={{ color: "rgba(255,255,255,0.75)" }} />
+            </button>
+          )}
           <button
             onClick={onOpenThemeSanctuary}
             className="p-2.5 rounded-full transition-all hover:scale-110 active:scale-95"

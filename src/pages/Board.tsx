@@ -24,7 +24,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind, Church,
+  ArrowUpDown, Filter, Users, Home, Wind, Church, Settings,
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
@@ -42,6 +42,8 @@ import { BoardBibleAnnotations } from "@/components/board/BoardBibleAnnotations"
 import { useSermonPlans } from "@/hooks/useSermonPlans";
 import { PlanProgressCard } from "@/components/sermon/PlanProgressCard";
 import { MyChurchSection } from "@/components/board/MyChurchSection";
+import { SiteSettingsSheet } from "@/components/board/SiteSettingsSheet";
+import { useBibleTextSize } from "@/hooks/useBibleTextSize";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
@@ -120,6 +122,7 @@ export default function Board() {
   const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
   const isMobile = useIsMobile();
   const { plans: sermonPlans, memberships: sermonMemberships, updateMemberToggles, markDayComplete } = useSermonPlans();
+  const { size: bibleTextSize, setTextSize: setBibleTextSize, MIN_SIZE: bibleMin, MAX_SIZE: bibleMax } = useBibleTextSize();
 
   // Stale-while-revalidate: show cached board instantly
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
@@ -172,6 +175,7 @@ export default function Board() {
   const [classicalOpen, setClassicalOpen] = useState(false);
   const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
   const [themeSanctuaryOpen, setThemeSanctuaryOpen] = useState(false);
+  const [siteSettingsOpen, setSiteSettingsOpen] = useState(false);
 
   // Auto-hide nav on scroll
   const [navVisible, setNavVisible] = useState(true);
@@ -431,6 +435,13 @@ export default function Board() {
               <span className="text-white">.ing</span>
             </Link>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSiteSettingsOpen(true)}
+                className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                title="Site Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
               <NotificationBell dark scrolled={false} />
             </div>
           </nav>
@@ -451,6 +462,7 @@ export default function Board() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenThemeSanctuary={() => setThemeSanctuaryOpen(true)}
+        onOpenSettings={() => setSiteSettingsOpen(true)}
       />
 
       {/* Main content */}
@@ -661,6 +673,9 @@ export default function Board() {
                       themeVars={themeVars}
                       onAddToPlaylist={id => openPlaylist(id)}
                       onOpenViewer={(itm) => setViewerItem(itm as SavedPrayer)}
+                      captionModeTts={prefs.caption_mode_tts}
+                      captionModeRecorded={prefs.caption_mode_recorded}
+                      defaultCardLayout={prefs.default_card_layout}
                     />
                   </div>
                 );
@@ -853,6 +868,18 @@ export default function Board() {
         currentAtmosphereId={prefs.atmosphere_id}
         onApply={(data) => savePrefs(data)}
         onAtmosphereChange={(id) => savePrefs({ atmosphere_id: id })}
+      />
+
+      {/* ── Site Settings Sheet ──────────────────────────────────────── */}
+      <SiteSettingsSheet
+        open={siteSettingsOpen}
+        onOpenChange={setSiteSettingsOpen}
+        prefs={prefs}
+        onSave={savePrefs}
+        bibleTextSize={bibleTextSize}
+        onBibleTextSizeChange={setBibleTextSize}
+        bibleTextMin={bibleMin}
+        bibleTextMax={bibleMax}
       />
 
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}

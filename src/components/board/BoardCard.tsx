@@ -10,6 +10,7 @@ import AIEnrichPanel from "@/components/AIEnrichPanel";
 import { TestifyBack } from "@/components/board/TestifyBack";
 import { SermonApplicationPoints } from "@/components/board/SermonApplicationPoints";
 import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
+import { VoiceWaveformPlayer } from "@/components/board/VoiceWaveformPlayer";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { FormattedText } from "@/lib/FormattedText";
 import type { Database } from "@/integrations/supabase/types";
@@ -112,6 +113,9 @@ interface BoardCardProps {
   themeVars?: Record<string, string>;
   onAddToPlaylist?: (prayerId: string) => void;
   onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
+  captionModeTts?: boolean;
+  captionModeRecorded?: boolean;
+  defaultCardLayout?: string;
 }
 
 export function BoardCard({
@@ -125,6 +129,9 @@ export function BoardCard({
   themeVars,
   onAddToPlaylist,
   onOpenViewer,
+  captionModeTts = true,
+  captionModeRecorded = true,
+  defaultCardLayout = "standard",
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
@@ -487,7 +494,27 @@ export function BoardCard({
               </h3>
             )}
 
-            {/* Prayer text — with optional custom font */}
+            {/* Voice waveform player for voice-recorded prayers */}
+            {(card as any).voice_audio_url && (
+              <div className="my-2">
+                <VoiceWaveformPlayer
+                  audioUrl={(card as any).voice_audio_url}
+                  large={defaultCardLayout === "voice-visual"}
+                  accentColor={accentColor}
+                  onPlay={captionModeRecorded ? () => {
+                    // Open caption mode instead of inline play
+                    const text = card.extended_prayer
+                      ? `${card.prayer_text}\n\n${card.extended_prayer}`
+                      : card.prayer_text;
+                    toggleTts(text, card.id);
+                    return true;
+                  } : undefined}
+                />
+              </div>
+            )}
+
+            {/* Prayer text — with optional custom font (hidden in voice-visual mode for voice cards) */}
+            {!(defaultCardLayout === "voice-visual" && (card as any).voice_audio_url) && (
             <div className="select-none" onClick={(e) => {
               const now = Date.now();
               if (now - lastTapRef.current < 350) {
@@ -522,6 +549,7 @@ export function BoardCard({
                 </button>
               )}
             </div>
+            )}
 
             {/* Font preview banner */}
             <AnimatePresence>
@@ -1006,18 +1034,20 @@ export function BoardCard({
         </DialogContent>
       </Dialog>
 
-      {/* TTS Contemplation Overlay */}
-      <TtsContemplationOverlay
-        playing={ttsPlaying}
-        onStop={stopTts}
-        onPause={pauseTts}
-        onResume={resumeTts}
-        text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
-        playbackRate={playbackRate}
-        onPlaybackRateChange={changePlaybackRate}
-        timedPhrases={timedPhrases}
-        audioRef={audioRef}
-      />
+      {/* TTS Contemplation Overlay — only when caption mode is enabled */}
+      {captionModeTts && (
+        <TtsContemplationOverlay
+          playing={ttsPlaying}
+          onStop={stopTts}
+          onPause={pauseTts}
+          onResume={resumeTts}
+          text={card ? (card.extended_prayer ? `${card.prayer_text}\n\n${card.extended_prayer}` : card.prayer_text) : ""}
+          playbackRate={playbackRate}
+          onPlaybackRateChange={changePlaybackRate}
+          timedPhrases={timedPhrases}
+          audioRef={audioRef}
+        />
+      )}
 
     </div>
   );

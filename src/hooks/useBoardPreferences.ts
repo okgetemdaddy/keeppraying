@@ -17,6 +17,9 @@ export interface BoardPrefs {
   calendar_text: string;
   calendar_accent: string;
   atmosphere_id: string;
+  caption_mode_tts: boolean;
+  caption_mode_recorded: boolean;
+  default_card_layout: string;
 }
 
 const DEFAULTS: BoardPrefs = {
@@ -33,6 +36,9 @@ const DEFAULTS: BoardPrefs = {
   calendar_text: "#2C2418",
   calendar_accent: "#B85C38",
   atmosphere_id: "warm-parchment",
+  caption_mode_tts: true,
+  caption_mode_recorded: true,
+  default_card_layout: "standard",
 };
 
 export function useBoardPreferences() {
@@ -47,7 +53,7 @@ export function useBoardPreferences() {
     if (!user) { setLoaded(true); return; }
     supabase
       .from("board_preferences")
-      .select("theme,animations_enabled,sound_id,sound_volume,theme_preset,theme_bg,theme_text,theme_accent,theme_scope,calendar_bg,calendar_text,calendar_accent,atmosphere_id")
+      .select("theme,animations_enabled,sound_id,sound_volume,theme_preset,theme_bg,theme_text,theme_accent,theme_scope,calendar_bg,calendar_text,calendar_accent,atmosphere_id,caption_mode_tts,caption_mode_recorded,default_card_layout")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -66,6 +72,9 @@ export function useBoardPreferences() {
             calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
             calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
             atmosphere_id: (data as any).atmosphere_id ?? DEFAULTS.atmosphere_id,
+            caption_mode_tts: (data as any).caption_mode_tts ?? DEFAULTS.caption_mode_tts,
+            caption_mode_recorded: (data as any).caption_mode_recorded ?? DEFAULTS.caption_mode_recorded,
+            default_card_layout: (data as any).default_card_layout ?? DEFAULTS.default_card_layout,
           };
           setPrefs(fresh);
           setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);
