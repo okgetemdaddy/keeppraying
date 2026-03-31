@@ -14,6 +14,7 @@ import {
   AArrowDown,
   AArrowUp,
   Globe,
+  PanelLeft,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -61,6 +62,8 @@ import {
 import { VerseBunchStrip, useUserVerseBunches, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
 import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
+import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
+import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -398,8 +401,17 @@ export function BibleReader() {
   // ── Cross-translation annotations ──
   const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
 
-  const readingAreaRef = useRef<HTMLDivElement>(null);
+  // ── Bible Sleeve sheet ──
+  const [sleeveOpen, setSleeveOpen] = useState(false);
 
+  // ── First-click feature tour ──
+  const [showTour, setShowTour] = useState(false);
+  const tourSeen = useRef(() => {
+    try { return localStorage.getItem("bible_features_seen") === "true"; } catch { return true; }
+  });
+  const pendingTourVerse = useRef<{ verseNumber: number; event: React.MouseEvent } | null>(null);
+
+  const readingAreaRef = useRef<HTMLDivElement>(null);
   // Data hooks
   const { data: versions, isLoading: versionsLoading } = useBibleVersions();
   const { data: index, isLoading: indexLoading } = useBibleIndex(versionId);
@@ -515,7 +527,7 @@ export function BibleReader() {
   }, [bookUsfm, currentChapter?.id, versionId]);
 
   // ── Tap-select handler (cross-book aware) ──
-  const handleTapSelect = useCallback(
+  const handleTapSelectInner = useCallback(
     (verseNumber: number, e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button, a, input, textarea")) return;
 
@@ -604,7 +616,35 @@ export function BibleReader() {
     [versionId, bookUsfm, currentChapter, currentBook, selectedVerses, crossSelections.length],
   );
 
-  // ── Text selection handler (mouseup on reading area) ──
+  // ── Tour-intercepting wrapper ──
+  const handleTapSelect = useCallback(
+    (verseNumber: number, e: React.MouseEvent) => {
+      // First-click tour intercept
+      if (!tourSeen.current()) {
+        pendingTourVerse.current = { verseNumber, event: e };
+        setShowTour(true);
+        return;
+      }
+      handleTapSelectInner(verseNumber, e);
+    },
+    [handleTapSelectInner],
+  );
+
+  // ── Tour acknowledge handler ──
+  const handleTourAcknowledge = useCallback(() => {
+    setShowTour(false);
+    try { localStorage.setItem("bible_features_seen", "true"); } catch {}
+    // Update the ref so it won't show again
+    tourSeen.current = () => true;
+    // Now fire the original tap-select for the verse the user clicked
+    if (pendingTourVerse.current) {
+      const { verseNumber, event } = pendingTourVerse.current;
+      pendingTourVerse.current = null;
+      handleTapSelectInner(verseNumber, event);
+    }
+  }, [handleTapSelectInner]);
+
+
   useEffect(() => {
     const area = readingAreaRef.current;
     if (!area) return;
@@ -859,6 +899,16 @@ export function BibleReader() {
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-3">
+          {/* ── Bible Sleeve button ── */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSleeveOpen(true)}
+            className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
+            title="Your Bible Sleeve"
+          >
+            <PanelLeft className="h-4.5 w-4.5" />
+          </Button>
           <Select
             value={versionId?.toString()}
             onValueChange={(v) => {
@@ -964,29 +1014,7 @@ export function BibleReader() {
             </PopoverContent>
           </Popover>
 
-          {/* Hide bunches toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleHideBunches}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-            title={hideBunchRefs ? "Show Bunches" : "Hide Bunches"}
-          >
-            {hideBunchRefs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          </Button>
-
-          {/* Cross-translation annotations toggle */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleCrossTranslation}
-              className={`h-7 w-7 p-0 transition-colors ${crossTranslation ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
-              title={crossTranslation ? "Annotations: All translations" : "Annotations: Current translation only"}
-            >
-              <Globe className="h-3.5 w-3.5" />
-            </Button>
-          )}
+          {/* Hide bunches, cross-translation, and reading mode are in the Bible Sleeve */}
 
           <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
             <Toggle
@@ -1184,6 +1212,42 @@ export function BibleReader() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Bible Sleeve Sheet ── */}
+      <BibleSleeveSheet
+        open={sleeveOpen}
+        onOpenChange={setSleeveOpen}
+        userName={user?.email ?? undefined}
+        textSize={textSize}
+        minSize={MIN_SIZE}
+        maxSize={MAX_SIZE}
+        onTextSizeChange={setTextSize}
+        readingMode={mode}
+        onReadingModeChange={setMode}
+        crossTranslation={crossTranslation}
+        onToggleCrossTranslation={toggleCrossTranslation}
+        hideBunches={hideBunchRefs}
+        onToggleHideBunches={toggleHideBunches}
+        highlights={chapterData?.highlights ?? []}
+        bookmarks={chapterData?.bookmarks ?? []}
+        notes={chapterData?.notes ?? []}
+        currentBook={currentBook?.title}
+        currentChapter={currentChapter?.title}
+        bunches={bunches ?? []}
+        onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
+        onNavigateToVerse={(vn) => {
+          setSleeveOpen(false);
+          setTimeout(() => {
+            document.getElementById(`verse-${vn}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 300);
+        }}
+      />
+
+      {/* ── First-Click Feature Tour ── */}
+      <BibleFeaturesTour
+        open={showTour}
+        onAcknowledge={handleTourAcknowledge}
+      />
     </article>
   );
 }
