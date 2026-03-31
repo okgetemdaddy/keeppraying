@@ -401,7 +401,15 @@ export function BibleReader() {
   // ── Cross-translation annotations ──
   const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
 
-  const readingAreaRef = useRef<HTMLDivElement>(null);
+  // ── Bible Sleeve sheet ──
+  const [sleeveOpen, setSleeveOpen] = useState(false);
+
+  // ── First-click feature tour ──
+  const [showTour, setShowTour] = useState(false);
+  const tourSeen = useRef(() => {
+    try { return localStorage.getItem("bible_features_seen") === "true"; } catch { return true; }
+  });
+  const pendingTourVerse = useRef<{ verseNumber: number; event: React.MouseEvent } | null>(null);
 
   // Data hooks
   const { data: versions, isLoading: versionsLoading } = useBibleVersions();
