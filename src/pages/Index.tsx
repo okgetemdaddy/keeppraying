@@ -353,7 +353,15 @@ const NAV_LINKS = [
 export default function Index() {
   const [searchVal, setSearchVal] = useState("");
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const heroRef = useRef<HTMLElement>(null);
+
+  // Redirect authenticated users to Prayer Station
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/board", { replace: true });
+    }
+  }, [user, loading, navigate]);
 
   // Parallax
   const { scrollY } = useScroll();
