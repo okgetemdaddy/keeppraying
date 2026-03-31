@@ -68,6 +68,7 @@ import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/Sele
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
 import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
+import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
 
 type ReadingMode = "verse" | "paragraph";
 
