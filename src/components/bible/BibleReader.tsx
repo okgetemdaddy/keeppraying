@@ -510,14 +510,17 @@ export function BibleReader() {
 
   // ── Load saved position on mount ──
   useEffect(() => {
-    if (!user?.id || positionLoaded) return;
+    if (positionLoaded) return;
+    if (!user?.id) {
+      setPositionLoaded(true);
+      return;
+    }
     loadPosition().then((pos) => {
       if (pos) {
         setVersionId(pos.versionId);
         setBookUsfm(pos.bookUsfm);
         setChapterIdx(pos.chapterIdx);
         setMode(pos.mode);
-        // Scroll restore happens after verses render (see below)
         savedScrollRef.current = pos.scrollTop;
       }
       setPositionLoaded(true);
