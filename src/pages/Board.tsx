@@ -42,6 +42,8 @@ import { BoardBibleAnnotations } from "@/components/board/BoardBibleAnnotations"
 import { useSermonPlans } from "@/hooks/useSermonPlans";
 import { PlanProgressCard } from "@/components/sermon/PlanProgressCard";
 import { MyChurchSection } from "@/components/board/MyChurchSection";
+import { SiteSettingsSheet } from "@/components/board/SiteSettingsSheet";
+import { useBibleTextSize } from "@/hooks/useBibleTextSize";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type CardSize = "small" | "medium" | "large";
