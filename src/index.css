@@ -125,7 +125,7 @@
 @layer base {
   * { @apply border-border; }
 
-  html { scroll-behavior: smooth; overflow-x: hidden; }
+  html, #root { scroll-behavior: smooth; overflow-x: hidden; }
 
   body {
     overflow-x: hidden;
