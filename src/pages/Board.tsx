@@ -24,7 +24,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind, Church,
+  ArrowUpDown, Filter, Users, Home, Wind, Church, Settings,
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
