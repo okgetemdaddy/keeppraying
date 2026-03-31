@@ -18,10 +18,10 @@ import {
 
 /* ── Stripe Price IDs ── */
 const ONE_TIME_TIERS = [
-  { label: "Seed — $5", priceId: "price_1TFppdDUKR31DNgBs8rZtDs3", amount: 5, icon: Coffee, description: "Plant a seed of support" },
-  { label: "Blessing — $10", priceId: "price_1TFpqADUKR31DNgBhhT07mvb", amount: 10, icon: Heart, description: "A heartfelt blessing" },
-  { label: "Harvest — $25", priceId: "price_1TFpqXDUKR31DNgBeqSssIvI", amount: 25, icon: Star, description: "Reap a bountiful harvest" },
-  { label: "Kingdom — $50", priceId: "price_1TFpqxDUKR31DNgBWGgZ68Ty", amount: 50, icon: Crown, description: "A Kingdom-level gift" },
+  { label: "Seed — $5", priceId: "price_1TFppdDUKR31DNgBs8rZtDs3", amount: 5, icon: Coffee },
+  { label: "Blessing — $10", priceId: "price_1TFpqADUKR31DNgBhhT07mvb", amount: 10, icon: Heart },
+  { label: "Harvest — $25", priceId: "price_1TFpqXDUKR31DNgBeqSssIvI", amount: 25, icon: Star },
+  { label: "Kingdom — $50", priceId: "price_1TFpqxDUKR31DNgBWGgZ68Ty", amount: 50, icon: Crown },
 ];
 
 const RECURRING_TIERS = [
