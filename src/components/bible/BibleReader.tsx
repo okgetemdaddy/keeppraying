@@ -14,6 +14,7 @@ import {
   AArrowDown,
   AArrowUp,
   Globe,
+  PanelLeft,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -61,6 +62,8 @@ import {
 import { VerseBunchStrip, useUserVerseBunches, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
 import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
+import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
+import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
 
 type ReadingMode = "verse" | "paragraph";
 
