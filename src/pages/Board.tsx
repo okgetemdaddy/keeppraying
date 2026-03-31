@@ -435,6 +435,13 @@ export default function Board() {
               <span className="text-white">.ing</span>
             </Link>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSiteSettingsOpen(true)}
+                className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                title="Site Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
               <NotificationBell dark scrolled={false} />
             </div>
           </nav>
