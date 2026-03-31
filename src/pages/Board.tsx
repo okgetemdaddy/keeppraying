@@ -672,6 +672,9 @@ export default function Board() {
                       themeVars={themeVars}
                       onAddToPlaylist={id => openPlaylist(id)}
                       onOpenViewer={(itm) => setViewerItem(itm as SavedPrayer)}
+                      captionModeTts={prefs.caption_mode_tts}
+                      captionModeRecorded={prefs.caption_mode_recorded}
+                      defaultCardLayout={prefs.default_card_layout}
                     />
                   </div>
                 );
