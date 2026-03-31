@@ -15,6 +15,8 @@ import {
   AArrowUp,
   Globe,
   PanelLeft,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -403,6 +405,20 @@ export function BibleReader() {
 
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
+
+  // ── Focus mode (hide bottom nav) ──
+  const [focusMode, setFocusMode] = useState(false);
+  const toggleFocusMode = useCallback(() => {
+    setFocusMode((prev) => {
+      const next = !prev;
+      window.dispatchEvent(new Event(next ? "tabbar:hide" : "tabbar:show"));
+      return next;
+    });
+  }, []);
+  // Restore tab bar on unmount
+  useEffect(() => {
+    return () => { window.dispatchEvent(new Event("tabbar:show")); };
+  }, []);
 
   // ── First-click feature tour ──
   const [showTour, setShowTour] = useState(false);
@@ -977,6 +993,17 @@ export function BibleReader() {
               title="Your Bible Sleeve"
             >
               <PanelLeft className="h-4 w-4" />
+            </Button>
+
+            {/* Focus mode — hide bottom nav */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleFocusMode}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title={focusMode ? "Show navigation" : "Focus mode"}
+            >
+              {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
 
             <div className="flex-1" />
