@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen, Wind, HeartHandshake } from "lucide-react";
@@ -14,8 +15,20 @@ export function MobileTabBar() {
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
+  const [hidden, setHidden] = useState(false);
 
-  if (!isMobile) return null;
+  useEffect(() => {
+    const show = () => setHidden(false);
+    const hide = () => setHidden(true);
+    window.addEventListener("tabbar:hide", hide);
+    window.addEventListener("tabbar:show", show);
+    return () => {
+      window.removeEventListener("tabbar:hide", hide);
+      window.removeEventListener("tabbar:show", show);
+    };
+  }, []);
+
+  if (!isMobile || hidden) return null;
 
   const currentPath = location.pathname;
 
@@ -43,7 +56,6 @@ export function MobileTabBar() {
               className="relative flex flex-col items-center justify-center gap-0.5 w-16 h-full focus:outline-none"
               aria-label={tab.label}
             >
-              {/* Active indicator dot */}
               {isActive && (
                 <motion.div
                   layoutId="tab-indicator"
