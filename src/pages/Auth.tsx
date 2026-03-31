@@ -36,9 +36,9 @@ export default function Auth() {
         if (pendingRaw) {
           sessionStorage.removeItem("kp_post_login");
           const pending = JSON.parse(pendingRaw) as { path: string };
-          navigate(pending.path || "/prayers");
+        navigate(pending.path || "/board");
         } else {
-          navigate("/prayers");
+          navigate("/board");
         }
       } else {
         const { error } = await signUp(email, password, name);
