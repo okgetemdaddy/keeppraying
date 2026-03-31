@@ -278,15 +278,13 @@ export default function Support() {
                     transition={{ delay: i * 0.08 }}
                   >
                     <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-lg group cursor-pointer h-full">
-                      <CardContent className="p-6 flex flex-col items-center text-center gap-4 h-full">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                          <Icon className="w-6 h-6 text-primary" />
+                      <CardContent className="p-3 flex flex-col items-center text-center gap-2 h-full">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                          <Icon className="w-4 h-4 text-primary" />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-foreground text-lg">${tier.amount}</h3>
-                          <p className="text-muted-foreground text-xs mt-1">{tier.description}</p>
-                        </div>
+                        <h3 className="font-bold text-foreground text-lg">${tier.amount}</h3>
                         <Button
+                          size="sm"
                           className="w-full mt-auto"
                           onClick={() => handleDonate(tier.priceId, donationTab === "recurring" ? "subscription" : "payment")}
                           disabled={donating === tier.priceId}
