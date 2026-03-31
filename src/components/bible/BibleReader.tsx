@@ -1014,29 +1014,7 @@ export function BibleReader() {
             </PopoverContent>
           </Popover>
 
-          {/* Hide bunches toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleHideBunches}
-            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-            title={hideBunchRefs ? "Show Bunches" : "Hide Bunches"}
-          >
-            {hideBunchRefs ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          </Button>
-
-          {/* Cross-translation annotations toggle */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleCrossTranslation}
-              className={`h-7 w-7 p-0 transition-colors ${crossTranslation ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
-              title={crossTranslation ? "Annotations: All translations" : "Annotations: Current translation only"}
-            >
-              <Globe className="h-3.5 w-3.5" />
-            </Button>
-          )}
+          {/* Hide bunches, cross-translation, and reading mode are in the Bible Sleeve */}
 
           <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
             <Toggle
