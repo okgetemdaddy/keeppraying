@@ -527,7 +527,7 @@ export function BibleReader() {
   }, [bookUsfm, currentChapter?.id, versionId]);
 
   // ── Tap-select handler (cross-book aware) ──
-  const handleTapSelect = useCallback(
+  const handleTapSelectInner = useCallback(
     (verseNumber: number, e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest("button, a, input, textarea")) return;
 
