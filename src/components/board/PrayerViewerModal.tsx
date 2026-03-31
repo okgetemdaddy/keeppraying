@@ -102,6 +102,7 @@ export function PrayerViewerModal({
   const [backdropDim, setBackdropDim] = useState(80);
   const [imageBrightness, setImageBrightness] = useState(100);
   const [textShade, setTextShade] = useState(100); // 0=black, 100=white
+  const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
 
   // TTS
   const {
