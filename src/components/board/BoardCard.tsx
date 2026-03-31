@@ -113,6 +113,9 @@ interface BoardCardProps {
   themeVars?: Record<string, string>;
   onAddToPlaylist?: (prayerId: string) => void;
   onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
+  captionModeTts?: boolean;
+  captionModeRecorded?: boolean;
+  defaultCardLayout?: string;
 }
 
 export function BoardCard({
