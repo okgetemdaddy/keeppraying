@@ -1394,9 +1394,7 @@ export function BibleReader() {
         onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
         onNavigateToVerse={(vn) => {
           setSleeveOpen(false);
-          setTimeout(() => {
-            document.getElementById(`verse-${vn}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 300);
+          pendingScrollVerseRef.current = vn;
         }}
       />
 
