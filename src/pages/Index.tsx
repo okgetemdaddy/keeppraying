@@ -359,7 +359,11 @@ export default function Index() {
   // Redirect authenticated users to Prayer Station
   useEffect(() => {
     if (!loading && user) {
-      navigate("/board", { replace: true });
+      const key = "kp_board_redirected";
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        navigate("/board", { replace: true });
+      }
     }
   }, [user, loading, navigate]);
 
