@@ -913,6 +913,22 @@ export function BibleReader() {
     [index],
   );
 
+  // ── Navigate from search ──
+  const handleSearchNavigate = useCallback(
+    (searchBookUsfm: string, chapter: number, verse?: number) => {
+      setBookUsfm(searchBookUsfm);
+      const book = index?.books?.find((b) => b.id === searchBookUsfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(chapter)) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      if (verse) {
+        setTimeout(() => {
+          document.getElementById(`verse-${verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 500);
+      }
+    },
+    [index],
+  );
+
   // ── Navigate to a selected verse from strip ──
   const handleNavigateToSelection = useCallback(
     (v: SelectedVerse) => {
