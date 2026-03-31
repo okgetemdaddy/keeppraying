@@ -17,6 +17,7 @@ import {
   PanelLeft,
   Maximize2,
   Minimize2,
+  Search,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -67,6 +68,7 @@ import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/Sele
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
 import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
+import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -410,6 +412,9 @@ export function BibleReader() {
 
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
+
+  // ── Bible Search dialog ──
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
@@ -908,6 +913,22 @@ export function BibleReader() {
     [index],
   );
 
+  // ── Navigate from search ──
+  const handleSearchNavigate = useCallback(
+    (searchBookUsfm: string, chapter: number, verse?: number) => {
+      setBookUsfm(searchBookUsfm);
+      const book = index?.books?.find((b) => b.id === searchBookUsfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(chapter)) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      if (verse) {
+        setTimeout(() => {
+          document.getElementById(`verse-${verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 500);
+      }
+    },
+    [index],
+  );
+
   // ── Navigate to a selected verse from strip ──
   const handleNavigateToSelection = useCallback(
     (v: SelectedVerse) => {
@@ -1056,6 +1077,17 @@ export function BibleReader() {
             </Button>
 
             {/* Focus mode — hide bottom nav */}
+
+            {/* Search button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchOpen(true)}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title="Search (⌘K)"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -1339,6 +1371,14 @@ export function BibleReader() {
       <BibleFeaturesTour
         open={showTour}
         onAcknowledge={handleTourAcknowledge}
+      />
+
+      {/* ── Bible Search ── */}
+      <BibleSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        availableBooks={index?.books?.map((b) => b.id)}
+        onNavigate={handleSearchNavigate}
       />
     </article>
   );
