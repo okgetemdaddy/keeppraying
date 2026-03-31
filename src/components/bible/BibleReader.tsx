@@ -899,6 +899,16 @@ export function BibleReader() {
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-3">
+          {/* ── Bible Sleeve button ── */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSleeveOpen(true)}
+            className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
+            title="Your Bible Sleeve"
+          >
+            <PanelLeft className="h-4.5 w-4.5" />
+          </Button>
           <Select
             value={versionId?.toString()}
             onValueChange={(v) => {
