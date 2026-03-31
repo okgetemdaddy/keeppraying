@@ -406,6 +406,20 @@ export function BibleReader() {
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
 
+  // ── Focus mode (hide bottom nav) ──
+  const [focusMode, setFocusMode] = useState(false);
+  const toggleFocusMode = useCallback(() => {
+    setFocusMode((prev) => {
+      const next = !prev;
+      window.dispatchEvent(new Event(next ? "tabbar:hide" : "tabbar:show"));
+      return next;
+    });
+  }, []);
+  // Restore tab bar on unmount
+  useEffect(() => {
+    return () => { window.dispatchEvent(new Event("tabbar:show")); };
+  }, []);
+
   // ── First-click feature tour ──
   const [showTour, setShowTour] = useState(false);
   const tourSeen = useRef(() => {
