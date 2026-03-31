@@ -25,9 +25,9 @@ const ONE_TIME_TIERS = [
 ];
 
 const RECURRING_TIERS = [
-  { label: "Monthly Seed — $5/mo", priceId: "price_1TFprbDUKR31DNgBw9j6Qkwg", amount: 5, icon: Coffee, description: "Faithful monthly seed" },
-  { label: "Monthly Blessing — $10/mo", priceId: "price_1TFprsDUKR31DNgBvcR8clvt", amount: 10, icon: Heart, description: "Steady blessing each month" },
-  { label: "Monthly Harvest — $25/mo", priceId: "price_1TFps8DUKR31DNgBkoH3zUUS", amount: 25, icon: Star, description: "Abundant monthly harvest" },
+  { label: "Monthly Seed — $5/mo", priceId: "price_1TFprbDUKR31DNgBw9j6Qkwg", amount: 5, icon: Coffee },
+  { label: "Monthly Blessing — $10/mo", priceId: "price_1TFprsDUKR31DNgBvcR8clvt", amount: 10, icon: Heart },
+  { label: "Monthly Harvest — $25/mo", priceId: "price_1TFps8DUKR31DNgBkoH3zUUS", amount: 25, icon: Star },
 ];
 
 interface UpdateLog {
