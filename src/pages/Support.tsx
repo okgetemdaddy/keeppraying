@@ -18,16 +18,16 @@ import {
 
 /* ── Stripe Price IDs ── */
 const ONE_TIME_TIERS = [
-  { label: "Seed — $5", priceId: "price_1TFppdDUKR31DNgBs8rZtDs3", amount: 5, icon: Coffee, description: "Plant a seed of support" },
-  { label: "Blessing — $10", priceId: "price_1TFpqADUKR31DNgBhhT07mvb", amount: 10, icon: Heart, description: "A heartfelt blessing" },
-  { label: "Harvest — $25", priceId: "price_1TFpqXDUKR31DNgBeqSssIvI", amount: 25, icon: Star, description: "Reap a bountiful harvest" },
-  { label: "Kingdom — $50", priceId: "price_1TFpqxDUKR31DNgBWGgZ68Ty", amount: 50, icon: Crown, description: "A Kingdom-level gift" },
+  { label: "Seed — $5", priceId: "price_1TFppdDUKR31DNgBs8rZtDs3", amount: 5, icon: Coffee },
+  { label: "Blessing — $10", priceId: "price_1TFpqADUKR31DNgBhhT07mvb", amount: 10, icon: Heart },
+  { label: "Harvest — $25", priceId: "price_1TFpqXDUKR31DNgBeqSssIvI", amount: 25, icon: Star },
+  { label: "Kingdom — $50", priceId: "price_1TFpqxDUKR31DNgBWGgZ68Ty", amount: 50, icon: Crown },
 ];
 
 const RECURRING_TIERS = [
-  { label: "Monthly Seed — $5/mo", priceId: "price_1TFprbDUKR31DNgBw9j6Qkwg", amount: 5, icon: Coffee, description: "Faithful monthly seed" },
-  { label: "Monthly Blessing — $10/mo", priceId: "price_1TFprsDUKR31DNgBvcR8clvt", amount: 10, icon: Heart, description: "Steady blessing each month" },
-  { label: "Monthly Harvest — $25/mo", priceId: "price_1TFps8DUKR31DNgBkoH3zUUS", amount: 25, icon: Star, description: "Abundant monthly harvest" },
+  { label: "Monthly Seed — $5/mo", priceId: "price_1TFprbDUKR31DNgBw9j6Qkwg", amount: 5, icon: Coffee },
+  { label: "Monthly Blessing — $10/mo", priceId: "price_1TFprsDUKR31DNgBvcR8clvt", amount: 10, icon: Heart },
+  { label: "Monthly Harvest — $25/mo", priceId: "price_1TFps8DUKR31DNgBkoH3zUUS", amount: 25, icon: Star },
 ];
 
 interface UpdateLog {
@@ -266,7 +266,7 @@ export default function Support() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3"
             >
               {tiers.map((tier, i) => {
                 const Icon = tier.icon;
@@ -278,15 +278,13 @@ export default function Support() {
                     transition={{ delay: i * 0.08 }}
                   >
                     <Card className="border-border/60 hover:border-primary/40 transition-all hover:shadow-lg group cursor-pointer h-full">
-                      <CardContent className="p-6 flex flex-col items-center text-center gap-4 h-full">
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                          <Icon className="w-6 h-6 text-primary" />
+                      <CardContent className="p-3 flex flex-col items-center text-center gap-2 h-full">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                          <Icon className="w-4 h-4 text-primary" />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-foreground text-lg">${tier.amount}</h3>
-                          <p className="text-muted-foreground text-xs mt-1">{tier.description}</p>
-                        </div>
+                        <h3 className="font-bold text-foreground text-lg">${tier.amount}</h3>
                         <Button
+                          size="sm"
                           className="w-full mt-auto"
                           onClick={() => handleDonate(tier.priceId, donationTab === "recurring" ? "subscription" : "payment")}
                           disabled={donating === tier.priceId}
