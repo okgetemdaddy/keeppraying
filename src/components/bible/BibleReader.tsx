@@ -375,6 +375,10 @@ export function BibleReader() {
   const [bookUsfm, setBookUsfm] = useState<string | undefined>(undefined);
   const [chapterIdx, setChapterIdx] = useState<number>(0);
   const [mode, setMode] = useState<ReadingMode>("verse");
+  const [positionLoaded, setPositionLoaded] = useState(false);
+
+  // ── Position persistence ──
+  const { loadPosition, savePosition } = useBiblePosition(user?.id);
 
   // ── Cross-book selection state ──
   const [crossSelections, setCrossSelections] = useState<SelectedVerse[]>([]);
