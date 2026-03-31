@@ -298,7 +298,8 @@ export function PrayerViewerModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-6"
+            className="fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center p-4 md:p-6"
+            style={{ background: `rgba(0, 0, 0, ${backdropDim / 100})` }}
             onClick={onClose}
           >
             {/* ── Floating prayer card inside dark theater ── */}
