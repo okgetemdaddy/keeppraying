@@ -58,33 +58,33 @@ export function VerseBunchStrip({ onNavigateToBunch }: VerseBunchStripProps) {
 
   if (!user || !bunches?.length) return null;
 
+  // Only show the newest (most recently created) bunch — all bunches are in the Bible Sleeve
+  const newest = bunches[0];
+  const color = getBunchColor(0);
+  const classes = BUNCH_COLOR_CLASSES[color];
+
   return (
     <div className="border-b border-border bg-muted/30">
       <div className="mx-auto max-w-3xl px-4 py-2">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <div className="flex items-center gap-2">
-            <Package className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-            <span className="text-[0.65rem] font-medium text-muted-foreground shrink-0 uppercase tracking-wider">
-              Bunches
+        <div className="flex items-center gap-2">
+          <Package className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <span className="text-[0.65rem] font-medium text-muted-foreground shrink-0 uppercase tracking-wider">
+            Latest Bunch
+          </span>
+          <div className="mx-1 h-4 w-px bg-border shrink-0" />
+          <button
+            onClick={() => onNavigateToBunch(newest)}
+            className={`inline-flex items-center gap-1.5 rounded-full border ${classes.pill} px-3 py-1 text-xs font-medium ${classes.pillText} hover:opacity-80 transition-colors whitespace-nowrap`}
+          >
+            {newest.bunch_name}
+            <span className="text-[0.6rem] opacity-60">{newest.item_count}v</span>
+          </button>
+          {bunches.length > 1 && (
+            <span className="text-[0.6rem] text-muted-foreground">
+              +{bunches.length - 1} more in Sleeve
             </span>
-            <div className="mx-1 h-4 w-px bg-border shrink-0" />
-            {bunches.map((b, idx) => {
-              const color = getBunchColor(idx);
-              const classes = BUNCH_COLOR_CLASSES[color];
-              return (
-                <button
-                  key={b.id}
-                  onClick={() => onNavigateToBunch(b)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border ${classes.pill} px-3 py-1 text-xs font-medium ${classes.pillText} hover:opacity-80 transition-colors whitespace-nowrap`}
-                >
-                  {b.bunch_name}
-                  <span className="text-[0.6rem] opacity-60">{b.item_count}v</span>
-                </button>
-              );
-            })}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+          )}
+        </div>
       </div>
     </div>
   );
