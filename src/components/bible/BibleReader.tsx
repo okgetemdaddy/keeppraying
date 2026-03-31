@@ -49,6 +49,7 @@ import {
 import { useBibleMutations, type ScriptureRef, type CrossBunchItem } from "@/hooks/useBibleMutations";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
+import { useBiblePosition, type BiblePosition } from "@/hooks/useBiblePosition";
 import {
   FloatingToolbar,
   NoteInputPanel,
