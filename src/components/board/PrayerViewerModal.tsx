@@ -324,9 +324,10 @@ export function PrayerViewerModal({
                     src={bgUrl!}
                     alt=""
                     className="w-full h-full object-cover"
+                    style={{ filter: `brightness(${imageBrightness / 100})` }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
                 </div>
               )}
 
