@@ -78,7 +78,7 @@ function ToolbarActions({
   const isVertical = layout === "vertical";
 
   return (
-    <div className={isVertical ? "space-y-4" : ""}>
+    <div className={isVertical ? "space-y-4" : "flex items-center"}>
       {/* ── Colour swatches ── */}
       <div className={isVertical ? "space-y-3" : "flex items-center gap-1"}>
         {isVertical && (
