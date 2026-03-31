@@ -137,6 +137,23 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     setRefined(null);
     transcriptRef.current = "";
     setElapsed(0);
+    audioBlobRef.current = null;
+    audioChunksRef.current = [];
+
+    // Start MediaRecorder in parallel
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm" });
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        audioBlobRef.current = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+    }).catch(() => {
+      // If mic access denied, we still have speech recognition
+    });
 
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
 
