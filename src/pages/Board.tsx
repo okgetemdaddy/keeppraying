@@ -869,6 +869,18 @@ export default function Board() {
         onAtmosphereChange={(id) => savePrefs({ atmosphere_id: id })}
       />
 
+      {/* ── Site Settings Sheet ──────────────────────────────────────── */}
+      <SiteSettingsSheet
+        open={siteSettingsOpen}
+        onOpenChange={setSiteSettingsOpen}
+        prefs={prefs}
+        onSave={savePrefs}
+        bibleTextSize={bibleTextSize}
+        onBibleTextSizeChange={setBibleTextSize}
+        bibleTextMin={bibleMin}
+        bibleTextMax={bibleMax}
+      />
+
       {/* ── Testify Sheet ──────────────────────────────────────────────── */}
       <Sheet open={testifyOpen} onOpenChange={o => { setTestifyOpen(o); if (!o) { setTestifyBody(""); setTestifyReject(""); } }}>
         <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto flex flex-col gap-0 p-0">
