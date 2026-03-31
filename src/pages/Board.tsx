@@ -122,6 +122,7 @@ export default function Board() {
   const { prefs, savePrefs, loaded: prefsLoaded } = useBoardPreferences();
   const isMobile = useIsMobile();
   const { plans: sermonPlans, memberships: sermonMemberships, updateMemberToggles, markDayComplete } = useSermonPlans();
+  const { size: bibleTextSize, setTextSize: setBibleTextSize, MIN_SIZE: bibleMin, MAX_SIZE: bibleMax } = useBibleTextSize();
 
   // Stale-while-revalidate: show cached board instantly
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
@@ -174,6 +175,7 @@ export default function Board() {
   const [classicalOpen, setClassicalOpen] = useState(false);
   const [viewerItem, setViewerItem] = useState<SavedPrayer | null>(null);
   const [themeSanctuaryOpen, setThemeSanctuaryOpen] = useState(false);
+  const [siteSettingsOpen, setSiteSettingsOpen] = useState(false);
 
   // Auto-hide nav on scroll
   const [navVisible, setNavVisible] = useState(true);
