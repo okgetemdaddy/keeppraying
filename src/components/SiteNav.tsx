@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User,
-  MoreHorizontal, Globe, Sparkles, BookOpen, Users, Home, Swords,
+  Globe, Sparkles, BookOpen, Users, Home, Swords,
   Radio, Heart, HandHeart, Wind, HeartHandshake, BookMarked
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -168,7 +168,7 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
         )}
         aria-label="More features"
       >
-        <MoreHorizontal className="w-4 h-4" />
+        
         More
         <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", open && "rotate-180")} />
       </button>
