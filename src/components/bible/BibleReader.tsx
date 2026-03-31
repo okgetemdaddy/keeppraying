@@ -1309,7 +1309,7 @@ export function BibleReader() {
       <BibleSleeveSheet
         open={sleeveOpen}
         onOpenChange={setSleeveOpen}
-        userName={user?.email ?? undefined}
+        userName={user?.user_metadata?.full_name || user?.email || undefined}
         textSize={textSize}
         minSize={MIN_SIZE}
         maxSize={MAX_SIZE}
