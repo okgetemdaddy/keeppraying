@@ -125,9 +125,10 @@
 @layer base {
   * { @apply border-border; }
 
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
 
   body {
+    overflow-x: hidden;
     @apply bg-background text-foreground;
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
