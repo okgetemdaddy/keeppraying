@@ -559,6 +559,24 @@ export function BibleReader() {
     }
   }, [hasVerses]);
 
+  // ── Save scroll position on scroll (debounced) ──
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (!user?.id || !versionId || !bookUsfm || !positionLoaded) return;
+    const area = readingAreaRef.current;
+    if (!area) return;
+    const onScroll = () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = setTimeout(() => {
+        savePosition({ versionId, bookUsfm, chapterIdx, mode, scrollTop: area.scrollTop });
+      }, 1500);
+    };
+    area.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      area.removeEventListener("scroll", onScroll);
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, [user?.id, versionId, bookUsfm, chapterIdx, mode, positionLoaded, savePosition]);
   // Clear transient UI on chapter change (NOT selections)
   useEffect(() => {
     setToolbarPos(null);
