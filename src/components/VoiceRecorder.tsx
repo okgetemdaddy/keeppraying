@@ -320,9 +320,14 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       recognitionRef.current = null;
     }
     if (timerRef.current) clearInterval(timerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
     setState("idle");
     setTranscript("");
     setRefined(null);
+    audioBlobRef.current = null;
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
