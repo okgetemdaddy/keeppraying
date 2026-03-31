@@ -18,11 +18,11 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  ResponsiveSheet as Sheet,
+  ResponsiveSheetContent as SheetContent,
+  ResponsiveSheetHeader as SheetHeader,
+  ResponsiveSheetTitle as SheetTitle,
+} from "@/components/ui/responsive-sheet";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import type { UserHighlight, UserNote, UserBookmark } from "@/hooks/useBibleChapterData";
 import type { BunchWithCount } from "@/components/bible/VerseBunchStrip";

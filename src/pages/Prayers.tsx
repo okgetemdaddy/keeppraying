@@ -20,8 +20,8 @@ import {
   Volume2, VolumeX, Loader2, Share2, Bird,
 } from "lucide-react";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
+  ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle,
+} from "@/components/ui/responsive-sheet";
 import { SiteNav } from "@/components/SiteNav";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 

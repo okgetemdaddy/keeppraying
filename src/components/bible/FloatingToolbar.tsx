@@ -12,11 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  ResponsiveSheet as Sheet,
+  ResponsiveSheetContent as SheetContent,
+  ResponsiveSheetHeader as SheetHeader,
+  ResponsiveSheetTitle as SheetTitle,
+} from "@/components/ui/responsive-sheet";
 
 /* ── Colour swatches ── */
 const SWATCH_COLORS = [

@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+  ResponsiveSheet as Sheet,
+  ResponsiveSheetContent as SheetContent,
+  ResponsiveSheetHeader as SheetHeader,
+  ResponsiveSheetTitle as SheetTitle,
+  ResponsiveSheetDescription as SheetDescription,
+} from "@/components/ui/responsive-sheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";

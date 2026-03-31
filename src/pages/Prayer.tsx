@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
 import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle } from "@/components/ui/responsive-sheet";
 import { TestifyBack } from "@/components/board/TestifyBack";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { SiteNav } from "@/components/SiteNav";
