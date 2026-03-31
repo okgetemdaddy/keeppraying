@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, LogOut, LayoutDashboard, ChevronDown, ShieldCheck, User,
-  MoreHorizontal, Globe, Sparkles, BookOpen, Users, Home, Swords,
+  Globe, Sparkles, BookOpen, Users, Home, Swords,
   Radio, Heart, HandHeart, Wind, HeartHandshake, BookMarked
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
