@@ -21,6 +21,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Dev-only bypass: synthetic user + admin when DEV_ADMIN_BYPASS is set
+  const devBypass = import.meta.env.DEV && typeof window !== 'undefined' && sessionStorage.getItem('DEV_ADMIN_BYPASS') === 'true';
+
   const checkAdmin = async (userId: string) => {
     // Use has_role() security definer function to prevent privilege escalation
     const { data } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' });
@@ -72,7 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signUp, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{
+      user: devBypass ? ({ id: 'dev-admin', email: 'dev@localhost' } as any) : user,
+      session: devBypass ? ({} as any) : session,
+      loading: devBypass ? false : loading,
+      isAdmin: devBypass ? true : isAdmin,
+      signUp, signIn, signOut, resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );
