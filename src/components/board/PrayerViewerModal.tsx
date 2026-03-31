@@ -99,6 +99,7 @@ export function PrayerViewerModal({
 
   // Creator card styling state
   const [cardOpacity, setCardOpacity] = useState(100);
+  const [backdropDim, setBackdropDim] = useState(80);
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
 
   // TTS
