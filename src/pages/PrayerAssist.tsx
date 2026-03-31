@@ -237,7 +237,7 @@ export default function PrayerAssist() {
               >
                 <span className="font-semibold">KeepPray.ing is currently in Beta ❤️</span>
                 {" "}Bugs or suggestions? Please use the{" "}
-                <Link to="/support" className="underline font-medium hover:text-primary transition-colors">
+                <Link to="/support#contact" className="underline font-medium hover:text-primary transition-colors">
                   contact form
                 </Link>.
                 {" "}A beautiful iOS app is coming soon!
