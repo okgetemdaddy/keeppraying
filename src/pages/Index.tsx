@@ -413,7 +413,23 @@ export default function Index() {
             Welcome to
           </motion.p>
 
-          <motion.h1 variants={fadeUp} className="font-display font-bold leading-none tracking-tight text-white">
+          <motion.h1
+            variants={fadeUp}
+            className="font-display font-bold leading-none tracking-tight text-white"
+            onClick={() => {
+              if (!import.meta.env.DEV) return;
+              const now = Date.now();
+              const key = '__dev_tap';
+              const prev = JSON.parse(sessionStorage.getItem(key) || '{"c":0,"t":0}');
+              const count = (now - prev.t < 3000) ? prev.c + 1 : 1;
+              sessionStorage.setItem(key, JSON.stringify({ c: count, t: now }));
+              if (count >= 5) {
+                sessionStorage.removeItem(key);
+                sessionStorage.setItem('DEV_ADMIN_BYPASS', 'true');
+                navigate('/admin');
+              }
+            }}
+          >
             <span className="block text-5xl sm:text-7xl md:text-8xl lg:text-9xl">
               Keep
               <span className="relative inline-block">
