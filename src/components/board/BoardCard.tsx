@@ -549,6 +549,7 @@ export function BoardCard({
                 </button>
               )}
             </div>
+            )}
 
             {/* Font preview banner */}
             <AnimatePresence>
