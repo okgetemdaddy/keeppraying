@@ -384,7 +384,7 @@ export default function Support() {
                 <ul className="space-y-2 list-none">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span>AI does not write prayers for you on its own. It only helps craft or refine a prayer after first listening to and understanding your personal intent, feelings, and the true issue on your heart.</span>
+                    <span>AI only helps craft or refine a prayer after first listening to and understanding your personal intent, feelings, and the true issue on your heart. You are in control. AI helps you find the words.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
