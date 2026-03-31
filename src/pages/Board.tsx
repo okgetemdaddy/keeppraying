@@ -462,6 +462,7 @@ export default function Board() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onOpenThemeSanctuary={() => setThemeSanctuaryOpen(true)}
+        onOpenSettings={() => setSiteSettingsOpen(true)}
       />
 
       {/* Main content */}
