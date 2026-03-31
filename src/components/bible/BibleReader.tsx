@@ -1212,6 +1212,42 @@ export function BibleReader() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Bible Sleeve Sheet ── */}
+      <BibleSleeveSheet
+        open={sleeveOpen}
+        onOpenChange={setSleeveOpen}
+        userName={user?.email ?? undefined}
+        textSize={textSize}
+        minSize={MIN_SIZE}
+        maxSize={MAX_SIZE}
+        onTextSizeChange={setTextSize}
+        readingMode={mode}
+        onReadingModeChange={setMode}
+        crossTranslation={crossTranslation}
+        onToggleCrossTranslation={toggleCrossTranslation}
+        hideBunches={hideBunchRefs}
+        onToggleHideBunches={toggleHideBunches}
+        highlights={chapterData?.highlights ?? []}
+        bookmarks={chapterData?.bookmarks ?? []}
+        notes={chapterData?.notes ?? []}
+        currentBook={currentBook?.title}
+        currentChapter={currentChapter?.title}
+        bunches={bunches ?? []}
+        onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
+        onNavigateToVerse={(vn) => {
+          setSleeveOpen(false);
+          setTimeout(() => {
+            document.getElementById(`verse-${vn}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 300);
+        }}
+      />
+
+      {/* ── First-Click Feature Tour ── */}
+      <BibleFeaturesTour
+        open={showTour}
+        onAcknowledge={handleTourAcknowledge}
+      />
     </article>
   );
 }
