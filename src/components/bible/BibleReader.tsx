@@ -898,143 +898,148 @@ export function BibleReader() {
 
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-2 px-4 py-3">
-          {/* ── Bible Sleeve button ── */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSleeveOpen(true)}
-            className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
-            title="Your Bible Sleeve"
-          >
-            <PanelLeft className="h-4.5 w-4.5" />
-          </Button>
-          <Select
-            value={versionId?.toString()}
-            onValueChange={(v) => {
-              setVersionId(Number(v));
-              setBookUsfm(undefined);
-              setChapterIdx(0);
-            }}
-          >
-            <SelectTrigger className="w-[130px] text-xs sm:text-sm">
-              <SelectValue placeholder={versionsLoading ? "Loading…" : "Version"} />
-            </SelectTrigger>
-            <SelectContent>
-              {versions?.map((v, i) => {
-                // Insert separator after the featured translations (NIV, NIrV, BSB)
-                const FEATURED_IDS = new Set([111, 110]);
-                const isBSB = v.abbreviation === "BSB" || v.localized_abbreviation === "BSB";
-                const isFeatured = FEATURED_IDS.has(v.id) || isBSB;
-                const nextV = versions[i + 1];
-                const nextIsFeatured = nextV
-                  ? FEATURED_IDS.has(nextV.id) || nextV.abbreviation === "BSB" || nextV.localized_abbreviation === "BSB"
-                  : false;
-                const showSep = isFeatured && !nextIsFeatured && i < versions.length - 1;
+        <div className="mx-auto max-w-3xl px-4 py-2 space-y-1.5">
+          {/* ── Row 1: Version · Book · Chapter ── */}
+          <div className="flex items-center gap-2">
+            <Select
+              value={versionId?.toString()}
+              onValueChange={(v) => {
+                setVersionId(Number(v));
+                setBookUsfm(undefined);
+                setChapterIdx(0);
+              }}
+            >
+              <SelectTrigger className="w-[130px] text-xs sm:text-sm">
+                <SelectValue placeholder={versionsLoading ? "Loading…" : "Version"} />
+              </SelectTrigger>
+              <SelectContent>
+                {versions?.map((v, i) => {
+                  const FEATURED_IDS = new Set([111, 110]);
+                  const isBSB = v.abbreviation === "BSB" || v.localized_abbreviation === "BSB";
+                  const isFeatured = FEATURED_IDS.has(v.id) || isBSB;
+                  const nextV = versions[i + 1];
+                  const nextIsFeatured = nextV
+                    ? FEATURED_IDS.has(nextV.id) || nextV.abbreviation === "BSB" || nextV.localized_abbreviation === "BSB"
+                    : false;
+                  const showSep = isFeatured && !nextIsFeatured && i < versions.length - 1;
 
-                return (
-                  <React.Fragment key={v.id}>
-                    <SelectItem value={v.id.toString()}>
-                      {v.id === 110 ? "For Kids" : v.localized_abbreviation}
-                    </SelectItem>
-                    {showSep && <SelectSeparator />}
-                  </React.Fragment>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                  return (
+                    <React.Fragment key={v.id}>
+                      <SelectItem value={v.id.toString()}>
+                        {v.id === 110 ? "For Kids" : v.localized_abbreviation}
+                      </SelectItem>
+                      {showSep && <SelectSeparator />}
+                    </React.Fragment>
+                  );
+                })}
+              </SelectContent>
+            </Select>
 
-          <Select
-            value={bookUsfm}
-            onValueChange={(v) => { setBookUsfm(v); setChapterIdx(0); }}
-            disabled={!index}
-          >
-            <SelectTrigger className="w-[140px] sm:w-[170px] text-xs sm:text-sm">
-              <SelectValue placeholder={indexLoading ? "Loading…" : "Book"} />
-            </SelectTrigger>
-            <SelectContent>
-              {index?.books?.map((b) => (
-                <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select
+              value={bookUsfm}
+              onValueChange={(v) => { setBookUsfm(v); setChapterIdx(0); }}
+              disabled={!index}
+            >
+              <SelectTrigger className="w-[140px] sm:w-[170px] text-xs sm:text-sm">
+                <SelectValue placeholder={indexLoading ? "Loading…" : "Book"} />
+              </SelectTrigger>
+              <SelectContent>
+                {index?.books?.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select
-            value={chapterIdx.toString()}
-            onValueChange={(v) => setChapterIdx(Number(v))}
-            disabled={!currentBook}
-          >
-            <SelectTrigger className="w-[80px] text-xs sm:text-sm">
-              <SelectValue placeholder="Ch" />
-            </SelectTrigger>
-            <SelectContent>
-              {currentBook?.chapters?.map((ch, i) => (
-                <SelectItem key={ch.id} value={i.toString()}>{ch.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select
+              value={chapterIdx.toString()}
+              onValueChange={(v) => setChapterIdx(Number(v))}
+              disabled={!currentBook}
+            >
+              <SelectTrigger className="w-[80px] text-xs sm:text-sm">
+                <SelectValue placeholder="Ch" />
+              </SelectTrigger>
+              <SelectContent>
+                {currentBook?.chapters?.map((ch, i) => (
+                  <SelectItem key={ch.id} value={i.toString()}>{ch.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <div className="flex-1" />
+          {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
+          <div className="flex items-center gap-2">
+            {/* Bible Sleeve button (left) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSleeveOpen(true)}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title="Your Bible Sleeve"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </Button>
 
-          {/* Selection indicator */}
-          {crossSelections.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {crossSelections.length} verse{crossSelections.length > 1 ? "s" : ""} selected
-            </span>
-          )}
+            <div className="flex-1" />
 
-          {/* Text size control */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
-                title="Text size"
-              >
-                <AArrowUp className="h-4.5 w-4.5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-3" align="end">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <AArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs font-medium text-foreground">{textSize}px</span>
-                  <AArrowUp className="h-4.5 w-4.5 text-muted-foreground" />
+            {/* Selection indicator */}
+            {crossSelections.length > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {crossSelections.length} verse{crossSelections.length > 1 ? "s" : ""} selected
+              </span>
+            )}
+
+            {/* Text size control */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  title="Text size"
+                >
+                  <AArrowUp className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-3" align="end">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <AArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-medium text-foreground">{textSize}px</span>
+                    <AArrowUp className="h-4.5 w-4.5 text-muted-foreground" />
+                  </div>
+                  <Slider
+                    value={[textSize]}
+                    min={MIN_SIZE}
+                    max={MAX_SIZE}
+                    step={1}
+                    onValueChange={([v]) => setTextSize(v)}
+                    className="w-full"
+                  />
                 </div>
-                <Slider
-                  value={[textSize]}
-                  min={MIN_SIZE}
-                  max={MAX_SIZE}
-                  step={1}
-                  onValueChange={([v]) => setTextSize(v)}
-                  className="w-full"
-                />
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
 
-          {/* Hide bunches, cross-translation, and reading mode are in the Bible Sleeve */}
-
-          <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
-            <Toggle
-              pressed={mode === "verse"}
-              onPressedChange={() => setMode("verse")}
-              size="sm"
-              className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-              aria-label="Verse-by-verse mode"
-            >
-              <List className="h-3.5 w-3.5" />
-            </Toggle>
-            <Toggle
-              pressed={mode === "paragraph"}
-              onPressedChange={() => setMode("paragraph")}
-              size="sm"
-              className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-              aria-label="Paragraph mode"
-            >
-              <AlignJustify className="h-3.5 w-3.5" />
-            </Toggle>
+            {/* Reading mode toggle */}
+            <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+              <Toggle
+                pressed={mode === "verse"}
+                onPressedChange={() => setMode("verse")}
+                size="sm"
+                className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                aria-label="Verse-by-verse mode"
+              >
+                <List className="h-3.5 w-3.5" />
+              </Toggle>
+              <Toggle
+                pressed={mode === "paragraph"}
+                onPressedChange={() => setMode("paragraph")}
+                size="sm"
+                className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                aria-label="Paragraph mode"
+              >
+                <AlignJustify className="h-3.5 w-3.5" />
+              </Toggle>
+            </div>
           </div>
         </div>
       </div>
