@@ -171,6 +171,11 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       clearInterval(timerRef.current);
       timerRef.current = undefined;
     }
+    // Stop MediaRecorder
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
 
     if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
 
