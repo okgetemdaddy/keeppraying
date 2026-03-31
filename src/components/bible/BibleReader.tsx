@@ -1372,6 +1372,14 @@ export function BibleReader() {
         open={showTour}
         onAcknowledge={handleTourAcknowledge}
       />
+
+      {/* ── Bible Search ── */}
+      <BibleSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        availableBooks={index?.books?.map((b) => b.id)}
+        onNavigate={handleSearchNavigate}
+      />
     </article>
   );
 }
