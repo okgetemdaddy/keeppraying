@@ -56,6 +56,11 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const transcriptRef = useRef("");
 
+  // MediaRecorder for actual audio capture
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioBlobRef = useRef<Blob | null>(null);
+
   // Process offline queue on mount + listen for reconnect
   useEffect(() => {
     if (!user) return;
