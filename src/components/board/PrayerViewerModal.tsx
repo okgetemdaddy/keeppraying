@@ -99,6 +99,7 @@ export function PrayerViewerModal({
 
   // Creator card styling state
   const [cardOpacity, setCardOpacity] = useState(100);
+  const [backdropDim, setBackdropDim] = useState(80);
   const [cardBgPreset, setCardBgPreset] = useState<{ bg: string; text: string } | null>(null);
 
   // TTS
@@ -297,7 +298,8 @@ export function PrayerViewerModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35 }}
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-6"
+            className="fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center p-4 md:p-6"
+            style={{ background: `rgba(0, 0, 0, ${backdropDim / 100})` }}
             onClick={onClose}
           >
             {/* ── Floating prayer card inside dark theater ── */}
@@ -393,21 +395,21 @@ export function PrayerViewerModal({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64 p-3 rounded-xl">
                             <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
-                              <SunDim className="w-3.5 h-3.5" /> Card Transparency
+                              <SunDim className="w-3.5 h-3.5" /> Background Dimmer
                             </DropdownMenuLabel>
                             <div className="px-1 py-2">
                               <Slider
-                                value={[cardOpacity]}
-                                onValueChange={handleOpacityChange}
-                                min={0}
+                                value={[backdropDim]}
+                                onValueChange={(val) => setBackdropDim(val[0])}
+                                min={20}
                                 max={100}
                                 step={1}
                                 className="w-full"
                               />
                               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                                <span>Transparent</span>
-                                <span>{cardOpacity}%</span>
-                                <span>Solid</span>
+                                <span>Light</span>
+                                <span>{backdropDim}%</span>
+                                <span>Dark</span>
                               </div>
                             </div>
                             <DropdownMenuSeparator />
