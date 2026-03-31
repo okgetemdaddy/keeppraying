@@ -464,6 +464,45 @@ export function BibleReader() {
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
 
+  // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
+  const pendingScrollVerseRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (pendingScrollVerseRef.current == null) return;
+    const verseNum = pendingScrollVerseRef.current;
+
+    const tryScroll = () => {
+      const el = document.getElementById(`verse-${verseNum}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        pendingScrollVerseRef.current = null;
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate attempt (covers most cases where effect fires after render)
+    if (tryScroll()) return;
+
+    // Fallback: MutationObserver watches for the element to appear
+    const observer = new MutationObserver(() => {
+      if (tryScroll()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Safety timeout to prevent leaks
+    const timeout = setTimeout(() => {
+      observer.disconnect();
+      tryScroll(); // one last attempt
+      pendingScrollVerseRef.current = null;
+    }, 3000);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeout);
+    };
+  }, [verses]);
+
   // Scripture ref for mutations
   const scriptureRef: ScriptureRef | null = useMemo(
     () =>
