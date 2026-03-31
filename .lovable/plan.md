@@ -1,32 +1,102 @@
 
 
-# Fix: 404 on "Add a Prayer" + Graceful Not-Found Page
+# Swipe-to-Dismiss for Mobile AND iPad — Responsive Wrappers
 
 ## Problem
-The floating action button's "Add a Prayer" navigates to `/prayer` — a route that doesn't exist. The route `/prayer/:id` exists (for viewing a specific prayer), but `/prayer` alone falls through to the 404 page. Additionally, the current 404 page is bare and shows a blunt "404" number.
+All `Sheet` and `Dialog` components use Radix primitives that lack touch swipe-to-dismiss. The current `useIsMobile()` hook only covers phones (<768px), completely ignoring iPads (768–1024px). iPad users get the desktop experience but need touch-friendly swipe interactions too.
 
-## Changes
+## Approach
 
-### 1. Fix the broken navigation (`src/components/PrayerFAB.tsx`)
-Change line 227 from `navigate("/prayer")` to `navigate("/board")` — this takes the user to their Prayer Board, which is where the "Add Prayer" modal lives and will auto-open. Alternatively, navigate to `/prayers` (the public prayers list page which also has an Add Prayer modal).
+### 1. Add `useIsTouch()` hook (`src/hooks/use-mobile.tsx`)
+Add a new hook alongside the existing `useIsMobile`:
+- `useIsTouch()` returns `true` for **both** mobile and iPad (< 1024px)
+- This is the hook the responsive wrappers will use — any touch device gets swipe
+- Keep `useIsMobile()` unchanged for layout decisions (tab bar, etc.)
 
-The board route is the better destination since that's the user's personal prayer space.
+### 2. Create `ResponsiveSheet` (`src/components/ui/responsive-sheet.tsx`)
+- Uses `useIsTouch()`
+- **Touch devices** (phone + iPad): renders as `Drawer` (vaul) — swipe-to-dismiss from bottom
+- **Desktop**: renders as standard `Sheet` (side panel)
+- Exports matching sub-components: `ResponsiveSheetContent`, `ResponsiveSheetHeader`, `ResponsiveSheetTitle`, `ResponsiveSheetDescription`, `ResponsiveSheetFooter`, `ResponsiveSheetClose`
 
-### 2. Redesign the Not-Found page (`src/pages/NotFound.tsx`)
-Replace the current minimal 404 with a graceful, spiritually-toned page — no numbers, no "404":
+### 3. Create `ResponsiveDialog` (`src/components/ui/responsive-dialog.tsx`)
+- Uses `useIsTouch()`
+- **Touch devices**: renders as `Drawer` — swipe-to-dismiss bottom sheet
+- **Desktop**: renders as centered `Dialog`
+- Exports matching sub-components
 
-- Warm, centered layout with a subtle icon (e.g., a compass or dove)
-- Heading like **"This path doesn't seem to lead anywhere"**
-- Subtext: *"Even when we feel lost, God knows exactly where we are."*
-- A Scripture reference (e.g., Psalm 32:8 — "I will instruct you and teach you in the way you should go")
-- A "Return Home" button styled consistently with the app
-- A secondary "Go to Prayer Board" link
-- Soft background consistent with the app's sacred aesthetic
+### 4. Migrate all Sheet consumers (11 files)
+Replace `Sheet` imports with `ResponsiveSheet` in:
 
-### Files Modified
+| File | Context |
+|------|---------|
+| `SiteSettingsSheet.tsx` | Board settings |
+| `AIEnrichPanel.tsx` | AI enrichment |
+| `BibleSleeveSheet.tsx` | Bible tools |
+| `BibleSuggestionSheet.tsx` | Bible suggestion |
+| `BibleFeaturesTour.tsx` | Bible tour |
+| `FloatingToolbar.tsx` | Bible floating toolbar |
+| `Prayer.tsx` | Testify sheet |
+| `Board.tsx` | Various sheets |
+| `Testify.tsx` | Testify sheets |
+| `Prayers.tsx` | Prayer list sheets |
+| `sidebar.tsx` | Sidebar (mobile) |
 
-| File | Change |
+### 5. Migrate all Dialog consumers (21 files)
+Replace `Dialog` imports with `ResponsiveDialog` in:
+
+| File | Context |
+|------|---------|
+| `AddPrayerModal.tsx` | Add prayer form |
+| `SharePrayerModal.tsx` | Share prayer |
+| `InviteShareModal.tsx` | Invite/share |
+| `CommunityPrayerRequestModal.tsx` | Community request |
+| `TeamPrayerRequestModal.tsx` | Team request |
+| `AddBreathPrayerModal.tsx` | Add breath prayer |
+| `ThemeSanctuaryModal.tsx` | Theme picker |
+| `PrayerPartnerCard.tsx` | Partner dialog |
+| `BoardCard.tsx` | Duplicate/confirm dialogs |
+| `PrayerViewerModal.tsx` | Prayer viewer |
+| `TestimonyEnrichModal.tsx` | Testimony enrich |
+| `VerseBunchDialog.tsx` | Verse bunch |
+| `ClassicalPrayersLibrary.tsx` | Classical prayers |
+| `BibleSearchDialog.tsx` | Bible search |
+| `AccountabilityCircles.tsx` | Circle dialogs |
+| `FamilyRooms.tsx` | Room dialogs |
+| `FamilyRoomDetail.tsx` | Room detail dialogs |
+| `Breathe.tsx` | Breathe page dialogs |
+| `TestimonyDetail.tsx` | Testimony dialogs |
+| `Board.tsx` | Board dialogs |
+| `Testify.tsx` | Testify dialogs |
+
+### Technical Detail
+
+**`useIsTouch` implementation:**
+```typescript
+const TABLET_BREAKPOINT = 1024;
+export function useIsTouch() {
+  // returns true for < 1024px (phones + iPads)
+}
+```
+
+**ResponsiveSheet pattern:**
+```tsx
+export function ResponsiveSheet({ children, ...props }) {
+  const isTouch = useIsTouch();
+  if (isTouch) return <Drawer {...props}>{children}</Drawer>;
+  return <Sheet {...props}>{children}</Sheet>;
+}
+```
+
+Each sub-component (Content, Header, Title, etc.) similarly switches between Drawer and Sheet variants.
+
+### Files Summary
+
+| File | Action |
 |------|--------|
-| `src/components/PrayerFAB.tsx` | Fix navigation from `/prayer` → `/board` |
-| `src/pages/NotFound.tsx` | Replace with graceful, number-free not-found page |
+| `src/hooks/use-mobile.tsx` | Add `useIsTouch()` hook |
+| `src/components/ui/responsive-sheet.tsx` | **New** — Sheet↔Drawer wrapper |
+| `src/components/ui/responsive-dialog.tsx` | **New** — Dialog↔Drawer wrapper |
+| 11 Sheet-consuming files | Update imports |
+| ~21 Dialog-consuming files | Update imports |
 
