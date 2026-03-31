@@ -395,21 +395,21 @@ export function PrayerViewerModal({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64 p-3 rounded-xl">
                             <DropdownMenuLabel className="flex items-center gap-1.5 text-xs font-semibold">
-                              <SunDim className="w-3.5 h-3.5" /> Card Transparency
+                              <SunDim className="w-3.5 h-3.5" /> Background Dimmer
                             </DropdownMenuLabel>
                             <div className="px-1 py-2">
                               <Slider
-                                value={[cardOpacity]}
-                                onValueChange={handleOpacityChange}
-                                min={0}
+                                value={[backdropDim]}
+                                onValueChange={(val) => setBackdropDim(val[0])}
+                                min={20}
                                 max={100}
                                 step={1}
                                 className="w-full"
                               />
                               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                                <span>Transparent</span>
-                                <span>{cardOpacity}%</span>
-                                <span>Solid</span>
+                                <span>Light</span>
+                                <span>{backdropDim}%</span>
+                                <span>Dark</span>
                               </div>
                             </div>
                             <DropdownMenuSeparator />
