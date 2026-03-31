@@ -168,7 +168,7 @@ function MoreDropdown({ dark, scrolled }: { dark?: boolean; scrolled?: boolean }
         )}
         aria-label="More features"
       >
-        <MoreHorizontal className="w-4 h-4" />
+        
         More
         <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", open && "rotate-180")} />
       </button>
