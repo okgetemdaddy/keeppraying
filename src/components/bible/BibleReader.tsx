@@ -464,6 +464,45 @@ export function BibleReader() {
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
 
+  // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
+  const pendingScrollVerseRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (pendingScrollVerseRef.current == null) return;
+    const verseNum = pendingScrollVerseRef.current;
+
+    const tryScroll = () => {
+      const el = document.getElementById(`verse-${verseNum}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        pendingScrollVerseRef.current = null;
+        return true;
+      }
+      return false;
+    };
+
+    // Immediate attempt (covers most cases where effect fires after render)
+    if (tryScroll()) return;
+
+    // Fallback: MutationObserver watches for the element to appear
+    const observer = new MutationObserver(() => {
+      if (tryScroll()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Safety timeout to prevent leaks
+    const timeout = setTimeout(() => {
+      observer.disconnect();
+      tryScroll(); // one last attempt
+      pendingScrollVerseRef.current = null;
+    }, 3000);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timeout);
+    };
+  }, [verses]);
+
   // Scripture ref for mutations
   const scriptureRef: ScriptureRef | null = useMemo(
     () =>
@@ -905,9 +944,7 @@ export function BibleReader() {
       const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(bunch.first_chapter)) ?? 0;
       setChapterIdx(Math.max(chIdx, 0));
       if (bunch.first_verse) {
-        setTimeout(() => {
-          document.getElementById(`verse-${bunch.first_verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 500);
+        pendingScrollVerseRef.current = bunch.first_verse;
       }
     },
     [index],
@@ -921,9 +958,7 @@ export function BibleReader() {
       const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(chapter)) ?? 0;
       setChapterIdx(Math.max(chIdx, 0));
       if (verse) {
-        setTimeout(() => {
-          document.getElementById(`verse-${verse}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 500);
+        pendingScrollVerseRef.current = verse;
       }
     },
     [index],
@@ -937,9 +972,7 @@ export function BibleReader() {
       const book = index?.books?.find((b) => b.id === v.bookUsfm);
       const chIdx = book?.chapters?.findIndex((ch) => ch.id === v.chapterNumber) ?? 0;
       setChapterIdx(Math.max(chIdx, 0));
-      setTimeout(() => {
-        document.getElementById(`verse-${v.verseNumber}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 400);
+      pendingScrollVerseRef.current = v.verseNumber;
     },
     [index, versionId, bookUsfm],
   );
@@ -1361,9 +1394,7 @@ export function BibleReader() {
         onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
         onNavigateToVerse={(vn) => {
           setSleeveOpen(false);
-          setTimeout(() => {
-            document.getElementById(`verse-${vn}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 300);
+          pendingScrollVerseRef.current = vn;
         }}
       />
 
