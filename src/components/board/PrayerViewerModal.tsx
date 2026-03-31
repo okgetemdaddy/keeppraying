@@ -374,7 +374,7 @@ export function PrayerViewerModal({
                           <h2
                             className="text-xl md:text-2xl font-semibold leading-tight"
                             style={{
-                              color: hasImage ? "white" : cardTextColor,
+                              color: effectiveTextColor,
                               fontFamily: '"Playfair Display", serif',
                             }}
                           >
@@ -390,7 +390,7 @@ export function PrayerViewerModal({
                             <button
                               className="p-1.5 rounded-lg transition-colors"
                               style={{
-                                color: hasImage ? "white" : cardTextColor,
+                                color: effectiveTextColor,
                                 background: hasImage ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.05)",
                               }}
                               title="Card settings"
@@ -515,7 +515,7 @@ export function PrayerViewerModal({
                       text={card.prayer_text}
                       className="text-base md:text-lg leading-[1.85] font-medium mb-8 selection:bg-amber-100 selection:text-slate-900"
                       style={{
-                        color: hasImage ? "white" : cardTextColor,
+                        color: effectiveTextColor,
                         fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : '"Lora", serif',
                       }}
                       indent
