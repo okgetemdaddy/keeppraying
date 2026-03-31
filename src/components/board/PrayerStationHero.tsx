@@ -42,6 +42,8 @@ interface PrayerStationHeroProps {
   onSearchChange: (q: string) => void;
   /* Theme Sanctuary */
   onOpenThemeSanctuary: () => void;
+  /* Site Settings */
+  onOpenSettings?: () => void;
 }
 
 export function PrayerStationHero({
@@ -54,6 +56,7 @@ export function PrayerStationHero({
   searchQuery,
   onSearchChange,
   onOpenThemeSanctuary,
+  onOpenSettings,
 }: PrayerStationHeroProps) {
   const { user } = useAuth();
   const [welcomeMsg, setWelcomeMsg] = useState<string | null>(null);
