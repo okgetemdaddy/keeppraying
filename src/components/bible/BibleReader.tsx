@@ -995,6 +995,17 @@ export function BibleReader() {
               <PanelLeft className="h-4 w-4" />
             </Button>
 
+            {/* Focus mode — hide bottom nav */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleFocusMode}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title={focusMode ? "Show navigation" : "Focus mode"}
+            >
+              {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
+
             <div className="flex-1" />
 
             {/* Selection indicator */}
