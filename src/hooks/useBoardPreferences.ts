@@ -72,6 +72,9 @@ export function useBoardPreferences() {
             calendar_text: (data as any).calendar_text ?? DEFAULTS.calendar_text,
             calendar_accent: (data as any).calendar_accent ?? DEFAULTS.calendar_accent,
             atmosphere_id: (data as any).atmosphere_id ?? DEFAULTS.atmosphere_id,
+            caption_mode_tts: (data as any).caption_mode_tts ?? DEFAULTS.caption_mode_tts,
+            caption_mode_recorded: (data as any).caption_mode_recorded ?? DEFAULTS.caption_mode_recorded,
+            default_card_layout: (data as any).default_card_layout ?? DEFAULTS.default_card_layout,
           };
           setPrefs(fresh);
           setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);
