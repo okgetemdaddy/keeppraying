@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette, ExternalLink } from "lucide-react";
+import { X, Heart, Pin, Share2, Bird, Sparkles, Tag, Globe, Lock, Loader2, ListPlus, ArrowLeft, Volume2, MoreVertical, SunDim, Check, Palette, ExternalLink, ImageIcon, Type } from "lucide-react";
 import { FormattedText } from "@/lib/FormattedText";
 import { TestifyBack } from "./TestifyBack";
 import { Switch } from "@/components/ui/switch";
