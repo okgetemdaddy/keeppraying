@@ -1077,6 +1077,17 @@ export function BibleReader() {
             </Button>
 
             {/* Focus mode — hide bottom nav */}
+
+            {/* Search button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchOpen(true)}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title="Search (⌘K)"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
