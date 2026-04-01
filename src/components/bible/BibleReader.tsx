@@ -509,6 +509,7 @@ export function BibleReader() {
     currentChapter?.id,
     verseIds,
     crossTranslation,
+    crossBunchTranslation,
   );
 
   const verses = chapterData?.verses ?? [];
