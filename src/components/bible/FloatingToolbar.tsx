@@ -55,8 +55,10 @@ export interface FloatingToolbarProps {
   onToggleBookmark: (verseNumber: number, color: string, existingId?: string) => void;
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
+  onAddToBunch?: () => void;
   onDismiss: () => void;
   isAuthenticated: boolean;
+  hasBunches?: boolean;
   /** All bookmark colors used by the user (for "+" auto-assign) */
   usedBookmarkColors?: Set<string>;
   /** Current bookmark on this verse, if any */
@@ -80,6 +82,8 @@ function ToolbarActions({
   onToggleBookmark,
   onAddNote,
   onCreateBunch,
+  onAddToBunch,
+  hasBunches,
   onDismiss,
   layout = "horizontal",
 }: Omit<FloatingToolbarProps, "position" | "isAuthenticated"> & { layout?: "horizontal" | "vertical" }) {
@@ -224,6 +228,21 @@ function ToolbarActions({
           >
             <Package className="h-4 w-4" />
             <span className={`font-medium ${isVertical ? "text-sm" : "text-xs"}`}>Bunch</span>
+          </button>
+        )}
+
+        {/* ── Add to existing Bunch ── */}
+        {hasBunches && onAddToBunch && (
+          <button
+            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
+            title="Add to a Bunch"
+            onClick={() => {
+              onAddToBunch();
+              onDismiss();
+            }}
+          >
+            <Package className="h-4 w-4" />
+            <span className={`font-medium ${isVertical ? "text-sm" : "text-xs"}`}>+ Bunch</span>
           </button>
         )}
       </div>

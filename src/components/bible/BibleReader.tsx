@@ -64,6 +64,7 @@ import {
   clearPendingBunch,
 } from "@/components/bible/VerseBunchDialog";
 import { VerseBunchStrip, useUserVerseBunches, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
+import { AddToBunchDrawer, VerseAddedToast } from "@/components/bible/AddToBunchDrawer";
 import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
@@ -447,6 +448,15 @@ export function BibleReader() {
     }
     return () => { root.classList.remove("bible-dark", "bible-oled"); };
   }, [premiumDark, oledMode]);
+
+  // ── Active Bunch (session-only, resets on reload) ──
+  const [activeBunchId, setActiveBunchId] = useState<string | null>(null);
+
+  // ── Add to Bunch drawer ──
+  const [addToBunchOpen, setAddToBunchOpen] = useState(false);
+
+  // ── Floating "Verse Added" toast ──
+  const [verseAddedToast, setVerseAddedToast] = useState<{ name: string; visible: boolean }>({ name: "", visible: false });
 
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -984,7 +994,65 @@ export function BibleReader() {
     [index],
   );
 
-  // ── Navigate from search ──
+  // ── Navigate to a specific verse from bunch strip ──
+  const handleNavigateToVerse = useCallback(
+    (targetVersionId: number, targetBookUsfm: string, chapter: number, verse: number) => {
+      setVersionId(targetVersionId);
+      setBookUsfm(targetBookUsfm);
+      const book = index?.books?.find((b) => b.id === targetBookUsfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(chapter)) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      pendingScrollVerseRef.current = verse;
+    },
+    [index],
+  );
+
+  // ── Add to Bunch flow ──
+  const handleAddToBunchRequest = useCallback(() => {
+    setAddToBunchOpen(true);
+  }, []);
+
+  const handleAddToBunchConfirm = useCallback(
+    (bunchId: string, bunchName: string) => {
+      const items: CrossBunchItem[] = crossSelections.map((s) => ({
+        versionId: s.versionId,
+        bookUsfm: s.bookUsfm,
+        chapterNumber: parseInt(s.chapterNumber, 10),
+        verseNumber: s.verseNumber,
+      }));
+      mutations.addToBunch.mutate({ bunchId, bunchName, items });
+      setAddToBunchOpen(false);
+      setCrossSelections([]);
+      setToolbarPos(null);
+
+      // If adding to the latest bunch, switch label to Active
+      const newest = bunches?.[0];
+      if (newest && bunchId === newest.id) {
+        setActiveBunchId(bunchId);
+      }
+
+      // Show floating toast
+      setVerseAddedToast({ name: bunchName, visible: true });
+      setTimeout(() => setVerseAddedToast((prev) => ({ ...prev, visible: false })), 2500);
+    },
+    [crossSelections, mutations.addToBunch, bunches],
+  );
+
+  // ── Set active bunch (from Sleeve context menu) ──
+  const handleSetActiveBunch = useCallback((bunchId: string) => {
+    setActiveBunchId(bunchId);
+  }, []);
+
+  // ── Delete bunch ──
+  const handleDeleteBunch = useCallback(
+    (bunchId: string) => {
+      mutations.deleteBunch.mutate(bunchId);
+      if (activeBunchId === bunchId) setActiveBunchId(null);
+    },
+    [mutations.deleteBunch, activeBunchId],
+  );
+
+
   const handleSearchNavigate = useCallback(
     (searchBookUsfm: string, chapter: number, verse?: number) => {
       setBookUsfm(searchBookUsfm);
@@ -1057,7 +1125,13 @@ export function BibleReader() {
   return (
     <article className={`min-h-screen bg-background transition-colors duration-300 ${premiumDark ? 'bible-dark' : ''} ${premiumDark && oledMode ? 'bible-oled' : ''}`}>
       {/* ── Verse Bunch strip (saved bunches) ── */}
-      {!hideBunchRefs && <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />}
+      {!hideBunchRefs && (
+        <VerseBunchStrip
+          onNavigateToBunch={handleNavigateToBunch}
+          onNavigateToVerse={handleNavigateToVerse}
+          activeBunchId={activeBunchId}
+        />
+      )}
 
       {/* ── Selected verses strip (active selections) ── */}
       <SelectedVersesStrip
@@ -1353,6 +1427,8 @@ export function BibleReader() {
             onToggleBookmark={handleToggleBookmark}
             onAddNote={handleAddNote}
             onCreateBunch={handleCreateBunchRequest}
+            onAddToBunch={handleAddToBunchRequest}
+            hasBunches={(bunches ?? []).length > 0}
             onDismiss={dismissToolbar}
             isAuthenticated={!!user}
           />
@@ -1439,11 +1515,24 @@ export function BibleReader() {
         currentChapter={currentChapter?.title}
         bunches={bunches ?? []}
         onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
+        onSetActiveBunch={handleSetActiveBunch}
+        onDeleteBunch={handleDeleteBunch}
         onNavigateToVerse={(vn) => {
           setSleeveOpen(false);
           pendingScrollVerseRef.current = vn;
         }}
       />
+
+      {/* ── Add to Bunch Drawer ── */}
+      <AddToBunchDrawer
+        open={addToBunchOpen}
+        onOpenChange={setAddToBunchOpen}
+        bunches={bunches ?? []}
+        onSelect={handleAddToBunchConfirm}
+      />
+
+      {/* ── Verse Added Toast ── */}
+      <VerseAddedToast bunchName={verseAddedToast.name} visible={verseAddedToast.visible} />
 
       {/* ── First-Click Feature Tour ── */}
       <BibleFeaturesTour
