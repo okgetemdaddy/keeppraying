@@ -1407,9 +1407,15 @@ export function BibleReader() {
             <Button
               variant={studyMode ? "default" : "ghost"}
               size="sm"
-              onClick={() => handleToggleStudyMode(!studyMode)}
+              onClick={() => {
+                if (studyMode && studyModeVariant === "canvas") {
+                  setCanvasOpen(!canvasOpen);
+                } else {
+                  handleToggleStudyMode(!studyMode);
+                }
+              }}
               className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
+              title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
             >
               <PenTool className="h-4 w-4" />
             </Button>
