@@ -1,55 +1,31 @@
 
 
-# Mobile "Write a Prayer" — Full-Screen Composer Redesign
+# Hide All Scrollbars App-Wide
 
-## What Changes
+## Summary
+Apply the `scrollbar-hide` utility globally so no scrollbar is ever visible — users can still scroll freely, but no bar renders. This is a two-part approach: a global CSS rule plus targeted cleanup of `ScrollArea` components that render their own styled scrollbar thumbs.
 
-Redesign the mobile "Write It" flow into a **three-phase experience** using a bottom-slide-up Drawer:
+## Changes
 
-### Phase 1: Initial Drawer (slide up from bottom)
-- Clean drawer with title "Write a Prayer" and a tappable text input placeholder
-- Tapping the text area transitions to Phase 2
+### 1. `src/index.css` — Global scrollbar suppression
+Replace the existing custom scrollbar styles (lines 274–281) with the `scrollbar-hide` approach applied to everything:
 
-### Phase 2: Full-Screen Composer
-- Textarea expands to fill the entire screen (fixed fullscreen overlay)
-- A **slim formatting toolbar** sits just above the textarea with: **Bold**, **Italic**, **Underline**, **Strikethrough** toggle buttons
-- Below the textarea: a slim, easily tappable **"Submit Prayer"** button (full-width, gold gradient)
-- No title field, no text style pills, no accordions — just the writing space and formatting bar
-- User types their prayer, applies inline formatting, taps Submit
+```css
+/* Hide all scrollbars globally */
+* { -ms-overflow-style: none; scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+```
 
-### Phase 3: Thank You Confirmation (back to drawer)
-- After successful submission, the fullscreen closes and the drawer shows a warm confirmation:
-  - *"Thank you — God bless you. He hears every prayer."*
-  - *"Consider making it public to edify others. We are praying for you!"*
-- Tap anywhere or swipe down to dismiss
+Remove the existing `::-webkit-scrollbar`, `::-webkit-scrollbar-track`, `::-webkit-scrollbar-thumb` rules. Keep the `.scrollbar-hide` utility class for explicit use.
 
-### Desktop Behavior
-- Desktop keeps the current modal UI unchanged — this redesign is **mobile-only** (detected via `useIsMobile()`)
+### 2. `src/components/ui/scroll-area.tsx` — Hide the Radix scrollbar thumb
+The `ScrollArea` component renders a visible `ScrollBar` thumb by default. Update `ScrollArea` to **not render `<ScrollBar />`** inside, so no thumb appears. The component still provides smooth overflow behavior via the Radix viewport.
 
-## Technical Approach
+### 3. Individual files — No code changes needed
+Once the global CSS hides all scrollbars and `ScrollArea` stops rendering its thumb, all 33+ files using `overflow-y-auto` / `overflow-x-auto` and all 6 files using `ScrollArea` / `ScrollBar` will automatically have hidden scrollbars with no per-file edits required.
 
-### File: `src/components/AddPrayerModal.tsx`
-- Add `useIsMobile()` hook check
-- When mobile: render a completely different component (`MobileWritePrayerDrawer`) instead of the current dialog
-- When desktop: keep existing modal as-is
-
-### New File: `src/components/MobileWritePrayerDrawer.tsx`
-- Uses the `Drawer` component from vaul (same pattern as `ResponsiveDialog`)
-- Internal state machine: `idle` → `composing` → `submitted`
-- **idle**: Drawer with placeholder text area that on focus transitions to `composing`
-- **composing**: Fixed fullscreen overlay with:
-  - Formatting toolbar (Bold/Italic/Underline/Strikethrough as icon toggle buttons)
-  - Uses `document.execCommand` or tracked markdown state for inline formatting
-  - Full-height contentEditable div or textarea
-  - Slim "Submit Prayer" button pinned at bottom
-- **submitted**: Back to drawer view with thank-you message, dismiss on tap/swipe
-- Submission logic reuses the same Supabase insert from `AddPrayerModal`
-
-### Formatting Implementation
-- Use a `contentEditable` div for rich text, or simpler approach: track bold/italic/underline/strikethrough as toggles that wrap selected text with markers, then store as the `text_style` or apply inline HTML
-- Simplest reliable approach: `contentEditable` div with `document.execCommand('bold')` etc., extract innerHTML for storage
-
-### No Database Changes
-- Prayer text stored in existing `prayer_text` column
-- Rich formatting stored as simple HTML in the same field (already supports string content)
+## Result
+- Zero visible scrollbars anywhere in the app (popups, drawers, sheets, pages, dialogs)
+- All scrollable areas remain fully scrollable via touch/trackpad/mouse wheel
+- Clean, minimal aesthetic throughout
 
