@@ -1,51 +1,24 @@
 
 
-# Voice Waveform Player + Caption Toggle Improvements
+# Fix CC Toggle Deselecting on Outside Click
 
 ## Problem
-1. The waveform bars change shape during playback (driven by real-time frequency analyser) — they should stay static and only change **color** as audio progresses
-2. Unplayed bars should be **grey**, played bars should fill with a **gradient orange** (left-to-right fill effect)
-3. The play button should play the **user's recorded voice**, not AI TTS — need to verify it's using `voice_audio_url` (it is)
-4. A **closed caption (CC) toggle icon** needs to appear next to:
-   - The Volume2 (speaker/listen) button on every card footer
-   - The play button on voice prayer cards (VoiceWaveformPlayer)
+The CC (caption) toggle on prayer cards uses local `useState` inside `BoardCard`. When the user clicks elsewhere on the Board, the card list re-renders (e.g., from a data refetch or parent state change), causing `BoardCard` to remount and reset `localCaptionTts` / `localCaptionRecorded` back to the prop default values.
+
+## Solution
+Lift the CC toggle state out of `BoardCard` and into the Board page level, using the existing `useBoardPreferences` hook which already has `caption_mode_tts` and `caption_mode_recorded` fields that persist to the database.
 
 ## Changes
 
-### File 1: `src/components/board/VoiceWaveformPlayer.tsx`
+### File: `src/pages/Board.tsx`
+- Pass `onToggleCaptionTts` and `onToggleCaptionRecorded` callbacks to `BoardCard` that call `updatePref("caption_mode_tts", !prefs.caption_mode_tts)` and similar
+- These persist the toggle to the database so it survives page refreshes too
 
-**Waveform behavior fix:**
-- Keep the static bars generated on mount as the **permanent shape** — never replace them with analyser data
-- Remove the `connectAnalyser` / `animateBars` logic entirely (no more real-time frequency reshaping)
-- Color logic: unplayed bars = `#9ca3af` (grey-400), played bars = gradient orange (`hsl(30, 90%, 50%)` → `hsl(42, 85%, 55%)`)
-- Use progress-based coloring: bar index `i / barCount <= progress` determines played vs unplayed
+### File: `src/components/board/BoardCard.tsx`
+- Remove `localCaptionTts` and `localCaptionRecorded` local state
+- Add new props: `onToggleCaptionTts?: () => void` and `onToggleCaptionRecorded?: () => void`
+- Use the existing `captionModeTts` and `captionModeRecorded` props directly (they're already passed from Board) instead of copying them into local state
+- Pass the new toggle callbacks down to `ActionButtons` and `VoiceWaveformPlayer`
 
-**Add caption toggle button:**
-- New prop: `captionsEnabled?: boolean`, `onToggleCaptions?: () => void`
-- Render a `Captions` (or `Subtitles`) icon button next to the play/pause button
-- When active, icon is highlighted in accent color; when off, greyed out
-
-### File 2: `src/components/board/BoardCard.tsx`
-
-**Add CC toggle next to Volume2 (listen) button in ActionButtons:**
-- Add a `Captions` icon button right next to the existing Volume2 button
-- Wire it to toggle `captionModeTts` per-card (local state toggle that controls whether clicking listen opens the TtsContemplationOverlay or plays inline)
-- When caption mode is on, the CC icon is highlighted; when off, greyed
-
-**Wire caption toggle to VoiceWaveformPlayer:**
-- Pass `captionsEnabled={captionModeRecorded}` and `onToggleCaptions` to the `VoiceWaveformPlayer` instance
-- The toggle flips whether the play button opens caption overlay vs plays inline audio
-
-## Visual Summary
-```text
-Before:  [▶] [|||dynamic bars|||]  0:00 — 1:23
-After:   [▶] [CC] [███grey░░░░░░]  0:00 — 1:23
-                   ^^orange fill^^
-```
-
-Card footer:
-```text
-Before:  ❤️  📌  🔊  ↗  ⋯
-After:   ❤️  📌  🔊 [CC]  ↗  ⋯
-```
+This makes the CC toggle a persistent, global preference rather than ephemeral local state that resets on re-render.
 
