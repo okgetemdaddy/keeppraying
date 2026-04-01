@@ -145,7 +145,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-full max-h-[95vh] overflow-y-auto border-0 shadow-2xl p-0"
+        className="w-full border-0 shadow-2xl p-0"
         style={{
           maxWidth: "min(40rem, 95vw)",
           background: "hsl(42 55% 99%)",
