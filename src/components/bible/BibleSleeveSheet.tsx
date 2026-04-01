@@ -634,6 +634,37 @@ export function BibleSleeveSheet({
 
             <div className="h-px bg-border" />
 
+            {/* ── iPad Study Mode ── */}
+            {onToggleStudyMode && (
+              <>
+                <Collapsible open={isOpen(SECTION_IDS.studyMode)}>
+                  <SectionHeader icon={PenTool} label="iPad Study Mode" isOpen={isOpen(SECTION_IDS.studyMode)} onToggle={() => toggleSection(SECTION_IDS.studyMode)} />
+                  <CollapsibleContent className="mt-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-foreground font-medium">Handwritten Annotations</span>
+                        <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                          Write directly on the page with Apple Pencil or finger. Strokes are saved per verse.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={!!studyMode}
+                        onCheckedChange={onToggleStudyMode}
+                        className="shrink-0 mt-0.5"
+                      />
+                    </div>
+                    {pencilDetected && (
+                      <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg">
+                        <span>🍎</span>
+                        <span>Apple Pencil connected</span>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+                <div className="h-px bg-border" />
+              </>
+            )}
+
             {/* ── Trash Bin (always visible) ── */}
             <section>
               <button
