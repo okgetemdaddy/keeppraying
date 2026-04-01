@@ -274,7 +274,12 @@ function EnrichedVerse({
   isSelected,
   hideBunches,
   onTapSelect,
+  studyMode,
+  verseAnnotation,
+  onAnnotationSave,
+  verseIdString,
 }: EnrichedVerseProps) {
+  const [showAnnotation, setShowAnnotation] = useState(false);
   const bunchBorderClass = useMemo(() => {
     if (!bunchGroupPosition || hideBunches) return "";
     const firstBunchId = bunchItems[0]?.bunch_id;
