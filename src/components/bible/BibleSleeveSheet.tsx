@@ -130,6 +130,7 @@ export function BibleSleeveSheet({
   }, [highlights]);
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-[320px] sm:w-[360px] p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
