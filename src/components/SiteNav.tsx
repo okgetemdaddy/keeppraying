@@ -24,7 +24,7 @@ const CORE_LINKS = [
 const MORE_LINKS = [
   { label: "Sermon Mode", href: "/sermon-sync", icon: Radio, description: "Live sermon prayer sync" },
   { label: "PrayerAssist.ing", href: "/assistant", icon: Sparkles, description: "AI-guided prayer crafting" },
-  { label: "God's Word", href: "/bible", icon: BookMarked, description: "With highlights, notes, bookmarks" },
+  { label: "KeepRead.ing", href: "/bible", icon: BookMarked, description: "With highlights, notes, bookmarks" },
   { label: "Circles", href: "/circles", icon: Users, description: "Prayer groups & accountability" },
   { label: "Family", href: "/family", icon: Home, description: "Family prayer rooms" },
   { label: "KeepFight.ing", href: "/war-room", icon: Swords, description: "Spiritual warfare room" },

@@ -270,7 +270,7 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
               <SheetTitle className="text-base">Sign In Required</SheetTitle>
             </SheetHeader>
             <p className="text-sm text-muted-foreground mt-2">
-              Sign in to highlight, bookmark & take notes on God's Word.
+              Sign in to highlight, bookmark & take notes on KeepRead.ing.
             </p>
           </SheetContent>
         </Sheet>

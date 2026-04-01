@@ -88,7 +88,7 @@ export function PrayerStationHero({
       { id: "family", label: "Family", icon: Home, href: "/family", state: { from: "board" } },
       { id: "breathe", label: "Breathe", icon: Wind, href: "/breathe" },
       { id: "classical", label: "Classical", icon: BookOpen, onClick: onClassical },
-      { id: "bible", label: "God's Word", icon: BookMarked, href: "/bible" },
+      { id: "bible", label: "KeepRead.ing", icon: BookMarked, href: "/bible" },
     ];
     if (hasPrayers) {
       items.splice(1, 0, { id: "playlist", label: "Playlist", icon: ListMusic, onClick: onPlaylist, highlight: false } as any);

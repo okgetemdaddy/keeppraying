@@ -21,7 +21,6 @@ import {
   ResponsiveSheetDescription as SheetDescription,
 } from "@/components/ui/responsive-sheet";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
-import { isKeepReading } from "@/lib/hostDetect";
 
 const FEATURES = [
   {
@@ -81,7 +80,6 @@ interface BibleFeaturesTourProps {
 
 export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProps) {
   const [showSuggestion, setShowSuggestion] = useState(false);
-  const kr = isKeepReading();
 
   return (
     <>
@@ -89,12 +87,10 @@ export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProp
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto pb-8 px-5">
           <SheetHeader className="text-left">
             <SheetTitle className="text-lg font-bold tracking-tight">
-              {kr ? "Welcome to KeepRead.ing ✨" : "Welcome to God's Word ✨"}
+              Welcome to KeepRead.ing ✨
             </SheetTitle>
             <SheetDescription className="text-sm text-muted-foreground leading-relaxed">
-              {kr
-                ? "Keep Reading. Go Deeper. Here's everything you can do."
-                : "Here's everything you can do while reading Scripture."}
+              Keep Reading. Go Deeper. Here's everything you can do.
             </SheetDescription>
           </SheetHeader>
 
@@ -132,7 +128,7 @@ export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProp
             className="mt-6 w-full"
             size="lg"
           >
-            {kr ? "Start Reading" : "Thanks for letting me know"}
+            Start Reading
           </Button>
         </SheetContent>
       </Sheet>

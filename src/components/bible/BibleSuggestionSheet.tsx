@@ -92,7 +92,7 @@ export function BibleSuggestionSheet({ open, onClose }: BibleSuggestionSheetProp
                 Make a Suggestion 💡
               </SheetTitle>
               <SheetDescription className="text-sm text-muted-foreground leading-relaxed">
-                Thank you for blessing us by helping us improve God's Word reader.
+                Thank you for blessing us by helping us improve KeepRead.ing.
                 Every suggestion is read prayerfully by our team.
               </SheetDescription>
             </SheetHeader>

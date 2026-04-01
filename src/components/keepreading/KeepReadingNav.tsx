@@ -65,14 +65,19 @@ function KRUserMenu() {
                   {user.email}
                 </p>
               )}
-              <Link
-                to="/profile"
+              <p className="px-4 py-2 text-[11px] text-muted-foreground/70 leading-relaxed">
+                Your KeepRead.ing login seamlessly works with{" "}
+                <a href="https://keeppray.ing" className="text-primary hover:underline font-medium">KeepPray.ing</a>
+              </p>
+              <div className="border-t border-border my-1" />
+              <a
+                href="https://keeppray.ing/profile"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground/80 hover:text-foreground hover:bg-muted transition-colors"
               >
                 <User className="w-4 h-4" />
                 My Profile
-              </Link>
+              </a>
               <button
                 onClick={async () => { setOpen(false); await signOut(); navigate("/"); }}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
