@@ -151,6 +151,10 @@ export function useBibleMutations(ref: ScriptureRef | null) {
 
       // Remove existing bookmark if present
       if (params.existingId) {
+        if (user) {
+          const { data: snap } = await supabase.from("user_bookmarks").select("*").eq("id", params.existingId).single();
+          if (snap) await trashItem(user.id, "bookmark", params.existingId, snap as any);
+        }
         const { error } = await supabase
           .from("user_bookmarks")
           .delete()
