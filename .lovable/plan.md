@@ -1,36 +1,48 @@
 
 
-# Fix: Microphone "aborted" Error in Voice Recorder
+# Fix: Immediate Red Error on Mic Button in War Room
 
 ## Problem
-The `SpeechRecognition` API fires an `"aborted"` error when the session is interrupted — this is normal and expected (e.g. when the user stops recording, or recognition auto-restarts). But the current error handler only ignores `"no-speech"`, so `"aborted"` triggers a scary red toast and calls `stopRecording()`.
-
-A second bug: the `recognition.onend` handler references `state` from the closure, which is always `"idle"` (the value when `startRecording` was called). So auto-restart never works — recognition just dies silently, and if it fires `"aborted"` on the way out, the user sees an error.
+Clicking the mic button fires `SpeechRecognition.start()`, which immediately errors with `audio-capture` in environments where mic access is blocked (e.g. the Lovable preview iframe, or if the user denied permission). This error is not in the harmless list, so a scary red toast with just "audio-capture" appears.
 
 ## Fix
 
 **File:** `src/components/VoiceRecorder.tsx`
 
-### 1. Use a ref for recording state so closures always see current value
-Add a `stateRef` that stays in sync with `state`, and use it in the `onend` handler.
+### 1. Handle `audio-capture` and `not-allowed` gracefully
+Instead of showing the raw error string, detect these two mic-permission errors and show a user-friendly message:
 
-### 2. Ignore harmless SpeechRecognition errors
-Change the error filter from:
 ```ts
-if (event.error !== "no-speech") {
-```
-to:
-```ts
-const harmless = ["no-speech", "aborted", "network"];
-if (!harmless.includes(event.error)) {
-```
-This prevents `"aborted"` (normal lifecycle) and `"network"` (brief connectivity blips) from showing a destructive toast and killing the session.
+recognition.onerror = (event: any) => {
+  console.error("Speech recognition error:", event.error);
+  const harmless = ["no-speech", "aborted", "network"];
+  if (harmless.includes(event.error)) return;
 
-### 3. Don't call stopRecording on harmless errors
-Only call `stopRecording()` for real failures (like `"not-allowed"` or `"audio-capture"`).
+  const micBlocked = ["audio-capture", "not-allowed"];
+  if (micBlocked.includes(event.error)) {
+    toast({
+      title: "Microphone not available",
+      description: "Please allow microphone access in your browser settings and try again.",
+    });
+    cancel(); // clean reset instead of stopRecording
+    return;
+  }
+
+  toast({ title: "Recording error", description: event.error, variant: "destructive" });
+  stopRecording();
+};
+```
+
+### 2. Guard `getUserMedia` failure
+The `navigator.mediaDevices.getUserMedia` call already has a `.catch(() => {})` that silently swallows mic denial. This is fine since it's only for the audio recording (not transcription). No change needed there.
+
+### Result
+- `audio-capture` / `not-allowed` → friendly toast + clean reset to idle, no red error
+- `no-speech` / `aborted` / `network` → silently ignored (existing behavior)
+- Other errors → red toast (existing behavior)
 
 ### Files Modified
 | File | Change |
 |------|--------|
-| `src/components/VoiceRecorder.tsx` | Add `stateRef`, fix error filter, fix `onend` closure |
+| `src/components/VoiceRecorder.tsx` | Add friendly handling for `audio-capture` and `not-allowed` errors |
 
