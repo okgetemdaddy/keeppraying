@@ -206,6 +206,9 @@ export function BibleSleeveSheet({
   immersiveIOSLimited,
   immersiveActive,
   onToggleImmersive,
+  studyMode,
+  pencilDetected,
+  onToggleStudyMode,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
