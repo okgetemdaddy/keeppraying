@@ -866,6 +866,35 @@ export default function Board() {
         onWrite={() => setAddOpen(true)}
       />
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
+
+      {/* Voice Recorder Modal — triggered from chooser */}
+      <Dialog open={voiceRecorderOpen} onOpenChange={setVoiceRecorderOpen}>
+        <DialogContent
+          className="w-full border-0 shadow-2xl p-6"
+          style={{
+            maxWidth: "min(36rem, 95vw)",
+            background: "hsl(42 55% 99%)",
+            boxShadow: "0 32px 80px -16px rgba(0,0,0,0.22), 0 0 0 1px hsl(38 22% 90%)",
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl" style={{ color: "hsl(25 35% 14%)" }}>
+              Speak Your Prayer
+            </DialogTitle>
+            <DialogDescription className="text-sm" style={{ color: "hsl(25 18% 52%)" }}>
+              Record your prayer aloud — we'll transcribe and save it to your board.
+            </DialogDescription>
+          </DialogHeader>
+          <VoiceRecorder
+            variant="inline"
+            onPrayerCreated={(id) => {
+              setVoiceRecorderOpen(false);
+              fetchSaved();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
 
       {/* ── Theme Sanctuary Modal ──────────────────────────────────── */}
