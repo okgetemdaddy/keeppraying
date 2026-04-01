@@ -1520,6 +1520,8 @@ export function BibleReader() {
         onToggleCrossTranslation={toggleCrossTranslation}
         hideBunches={hideBunchRefs}
         onToggleHideBunches={toggleHideBunches}
+        crossBunchTranslation={crossBunchTranslation}
+        onToggleCrossBunchTranslation={toggleCrossBunchTranslation}
         premiumDark={premiumDark}
         oledMode={oledMode}
         onTogglePremiumDark={handleTogglePremiumDark}
