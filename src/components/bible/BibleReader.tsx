@@ -994,7 +994,65 @@ export function BibleReader() {
     [index],
   );
 
-  // ── Navigate from search ──
+  // ── Navigate to a specific verse from bunch strip ──
+  const handleNavigateToVerse = useCallback(
+    (targetVersionId: number, targetBookUsfm: string, chapter: number, verse: number) => {
+      setVersionId(targetVersionId);
+      setBookUsfm(targetBookUsfm);
+      const book = index?.books?.find((b) => b.id === targetBookUsfm);
+      const chIdx = book?.chapters?.findIndex((ch) => ch.id === String(chapter)) ?? 0;
+      setChapterIdx(Math.max(chIdx, 0));
+      pendingScrollVerseRef.current = verse;
+    },
+    [index],
+  );
+
+  // ── Add to Bunch flow ──
+  const handleAddToBunchRequest = useCallback(() => {
+    setAddToBunchOpen(true);
+  }, []);
+
+  const handleAddToBunchConfirm = useCallback(
+    (bunchId: string, bunchName: string) => {
+      const items: CrossBunchItem[] = crossSelections.map((s) => ({
+        versionId: s.versionId,
+        bookUsfm: s.bookUsfm,
+        chapterNumber: parseInt(s.chapterNumber, 10),
+        verseNumber: s.verseNumber,
+      }));
+      mutations.addToBunch.mutate({ bunchId, bunchName, items });
+      setAddToBunchOpen(false);
+      setCrossSelections([]);
+      setToolbarPos(null);
+
+      // If adding to the latest bunch, switch label to Active
+      const newest = bunches?.[0];
+      if (newest && bunchId === newest.id) {
+        setActiveBunchId(bunchId);
+      }
+
+      // Show floating toast
+      setVerseAddedToast({ name: bunchName, visible: true });
+      setTimeout(() => setVerseAddedToast((prev) => ({ ...prev, visible: false })), 2500);
+    },
+    [crossSelections, mutations.addToBunch, bunches],
+  );
+
+  // ── Set active bunch (from Sleeve context menu) ──
+  const handleSetActiveBunch = useCallback((bunchId: string) => {
+    setActiveBunchId(bunchId);
+  }, []);
+
+  // ── Delete bunch ──
+  const handleDeleteBunch = useCallback(
+    (bunchId: string) => {
+      mutations.deleteBunch.mutate(bunchId);
+      if (activeBunchId === bunchId) setActiveBunchId(null);
+    },
+    [mutations.deleteBunch, activeBunchId],
+  );
+
+
   const handleSearchNavigate = useCallback(
     (searchBookUsfm: string, chapter: number, verse?: number) => {
       setBookUsfm(searchBookUsfm);
