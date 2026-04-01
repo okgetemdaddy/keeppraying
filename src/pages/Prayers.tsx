@@ -675,8 +675,8 @@ export default function Prayers() {
       <SiteNav
         rightSlot={
           user ? (
-            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs hidden sm:flex" onClick={() => setAddOpen(true)}>
-              <Plus className="w-3.5 h-3.5" />Add Prayer
+            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs hidden sm:flex" onClick={() => setChooserOpen(true)}>
+              <Plus className="w-3.5 h-3.5" />Add a Prayer
             </Button>
           ) : undefined
         }

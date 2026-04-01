@@ -222,6 +222,28 @@ export function SiteSettingsSheet({
               </section>
             </>
           )}
+          <Separator />
+
+          {/* ── Add a Prayer Button ──────────── */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Eye className="w-3.5 h-3.5" />
+              Quick Access
+            </h3>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-0.5 flex-1">
+                <Label className="text-sm font-medium">Add a Prayer Button</Label>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Show "Add a Prayer" button on my Prayer Station for quicker access
+                </p>
+              </div>
+              <Switch
+                checked={prefs.show_add_prayer_fab}
+                onCheckedChange={(v) => onSave({ show_add_prayer_fab: v })}
+              />
+            </div>
+          </section>
         </div>
       </SheetContent>
     </Sheet>

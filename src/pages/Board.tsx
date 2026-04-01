@@ -648,7 +648,7 @@ export default function Board() {
             </p>
           </div>
         ) : displayedItems.length === 0 ? (
-          <EmptyBoard onAdd={() => setAddOpen(true)} themeVars={themeVars} />
+          <EmptyBoard onAdd={() => setChooserOpen(true)} themeVars={themeVars} />
         ) : (
           <motion.div
             layout

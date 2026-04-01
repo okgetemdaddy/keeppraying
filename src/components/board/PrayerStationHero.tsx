@@ -83,7 +83,7 @@ export function PrayerStationHero({
 
   const actions = useMemo(() => {
     const items = [
-      { id: "add", label: "Add Prayer", icon: PlusCircle, onClick: onAddPrayer, highlight: true },
+      { id: "add", label: "Add a Prayer", icon: PlusCircle, onClick: onAddPrayer, highlight: true },
       { id: "circles", label: "Circles", icon: Users, href: "/circles", state: { from: "board" } },
       { id: "family", label: "Family", icon: Home, href: "/family", state: { from: "board" } },
       { id: "breathe", label: "Breathe", icon: Wind, href: "/breathe" },
