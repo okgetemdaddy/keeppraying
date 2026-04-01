@@ -18,6 +18,12 @@ import {
   ResponsiveSheetHeader as SheetHeader,
   ResponsiveSheetTitle as SheetTitle,
 } from "@/components/ui/responsive-sheet";
+import {
+  DEFAULT_BOOKMARK_COLORS,
+  getBookmarkColorDef,
+  getNextExpansionColor,
+  type BookmarkColorDef,
+} from "@/components/bible/bookmarkColors";
 
 /* ── Colour swatches ── */
 const SWATCH_COLORS = [
