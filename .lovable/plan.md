@@ -1,26 +1,17 @@
 
+# Colored Bookmarks — Implemented
 
-# Fix: Floating Toolbar Layout on Desktop
+Bookmarks now support multiple colors: 3 default (gold, coral, sky) + 5 expansion colors via "+" button.
 
-## Problem
-In `ToolbarActions`, the root `<div>` has no flex class when `layout="horizontal"` — it defaults to block stacking. The swatches, separator, and action buttons render on separate rows instead of one compact horizontal strip.
-
-## Fix
-**File:** `src/components/bible/FloatingToolbar.tsx`
-
-**Line 81** — Change the root div class from empty string to `flex items-center`:
-```tsx
-// Before
-<div className={isVertical ? "space-y-4" : ""}>
-
-// After
-<div className={isVertical ? "space-y-4" : "flex items-center"}>
-```
-
-That single class addition puts swatches, separator, and action buttons all in one horizontal row — matching the intended compact floating toolbar appearance.
-
-### Files Modified
+## Changes Made
 | File | Change |
 |------|--------|
-| `src/components/bible/FloatingToolbar.tsx` | Add `flex items-center` to horizontal layout root div |
-
+| Migration | Added `color text NOT NULL DEFAULT 'gold'` to `user_bookmarks` |
+| `bookmarkColors.ts` | New palette + helpers |
+| `FloatingToolbar.tsx` | Bookmark color picker with 3 swatches + "+" button |
+| `useBibleChapterData.ts` | `UserBookmark.color` + updated select |
+| `useBibleMutations.ts` | Color-aware toggle (add/remove/change color) |
+| `BibleReader.tsx` | Colored `BookmarkRibbon`, updated handler & props |
+| `BibleSleeveSheet.tsx` | Colored bookmark dots |
+| `BoardBibleAnnotations.tsx` | `color` in type/query, colored dots |
+| `PrayerCalendar.tsx` | `color` in bookmark select |
