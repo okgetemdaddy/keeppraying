@@ -25,11 +25,11 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ResponsiveSheet as Sheet,
-  ResponsiveSheetContent as SheetContent,
-  ResponsiveSheetHeader as SheetHeader,
-  ResponsiveSheetTitle as SheetTitle,
-} from "@/components/ui/responsive-sheet";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import type { UserHighlight, UserNote, UserBookmark } from "@/hooks/useBibleChapterData";
@@ -146,7 +146,7 @@ export function BibleSleeveSheet({
   return (
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[320px] sm:w-[360px] p-0 flex flex-col">
+      <SheetContent side="left" className="w-[80vw] sm:w-[360px] p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
           <SheetTitle className="text-left">
             <span className="text-base font-bold text-foreground">
@@ -162,7 +162,7 @@ export function BibleSleeveSheet({
           </p>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-5 py-4">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4">
           <div className="space-y-6 pb-8">
 
             {/* ── Text Size ── */}
@@ -523,7 +523,7 @@ export function BibleSleeveSheet({
               </button>
             </section>
           </div>
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
     <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="bible" />
