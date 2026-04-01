@@ -69,6 +69,7 @@ import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColo
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
 import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
 import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
+import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 
 type ReadingMode = "verse" | "paragraph";
 
