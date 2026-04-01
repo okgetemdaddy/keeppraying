@@ -174,7 +174,7 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, voiceId: options.voiceId }),
         }
       );
       if (!resp.ok) throw new Error("Could not generate speech");
