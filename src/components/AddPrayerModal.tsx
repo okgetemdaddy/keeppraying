@@ -170,7 +170,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             {/* Single column layout */}
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto" style={{ maxHeight: "calc(85vh - 10rem)" }}>
               {/* Title */}
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem className="space-y-1">
