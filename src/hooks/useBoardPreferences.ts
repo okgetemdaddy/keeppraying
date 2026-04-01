@@ -42,6 +42,7 @@ const DEFAULTS: BoardPrefs = {
   caption_mode_recorded: true,
   default_card_layout: "standard",
   tts_voice_id: "sal",
+  show_add_prayer_fab: true,
 };
 
 export function useBoardPreferences() {
