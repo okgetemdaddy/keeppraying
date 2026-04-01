@@ -364,9 +364,12 @@ function getVerseFromNode(node: Node | null): number | null {
   return null;
 }
 
-/* ── localStorage helper for hide bunches ── */
+/* ── localStorage helpers ── */
 function getHideBunches(): boolean {
   try { return localStorage.getItem("bible_hide_bunch_refs") === "true"; } catch { return false; }
+}
+function getCrossBunchTranslation(): boolean {
+  try { return localStorage.getItem("bible_cross_bunch_translation") === "true"; } catch { return false; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -409,6 +412,9 @@ export function BibleReader() {
 
   // ── Hide bunches toggle ──
   const [hideBunchRefs, setHideBunchRefs] = useState(getHideBunches);
+
+  // ── Cross-bunch translation toggle ──
+  const [crossBunchTranslation, setCrossBunchTranslation] = useState(getCrossBunchTranslation);
 
   // ── Cross-translation annotations ──
   const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
@@ -503,6 +509,7 @@ export function BibleReader() {
     currentChapter?.id,
     verseIds,
     crossTranslation,
+    crossBunchTranslation,
   );
 
   const verses = chapterData?.verses ?? [];
@@ -1098,6 +1105,15 @@ export function BibleReader() {
     });
   }, []);
 
+  // ── Toggle cross-bunch translation ──
+  const toggleCrossBunchTranslation = useCallback(() => {
+    setCrossBunchTranslation((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("bible_cross_bunch_translation", String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   // ── Determine toolbar context ──
   const selectedArr = useMemo(() => [...selectedVerses].sort((a, b) => a - b), [selectedVerses]);
   const primaryVerse = selectedArr[0];
@@ -1504,6 +1520,8 @@ export function BibleReader() {
         onToggleCrossTranslation={toggleCrossTranslation}
         hideBunches={hideBunchRefs}
         onToggleHideBunches={toggleHideBunches}
+        crossBunchTranslation={crossBunchTranslation}
+        onToggleCrossBunchTranslation={toggleCrossBunchTranslation}
         premiumDark={premiumDark}
         oledMode={oledMode}
         onTogglePremiumDark={handleTogglePremiumDark}

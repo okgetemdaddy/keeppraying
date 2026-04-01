@@ -68,6 +68,7 @@ export function useBibleChapterData(
   chapterNumber: string | undefined, // e.g. "1"
   verseIds: string[] | undefined,    // e.g. ["GEN.1.1", "GEN.1.2", ...]
   crossTranslation: boolean = false, // when true, annotations show across all versions
+  crossBunchTranslation: boolean = false, // when true, bunch markers show across all versions
 ) {
   const { user } = useAuth();
 
@@ -80,6 +81,7 @@ export function useBibleChapterData(
       chapterNumber,
       user?.id ?? "anon",
       crossTranslation ? "cross" : "single",
+      crossBunchTranslation ? "crossBunch" : "singleBunch",
     ],
     queryFn: async (): Promise<BibleChapterData> => {
       if (!versionId || !bookUsfm || !chapterNumber) {
@@ -168,13 +170,14 @@ export function useBibleChapterData(
       // ── Fetch E: Verse bunch items for this chapter ──
       const fetchBunchItems = async (): Promise<VerseBunchItemWithName[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let bq = supabase
           .from("verse_bunch_items")
           .select("id, bunch_id, verse_number, verse_bunches!inner(bunch_name)")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossBunchTranslation) bq = bq.eq("version_id", versionId!);
+        const { data, error } = await bq;
         if (error) {
           console.warn("Failed to fetch bunch items:", error.message);
           return [];

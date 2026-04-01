@@ -58,6 +58,8 @@ interface BibleSleeveSheetProps {
   onReadingModeChange: (mode: "verse" | "paragraph") => void;
   crossTranslation: boolean;
   onToggleCrossTranslation: () => void;
+  crossBunchTranslation: boolean;
+  onToggleCrossBunchTranslation: () => void;
   hideBunches: boolean;
   onToggleHideBunches: () => void;
 
@@ -96,6 +98,8 @@ export function BibleSleeveSheet({
   onReadingModeChange,
   crossTranslation,
   onToggleCrossTranslation,
+  crossBunchTranslation,
+  onToggleCrossBunchTranslation,
   hideBunches,
   onToggleHideBunches,
   premiumDark,
@@ -216,6 +220,23 @@ export function BibleSleeveSheet({
                   <span className="text-sm text-foreground">Show Bunch Markers</span>
                 </div>
                 <Switch checked={!hideBunches} onCheckedChange={onToggleHideBunches} />
+              </div>
+              <div className={`flex items-start justify-between gap-3 transition-opacity duration-200 ${hideBunches ? 'opacity-40 pointer-events-none' : ''}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-sm text-foreground font-medium">Cross-Reference Bunches</span>
+                  </div>
+                  <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                    Show your verse bunches no matter which translation you're reading
+                  </p>
+                </div>
+                <Switch
+                  checked={crossBunchTranslation}
+                  onCheckedChange={onToggleCrossBunchTranslation}
+                  disabled={hideBunches}
+                  className="shrink-0 mt-0.5"
+                />
               </div>
             </section>
 
