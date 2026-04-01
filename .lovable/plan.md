@@ -1,52 +1,41 @@
 
 
-# Rename "Pray the World" → "Prayer Warriors" + Ensure Region Data Flows Through
+# Redesign VoiceRecorder Recording State
 
-## What changes
+## Problem
+The recording UI uses a basic pulsing red circle and plain text — looks amateurish and clip-art-like. Needs a premium, sanctuary-quality design matching the app's warm aesthetic.
 
-### 1. Rename everywhere
-All references to "Pray the World" / "We Pray" become **"Prayer Warriors"**:
+## Design Direction
+Replace the current recording state (lines 429-470) with a refined, modern audio recording experience:
+
+### Recording State Redesign
+- **Centered layout** instead of left-aligned row
+- **Animated waveform bars** (5-7 bars with staggered sine-wave animations) replacing the pulsing red dot — sleek and professional
+- **Warm amber/gold tones** instead of harsh red — matches the app's sacred palette
+- **Larger timer** with monospace font, subtle glow
+- **"Listening…" text** in elegant font-display with tracking
+- **Live transcript** in a frosted glass container with scroll
+- **Stop button** redesigned: rounded-full, amber-600 with a clean square-stop icon inside (not MicOff), premium shadow
+- **Subtle radial gradient background** inside the panel for depth
+
+### Specific Changes — `src/components/VoiceRecorder.tsx`
+
+**Recording state (lines 429-470):**
+- Replace pulsing red dot with 5 animated waveform bars using framer-motion, amber-500 color
+- Center everything vertically with text-center
+- Timer: text-3xl font-mono with amber text-shadow glow
+- "Listening…" in font-display text-sm uppercase tracking-widest
+- Transcript box: rounded-2xl with subtle inner border, warm tint
+- Stop button: rounded-full w-16 h-16 centered, bg-amber-600 with a square stop icon (custom div), not the MicOff icon. Below it a small "Tap to stop" label
+
+**Also clean up the panel wrapper (line 427):**
+- Add a subtle warm gradient overlay at the top of the panel for premium feel
+
+No logic changes — purely visual/UI redesign of the recording state.
+
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/pages/PrayTheWorld.tsx` | Page title "🌍 We Pray" → "🌍 Prayer Warriors"; tab label "We Pray" → "Prayer Warriors" |
-| `src/components/SiteNav.tsx` | Nav label "We Pray" → "Prayer Warriors", description updated |
-| `src/components/PrayerFAB.tsx` | FAB label "We Pray" → "Prayer Warriors" |
-| `src/components/FeatureShowcase.tsx` | Headline/body copy updated |
-| `src/App.tsx` | Route `/we-pray` → `/prayer-warriors`; add redirect from `/we-pray` and `/pray-the-world` to `/prayer-warriors` |
-
-### 2. Auto-detect region (from previously approved plan)
-- **Migration:** Add `region text` column to `profiles`
-- **New `src/lib/regionDetect.ts`:** Extract `getNearestRegion()` from LocalRadar + add `detectUserRegion()` that checks church lat/lng → address parsing → browser geolocation fallback
-- **New `src/hooks/useAutoRegion.ts`:** On auth, check profile.region; if null, run detection and save it
-- Wire into `AuthContext.tsx` or Board-level
-
-### 3. Region auto-attached to prayers
-- `AddPrayerModal.tsx` — remove manual region picker; read `userRegion` from profile and attach on insert
-- Same for voice-to-prayer flow if applicable
-
-### 4. Ensure region data feeds Prayer Warriors page
-The existing `usePrayerMapData` hook already aggregates `prayer_cards.region` — no change needed there. With auto-region on profiles, new prayers will have regions populated, which flows directly into the WorldMap hotspots and the Prayer Warriors page stats.
-
-### 5. PrayerMethodChooser + AddPrayerModal redesign (previously approved)
-- New `PrayerMethodChooser.tsx` — Speak It / Write It
-- Redesigned single-column `AddPrayerModal` — remove preview, remove left column, live text style on textarea
-- Wire into `Board.tsx`
-
-## Files touched
-
-| File | Action |
-|------|--------|
-| Migration SQL | Add `region` to `profiles` |
-| `src/lib/regionDetect.ts` | New — shared region detection |
-| `src/hooks/useAutoRegion.ts` | New — auto-detect + save region |
-| `src/components/board/PrayerMethodChooser.tsx` | New — Speak/Write chooser |
-| `src/components/AddPrayerModal.tsx` | Redesign + remove region picker + auto-attach region |
-| `src/pages/Board.tsx` | Wire chooser + pass region |
-| `src/pages/PrayTheWorld.tsx` | Rename title/labels |
-| `src/App.tsx` | Update routes |
-| `src/components/SiteNav.tsx` | Rename nav item |
-| `src/components/PrayerFAB.tsx` | Rename FAB item |
-| `src/components/FeatureShowcase.tsx` | Update copy |
-| `src/components/map/LocalRadar.tsx` | Import shared `getNearestRegion` |
+| `src/components/VoiceRecorder.tsx` | Redesign recording state UI (lines 429-470) — centered waveform bars, warm palette, premium stop button |
 
