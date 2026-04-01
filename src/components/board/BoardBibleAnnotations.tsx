@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
+import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 
 /* ── Types ── */
 interface HighlightRow {
