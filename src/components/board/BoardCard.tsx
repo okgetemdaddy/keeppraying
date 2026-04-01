@@ -167,6 +167,8 @@ export function BoardCard({
   const [isSharedRecipient, setIsSharedRecipient] = useState(false);
   const [duplicateDialog, setDuplicateDialog] = useState<{ matchId: string } | null>(null);
   const [disputeSending, setDisputeSending] = useState(false);
+  const [localCaptionTts, setLocalCaptionTts] = useState(captionModeTts);
+  const [localCaptionRecorded, setLocalCaptionRecorded] = useState(captionModeRecorded);
 
   // TTS player
   const {
