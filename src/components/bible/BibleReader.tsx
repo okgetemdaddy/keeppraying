@@ -1363,7 +1363,7 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
-              style={{ fontSize: `${textSize}px` }}
+              style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
