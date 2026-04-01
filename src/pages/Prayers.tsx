@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import { PrayerMethodChooser } from "@/components/board/PrayerMethodChooser";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import Comments from "@/components/Comments";
 import VerseLink from "@/components/VerseLink";
 import TtsLoadingPopup from "@/components/TtsLoadingPopup";
