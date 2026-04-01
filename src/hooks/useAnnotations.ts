@@ -58,6 +58,29 @@ export function useChapterAnnotations(bookUsfm?: string, chapterNumber?: string)
   });
 }
 
+export function useJournalAnnotations(bookUsfm?: string, chapterNumber?: string) {
+  const { user } = useAuth();
+  const journalKey = bookUsfm && chapterNumber ? `${bookUsfm}.${chapterNumber}.journal` : null;
+
+  return useQuery({
+    queryKey: ["annotations-journal", journalKey, user?.id],
+    enabled: !!journalKey && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("annotations")
+        .select("*")
+        .eq("user_id", user!.id);
+
+      if (error) throw error;
+      const all = (data ?? []) as Annotation[];
+      return all.filter((a) =>
+        a.verse_ids.some((vid) => vid.endsWith(".journal"))
+          && a.verse_ids.some((vid) => vid === journalKey)
+      );
+    },
+  });
+}
+
 export function useAnnotationMutations() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -67,11 +90,13 @@ export function useAnnotationMutations() {
       verseIds,
       strokes,
       svg,
+      typedText,
       existingId,
     }: {
       verseIds: string[];
       strokes: StrokeData[];
       svg?: string;
+      typedText?: string;
       existingId?: string;
     }) => {
       if (!user?.id) throw new Error("Not authenticated");
