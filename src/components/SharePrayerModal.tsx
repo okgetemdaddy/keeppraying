@@ -323,7 +323,7 @@ export function SharePrayerModal({ open, onOpenChange, prayerId, prayerTitle }: 
                   </Button>
 
                   <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
-                    This link expires in 30 days. Only the person you share it with can save the prayer to their board.
+                    This link expires in 7 days. Save the prayer to your board or copy the text before it's gone.
                   </p>
                 </>
               ) : null}
