@@ -177,6 +177,7 @@ export function useBibleChapterData(
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
         if (!crossBunchTranslation) bq = bq.eq("version_id", versionId!);
+        const { data, error } = await bq;
         if (error) {
           console.warn("Failed to fetch bunch items:", error.message);
           return [];
