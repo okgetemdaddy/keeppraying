@@ -1725,9 +1725,23 @@ export function BibleReader() {
         immersiveActive={immersiveActive}
         onToggleImmersive={toggleImmersive}
         studyMode={studyMode}
+        studyModeVariant={studyModeVariant}
         pencilDetected={pencilDetected}
         onToggleStudyMode={handleToggleStudyMode}
+        onStudyModeVariantChange={handleStudyModeVariantChange}
       />
+
+      {/* ── Manuscript Canvas (Mode 2) ── */}
+      {canvasOpen && studyMode && studyModeVariant === "canvas" && (
+        <ManuscriptCanvas
+          chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+          verses={verses.map((v) => ({ number: v.number, text: v.text }))}
+          initialStrokes={canvasInitialStrokes}
+          onSave={handleCanvasSave}
+          onClose={() => setCanvasOpen(false)}
+          textSize={textSize}
+        />
+      )}
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
