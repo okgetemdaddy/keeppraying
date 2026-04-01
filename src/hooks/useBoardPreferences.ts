@@ -20,6 +20,7 @@ export interface BoardPrefs {
   caption_mode_tts: boolean;
   caption_mode_recorded: boolean;
   default_card_layout: string;
+  tts_voice_id: string;
 }
 
 const DEFAULTS: BoardPrefs = {
