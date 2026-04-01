@@ -1,10 +1,23 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import {
   ArrowLeft,
   Highlighter,
   Bookmark,
   StickyNote,
   Package,
+  AArrowDown,
+  AArrowUp,
+  List,
+  AlignJustify,
+  Globe,
+  Eye,
+  EyeOff,
+  Sun,
+  Moon,
+  Smartphone,
+  Star,
+  Trash2,
+} from "lucide-react";
   AArrowDown,
   AArrowUp,
   List,
