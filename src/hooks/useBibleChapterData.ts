@@ -25,6 +25,7 @@ export interface UserNote {
 export interface UserBookmark {
   id: string;
   verse_number: number;
+  color: string;
   created_at: string;
 }
 
