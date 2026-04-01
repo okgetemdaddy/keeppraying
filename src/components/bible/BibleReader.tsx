@@ -1350,7 +1350,7 @@ export function BibleReader() {
             </Select>
           </div>
 
-          {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
+            {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
           <div className="flex items-center gap-2">
             {/* Bible Sleeve button (left) */}
             <Button
@@ -1361,6 +1361,17 @@ export function BibleReader() {
               title="Your Bible Sleeve"
             >
               <PanelLeft className="h-4 w-4" />
+            </Button>
+
+            {/* Study Mode (iPad/Pencil) */}
+            <Button
+              variant={studyMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleToggleStudyMode(!studyMode)}
+              className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
+            >
+              <PenTool className="h-4 w-4" />
             </Button>
 
             {/* Focus mode — hide bottom nav */}
