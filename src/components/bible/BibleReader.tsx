@@ -1492,6 +1492,10 @@ export function BibleReader() {
                         isSelected={selectedVerses.has(v.number)}
                         hideBunches={hideBunchRefs}
                         onTapSelect={handleTapSelect}
+                        studyMode={studyMode}
+                        verseAnnotation={annotationMap.get(v.number) ?? null}
+                        onAnnotationSave={handleAnnotationSave}
+                        verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
                       />
                       <AnimatePresence>
                         {noteInputVerse === v.number && (
