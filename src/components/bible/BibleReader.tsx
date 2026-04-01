@@ -364,9 +364,12 @@ function getVerseFromNode(node: Node | null): number | null {
   return null;
 }
 
-/* ── localStorage helper for hide bunches ── */
+/* ── localStorage helpers ── */
 function getHideBunches(): boolean {
   try { return localStorage.getItem("bible_hide_bunch_refs") === "true"; } catch { return false; }
+}
+function getCrossBunchTranslation(): boolean {
+  try { return localStorage.getItem("bible_cross_bunch_translation") === "true"; } catch { return false; }
 }
 
 /* ═══════════════════════════════════════════════════
