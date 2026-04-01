@@ -240,7 +240,7 @@ interface EnrichedVerseProps {
   verse: NormalisedVerse;
   highlights: UserHighlight[];
   notes: UserNote[];
-  isBookmarked: boolean;
+  bookmark?: UserBookmark;
   bunchItems: VerseBunchItemWithName[];
   bunchColorMap: Map<string, number>;
   bunchGroupPosition: "first" | "middle" | "last" | "single" | null;
