@@ -1,24 +1,38 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Captions } from "lucide-react";
 
 interface VoiceWaveformPlayerProps {
   audioUrl: string;
-  /** If true, fills the card with a large waveform */
   large?: boolean;
-  /** Called when play is tapped — parent can intercept to open caption mode */
   onPlay?: () => boolean | void;
   accentColor?: string;
+  captionsEnabled?: boolean;
+  onToggleCaptions?: () => void;
 }
 
 const BAR_COUNT = 40;
 const BAR_COUNT_LARGE = 60;
+
+// Static grey for unplayed, gradient orange for played
+const GREY = "#9ca3af";
+
+function orangeForIndex(i: number, total: number): string {
+  // gradient from hsl(30,90%,50%) to hsl(42,85%,55%)
+  const t = total > 1 ? i / (total - 1) : 0;
+  const h = 30 + t * 12;
+  const s = 90 - t * 5;
+  const l = 50 + t * 5;
+  return `hsl(${h} ${s}% ${l}%)`;
+}
 
 export function VoiceWaveformPlayer({
   audioUrl,
   large = false,
   onPlay,
   accentColor = "hsl(42 75% 40%)",
+  captionsEnabled,
+  onToggleCaptions,
 }: VoiceWaveformPlayerProps) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -26,14 +40,10 @@ export function VoiceWaveformPlayer({
   const [bars, setBars] = useState<number[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const rafRef = useRef<number>(0);
 
   const barCount = large ? BAR_COUNT_LARGE : BAR_COUNT;
 
-  // Generate static waveform bars on mount (random but deterministic-looking)
+  // Generate static waveform bars on mount (seeded from URL)
   useEffect(() => {
     const seed = audioUrl.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
     const staticBars: number[] = [];
@@ -52,45 +62,6 @@ export function VoiceWaveformPlayer({
     }
     return audioRef.current;
   }, [audioUrl]);
-
-  const connectAnalyser = useCallback(() => {
-    if (analyserRef.current || !audioRef.current) return;
-    try {
-      const ctx = new AudioContext();
-      ctxRef.current = ctx;
-      const source = ctx.createMediaElementSource(audioRef.current);
-      sourceRef.current = source;
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 128;
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
-      analyserRef.current = analyser;
-    } catch {
-      // Web Audio not available, static bars will show
-    }
-  }, []);
-
-  const animateBars = useCallback(() => {
-    if (!analyserRef.current || !playing) return;
-    const data = new Uint8Array(analyserRef.current.frequencyBinCount);
-    analyserRef.current.getByteFrequencyData(data);
-
-    const newBars: number[] = [];
-    const step = Math.floor(data.length / barCount);
-    for (let i = 0; i < barCount; i++) {
-      const idx = Math.min(i * step, data.length - 1);
-      newBars.push(Math.max(0.1, data[idx] / 255));
-    }
-    setBars(newBars);
-    rafRef.current = requestAnimationFrame(animateBars);
-  }, [playing, barCount]);
-
-  useEffect(() => {
-    if (playing) {
-      rafRef.current = requestAnimationFrame(animateBars);
-    }
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [playing, animateBars]);
 
   // Track progress
   useEffect(() => {
@@ -120,14 +91,9 @@ export function VoiceWaveformPlayer({
     const audio = setupAudio();
 
     if (!playing) {
-      // Let parent intercept (for caption mode)
       if (onPlay) {
         const intercepted = onPlay();
-        if (intercepted === true) return; // parent handled it
-      }
-      connectAnalyser();
-      if (ctxRef.current?.state === "suspended") {
-        ctxRef.current.resume();
+        if (intercepted === true) return;
       }
       audio.play().then(() => setPlaying(true)).catch(() => {});
     } else {
@@ -171,6 +137,24 @@ export function VoiceWaveformPlayer({
         {playing ? <Pause className={large ? "w-5 h-5" : "w-4 h-4"} /> : <Play className={`${large ? "w-5 h-5" : "w-4 h-4"} ml-0.5`} />}
       </motion.button>
 
+      {/* CC toggle */}
+      {onToggleCaptions && (
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={(e) => { e.stopPropagation(); onToggleCaptions(); }}
+          className="shrink-0 rounded-full flex items-center justify-center transition-colors"
+          style={{
+            width: large ? 36 : 28,
+            height: large ? 36 : 28,
+            background: captionsEnabled ? `${accentColor}25` : "transparent",
+            color: captionsEnabled ? accentColor : GREY,
+          }}
+          aria-label="Toggle captions"
+        >
+          <Captions className={large ? "w-4 h-4" : "w-3.5 h-3.5"} />
+        </motion.button>
+      )}
+
       {/* Waveform area */}
       <div className="flex-1 min-w-0">
         <div
@@ -183,11 +167,12 @@ export function VoiceWaveformPlayer({
             return (
               <div
                 key={i}
-                className="flex-1 rounded-sm transition-all duration-75"
+                className="flex-1 rounded-sm"
                 style={{
                   height: `${Math.max(8, h * 100)}%`,
-                  background: isPlayed ? accentColor : `${accentColor}30`,
-                  opacity: playing ? 1 : 0.8,
+                  background: isPlayed ? orangeForIndex(i, barCount) : GREY,
+                  opacity: isPlayed ? 1 : 0.45,
+                  transition: "background 0.15s ease, opacity 0.15s ease",
                 }}
               />
             );
