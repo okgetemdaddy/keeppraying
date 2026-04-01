@@ -141,7 +141,7 @@ export function useBibleMutations(ref: ScriptureRef | null) {
 
   /* ── BOOKMARK: Toggle ── */
   const toggleBookmark = useMutation({
-    mutationFn: async (params: { verseNumber: number; existingId?: string }) => {
+    mutationFn: async (params: { verseNumber: number; color: string; existingId?: string }) => {
       if (!user || !ref) throw new Error("Not authenticated");
       if (params.existingId) {
         const { error } = await supabase
@@ -159,8 +159,9 @@ export function useBibleMutations(ref: ScriptureRef | null) {
           book_usfm: ref.bookUsfm,
           chapter_number: ref.chapterNumber,
           verse_number: params.verseNumber,
+          color: params.color,
         } as any)
-        .select("id, verse_number, created_at")
+        .select("id, verse_number, color, created_at")
         .single();
       if (error) throw error;
       return { action: "added" as const, data };
@@ -177,6 +178,7 @@ export function useBibleMutations(ref: ScriptureRef | null) {
         const optimistic: UserBookmark = {
           id: `temp-${Date.now()}`,
           verse_number: params.verseNumber,
+          color: params.color,
           created_at: new Date().toISOString(),
         };
         updateChapterCache(qc, key, (old) => ({
