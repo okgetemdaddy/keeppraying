@@ -85,6 +85,12 @@ interface BibleSleeveSheetProps {
 
   /* verse navigation */
   onNavigateToVerse?: (verseNumber: number) => void;
+
+  /* immersive mode */
+  immersiveSupported?: boolean;
+  immersiveStandalone?: boolean;
+  immersiveActive?: boolean;
+  onToggleImmersive?: (v: boolean) => void;
 }
 
 export function BibleSleeveSheet({
