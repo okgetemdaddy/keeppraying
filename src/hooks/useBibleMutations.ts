@@ -440,6 +440,27 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     },
   });
 
+  /* ── VERSE BUNCH: Delete bunch ── */
+  const deleteBunch = useMutation({
+    mutationFn: async (bunchId: string) => {
+      const { error } = await supabase
+        .from("verse_bunches")
+        .delete()
+        .eq("id", bunchId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Verse Bunch deleted");
+      qc.invalidateQueries({ queryKey: ["verse_bunches"] });
+    },
+    onError: () => {
+      toast.error("Failed to delete Verse Bunch");
+    },
+    onSettled: () => {
+      if (key.length) qc.invalidateQueries({ queryKey: key });
+    },
+  });
+
   return {
     addHighlight,
     removeHighlight,
@@ -448,5 +469,6 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     deleteNote,
     createBunch,
     addToBunch,
+    deleteBunch,
   };
 }
