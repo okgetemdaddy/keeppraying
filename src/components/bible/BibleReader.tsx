@@ -1105,6 +1105,15 @@ export function BibleReader() {
     });
   }, []);
 
+  // ── Toggle cross-bunch translation ──
+  const toggleCrossBunchTranslation = useCallback(() => {
+    setCrossBunchTranslation((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("bible_cross_bunch_translation", String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   // ── Determine toolbar context ──
   const selectedArr = useMemo(() => [...selectedVerses].sort((a, b) => a - b), [selectedVerses]);
   const primaryVerse = selectedArr[0];
