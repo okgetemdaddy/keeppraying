@@ -128,11 +128,10 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
 
       const micBlocked = ["audio-capture", "not-allowed"];
       if (micBlocked.includes(event.error)) {
-        toast({
-          title: "Microphone not available",
-          description: "Please allow microphone access in your browser settings and try again.",
-        });
         cancel();
+        if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
+        setMicError("Please allow microphone access in your browser settings.");
+        micErrorTimerRef.current = setTimeout(() => setMicError(null), 4000);
         return;
       }
 
