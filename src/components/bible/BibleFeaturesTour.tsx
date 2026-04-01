@@ -92,9 +92,7 @@ export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProp
               Welcome to KeepRead.ing ✨
             </SheetTitle>
             <SheetDescription className="text-sm text-muted-foreground leading-relaxed">
-              {kr
-                ? "Keep Reading. Go Deeper. Here's everything you can do."
-                : "Here's everything you can do while reading Scripture."}
+              Keep Reading. Go Deeper. Here's everything you can do.
             </SheetDescription>
           </SheetHeader>
 
