@@ -1684,6 +1684,9 @@ export function BibleReader() {
         immersiveIOSLimited={immersiveIOSLimited}
         immersiveActive={immersiveActive}
         onToggleImmersive={toggleImmersive}
+        studyMode={studyMode}
+        pencilDetected={pencilDetected}
+        onToggleStudyMode={handleToggleStudyMode}
       />
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
