@@ -841,8 +841,8 @@ export function BibleReader() {
   );
 
   const handleToggleBookmark = useCallback(
-    (verseNumber: number, existingId?: string) => {
-      mutations.toggleBookmark.mutate({ verseNumber, existingId });
+    (verseNumber: number, color: string, existingId?: string) => {
+      mutations.toggleBookmark.mutate({ verseNumber, color, existingId });
     },
     [mutations.toggleBookmark],
   );
