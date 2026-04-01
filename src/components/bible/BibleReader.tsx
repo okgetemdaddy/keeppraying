@@ -1427,6 +1427,8 @@ export function BibleReader() {
             onToggleBookmark={handleToggleBookmark}
             onAddNote={handleAddNote}
             onCreateBunch={handleCreateBunchRequest}
+            onAddToBunch={handleAddToBunchRequest}
+            hasBunches={(bunches ?? []).length > 0}
             onDismiss={dismissToolbar}
             isAuthenticated={!!user}
           />
