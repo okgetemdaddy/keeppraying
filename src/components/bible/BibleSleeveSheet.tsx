@@ -674,8 +674,6 @@ export function BibleSleeveSheet({
                               className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center transition-all border ${
                                 studyModeVariant === key
                                   ? "border-primary bg-primary/10 text-foreground"
-                                  : key === "journal"
-                                  ? "border-border/50 bg-muted/30 text-muted-foreground/50 cursor-not-allowed"
                                   : "border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                               }`}
                             >
