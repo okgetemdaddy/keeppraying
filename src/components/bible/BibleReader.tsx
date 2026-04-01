@@ -18,6 +18,7 @@ import {
   Maximize2,
   Minimize2,
   Search,
+  PenTool,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
