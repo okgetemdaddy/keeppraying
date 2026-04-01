@@ -75,6 +75,9 @@ import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { useImmersiveMode } from "@/hooks/useImmersiveMode";
 import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
+import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
+import { useChapterAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
 
