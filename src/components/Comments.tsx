@@ -126,6 +126,10 @@ export default function Comments({ prayerId, uploaderId }: CommentsProps) {
   };
 
   const deleteComment = async (id: string) => {
+    if (user) {
+      const { data: snap } = await supabase.from("comments").select("*").eq("id", id).single();
+      if (snap) await trashItem(user.id, "comment", id, snap as any);
+    }
     await supabase.from("comments").delete().eq("id", id).eq("user_id", user!.id);
   };
 

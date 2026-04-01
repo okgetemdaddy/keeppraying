@@ -267,6 +267,8 @@ export default function Prayer() {
   const toggleSave = async () => {
     if (!user) { toast({ title: "Sign in to save prayers" }); return; }
     if (saved) {
+      const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("prayer_id", id!).eq("user_id", user.id).maybeSingle();
+      if (snap) await trashItem(user.id, "saved_prayer", snap.id, snap as any);
       await supabase.from("user_saved_prayers").delete().eq("prayer_id", id!).eq("user_id", user.id);
       setSaved(false);
     } else {
