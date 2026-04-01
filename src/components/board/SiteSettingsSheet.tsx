@@ -102,7 +102,7 @@ export function SiteSettingsSheet({
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <AudioLines className="w-3.5 h-3.5" />
-              AI Voice
+              KEEPPRAY.ING VOICE
             </h3>
             <p className="text-[11px] text-muted-foreground leading-snug">
               Choose the voice that reads your prayers aloud
