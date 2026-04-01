@@ -653,6 +653,31 @@ export function BibleReader() {
     [saveAnnotationMut],
   );
 
+  // Canvas-level annotation save (Mode 2) — saves all strokes for the whole chapter
+  const canvasAnnotationId = useMemo(() => {
+    if (!chapterAnnotations) return undefined;
+    const chapterKey = bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.canvas` : null;
+    if (!chapterKey) return undefined;
+    return chapterAnnotations.find((a) => a.verse_ids.includes(chapterKey))?.id;
+  }, [chapterAnnotations, bookUsfm, currentChapter]);
+
+  const canvasInitialStrokes = useMemo(() => {
+    if (!chapterAnnotations || !bookUsfm || !currentChapter) return [];
+    const chapterKey = `${bookUsfm}.${currentChapter.id}.canvas`;
+    const ann = chapterAnnotations.find((a) => a.verse_ids.includes(chapterKey));
+    return ann ? (ann.strokes as StrokeData[]) : [];
+  }, [chapterAnnotations, bookUsfm, currentChapter]);
+
+  const handleCanvasSave = useCallback(
+    (strokes: StrokeData[]) => {
+      if (!bookUsfm || !currentChapter) return;
+      const chapterKey = `${bookUsfm}.${currentChapter.id}.canvas`;
+      saveAnnotationMut.mutate({ verseIds: [chapterKey], strokes, existingId: canvasAnnotationId });
+      toast.success("Canvas annotations saved ✨");
+    },
+    [saveAnnotationMut, bookUsfm, currentChapter, canvasAnnotationId],
+  );
+
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
 
