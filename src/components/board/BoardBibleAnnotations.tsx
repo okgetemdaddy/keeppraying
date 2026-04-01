@@ -114,7 +114,7 @@ function useBibleAnnotations() {
       if (!user) return [];
       const { data, error } = await supabase
         .from("user_bookmarks")
-        .select("id, book_usfm, chapter_number, verse_number, version_id, created_at")
+        .select("id, book_usfm, chapter_number, verse_number, color, version_id, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(50);
