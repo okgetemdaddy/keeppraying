@@ -460,6 +460,33 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
   }, []);
 
+  // ── iPad Study Mode (handwritten annotations) ──
+  const [studyMode, setStudyMode] = useState(() => {
+    try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
+  });
+  const [pencilDetected, setPencilDetected] = useState(false);
+  const handleToggleStudyMode = useCallback((v: boolean) => {
+    setStudyMode(v);
+    try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
+  }, []);
+
+  // Auto-detect Apple Pencil
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      if (e.pointerType === "pen" && !pencilDetected) {
+        setPencilDetected(true);
+        if (!studyMode) {
+          handleToggleStudyMode(true);
+          toast("🍎 Apple Pencil detected — Study Mode enabled", {
+            description: "Write directly on the page alongside your verses",
+          });
+        }
+      }
+    };
+    window.addEventListener("pointerdown", handler);
+    return () => window.removeEventListener("pointerdown", handler);
+  }, [pencilDetected, studyMode, handleToggleStudyMode]);
+
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
     const root = document.documentElement;
