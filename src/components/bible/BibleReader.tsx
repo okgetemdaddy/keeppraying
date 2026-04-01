@@ -630,7 +630,8 @@ export function BibleReader() {
 
   // ── Chapter annotations (handwriting) ──
   const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
-  const { saveAnnotation: saveAnnotationMut } = useAnnotationMutations();
+  const { data: journalAnnotations } = useJournalAnnotations(bookUsfm, currentChapter?.id);
+  const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
   // Build a map: verseNumber → annotation
   const annotationMap = useMemo(() => {
