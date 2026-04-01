@@ -18,6 +18,7 @@ import {
   Maximize2,
   Minimize2,
   Search,
+  PenTool,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -74,6 +75,9 @@ import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { useImmersiveMode } from "@/hooks/useImmersiveMode";
 import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
+import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
+import { useChapterAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -252,6 +256,10 @@ interface EnrichedVerseProps {
   isSelected: boolean;
   hideBunches: boolean;
   onTapSelect: (verseNumber: number, e: React.MouseEvent) => void;
+  studyMode?: boolean;
+  verseAnnotation?: { id: string; strokes: StrokeData[] } | null;
+  onAnnotationSave?: (verseId: string, strokes: StrokeData[], existingId?: string) => void;
+  verseIdString?: string;
 }
 
 function EnrichedVerse({
@@ -266,7 +274,12 @@ function EnrichedVerse({
   isSelected,
   hideBunches,
   onTapSelect,
+  studyMode,
+  verseAnnotation,
+  onAnnotationSave,
+  verseIdString,
 }: EnrichedVerseProps) {
+  const [showAnnotation, setShowAnnotation] = useState(false);
   const bunchBorderClass = useMemo(() => {
     if (!bunchGroupPosition || hideBunches) return "";
     const firstBunchId = bunchItems[0]?.bunch_id;
@@ -318,11 +331,21 @@ function EnrichedVerse({
     <div
       id={`verse-${verse.number}`}
       data-verse={verse.number}
-      className={`group relative leading-relaxed text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
+      className={`group relative ${studyMode ? 'leading-[2.8]' : 'leading-relaxed'} text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
       onClick={(e) => onTapSelect(verse.number, e)}
     >
       <p>
         <BookmarkRibbon bookmark={bookmark} />
+        {/* Annotation indicator */}
+        {verseAnnotation && !studyMode && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowAnnotation(!showAnnotation); }}
+            className="inline-flex items-center justify-center h-4 w-4 mr-0.5 text-amber-600 hover:text-amber-700 align-middle"
+            title="View handwritten note"
+          >
+            <PenTool className="h-3 w-3" />
+          </button>
+        )}
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
@@ -330,6 +353,36 @@ function EnrichedVerse({
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
+
+      {/* Read-only annotation preview (when not in study mode) */}
+      {showAnnotation && verseAnnotation && !studyMode && (
+        <div className="mt-1 rounded-xl overflow-hidden border border-amber-200/40" style={{ height: 60 }}>
+          <HandwritingEngine
+            height={60}
+            variant="margin"
+            initialStrokes={verseAnnotation.strokes}
+            showToolbar={false}
+            className="pointer-events-none opacity-80"
+          />
+        </div>
+      )}
+
+      {/* Study mode: inline annotation canvas */}
+      {studyMode && (
+        <div className="mt-1" style={{ height: 60 }}>
+          <HandwritingEngine
+            height={60}
+            variant="margin"
+            initialStrokes={verseAnnotation?.strokes ?? []}
+            showToolbar={false}
+            onSave={(strokes) => {
+              if (verseIdString && onAnnotationSave) {
+                onAnnotationSave(verseIdString, strokes, verseAnnotation?.id);
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -456,6 +509,33 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
   }, []);
 
+  // ── iPad Study Mode (handwritten annotations) ──
+  const [studyMode, setStudyMode] = useState(() => {
+    try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
+  });
+  const [pencilDetected, setPencilDetected] = useState(false);
+  const handleToggleStudyMode = useCallback((v: boolean) => {
+    setStudyMode(v);
+    try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
+  }, []);
+
+  // Auto-detect Apple Pencil
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      if (e.pointerType === "pen" && !pencilDetected) {
+        setPencilDetected(true);
+        if (!studyMode) {
+          handleToggleStudyMode(true);
+          toast("🍎 Apple Pencil detected — Study Mode enabled", {
+            description: "Write directly on the page alongside your verses",
+          });
+        }
+      }
+    };
+    window.addEventListener("pointerdown", handler);
+    return () => window.removeEventListener("pointerdown", handler);
+  }, [pencilDetected, studyMode, handleToggleStudyMode]);
+
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
     const root = document.documentElement;
@@ -528,6 +608,35 @@ export function BibleReader() {
 
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
+
+  // ── Chapter annotations (handwriting) ──
+  const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
+  const { saveAnnotation: saveAnnotationMut } = useAnnotationMutations();
+
+  // Build a map: verseNumber → annotation
+  const annotationMap = useMemo(() => {
+    const map = new Map<number, { id: string; strokes: StrokeData[] }>();
+    if (!chapterAnnotations || !bookUsfm || !currentChapter) return map;
+    const prefix = `${bookUsfm}.${currentChapter.id}.`;
+    for (const ann of chapterAnnotations) {
+      for (const vid of ann.verse_ids) {
+        if (vid.startsWith(prefix)) {
+          const vn = parseInt(vid.slice(prefix.length), 10);
+          if (!isNaN(vn)) {
+            map.set(vn, { id: ann.id, strokes: ann.strokes as StrokeData[] });
+          }
+        }
+      }
+    }
+    return map;
+  }, [chapterAnnotations, bookUsfm, currentChapter]);
+
+  const handleAnnotationSave = useCallback(
+    (verseId: string, strokes: StrokeData[], existingId?: string) => {
+      saveAnnotationMut.mutate({ verseIds: [verseId], strokes, existingId });
+    },
+    [saveAnnotationMut],
+  );
 
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
@@ -1241,7 +1350,7 @@ export function BibleReader() {
             </Select>
           </div>
 
-          {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
+            {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
           <div className="flex items-center gap-2">
             {/* Bible Sleeve button (left) */}
             <Button
@@ -1252,6 +1361,17 @@ export function BibleReader() {
               title="Your Bible Sleeve"
             >
               <PanelLeft className="h-4 w-4" />
+            </Button>
+
+            {/* Study Mode (iPad/Pencil) */}
+            <Button
+              variant={studyMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleToggleStudyMode(!studyMode)}
+              className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
+            >
+              <PenTool className="h-4 w-4" />
             </Button>
 
             {/* Focus mode — hide bottom nav */}
@@ -1383,6 +1503,10 @@ export function BibleReader() {
                         isSelected={selectedVerses.has(v.number)}
                         hideBunches={hideBunchRefs}
                         onTapSelect={handleTapSelect}
+                        studyMode={studyMode}
+                        verseAnnotation={annotationMap.get(v.number) ?? null}
+                        onAnnotationSave={handleAnnotationSave}
+                        verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
                       />
                       <AnimatePresence>
                         {noteInputVerse === v.number && (
@@ -1560,6 +1684,9 @@ export function BibleReader() {
         immersiveIOSLimited={immersiveIOSLimited}
         immersiveActive={immersiveActive}
         onToggleImmersive={toggleImmersive}
+        studyMode={studyMode}
+        pencilDetected={pencilDetected}
+        onToggleStudyMode={handleToggleStudyMode}
       />
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
