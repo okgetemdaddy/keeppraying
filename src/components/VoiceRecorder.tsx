@@ -51,6 +51,8 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const [refined, setRefined] = useState<{ title: string; prayer_text: string; verses: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const micErrorTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -126,11 +128,10 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
 
       const micBlocked = ["audio-capture", "not-allowed"];
       if (micBlocked.includes(event.error)) {
-        toast({
-          title: "Microphone not available",
-          description: "Please allow microphone access in your browser settings and try again.",
-        });
         cancel();
+        if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
+        setMicError("Please allow microphone access in your browser settings.");
+        micErrorTimerRef.current = setTimeout(() => setMicError(null), 4000);
         return;
       }
 
@@ -354,22 +355,42 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   // ── FAB button (default) ──
   if (state === "idle") {
     return (
-      <motion.button
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={startRecording}
-        className={`
-          ${variant === "compact" ? "p-2 rounded-xl" : "p-3 rounded-2xl"}
-          transition-all shadow-lg
-          ${dark
-            ? "bg-white/10 hover:bg-white/20 text-white border border-white/15"
-            : "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-          }
-        `}
-        title="Record a prayer"
-      >
-        <Mic className={variant === "compact" ? "w-4 h-4" : "w-5 h-5"} />
-      </motion.button>
+      <div className="relative">
+        <motion.button
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => { setMicError(null); startRecording(); }}
+          className={`
+            ${variant === "compact" ? "p-2 rounded-xl" : "p-3 rounded-2xl"}
+            transition-all shadow-lg
+            ${dark
+              ? "bg-white/10 hover:bg-white/20 text-white border border-white/15"
+              : "bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+            }
+          `}
+          title="Record a prayer"
+        >
+          <Mic className={variant === "compact" ? "w-4 h-4" : "w-5 h-5"} />
+        </motion.button>
+
+        <AnimatePresence>
+          {micError && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className={`absolute top-full mt-2 right-0 z-50 w-56 rounded-xl px-3 py-2 text-xs shadow-lg border ${
+                dark
+                  ? "bg-black/80 backdrop-blur-md border-white/10 text-white/90"
+                  : "bg-card border-border text-foreground"
+              }`}
+            >
+              <p className="font-medium mb-0.5">🎙️ Mic not available</p>
+              <p className={dark ? "text-white/60" : "text-muted-foreground"}>{micError}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     );
   }
 
