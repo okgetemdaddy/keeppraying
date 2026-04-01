@@ -31,13 +31,9 @@ export default function Bible() {
     return () => { link.remove(); };
   }, [kr]);
 
-  const Nav = kr
-    ? () => <KeepReadingNav onOpenDrawer={() => setDrawerOpen(true)} />
-    : () => <SiteNav />;
-
   return (
     <>
-      {!focusMode && <Nav />}
+      {!focusMode && <KeepReadingNav onOpenDrawer={kr ? () => setDrawerOpen(true) : undefined} />}
       <main className={focusMode ? "" : "pt-16"}>
         <BibleReader />
       </main>
