@@ -256,6 +256,10 @@ interface EnrichedVerseProps {
   isSelected: boolean;
   hideBunches: boolean;
   onTapSelect: (verseNumber: number, e: React.MouseEvent) => void;
+  studyMode?: boolean;
+  verseAnnotation?: { id: string; strokes: StrokeData[] } | null;
+  onAnnotationSave?: (verseId: string, strokes: StrokeData[], existingId?: string) => void;
+  verseIdString?: string;
 }
 
 function EnrichedVerse({
