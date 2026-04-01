@@ -641,6 +641,8 @@ export default function Prayers() {
   const [activeLabel, setActiveTag] = useState("");
   const [showCommunity, setShowCommunity] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);
