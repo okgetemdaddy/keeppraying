@@ -383,8 +383,8 @@ export function VoiceRecorder({ variant = "fab", dark = false, autoStart = false
     ? "bg-zinc-900/95 backdrop-blur-2xl border-white/10"
     : "bg-card/98 backdrop-blur-2xl border-border";
 
-  // ── Idle: just the mic button ──
-  if (state === "idle") {
+  // ── Idle: just the mic button (skip if autoStart — will transition to recording) ──
+  if (state === "idle" && !autoStart) {
     return (
       <div className="relative">
         <motion.button
