@@ -1,54 +1,103 @@
 
 
-# "Ease the Eyes" Dimmer + Collapsible Bible Sleeve Sections
+# Handwritten Verse Annotations with Apple Pencil Support
 
-## Feature 1: "Ease the Eyes" Slider
+## Overview
 
-A dimming slider that sits between Premium Dark Mode and True Black OLED in the Appearance section. When active (only available when Premium Dark is on), it reduces the opacity/brightness of all non-background elements (text, icons, borders, cards) — making late-night reading gentler.
+Add a `HandwritingEngine` component using `perfect-freehand`, a Supabase `annotations` table, and integrate "iPad Study Mode" (Mode 1: Adaptive Marginalia) into the Bible reader. Users can handwrite notes in the margin alongside verses, with full Apple Pencil pressure/tilt support and PencilKit-compatible JSON export.
 
-### Implementation
+## Step 1: Install `perfect-freehand`
 
-**`src/index.css`** — Add a CSS custom property `--ease-eyes-dim` and apply it:
-```css
-.bible-dark {
-  --ease-eyes-dim: 1;
-}
-.bible-dark .bible-ease-eyes-target {
-  opacity: var(--ease-eyes-dim);
-}
+Add `perfect-freehand` to `package.json` dependencies.
+
+## Step 2: Create `HandwritingEngine.tsx`
+
+Create `src/components/bible/HandwritingEngine.tsx` with the user-provided code (adapted: remove `'use client'` directive since this is a Vite project, not Next.js). The component:
+- Uses an SVG canvas with pointer events for drawing
+- Captures `pressure`, `tiltX`, `tiltY`, `twist` from Apple Pencil
+- Stores strokes as `StrokeData[]` (JSON-serializable, PencilKit-compatible)
+- Supports `variant` prop: `margin` | `infinite` | `journal`
+- Includes a floating toolbar with color picker, size slider, undo, clear
+- Detects `pointerType === "pen"` and shows a Pencil indicator
+- Exposes `ref` handle: `clear()`, `undo()`, `getStrokes()`, `getSVG()`, `exportForPencilKit()`
+
+## Step 3: Create `annotations` table (migration)
+
+```sql
+create table public.annotations (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid not null,
+  verse_ids text[] not null,
+  strokes jsonb not null,
+  svg text,
+  tags text[],
+  folder text,
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+alter table public.annotations enable row level security;
+
+create policy "Users manage own annotations"
+  on public.annotations for all
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 ```
-The dimming will be applied via a CSS filter on the reader content area: `filter: brightness(var(--ease-eyes-dim))` — this dims everything (text, highlights, icons) without touching the background.
 
-**`src/components/bible/BibleReader.tsx`**:
-- Add `easeEyesDim` state (0.4–1.0, default 1.0) persisted to localStorage key `bible_ease_eyes`
-- Apply `style={{ filter: brightness(${easeEyesDim}) }}` to the reader content wrapper (not the background)
-- Pass value + setter to BibleSleeveSheet
+No foreign key to `auth.users` per project guidelines.
 
-**`src/components/bible/BibleSleeveSheet.tsx`**:
-- Add new props: `easeEyesDim: number`, `onEaseEyesDimChange: (v: number) => void`
-- Insert a slider between Premium Dark and True Black OLED rows, disabled when dark mode is off
-- Label: "Ease the Eyes" with icon (Eclipse/EyeOff), description: "Dim text and UI elements for comfortable night reading"
-- Slider range: 0.4 to 1.0, step 0.05
+## Step 4: Create `useAnnotations` hook
 
-## Feature 2: Collapsible Sections in Bible Sleeve
+New file `src/hooks/useAnnotations.ts`:
+- `useVerseAnnotations(verseId: string)` — fetches annotations where `verse_ids` contains the verse
+- `saveAnnotation(verseIds, strokes)` — upserts to the `annotations` table
+- `deleteAnnotation(id)` — removes an annotation
+- Uses React Query with `queryKey: ["annotations", verseId]`
 
-Wrap each section (Text Size, Reading Mode, Toggles, Appearance, Highlights, Bookmarks, Notes, Verse Bunches) in a `Collapsible` component so users can collapse/expand them. Persist collapsed state in localStorage.
+## Step 5: Integrate Mode 1 (Adaptive Marginalia) into BibleReader
 
-### Implementation
+### In `BibleReader.tsx`:
+- Add `studyMode` state (boolean), persisted to localStorage `bible_study_mode`
+- Auto-detect: if any `pointerdown` event has `pointerType === "pen"`, auto-enable study mode with a toast
+- Add a Pencil/PenTool icon button in toolbar Row 2 to toggle study mode manually
+- When `studyMode` is true:
+  - Increase line-height on the verse section to `leading-[2.8]`
+  - Pass `studyMode` prop to `EnrichedVerse`
 
-**`src/components/bible/BibleSleeveSheet.tsx`**:
-- Import `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`
-- Import `ChevronDown` icon
-- Add state: `collapsedSections` as a `Set<string>`, initialized from localStorage key `bible_sleeve_collapsed`
-- Toggle function that updates state + persists to localStorage
-- Wrap each `<section>` in `<Collapsible>`:
-  - The `<h3>` header becomes the `<CollapsibleTrigger>` with a rotating chevron
-  - Section content goes inside `<CollapsibleContent>`
-- Sections to make collapsible: Text Size, Reading Mode, Toggles, Appearance, Immersive Mode, Highlights, Bookmarks, Notes, Verse Bunches
-- Keep Trash Bin always visible (not collapsible)
+### In `EnrichedVerse` (within BibleReader.tsx):
+- When `studyMode` is true, render a `HandwritingEngine` overlay (variant="margin", showToolbar=false, height ~60px) below each verse
+- The overlay is positioned as a margin annotation area with subtle dashed border
+- On stroke completion (`onSave`), save to `annotations` table with `verse_ids: ["{BOOK}.{CH}.{VERSE}"]`
+- If a verse already has annotations, show a small handwriting icon (✍️) next to the verse number; tapping it reveals the strokes
 
-### Files Changed
-1. `src/index.css` — brightness filter class
-2. `src/components/bible/BibleReader.tsx` — easeEyesDim state + pass to sleeve + apply filter
-3. `src/components/bible/BibleSleeveSheet.tsx` — slider UI + collapsible sections
+### Annotation indicator:
+- For verses with saved annotations, show a tiny pen icon next to the verse number
+- Tapping the icon opens a small inline preview of the strokes (read-only SVG render)
+- Long-press or tap edit button to re-enter drawing mode for that verse
+
+## Step 6: Add Study Mode toggle to Bible Sleeve
+
+In `BibleSleeveSheet.tsx`, add a new collapsible section "iPad Study Mode" with:
+- Toggle to enable/disable study mode
+- Brief description: "Write directly on the page with Apple Pencil or finger"
+- Show Apple Pencil status indicator when detected
+
+## Files Changed
+
+1. `package.json` — add `perfect-freehand`
+2. `src/components/bible/HandwritingEngine.tsx` — new component (user-provided code, adapted)
+3. Database migration — `annotations` table + RLS
+4. `src/hooks/useAnnotations.ts` — new hook for CRUD
+5. `src/components/bible/BibleReader.tsx` — study mode state, auto-detect pencil, toolbar button, pass to EnrichedVerse, annotation overlay per verse
+6. `src/components/bible/BibleSleeveSheet.tsx` — study mode toggle in sleeve
+
+## Technical Notes
+
+- `'use client'` directive will be removed (Vite, not Next.js)
+- Strokes stored as JSONB in Supabase, directly compatible with future PencilKit import
+- SVG viewBox will use the actual rendered width of each verse margin area via `getBoundingClientRect`
+- `touch-action: none` on the SVG prevents scroll interference during drawing
+- Text remains selectable — the annotation overlay only captures pen/touch events on the SVG, not on the text layer
+- Modes 2 (Infinite Canvas) and 3 (Journal) are stubbed in the component but not wired into the reader UI yet — they'll be added after Mode 1 is validated
 
