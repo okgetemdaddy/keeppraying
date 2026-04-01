@@ -10,7 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 interface VoiceRecorderProps {
   variant?: "fab" | "inline" | "compact";
   dark?: boolean;
+  autoStart?: boolean;
   onPrayerCreated?: (prayerId: string) => void;
+  onClose?: () => void;
 }
 
 // Offline queue
