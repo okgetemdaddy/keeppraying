@@ -1312,6 +1312,8 @@ export function BibleReader() {
             partialSelectionRange={partialSelection ? { start: partialSelection.start, end: partialSelection.end } : undefined}
             isBookmarked={!!primaryBookmark}
             bookmarkId={primaryBookmark?.id}
+            existingBookmarkColor={primaryBookmark?.color}
+            usedBookmarkColors={usedBookmarkColors}
             existingHighlightColor={existingHighlightColor}
             existingHighlightId={existingHighlightId}
             onHighlight={handleHighlight}
