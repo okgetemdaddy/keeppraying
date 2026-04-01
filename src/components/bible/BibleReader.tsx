@@ -415,7 +415,25 @@ export function BibleReader() {
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
 
-  // ── Bible Search dialog ──
+  // ── Premium Dark Mode ──
+  const [premiumDark, setPremiumDark] = useState(() => {
+    try { return localStorage.getItem("bible_premium_dark") === "true"; } catch { return false; }
+  });
+  const [oledMode, setOledMode] = useState(() => {
+    try { return localStorage.getItem("bible_oled_mode") === "true"; } catch { return false; }
+  });
+  const handleTogglePremiumDark = useCallback((v: boolean) => {
+    setPremiumDark(v);
+    try { localStorage.setItem("bible_premium_dark", String(v)); } catch {}
+    if (!v) {
+      setOledMode(false);
+      try { localStorage.setItem("bible_oled_mode", "false"); } catch {}
+    }
+  }, []);
+  const handleToggleOled = useCallback((v: boolean) => {
+    setOledMode(v);
+    try { localStorage.setItem("bible_oled_mode", String(v)); } catch {}
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
