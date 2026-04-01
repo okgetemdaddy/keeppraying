@@ -177,6 +177,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     setPrayAnim(true);
     setTimeout(() => setPrayAnim(false), 400);
     if (prayed) {
+      const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "prayed_action", snap.id, snap as any);
       await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
       setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
     } else {
