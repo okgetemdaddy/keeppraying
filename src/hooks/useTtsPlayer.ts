@@ -14,6 +14,8 @@ interface UseTtsPlayerOptions {
   cacheId?: string;
   /** Pre-existing audio URL (e.g. prayer_cards.audio_url) */
   audioUrl?: string | null;
+  /** xAI TTS voice ID (e.g. "sal", "eve", "ara", "rex", "leo") */
+  voiceId?: string;
 }
 
 /** Fetch a URL as a Blob, returning null on failure. */
