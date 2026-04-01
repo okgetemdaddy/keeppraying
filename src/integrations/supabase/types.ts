@@ -347,6 +347,7 @@ export type Database = {
           cross_translation_annotations: boolean
           default_card_layout: string
           id: string
+          show_add_prayer_fab: boolean
           sound_id: string | null
           sound_volume: number
           theme: string
@@ -372,6 +373,7 @@ export type Database = {
           cross_translation_annotations?: boolean
           default_card_layout?: string
           id?: string
+          show_add_prayer_fab?: boolean
           sound_id?: string | null
           sound_volume?: number
           theme?: string
@@ -397,6 +399,7 @@ export type Database = {
           cross_translation_annotations?: boolean
           default_card_layout?: string
           id?: string
+          show_add_prayer_fab?: boolean
           sound_id?: string | null
           sound_volume?: number
           theme?: string
