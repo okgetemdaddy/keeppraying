@@ -186,7 +186,7 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
         ))}
       </AnimatePresence>
 
-      {/* Side buttons — God's Word & Report Issue */}
+      {/* Side buttons — KeepRead.ing & Report Issue */}
       <AnimatePresence>
         {open && (
           <motion.div
