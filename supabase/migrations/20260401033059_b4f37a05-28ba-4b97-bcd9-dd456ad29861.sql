@@ -1,0 +1,1 @@
+ALTER TABLE board_preferences ADD COLUMN tts_voice_id text NOT NULL DEFAULT 'sal';
