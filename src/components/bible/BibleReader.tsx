@@ -207,7 +207,6 @@ function NoteMarginalia({ notes }: { notes: UserNote[] }) {
 /* ── Bookmark ribbon ── */
 function BookmarkRibbon({ bookmark }: { bookmark?: UserBookmark }) {
   if (!bookmark) return null;
-  const { getBookmarkColorDef } = require("@/components/bible/bookmarkColors");
   const colorDef = getBookmarkColorDef(bookmark.color);
   return (
     <span className={`inline-flex items-center mr-0.5 ${colorDef.icon}`} title="Bookmarked">
