@@ -319,6 +319,10 @@ export function useBibleMutations(ref: ScriptureRef | null) {
   /* ── NOTE: Delete ── */
   const deleteNote = useMutation({
     mutationFn: async (noteId: string) => {
+      if (user) {
+        const { data: snap } = await supabase.from("user_notes").select("*").eq("id", noteId).single();
+        if (snap) await trashItem(user.id, "note", noteId, snap as any);
+      }
       const { error } = await supabase
         .from("user_notes")
         .delete()
