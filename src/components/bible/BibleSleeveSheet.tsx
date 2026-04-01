@@ -523,7 +523,7 @@ export function BibleSleeveSheet({
               </button>
             </section>
           </div>
-        </ScrollArea>
+        </div>
       </SheetContent>
     </Sheet>
     <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="bible" />
