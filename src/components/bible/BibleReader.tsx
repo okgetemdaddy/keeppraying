@@ -413,6 +413,9 @@ export function BibleReader() {
   // ── Hide bunches toggle ──
   const [hideBunchRefs, setHideBunchRefs] = useState(getHideBunches);
 
+  // ── Cross-bunch translation toggle ──
+  const [crossBunchTranslation, setCrossBunchTranslation] = useState(getCrossBunchTranslation);
+
   // ── Cross-translation annotations ──
   const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
 
