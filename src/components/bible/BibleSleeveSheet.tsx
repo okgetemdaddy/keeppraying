@@ -60,6 +60,7 @@ const SECTION_IDS = {
   toggles: "toggles",
   appearance: "appearance",
   immersive: "immersive",
+  studyMode: "study-mode",
   highlights: "highlights",
   bookmarks: "bookmarks",
   notes: "notes",
