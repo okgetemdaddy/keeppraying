@@ -33,7 +33,7 @@ const SpeechRecognition =
     ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     : null;
 
-export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }: VoiceRecorderProps) {
+export function VoiceRecorder({ variant = "fab", dark = false, autoStart = false, onPrayerCreated, onClose }: VoiceRecorderProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
