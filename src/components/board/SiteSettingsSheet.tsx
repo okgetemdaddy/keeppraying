@@ -248,8 +248,32 @@ export function SiteSettingsSheet({
               />
             </div>
           </section>
+
+          <Separator />
+
+          {/* ── Trash Bin ──────────────────── */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Trash2Icon className="w-3.5 h-3.5" />
+              Trash Bin
+            </h3>
+            <button
+              onClick={() => setTrashOpen(true)}
+              className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors border border-border"
+            >
+              <Trash2Icon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-foreground">Open Trash Bin</span>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Restore deleted items within 30 days
+                </p>
+              </div>
+            </button>
+          </section>
         </div>
       </SheetContent>
     </Sheet>
+    <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="board" />
+    </>
   );
 }
