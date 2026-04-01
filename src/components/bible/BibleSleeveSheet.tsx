@@ -166,8 +166,10 @@ interface BibleSleeveSheetProps {
 
   /* study mode */
   studyMode?: boolean;
+  studyModeVariant?: "margin" | "canvas" | "journal";
   pencilDetected?: boolean;
   onToggleStudyMode?: (v: boolean) => void;
+  onStudyModeVariantChange?: (v: "margin" | "canvas" | "journal") => void;
 }
 
 export function BibleSleeveSheet({
