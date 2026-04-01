@@ -666,12 +666,11 @@ export function BibleSleeveSheet({
                           {([
                             { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write beside verses" },
                             { key: "canvas" as const, icon: Layers, label: "Canvas", desc: "Full-page manuscript" },
-                            { key: "journal" as const, icon: BookOpen, label: "Journal", desc: "Coming soon" },
+                            { key: "journal" as const, icon: BookOpen, label: "Journal", desc: "Slide-out notebook" },
                           ]).map(({ key, icon: Icon, label, desc }) => (
                             <button
                               key={key}
-                              onClick={() => key !== "journal" && onStudyModeVariantChange(key)}
-                              disabled={key === "journal"}
+                              onClick={() => onStudyModeVariantChange(key)}
                               className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center transition-all border ${
                                 studyModeVariant === key
                                   ? "border-primary bg-primary/10 text-foreground"

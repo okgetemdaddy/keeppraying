@@ -1770,6 +1770,18 @@ export function BibleReader() {
         />
       )}
 
+      {/* ── Journal Panel (Mode 3) ── */}
+      <JournalPanel
+        open={journalOpen && studyMode && studyModeVariant === "journal"}
+        onOpenChange={setJournalOpen}
+        chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+        bookUsfm={bookUsfm}
+        chapterId={currentChapter?.id}
+        journalAnnotations={journalAnnotations ?? []}
+        onSave={handleJournalSave}
+        onDelete={(id) => deleteAnnotationMut.mutate(id)}
+      />
+
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
       {/* ── Add to Bunch Drawer ── */}
