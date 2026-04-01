@@ -1,18 +1,22 @@
 
 
-# Fix: Voice ID in TTS Cache Key
+# Fix: toggleTts cache key override in handleListen
 
 ## Problem
-Cache key is just the card ID. Changing voice preference still plays the old cached audio because the lookup hits the existing cache before ever reaching the edge function with the new voice.
+`useTtsPlayer` is correctly initialized with `cacheId: \`${card.id}_${ttsVoiceId || 'sal'}\``, but `handleListen` calls `toggleTts(text, card.id)` — the second argument overrides the options-level cacheId with just the bare card ID, so the voice-specific cache key is never used during playback.
 
 ## Fix
 
-### `src/components/board/BoardCard.tsx`
-- Change the `cacheId` passed to `useTtsPlayer` from `card.id` to `` `${card.id}_${ttsVoiceId || 'sal'}` ``
-- This ensures each voice variant gets its own cache entry in both IndexedDB and remote storage
+**File: `src/components/board/BoardCard.tsx` (line 189)**
 
-### `src/pages/Board.tsx` (or wherever `toggleTts` is called with a cacheId)
-- Same pattern: include voice ID in any explicit `cacheId` passed to `toggleTts(text, cacheId)`
+Change:
+```ts
+toggleTts(text, card.id);
+```
+To:
+```ts
+toggleTts(text);
+```
 
-No database or edge function changes needed — the storage paths automatically use the new compound key.
+By omitting the second argument, `toggleTts` will fall back to `options.cacheId` which already contains the correct compound key (`cardId_voiceId`). No other files need changes.
 
