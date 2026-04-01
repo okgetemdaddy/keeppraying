@@ -234,6 +234,8 @@ export default function Prayer() {
     if (!user) { toast({ title: "Sign in to like prayers" }); return; }
     setLikeAnim(true); setTimeout(() => setLikeAnim(false), 400);
     if (liked) {
+      const { data: snap } = await supabase.from("likes").select("*").eq("prayer_id", id!).eq("user_id", user.id).maybeSingle();
+      if (snap) await trashItem(user.id, "like", snap.id, snap as any);
       await supabase.from("likes").delete().eq("prayer_id", id!).eq("user_id", user.id);
       setLiked(false); setLikesCount(c => Math.max(0, c - 1));
     } else {
