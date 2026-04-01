@@ -47,15 +47,21 @@ export function isStandaloneMode(): boolean {
   );
 }
 
+function isIOSDevice(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+}
+
 export function useImmersiveMode(
   prefs: BoardPrefs,
   savePrefs: (updates: Partial<BoardPrefs>) => void,
 ) {
   const internalToggle = useRef(false);
+  const iOS = isIOSDevice();
+  const fullscreenAvailable = isFullscreenSupported();
 
   // Enter/exit fullscreen when pref changes
   useEffect(() => {
-    if (!isFullscreenSupported() || isStandaloneMode()) return;
+    if (!fullscreenAvailable || isStandaloneMode()) return;
 
     if (prefs.immersive_mode && !isInFullscreen()) {
       internalToggle.current = true;
@@ -64,10 +70,12 @@ export function useImmersiveMode(
       internalToggle.current = true;
       exitFullscreen();
     }
-  }, [prefs.immersive_mode]);
+  }, [prefs.immersive_mode, fullscreenAvailable]);
 
   // Listen for external fullscreen exit (native gesture / back button)
   useEffect(() => {
+    if (!fullscreenAvailable) return;
+
     const handler = () => {
       // Small delay to let internalToggle clear
       setTimeout(() => {
@@ -84,7 +92,7 @@ export function useImmersiveMode(
       document.removeEventListener("fullscreenchange", handler);
       document.removeEventListener("webkitfullscreenchange", handler);
     };
-  }, [prefs.immersive_mode, savePrefs]);
+  }, [prefs.immersive_mode, savePrefs, fullscreenAvailable]);
 
   const toggleImmersive = useCallback(
     (enabled: boolean) => {
@@ -94,8 +102,11 @@ export function useImmersiveMode(
   );
 
   return {
-    isSupported: isFullscreenSupported() || isStandaloneMode(),
+    /** true when either fullscreen API works OR iOS (show section either way) */
+    isSupported: fullscreenAvailable || iOS || isStandaloneMode(),
     isStandalone: isStandaloneMode(),
+    /** true on iOS where Fullscreen API is unavailable — show "Add to Home Screen" tip instead */
+    isIOSLimited: iOS && !fullscreenAvailable && !isStandaloneMode(),
     isActive: prefs.immersive_mode,
     toggleImmersive,
   };
