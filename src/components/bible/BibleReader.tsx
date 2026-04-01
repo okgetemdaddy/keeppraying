@@ -1544,7 +1544,13 @@ export function BibleReader() {
           setSleeveOpen(false);
           pendingScrollVerseRef.current = vn;
         }}
+        immersiveSupported={immersiveSupported}
+        immersiveStandalone={immersiveStandalone}
+        immersiveActive={immersiveActive}
+        onToggleImmersive={toggleImmersive}
       />
+
+      {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
