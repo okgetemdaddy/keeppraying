@@ -243,6 +243,42 @@ export type Database = {
         }
         Relationships: []
       }
+      annotations: {
+        Row: {
+          created_at: string
+          folder: string | null
+          id: string
+          strokes: Json
+          svg: string | null
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+          verse_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          folder?: string | null
+          id?: string
+          strokes: Json
+          svg?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+          verse_ids: string[]
+        }
+        Update: {
+          created_at?: string
+          folder?: string | null
+          id?: string
+          strokes?: Json
+          svg?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+          verse_ids?: string[]
+        }
+        Relationships: []
+      }
       bible_cache: {
         Row: {
           created_at: string
