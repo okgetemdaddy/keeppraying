@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Volume2, Mic, Eye, Sparkles, Type } from "lucide-react";
+import { Volume2, Mic, Eye, Sparkles, Type, AudioLines } from "lucide-react";
 import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 
 interface SiteSettingsSheetProps {
