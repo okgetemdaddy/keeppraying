@@ -8,7 +8,6 @@ interface VoiceWaveformPlayerProps {
   onPlay?: () => boolean | void;
   accentColor?: string;
   captionsEnabled?: boolean;
-  onToggleCaptions?: () => void;
 }
 
 const BAR_COUNT = 40;
