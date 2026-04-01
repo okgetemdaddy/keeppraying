@@ -118,6 +118,7 @@ interface BoardCardProps {
   onToggleCaptionTts?: () => void;
   onToggleCaptionRecorded?: () => void;
   defaultCardLayout?: string;
+  ttsVoiceId?: string;
 }
 
 export function BoardCard({
