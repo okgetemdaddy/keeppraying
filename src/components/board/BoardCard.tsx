@@ -19,7 +19,7 @@ import {
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
   SunDim, ImagePlus, ImageOff, Send, BookmarkX, AlertTriangle,
-  ExternalLink, Volume2, Captions,
+  ExternalLink, Volume2,
 } from "lucide-react";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
