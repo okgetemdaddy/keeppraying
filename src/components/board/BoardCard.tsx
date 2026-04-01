@@ -137,6 +137,7 @@ export function BoardCard({
   onToggleCaptionTts,
   onToggleCaptionRecorded,
   defaultCardLayout = "standard",
+  ttsVoiceId,
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
