@@ -594,35 +594,6 @@ export function BoardCard({
               )}
             </AnimatePresence>
           </div>
-
-          {/* Top-right actions — large cards only */}
-          {!actionsInFooter && (
-            <div className="flex items-center gap-1 shrink-0">
-              <ActionButtons
-                item={item} accentColor={accentColor} textColor={textColor}
-                onFavorite={toggleFavorite} onPin={togglePin} onShare={handleShare}
-                onCardSize={setCardSize} onEnrich={() => setEnrichOpen(true)}
-                onRemove={onRemove} isOwner={isOwner} size={size}
-                onPickFont={pickFont} onPickRandomFont={pickRandomFont}
-                currentFont={pendingFont ?? card.text_style}
-                onAddToPlaylist={onAddToPlaylist}
-                hasBgImage={!!bgUrl}
-                overlayOpacity={overlayOpacity}
-                onOverlayOpacityChange={handleOverlayOpacityChange}
-                cardBgPreset={cardBgPreset}
-                onCardBgPresetChange={handleCardBgPresetChange}
-                userId={userId}
-                onRefresh={onRefresh}
-                onSharePrivately={() => setShareModalOpen(true)}
-                isSharedRecipient={isSharedRecipient}
-                onListen={handleListen}
-                ttsLoading={ttsLoading}
-                ttsPlaying={ttsPlaying}
-
-
-              />
-            </div>
-          )}
         </div>
 
         {/* ── Collapsible chrome ────────────────────────────────────────── */}
