@@ -427,7 +427,7 @@ export function BoardCard({
   };
 
   // ── derived ──────────────────────────────────────────────────────────────────
-  const actionsInFooter = size !== "large";
+  // SAFEGUARD: Single unified footer for ALL card sizes — do NOT branch by size
 
   // ── render ───────────────────────────────────────────────────────────────────
   const bgUrl = card.background_url || null;
