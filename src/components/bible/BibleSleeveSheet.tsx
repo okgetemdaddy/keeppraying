@@ -213,7 +213,7 @@ export function BibleSleeveSheet({
             {/* ── Appearance ── */}
             <section className="space-y-3">
               <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                <Moon className="h-3.5 w-3.5" /> Appearance
+                <Sun className="h-3.5 w-3.5" /> Appearance
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
