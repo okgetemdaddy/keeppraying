@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
+import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 import { SharePrayerModal } from "@/components/SharePrayerModal";
 import { Slider } from "@/components/ui/slider";
 import {
