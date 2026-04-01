@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
+import { PenTool } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
