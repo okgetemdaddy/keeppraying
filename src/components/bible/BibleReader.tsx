@@ -254,7 +254,7 @@ function EnrichedVerse({
   verse,
   highlights,
   notes,
-  isBookmarked,
+  bookmark,
   bunchItems,
   bunchColorMap,
   bunchGroupPosition,
