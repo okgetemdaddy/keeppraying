@@ -93,10 +93,11 @@ export function useBoardPreferences() {
       // Write-through to local cache immediately
       setLocalCache(cacheKeys.boardPrefs(user.id), next);
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-      saveTimeoutRef.current = setTimeout(() => {
-        supabase
+      saveTimeoutRef.current = setTimeout(async () => {
+        await supabase
           .from("board_preferences")
-          .upsert({ user_id: user.id, ...next } as any, { onConflict: "user_id" });
+          .upsert({ user_id: user.id, ...next } as any, { onConflict: "user_id" })
+          .select();
       }, 800);
       return next;
     });
