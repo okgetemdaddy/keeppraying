@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { MapPin, Shield, Lock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { REGION_COORDS } from "@/hooks/usePrayerMapData";
+import { getNearestRegion } from "@/lib/regionDetect";
 
 interface RadarNode {
   angle: number;
@@ -12,31 +13,7 @@ interface RadarNode {
   count?: number;
 }
 
-// Map lat/lng to nearest region
-function getNearestRegion(lat: number, lng: number): string {
-  // Approximate lat/lng for each region center
-  const regionLatLng: Record<string, { lat: number; lng: number }> = {
-    "North America": { lat: 40, lng: -100 },
-    "South America": { lat: -15, lng: -60 },
-    "Europe": { lat: 50, lng: 10 },
-    "Africa": { lat: 5, lng: 20 },
-    "Middle East": { lat: 30, lng: 45 },
-    "Central Asia": { lat: 45, lng: 65 },
-    "East Asia": { lat: 35, lng: 115 },
-    "South Asia": { lat: 20, lng: 78 },
-    "Southeast Asia": { lat: 5, lng: 110 },
-    "Oceania": { lat: -25, lng: 135 },
-    "Caribbean": { lat: 18, lng: -72 },
-    "Russia": { lat: 60, lng: 90 },
-  };
-  let nearest = "North America";
-  let minDist = Infinity;
-  for (const [name, coords] of Object.entries(regionLatLng)) {
-    const d = Math.sqrt((lat - coords.lat) ** 2 + (lng - coords.lng) ** 2);
-    if (d < minDist) { minDist = d; nearest = name; }
-  }
-  return nearest;
-}
+// getNearestRegion is now imported from @/lib/regionDetect
 
 export default function LocalRadar() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);

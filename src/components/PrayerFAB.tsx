@@ -76,10 +76,10 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
       color: "hsl(42 85% 46%)",
     },
     {
-      id: "we-pray",
-      label: "We Pray",
+      id: "prayer-warriors",
+      label: "Prayer Warriors",
       icon: <Globe className="w-4 h-4" />,
-      onClick: go("/we-pray"),
+      onClick: go("/prayer-warriors"),
       color: "hsl(210 55% 45%)",
     },
     {

@@ -11,6 +11,7 @@ import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, R
 import { ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle, ResponsiveSheetDescription as SheetDescription } from "@/components/ui/responsive-sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import { PrayerMethodChooser } from "@/components/board/PrayerMethodChooser";
 import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
@@ -142,6 +143,8 @@ export default function Board() {
     })();
   }, [user]);
   const [addOpen, setAddOpen] = useState(false);
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testifyBody, setTestifyBody] = useState("");
   const [testifySubmitting, setTestifySubmitting] = useState(false);
@@ -454,7 +457,7 @@ export default function Board() {
       {/* Hero Section */}
       <PrayerStationHero
         firstName={firstName}
-        onAddPrayer={() => setAddOpen(true)}
+        onAddPrayer={() => setChooserOpen(true)}
         onPlaylist={() => openPlaylist()}
         onClassical={() => setClassicalOpen(true)}
         hasPrayers={saved.length > 0}
@@ -856,7 +859,42 @@ export default function Board() {
         </DialogContent>
       </Dialog>
 
+      <PrayerMethodChooser
+        open={chooserOpen}
+        onOpenChange={setChooserOpen}
+        onSpeak={() => setVoiceRecorderOpen(true)}
+        onWrite={() => setAddOpen(true)}
+      />
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
+
+      {/* Voice Recorder Modal — triggered from chooser */}
+      <Dialog open={voiceRecorderOpen} onOpenChange={setVoiceRecorderOpen}>
+        <DialogContent
+          className="w-full border-0 shadow-2xl p-6"
+          style={{
+            maxWidth: "min(36rem, 95vw)",
+            background: "hsl(42 55% 99%)",
+            boxShadow: "0 32px 80px -16px rgba(0,0,0,0.22), 0 0 0 1px hsl(38 22% 90%)",
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl" style={{ color: "hsl(25 35% 14%)" }}>
+              Speak Your Prayer
+            </DialogTitle>
+            <DialogDescription className="text-sm" style={{ color: "hsl(25 18% 52%)" }}>
+              Record your prayer aloud — we'll transcribe and save it to your board.
+            </DialogDescription>
+          </DialogHeader>
+          <VoiceRecorder
+            variant="inline"
+            onPrayerCreated={(id) => {
+              setVoiceRecorderOpen(false);
+              fetchSaved();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
 
       {/* ── Theme Sanctuary Modal ──────────────────────────────────── */}
