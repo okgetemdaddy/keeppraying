@@ -434,39 +434,78 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, x: -40 }}
-              className="p-6 sm:p-8 space-y-5"
+              className="relative p-6 sm:p-8 flex flex-col items-center text-center"
             >
-              <div className="flex items-center gap-4">
-                <motion.div
-                  animate={{ scale: [1, 1.35, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shrink-0"
-                >
-                  <div className="w-5 h-5 rounded-full bg-red-500" />
-                </motion.div>
-                <div>
-                  <p className={`text-lg font-semibold ${baseColor}`}>Listening…</p>
-                  <p className={`text-sm ${mutedColor}`}>{formatTime(elapsed)}</p>
-                </div>
+              {/* Subtle radial glow behind waveform */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                background: "radial-gradient(ellipse at 50% 30%, hsl(var(--gold) / 0.10) 0%, transparent 70%)"
+              }} />
+
+              {/* Listening label */}
+              <p className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4 relative z-10">
+                Listening…
+              </p>
+
+              {/* Animated waveform bars */}
+              <div className="flex items-center justify-center gap-[5px] h-20 mb-3 relative z-10">
+                {[0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9].map((delay, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-[5px] rounded-full"
+                    style={{ background: "hsl(var(--gold))" }}
+                    animate={{
+                      height: ["16px", `${28 + Math.sin(i * 1.2) * 16}px`, "16px"],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 1.1,
+                      repeat: Infinity,
+                      delay,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
               </div>
 
+              {/* Timer */}
+              <p className="font-mono text-3xl font-light tracking-wide relative z-10"
+                style={{
+                  color: "hsl(var(--gold))",
+                  textShadow: "0 0 18px hsl(var(--gold) / 0.3)",
+                }}
+              >
+                {formatTime(elapsed)}
+              </p>
+
+              {/* Live transcript */}
               {transcript && (
-                <div className={`rounded-2xl p-4 max-h-48 overflow-y-auto ${
-                  dark ? "bg-white/5" : "bg-muted/50"
+                <div className={`mt-5 w-full rounded-2xl p-4 max-h-40 overflow-y-auto text-left border relative z-10 ${
+                  dark
+                    ? "bg-white/5 border-white/10"
+                    : "bg-accent/40 border-border/60 backdrop-blur-sm"
                 }`}>
-                  <p className={`text-base leading-relaxed font-sans ${mutedColor}`}>
+                  <p className={`text-sm leading-relaxed font-sans ${mutedColor}`}>
                     {transcript}
                   </p>
                 </div>
               )}
 
-              <Button
-                onClick={handleStopRecording}
-                className="w-full rounded-2xl gap-2 h-12 text-base"
-                variant="destructive"
-              >
-                <MicOff className="w-5 h-5" /> Stop Recording
-              </Button>
+              {/* Stop button */}
+              <div className="mt-6 flex flex-col items-center gap-2 relative z-10">
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={handleStopRecording}
+                  className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-colors"
+                  style={{
+                    background: "hsl(var(--gold-dark))",
+                    boxShadow: "0 4px 20px hsl(var(--gold) / 0.35)",
+                  }}
+                >
+                  {/* Square stop icon */}
+                  <div className="w-5 h-5 rounded-[3px] bg-white" />
+                </motion.button>
+                <span className="text-[11px] text-muted-foreground">Tap to stop</span>
+              </div>
             </motion.div>
           )}
 
