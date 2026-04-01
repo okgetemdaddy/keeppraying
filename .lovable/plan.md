@@ -1,103 +1,65 @@
 
 
-# Handwritten Verse Annotations with Apple Pencil Support
+# Mode 3: Linked Slide-Out Rich Journal
 
 ## Overview
 
-Add a `HandwritingEngine` component using `perfect-freehand`, a Supabase `annotations` table, and integrate "iPad Study Mode" (Mode 1: Adaptive Marginalia) into the Bible reader. Users can handwrite notes in the margin alongside verses, with full Apple Pencil pressure/tilt support and PencilKit-compatible JSON export.
+A slide-out journal panel that opens from the right side of the Bible reader. Users can handwrite freeform notes using the `HandwritingEngine` (variant="journal") linked to the current chapter/verse. The journal feels like a leather-bound notebook page — rich paper texture, generous writing space, and automatic verse linking.
 
-## Step 1: Install `perfect-freehand`
+## New Component: `src/components/bible/JournalPanel.tsx`
 
-Add `perfect-freehand` to `package.json` dependencies.
+A slide-out drawer (Sheet from right, 85% width on mobile, 480px on desktop) containing:
 
-## Step 2: Create `HandwritingEngine.tsx`
+- **Header**: Chapter title + close button + save indicator
+- **Verse context strip**: Shows the current verse or selected verses as a subtle reference at the top
+- **HandwritingEngine**: `variant="journal"`, full height, `showToolbar=true`, with the journal's deeper shadow styling
+- **Typed notes area**: A `textarea` below the drawing canvas for users who want to type alongside their handwriting (stored as a `typed_text` field — we'll add this column)
+- **Entry list**: When the journal opens, show a scrollable list of previous journal entries for this chapter (pulled from annotations where `verse_ids` contains `{book}.{chapter}.journal`), each showing a small SVG preview thumbnail + timestamp. Tapping an entry loads it into the engine for editing.
+- **New entry button**: Creates a fresh canvas
 
-Create `src/components/bible/HandwritingEngine.tsx` with the user-provided code (adapted: remove `'use client'` directive since this is a Vite project, not Next.js). The component:
-- Uses an SVG canvas with pointer events for drawing
-- Captures `pressure`, `tiltX`, `tiltY`, `twist` from Apple Pencil
-- Stores strokes as `StrokeData[]` (JSON-serializable, PencilKit-compatible)
-- Supports `variant` prop: `margin` | `infinite` | `journal`
-- Includes a floating toolbar with color picker, size slider, undo, clear
-- Detects `pointerType === "pen"` and shows a Pencil indicator
-- Exposes `ref` handle: `clear()`, `undo()`, `getStrokes()`, `getSVG()`, `exportForPencilKit()`
+### Data keying
+- Journal entries use `verse_ids: ["{book}.{chapter}.journal"]` to distinguish from margin/canvas annotations
+- If a verse is selected when the journal opens, also include that verse ID so entries can be filtered per-verse later
 
-## Step 3: Create `annotations` table (migration)
+## Database Migration
+
+Add a `typed_text` column to the existing `annotations` table:
 
 ```sql
-create table public.annotations (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid not null,
-  verse_ids text[] not null,
-  strokes jsonb not null,
-  svg text,
-  tags text[],
-  folder text,
-  created_at timestamptz default now() not null,
-  updated_at timestamptz default now() not null
-);
-
-alter table public.annotations enable row level security;
-
-create policy "Users manage own annotations"
-  on public.annotations for all
-  to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+ALTER TABLE public.annotations ADD COLUMN IF NOT EXISTS typed_text text;
 ```
 
-No foreign key to `auth.users` per project guidelines.
+This allows journal entries to have both handwritten strokes AND typed text.
 
-## Step 4: Create `useAnnotations` hook
+## `useAnnotations.ts` Updates
 
-New file `src/hooks/useAnnotations.ts`:
-- `useVerseAnnotations(verseId: string)` — fetches annotations where `verse_ids` contains the verse
-- `saveAnnotation(verseIds, strokes)` — upserts to the `annotations` table
-- `deleteAnnotation(id)` — removes an annotation
-- Uses React Query with `queryKey: ["annotations", verseId]`
+- Add `useJournalAnnotations(bookUsfm, chapterNumber)` — fetches annotations where any `verse_ids` entry ends with `.journal`
+- Update `saveAnnotation` mutation to accept optional `typedText` parameter
 
-## Step 5: Integrate Mode 1 (Adaptive Marginalia) into BibleReader
+## `BibleReader.tsx` Updates
 
-### In `BibleReader.tsx`:
-- Add `studyMode` state (boolean), persisted to localStorage `bible_study_mode`
-- Auto-detect: if any `pointerdown` event has `pointerType === "pen"`, auto-enable study mode with a toast
-- Add a Pencil/PenTool icon button in toolbar Row 2 to toggle study mode manually
-- When `studyMode` is true:
-  - Increase line-height on the verse section to `leading-[2.8]`
-  - Pass `studyMode` prop to `EnrichedVerse`
+- Add `journalOpen` state (boolean)
+- When `studyModeVariant === "journal"` and study mode is on, the PenTool toolbar button opens the journal panel
+- Handle variant change: `if (v === "journal" && studyMode) setJournalOpen(true)`
+- Pass journal props to the new `JournalPanel`
 
-### In `EnrichedVerse` (within BibleReader.tsx):
-- When `studyMode` is true, render a `HandwritingEngine` overlay (variant="margin", showToolbar=false, height ~60px) below each verse
-- The overlay is positioned as a margin annotation area with subtle dashed border
-- On stroke completion (`onSave`), save to `annotations` table with `verse_ids: ["{BOOK}.{CH}.{VERSE}"]`
-- If a verse already has annotations, show a small handwriting icon (✍️) next to the verse number; tapping it reveals the strokes
+## `BibleSleeveSheet.tsx` Updates
 
-### Annotation indicator:
-- For verses with saved annotations, show a tiny pen icon next to the verse number
-- Tapping the icon opens a small inline preview of the strokes (read-only SVG render)
-- Long-press or tap edit button to re-enter drawing mode for that verse
-
-## Step 6: Add Study Mode toggle to Bible Sleeve
-
-In `BibleSleeveSheet.tsx`, add a new collapsible section "iPad Study Mode" with:
-- Toggle to enable/disable study mode
-- Brief description: "Write directly on the page with Apple Pencil or finger"
-- Show Apple Pencil status indicator when detected
+- Remove `disabled` and "Coming soon" from the Journal mode button
+- Enable clicking it to set variant to `"journal"`
 
 ## Files Changed
 
-1. `package.json` — add `perfect-freehand`
-2. `src/components/bible/HandwritingEngine.tsx` — new component (user-provided code, adapted)
-3. Database migration — `annotations` table + RLS
-4. `src/hooks/useAnnotations.ts` — new hook for CRUD
-5. `src/components/bible/BibleReader.tsx` — study mode state, auto-detect pencil, toolbar button, pass to EnrichedVerse, annotation overlay per verse
-6. `src/components/bible/BibleSleeveSheet.tsx` — study mode toggle in sleeve
+1. **New**: `src/components/bible/JournalPanel.tsx` — slide-out journal with HandwritingEngine + typed notes + entry list
+2. **Migration**: Add `typed_text` column to `annotations`
+3. **Edit**: `src/hooks/useAnnotations.ts` — add `useJournalAnnotations`, update save mutation for `typedText`
+4. **Edit**: `src/components/bible/BibleReader.tsx` — `journalOpen` state, variant handling, render `JournalPanel`
+5. **Edit**: `src/components/bible/BibleSleeveSheet.tsx` — enable Journal mode button
 
 ## Technical Notes
 
-- `'use client'` directive will be removed (Vite, not Next.js)
-- Strokes stored as JSONB in Supabase, directly compatible with future PencilKit import
-- SVG viewBox will use the actual rendered width of each verse margin area via `getBoundingClientRect`
-- `touch-action: none` on the SVG prevents scroll interference during drawing
-- Text remains selectable — the annotation overlay only captures pen/touch events on the SVG, not on the text layer
-- Modes 2 (Infinite Canvas) and 3 (Journal) are stubbed in the component but not wired into the reader UI yet — they'll be added after Mode 1 is validated
+- Journal uses the same `annotations` table — differentiated by the `.journal` suffix in `verse_ids`
+- The `HandwritingEngine` already supports `variant="journal"` with deeper shadow styling
+- Sheet component from `@/components/ui/sheet` used for the slide-out panel (opens from right)
+- SVG thumbnail previews rendered by dangerouslySetInnerHTML from the stored `svg` field
 
