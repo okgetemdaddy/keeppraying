@@ -881,8 +881,8 @@ export function BoardCard({
               </button>
             )}
 
-            {/* 6. Testify (public prayers only) */}
-            {isPublic && (
+            {/* 6. Testify (all prayers — private prayers can be answered too) */}
+            {(
               <button
                 onClick={() => setFlipped(true)}
                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
