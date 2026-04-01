@@ -387,7 +387,7 @@ export default function WarRoom() {
                 </button>
               );
             })}
-            <VoiceRecorder variant="compact" dark />
+            
             {/* Settings panel */}
             <SettingsPanel
               theme={theme}
@@ -519,6 +519,7 @@ export default function WarRoom() {
             >
               📜 Browse Classical Prayers
             </button>
+            <VoiceRecorder variant="inline" dark onPrayerCreated={() => {}} />
             {!user && (
               <p className="text-xs sm:text-sm" style={{ color: theme.muted, opacity: 0.5 }}>
                 <Link to="/auth" style={{ color: theme.accent }} className="underline">Sign in</Link>{" "}
