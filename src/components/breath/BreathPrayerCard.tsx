@@ -91,6 +91,8 @@ export default function BreathPrayerCard({
     e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to like" }); return; }
     if (liked) {
+      const { data: snap } = await supabase.from("likes").select("*").eq("prayer_id", id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "like", snap.id, snap as any);
       await supabase.from("likes").delete().eq("prayer_id", id).eq("user_id", userId);
       setLiked(false);
       setLikesLocal(c => Math.max(0, c - 1));
