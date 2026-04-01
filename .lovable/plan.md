@@ -1,24 +1,44 @@
 
 
-# Fix CC Toggle Deselecting on Outside Click
+# Add AI Voice Preference to Site Settings
 
-## Problem
-The CC (caption) toggle on prayer cards uses local `useState` inside `BoardCard`. When the user clicks elsewhere on the Board, the card list re-renders (e.g., from a data refetch or parent state change), causing `BoardCard` to remount and reset `localCaptionTts` / `localCaptionRecorded` back to the prop default values.
+## What we're building
+A new "AI Voice" section in the Site Settings sheet on /board where users pick which xAI voice reads their prayers aloud. Currently hardcoded to "sal" — this makes it a persisted user preference.
 
-## Solution
-Lift the CC toggle state out of `BoardCard` and into the Board page level, using the existing `useBoardPreferences` hook which already has `caption_mode_tts` and `caption_mode_recorded` fields that persist to the database.
+## Available xAI TTS Voices
+| Voice ID | Type | Tone |
+|----------|------|------|
+| `eve` | Female | Energetic, upbeat (default) |
+| `ara` | Female | Warm, friendly |
+| `rex` | Male | Confident, clear |
+| `sal` | Neutral | Smooth, balanced (current hardcoded) |
+| `leo` | Male | Authoritative, strong |
 
 ## Changes
 
-### File: `src/pages/Board.tsx`
-- Pass `onToggleCaptionTts` and `onToggleCaptionRecorded` callbacks to `BoardCard` that call `updatePref("caption_mode_tts", !prefs.caption_mode_tts)` and similar
-- These persist the toggle to the database so it survives page refreshes too
+### 1. Database Migration
+Add `tts_voice_id` column to `board_preferences`:
+```sql
+ALTER TABLE board_preferences ADD COLUMN tts_voice_id text NOT NULL DEFAULT 'sal';
+```
 
-### File: `src/components/board/BoardCard.tsx`
-- Remove `localCaptionTts` and `localCaptionRecorded` local state
-- Add new props: `onToggleCaptionTts?: () => void` and `onToggleCaptionRecorded?: () => void`
-- Use the existing `captionModeTts` and `captionModeRecorded` props directly (they're already passed from Board) instead of copying them into local state
-- Pass the new toggle callbacks down to `ActionButtons` and `VoiceWaveformPlayer`
+### 2. `src/hooks/useBoardPreferences.ts`
+- Add `tts_voice_id: string` to `BoardPrefs` interface (default: `"sal"`)
+- Include it in the select query and fresh-data mapping
 
-This makes the CC toggle a persistent, global preference rather than ephemeral local state that resets on re-render.
+### 3. `src/components/board/SiteSettingsSheet.tsx`
+- Add a new "AI Voice" section (with a `Volume2` or `AudioLines` icon) between Caption Mode and Voice Card Display
+- Use a `RadioGroup` with all 5 voices, each showing name + short description (e.g. "Sal — Smooth, balanced" / "Eve — Energetic, upbeat")
+- Calls `onSave({ tts_voice_id: value })` on selection
+
+### 4. `src/hooks/useTtsPlayer.ts`
+- Accept `voiceId?: string` in `UseTtsPlayerOptions`
+- Pass it in the edge function request body: `body: JSON.stringify({ text, voiceId })`
+
+### 5. `supabase/functions/prayer-tts/index.ts`
+- Read `voiceId` from request body (default to `"sal"` if not provided)
+- Use it in the xAI TTS call instead of hardcoded `"sal"`
+
+### 6. `src/components/board/BoardCard.tsx` (or wherever `useTtsPlayer` is called)
+- Pass `voiceId: prefs.tts_voice_id` (from board preferences) into the TTS player so the user's chosen voice is used
 
