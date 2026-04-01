@@ -1246,7 +1246,8 @@ export function BibleReader() {
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
               style={{ fontSize: `${textSize}px` }}
-              className="font-body"
+              className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+            >
             >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                 {verses.map((v) => {
