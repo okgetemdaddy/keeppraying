@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Heart, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useToast } from "@/hooks/use-toast";
 import VerseLink from "@/components/VerseLink";
 import { PrayedButton } from "@/components/PrayedButton";
