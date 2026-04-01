@@ -300,11 +300,11 @@
   /* ═══ Bible Premium Dark Mode (scoped) ═══ */
   .bible-dark {
     --background: 0 0% 7%;
-    --foreground: 0 0% 88%;
+    --foreground: 0 0% 93%;
     --card: 0 0% 12%;
-    --card-foreground: 0 0% 88%;
+    --card-foreground: 0 0% 93%;
     --popover: 0 0% 12%;
-    --popover-foreground: 0 0% 88%;
+    --popover-foreground: 0 0% 93%;
     --primary: 213 100% 65%;
     --primary-foreground: 0 0% 7%;
     --secondary: 0 0% 16%;

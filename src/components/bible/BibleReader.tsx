@@ -434,6 +434,20 @@ export function BibleReader() {
     setOledMode(v);
     try { localStorage.setItem("bible_oled_mode", String(v)); } catch {}
   }, []);
+
+  // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
+  useEffect(() => {
+    const root = document.documentElement;
+    if (premiumDark) {
+      root.classList.add("bible-dark");
+      if (oledMode) root.classList.add("bible-oled");
+      else root.classList.remove("bible-oled");
+    } else {
+      root.classList.remove("bible-dark", "bible-oled");
+    }
+    return () => { root.classList.remove("bible-dark", "bible-oled"); };
+  }, [premiumDark, oledMode]);
+
   const [searchOpen, setSearchOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
