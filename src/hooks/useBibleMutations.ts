@@ -430,6 +430,7 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     },
     onSuccess: (result) => {
       toast.success(`Added to "${result.bunchName}" 📦`);
+      // Invalidate all verse_bunches queries to refresh items lists
       qc.invalidateQueries({ queryKey: ["verse_bunches"] });
     },
     onError: () => {
@@ -437,6 +438,8 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     },
     onSettled: () => {
       if (key.length) qc.invalidateQueries({ queryKey: key });
+      // Always re-fetch bunches to ensure verse lists are current
+      qc.invalidateQueries({ queryKey: ["verse_bunches"] });
     },
   });
 
