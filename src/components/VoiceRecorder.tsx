@@ -376,17 +376,22 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
         <AnimatePresence>
           {micError && (
             <motion.div
+              key="mic-error"
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              className={`absolute top-full mt-2 right-0 z-50 w-56 rounded-xl px-3 py-2 text-xs shadow-lg border ${
+              className={`absolute top-full mt-3 left-1/2 -translate-x-1/2 z-[9999] w-56 rounded-xl px-3 py-2 text-xs shadow-2xl border ${
                 dark
-                  ? "bg-black/80 backdrop-blur-md border-white/10 text-white/90"
-                  : "bg-card border-border text-foreground"
+                  ? "bg-zinc-900 border-amber-500/30 text-white/90"
+                  : "bg-card border-border text-foreground shadow-lg"
               }`}
             >
-              <p className="font-medium mb-0.5">🎙️ Mic not available</p>
-              <p className={dark ? "text-white/60" : "text-muted-foreground"}>{micError}</p>
+              {/* Caret arrow */}
+              <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 ${
+                dark ? "bg-zinc-900 border-l border-t border-amber-500/30" : "bg-card border-l border-t border-border"
+              }`} />
+              <p className="font-medium mb-0.5 relative">🎙️ Mic not available</p>
+              <p className={`relative ${dark ? "text-white/60" : "text-muted-foreground"}`}>{micError}</p>
             </motion.div>
           )}
         </AnimatePresence>
