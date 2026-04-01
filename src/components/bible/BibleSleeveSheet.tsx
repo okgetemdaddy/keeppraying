@@ -123,6 +123,10 @@ export function BibleSleeveSheet({
   onSetActiveBunch,
   onDeleteBunch,
   onNavigateToVerse,
+  immersiveSupported,
+  immersiveStandalone,
+  immersiveActive,
+  onToggleImmersive,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
