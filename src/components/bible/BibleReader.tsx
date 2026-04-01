@@ -527,7 +527,8 @@ export function BibleReader() {
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
     // If turning on with canvas variant, open canvas
     if (v && studyModeVariant === "canvas") setCanvasOpen(true);
-    if (!v) setCanvasOpen(false);
+    if (v && studyModeVariant === "journal") setJournalOpen(true);
+    if (!v) { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyModeVariant]);
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
