@@ -1,0 +1,1 @@
+ALTER TABLE public.board_preferences ADD COLUMN show_add_prayer_fab boolean NOT NULL DEFAULT true;

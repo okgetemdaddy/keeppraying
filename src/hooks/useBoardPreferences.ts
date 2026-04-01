@@ -21,6 +21,7 @@ export interface BoardPrefs {
   caption_mode_recorded: boolean;
   default_card_layout: string;
   tts_voice_id: string;
+  show_add_prayer_fab: boolean;
 }
 
 const DEFAULTS: BoardPrefs = {
@@ -41,6 +42,7 @@ const DEFAULTS: BoardPrefs = {
   caption_mode_recorded: true,
   default_card_layout: "standard",
   tts_voice_id: "sal",
+  show_add_prayer_fab: true,
 };
 
 export function useBoardPreferences() {
@@ -78,6 +80,7 @@ export function useBoardPreferences() {
             caption_mode_recorded: (data as any).caption_mode_recorded ?? DEFAULTS.caption_mode_recorded,
             default_card_layout: (data as any).default_card_layout ?? DEFAULTS.default_card_layout,
             tts_voice_id: (data as any).tts_voice_id ?? DEFAULTS.tts_voice_id,
+            show_add_prayer_fab: (data as any).show_add_prayer_fab ?? DEFAULTS.show_add_prayer_fab,
           };
           setPrefs(fresh);
           setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);

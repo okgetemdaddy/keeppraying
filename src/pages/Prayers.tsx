@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import { PrayerMethodChooser } from "@/components/board/PrayerMethodChooser";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import Comments from "@/components/Comments";
 import VerseLink from "@/components/VerseLink";
 import TtsLoadingPopup from "@/components/TtsLoadingPopup";
@@ -639,6 +641,8 @@ export default function Prayers() {
   const [activeLabel, setActiveTag] = useState("");
   const [showCommunity, setShowCommunity] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -675,8 +679,8 @@ export default function Prayers() {
       <SiteNav
         rightSlot={
           user ? (
-            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs hidden sm:flex" onClick={() => setAddOpen(true)}>
-              <Plus className="w-3.5 h-3.5" />Add Prayer
+            <Button size="sm" variant="outline" className="rounded-xl gap-1.5 text-xs hidden sm:flex" onClick={() => setChooserOpen(true)}>
+              <Plus className="w-3.5 h-3.5" />Add a Prayer
             </Button>
           ) : undefined
         }
@@ -907,6 +911,15 @@ export default function Prayers() {
       </main>
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchPrayers} />
+      <PrayerMethodChooser
+        open={chooserOpen}
+        onOpenChange={setChooserOpen}
+        onSpeak={() => setVoiceOpen(true)}
+        onWrite={() => setAddOpen(true)}
+      />
+      {voiceOpen && (
+        <VoiceRecorder onClose={() => setVoiceOpen(false)} onPrayerCreated={() => fetchPrayers()} />
+      )}
     </div>
   );
 }

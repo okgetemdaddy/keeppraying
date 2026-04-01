@@ -25,7 +25,7 @@ import type { Database } from "@/integrations/supabase/types";
 import {
   PlusCircle, BookOpen, ListMusic, Heart,
   Pin, Loader2, Maximize2, Sparkles, ListPlus, Bird, Columns2, Square,
-  ArrowUpDown, Filter, Users, Home, Wind, Church, Settings,
+  ArrowUpDown, Filter, Users, Home, Wind, Church, Settings, XCircle,
 } from "lucide-react";
 
 import { NotificationBell } from "@/components/NotificationBell";
@@ -648,7 +648,7 @@ export default function Board() {
             </p>
           </div>
         ) : displayedItems.length === 0 ? (
-          <EmptyBoard onAdd={() => setAddOpen(true)} themeVars={themeVars} />
+          <EmptyBoard onAdd={() => setChooserOpen(true)} themeVars={themeVars} />
         ) : (
           <motion.div
             layout
@@ -691,16 +691,28 @@ export default function Board() {
         )}
       </div>
 
-      {/* FAB */}
-      {saved.length > 0 && (
-        <motion.button
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-          onClick={() => setAddOpen(true)}
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 btn-gold flex items-center gap-2 px-5 py-3 rounded-full shadow-2xl text-sm font-medium"
-        >
-          <PlusCircle className="w-4 h-4" /> Add Prayer
-        </motion.button>
+      {/* Floating "Add a Prayer" pill */}
+      {saved.length > 0 && prefs.show_add_prayer_fab && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 md:hidden z-40 flex items-center gap-2">
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => savePrefs({ show_add_prayer_fab: false })}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-background/80 backdrop-blur-sm border border-border shadow-lg"
+            aria-label="Hide Add a Prayer button"
+          >
+            <XCircle className="w-5 h-5 text-muted-foreground" />
+          </motion.button>
+          <motion.button
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+            onClick={() => setChooserOpen(true)}
+            className="btn-gold flex items-center gap-2 px-5 py-3 rounded-full shadow-2xl text-sm font-medium"
+          >
+            <PlusCircle className="w-4 h-4" /> Add a Prayer
+          </motion.button>
+        </div>
       )}
 
       {/* ── Stats drawer (prayed / liked / testified) ────────────────── */}
