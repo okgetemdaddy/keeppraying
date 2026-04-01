@@ -1681,6 +1681,7 @@ export type Database = {
           is_public: boolean
           last_prayed_date: string | null
           longest_streak: number
+          region: string | null
           role: string
           updated_at: string
         }
@@ -1698,6 +1699,7 @@ export type Database = {
           is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
+          region?: string | null
           role?: string
           updated_at?: string
         }
@@ -1715,6 +1717,7 @@ export type Database = {
           is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
+          region?: string | null
           role?: string
           updated_at?: string
         }
