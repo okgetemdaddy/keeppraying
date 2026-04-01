@@ -24,6 +24,7 @@ import {
   ResponsiveSheetTitle as SheetTitle,
 } from "@/components/ui/responsive-sheet";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
+import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import type { UserHighlight, UserNote, UserBookmark } from "@/hooks/useBibleChapterData";
 import type { BunchWithCount } from "@/components/bible/VerseBunchStrip";
 
