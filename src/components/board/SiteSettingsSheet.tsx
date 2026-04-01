@@ -33,7 +33,11 @@ export function SiteSettingsSheet({
   bibleTextMax = 28,
 }: SiteSettingsSheetProps) {
   const [trashOpen, setTrashOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const { isSupported, isStandalone, isActive, toggleImmersive } = useImmersiveMode(prefs, onSave);
   return (
+    <>
+    {isActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[340px] sm:w-[380px] flex flex-col">
