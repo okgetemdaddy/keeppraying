@@ -459,6 +459,11 @@ export function useBibleMutations(ref: ScriptureRef | null) {
   /* ── VERSE BUNCH: Delete bunch ── */
   const deleteBunch = useMutation({
     mutationFn: async (bunchId: string) => {
+      if (user) {
+        const { data: snap } = await supabase.from("verse_bunches").select("*").eq("id", bunchId).single();
+        const { data: itemsSnap } = await supabase.from("verse_bunch_items").select("*").eq("bunch_id", bunchId);
+        if (snap) await trashItem(user.id, "verse_bunch", bunchId, { ...snap as any, _items: itemsSnap || [] });
+      }
       const { error } = await supabase
         .from("verse_bunches")
         .delete()
