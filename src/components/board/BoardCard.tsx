@@ -755,154 +755,164 @@ export function BoardCard({
           )}
         </AnimatePresence>
 
-        {/* ── Footer row (small + medium) ───────────────────────────────── */}
-        {actionsInFooter && (
-          <div
-            className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-slate-400 text-xs md:text-sm"
-          >
-            {/* Visibility toggle */}
-            {isOwner ? (
-              <div className="flex items-center gap-1.5">
-                {togglingPublic ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
-                ) : isPrivate ? (
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                ) : (
-                  <Globe className="w-3.5 h-3.5 text-slate-500" />
-                )}
-                <span className="text-xs text-slate-500">
-                  {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
-                </span>
-                <Switch
-                  checked={!isPrivate}
-                  onCheckedChange={handlePublicToggle}
-                  disabled={togglingPublic || card.status === "approved"}
-                  className="scale-75 origin-left"
-                />
-              </div>
-            ) : <div />}
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-0.5">
-              {/* Prayed button */}
-              <div className="relative">
-                <AnimatePresence>
-                  {prayedFloat && (
-                    <motion.span
-                      key="prayed-float"
-                      initial={{ opacity: 1, y: 0, x: "-50%" }}
-                      animate={{ opacity: 0, y: -28 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 1.1, ease: "easeOut" }}
-                      className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
-                      style={{ color: accentColor }}
-                    >
-                      🙏 Prayed
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-                <motion.button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (!userId) return;
-                    if (prayedCooldownRef.current) return;
-                    prayedCooldownRef.current = true;
-                    setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
-                    setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
-                    if (prayed) {
-                      await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
-                      setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
-                    } else {
-                      await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
-                      setPrayed(true); setPrayedCount(c => c + 1);
-                      setPrayedFloat(true); setTimeout(() => setPrayedFloat(false), 1200);
-                    }
-                  }}
-                  animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
-                  transition={{ duration: 0.35 }}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
-                  style={{ color: prayed ? accentColor : `${textColor}55` }}
-                  title="I prayed this"
-                >
-                  <PrayingHandsIcon className="w-3.5 h-3.5" />
-                  {prayedCount > 0 && <span>{prayedCount}</span>}
-                </motion.button>
-              </div>
-
-              {isPublic && (
-                <button
-                  onClick={() => setFlipped(true)}
-                  className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
-                  title={hasTestimony ? "See your testimony" : "Share your testimony"}
-                >
-                  <Bird className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{hasTestimony ? "See Testimony" : "Testify"}</span>
-                </button>
+        {/* ══════════════════════════════════════════════════════════════
+            UNIFIED FOOTER — identical for ALL card sizes (small/medium/large),
+            ALL card types (standard, voice, breath). DO NOT branch by size.
+            SAFEGUARD: If you need to add a new action, add it HERE — nowhere else.
+            ══════════════════════════════════════════════════════════════ */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-slate-400 text-xs md:text-sm"
+        >
+          {/* Left: Visibility toggle (owner only) */}
+          {isOwner ? (
+            <div className="flex items-center gap-1.5">
+              {togglingPublic ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
+              ) : isPrivate ? (
+                <Lock className="w-3.5 h-3.5 text-slate-400" />
+              ) : (
+                <Globe className="w-3.5 h-3.5 text-slate-500" />
               )}
-              <ActionButtons
-                item={item} accentColor={accentColor} textColor={textColor}
-                onFavorite={toggleFavorite} onPin={togglePin} onShare={handleShare}
-                onCardSize={setCardSize} onEnrich={() => setEnrichOpen(true)}
-                onRemove={onRemove} isOwner={isOwner} size={size}
-                onPickFont={pickFont} onPickRandomFont={pickRandomFont}
-                currentFont={pendingFont ?? card.text_style}
-                onAddToPlaylist={onAddToPlaylist}
-                hasBgImage={!!bgUrl}
-                overlayOpacity={overlayOpacity}
-                onOverlayOpacityChange={handleOverlayOpacityChange}
-                cardBgPreset={cardBgPreset}
-                onCardBgPresetChange={handleCardBgPresetChange}
-                userId={userId}
-                onRefresh={onRefresh}
-                onSharePrivately={() => setShareModalOpen(true)}
-                isSharedRecipient={isSharedRecipient}
-                onListen={handleListen}
-                ttsLoading={ttsLoading}
-                ttsPlaying={ttsPlaying}
-
-
+              <span className="text-xs text-slate-500">
+                {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
+              </span>
+              <Switch
+                checked={!isPrivate}
+                onCheckedChange={handlePublicToggle}
+                disabled={togglingPublic || card.status === "approved"}
+                className="scale-75 origin-left"
               />
             </div>
-          </div>
-        )}
+          ) : <div />}
 
-        {/* ── Large card: visibility toggle + testify ──────────────────── */}
-        {!actionsInFooter && (
-          <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: `${textColor}12` }}>
-            {isOwner && (
-              <>
-                {togglingPublic ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" style={{ color: `${textColor}60` }} />
-                ) : isPrivate ? (
-                  <Lock className="w-3.5 h-3.5" style={{ color: `${textColor}50` }} />
-                ) : (
-                  <Globe className="w-3.5 h-3.5" style={{ color: accentColor }} />
+          {/* Right: All action icons in fixed order */}
+          <div className="flex items-center gap-0.5">
+            {/* 1. Prayed */}
+            <div className="relative">
+              <AnimatePresence>
+                {prayedFloat && (
+                  <motion.span
+                    key="prayed-float"
+                    initial={{ opacity: 1, y: 0, x: "-50%" }}
+                    animate={{ opacity: 0, y: -28 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1.1, ease: "easeOut" }}
+                    className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
+                    style={{ color: accentColor }}
+                  >
+                    🙏 Prayed
+                  </motion.span>
                 )}
-                <span className="text-xs" style={{ color: `${textColor}55` }}>
-                  {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
-                </span>
-                <Switch
-                  checked={!isPrivate}
-                  onCheckedChange={handlePublicToggle}
-                  disabled={togglingPublic || card.status === "approved"}
-                  className="scale-75 origin-left"
-                />
-              </>
+              </AnimatePresence>
+              <motion.button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!userId) return;
+                  if (prayedCooldownRef.current) return;
+                  prayedCooldownRef.current = true;
+                  setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
+                  setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
+                  if (prayed) {
+                    await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
+                    setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
+                  } else {
+                    await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
+                    setPrayed(true); setPrayedCount(c => c + 1);
+                    setPrayedFloat(true); setTimeout(() => setPrayedFloat(false), 1200);
+                  }
+                }}
+                animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
+                transition={{ duration: 0.35 }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
+                style={{ color: prayed ? accentColor : `${textColor}55` }}
+                title="I prayed this"
+              >
+                <PrayingHandsIcon className="w-3.5 h-3.5" />
+                {prayedCount > 0 && <span>{prayedCount}</span>}
+              </motion.button>
+            </div>
+
+            {/* 2. Heart / Favourite */}
+            <button
+              onClick={toggleFavorite}
+              className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+              style={{ color: item.favorite ? "hsl(0 72% 51%)" : `${textColor}55` }}
+              aria-label="Favourite"
+            >
+              <Heart className={`w-3.5 h-3.5 ${item.favorite ? "fill-current" : ""}`} />
+            </button>
+
+            {/* 3. Pin */}
+            <button
+              onClick={togglePin}
+              className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+              style={{ color: item.pinned ? accentColor : `${textColor}55` }}
+              aria-label="Pin"
+            >
+              <Pin className="w-3.5 h-3.5" />
+            </button>
+
+            {/* 4. Listen / Speaker */}
+            <div className="relative">
+              <TtsLoadingPopup visible={!!ttsLoading && !ttsPlaying} />
+              <button
+                onClick={(e) => { e.stopPropagation(); handleListen(); }}
+                className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+                style={{ color: ttsPlaying ? accentColor : `${textColor}55` }}
+                aria-label="Listen"
+              >
+                {ttsLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Volume2 className={`w-3.5 h-3.5 ${ttsPlaying ? 'fill-current' : ''}`} />
+                )}
+              </button>
+            </div>
+
+            {/* 5. Share */}
+            {!isSharedRecipient && (
+              <button
+                onClick={handleShare}
+                className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
+                style={{ color: `${textColor}55` }}
+                aria-label="Share"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
             )}
-            <div className="flex-1" />
+
+            {/* 6. Testify (public prayers only) */}
             {isPublic && (
               <button
                 onClick={() => setFlipped(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:scale-105"
-                style={{ background: `${accentColor}15`, color: accentColor }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
                 title={hasTestimony ? "See your testimony" : "Share your testimony"}
               >
                 <Bird className="w-3.5 h-3.5" />
-                {hasTestimony ? "See Testimony ✨" : "Testify 🕊️"}
+                <span className="hidden sm:inline">{hasTestimony ? "Testimony" : "Testify"}</span>
               </button>
             )}
+
+            {/* 7. ⋯ Dropdown menu (ActionButtons — dropdown only) */}
+            <ActionButtons
+              item={item} accentColor={accentColor} textColor={textColor}
+              onCardSize={setCardSize} onEnrich={() => setEnrichOpen(true)}
+              onRemove={onRemove} isOwner={isOwner} size={size}
+              onPickFont={pickFont} onPickRandomFont={pickRandomFont}
+              currentFont={pendingFont ?? card.text_style}
+              onAddToPlaylist={onAddToPlaylist}
+              hasBgImage={!!bgUrl}
+              overlayOpacity={overlayOpacity}
+              onOverlayOpacityChange={handleOverlayOpacityChange}
+              cardBgPreset={cardBgPreset}
+              onCardBgPresetChange={handleCardBgPresetChange}
+              userId={userId}
+              onRefresh={onRefresh}
+              onSharePrivately={() => setShareModalOpen(true)}
+              isSharedRecipient={isSharedRecipient}
+            />
           </div>
-        )}
+        </div>
       </div>
 
       {/* AI Enrich Panel */}
