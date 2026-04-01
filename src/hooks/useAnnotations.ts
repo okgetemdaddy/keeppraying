@@ -104,7 +104,7 @@ export function useAnnotationMutations() {
       if (existingId) {
         const { error } = await (supabase as any)
           .from("annotations")
-          .update({ strokes, svg, updated_at: new Date().toISOString() })
+          .update({ strokes, svg, typed_text: typedText ?? null, updated_at: new Date().toISOString() })
           .eq("id", existingId)
           .eq("user_id", user.id);
         if (error) throw error;
@@ -116,6 +116,7 @@ export function useAnnotationMutations() {
             verse_ids: verseIds,
             strokes,
             svg: svg ?? null,
+            typed_text: typedText ?? null,
           });
         if (error) throw error;
       }
