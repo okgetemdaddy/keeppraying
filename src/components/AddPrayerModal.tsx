@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAutoRegion } from "@/hooks/useAutoRegion";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, ResponsiveDialogHeader as DialogHeader, ResponsiveDialogTitle as DialogTitle, ResponsiveDialogDescription as DialogDescription } from "@/components/ui/responsive-dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Sparkles, Upload, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import MobileWritePrayerDrawer from "@/components/MobileWritePrayerDrawer";
 
 const TEXT_STYLES = [
   { value: "classic",       label: "Classic",             preview: "font-body text-base" },
@@ -51,6 +53,27 @@ interface AddPrayerModalProps {
 }
 
 export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
+  const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { region: userRegion } = useAutoRegion();
+
+  // Mobile gets a completely different experience
+  if (isMobile) {
+    return (
+      <MobileWritePrayerDrawer
+        open={open}
+        onOpenChange={onOpenChange}
+        onSuccess={onSuccess}
+      />
+    );
+  }
+
+  return <DesktopAddPrayerModal open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />;
+}
+
+function DesktopAddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
