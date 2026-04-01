@@ -506,9 +506,9 @@ export function BoardCard({
                   audioUrl={(card as any).voice_audio_url}
                   large={defaultCardLayout === "voice-visual"}
                   accentColor={accentColor}
-                  captionsEnabled={localCaptionRecorded}
-                  onToggleCaptions={() => setLocalCaptionRecorded(v => !v)}
-                  onPlay={localCaptionRecorded ? () => {
+                  captionsEnabled={captionModeRecorded}
+                  onToggleCaptions={onToggleCaptionRecorded}
+                  onPlay={captionModeRecorded ? () => {
                     const text = card.extended_prayer
                       ? `${card.prayer_text}\n\n${card.extended_prayer}`
                       : card.prayer_text;
