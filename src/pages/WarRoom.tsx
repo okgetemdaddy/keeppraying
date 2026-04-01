@@ -387,7 +387,7 @@ export default function WarRoom() {
                 </button>
               );
             })}
-            <VoiceRecorder variant="compact" dark />
+            
             {/* Settings panel */}
             <SettingsPanel
               theme={theme}
