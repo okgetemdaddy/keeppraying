@@ -29,7 +29,7 @@ export function MobileTabBar() {
     };
   }, []);
 
-  if (!isMobile || hidden) return null;
+  if (!isMobile || hidden || isKeepReading()) return null;
 
   const currentPath = location.pathname;
 

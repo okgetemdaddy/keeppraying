@@ -219,7 +219,7 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <BrowserRouter>
-          <AppShell />
+          {isKeepReading() ? <KeepReadingShell /> : <AppShell />}
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
