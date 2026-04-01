@@ -447,6 +447,15 @@ export function BibleReader() {
     try { localStorage.setItem("bible_oled_mode", String(v)); } catch {}
   }, []);
 
+  // ── Ease the Eyes dimmer ──
+  const [easeEyesDim, setEaseEyesDim] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ease_eyes") ?? "1"); } catch { return 1; }
+  });
+  const handleEaseEyesDimChange = useCallback((v: number) => {
+    setEaseEyesDim(v);
+    try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
+  }, []);
+
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
     const root = document.documentElement;
@@ -1354,7 +1363,7 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
-              style={{ fontSize: `${textSize}px` }}
+              style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
@@ -1531,6 +1540,8 @@ export function BibleReader() {
         oledMode={oledMode}
         onTogglePremiumDark={handleTogglePremiumDark}
         onToggleOled={handleToggleOled}
+        easeEyesDim={easeEyesDim}
+        onEaseEyesDimChange={handleEaseEyesDimChange}
         highlights={chapterData?.highlights ?? []}
         bookmarks={chapterData?.bookmarks ?? []}
         notes={chapterData?.notes ?? []}
