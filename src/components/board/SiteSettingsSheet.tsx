@@ -264,25 +264,39 @@ export function SiteSettingsSheet({
                   Immersive Mode
                 </h3>
 
-                <div className="flex items-center justify-between gap-3">
-                  <div className="space-y-0.5 flex-1">
-                    <Label className="text-sm font-medium">Hide Browser Bars</Label>
-                    <p className="text-[11px] text-muted-foreground leading-snug">
-                      {isStandalone
-                        ? "You're running in app mode — browser bars are already hidden"
-                        : "Remove the address bar and toolbars for a distraction-free experience. Swipe from the top or bottom edge to reveal the exit button."}
+                {isIOSLimited ? (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                    <Label className="text-sm font-medium">Full-Screen on iPhone</Label>
+                    <p className="text-[11px] text-muted-foreground leading-snug mt-1">
+                      iOS doesn't support hiding browser bars directly. Add <span className="font-semibold text-primary">KeepPray.ing</span> to your Home Screen for a permanent full-screen, app-like experience with no browser UI.
+                    </p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1.5 italic">
+                      Tap the share button (↑) → "Add to Home Screen"
                     </p>
                   </div>
-                  <Switch
-                    checked={isActive}
-                    onCheckedChange={toggleImmersive}
-                    disabled={isStandalone}
-                  />
-                </div>
-                {!isStandalone && !isActive && (
-                  <p className="text-[10px] text-muted-foreground/60 italic">
-                    Tip: Add KeepPray.ing to your Home Screen for a permanent app-like experience
-                  </p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-0.5 flex-1">
+                        <Label className="text-sm font-medium">Hide Browser Bars</Label>
+                        <p className="text-[11px] text-muted-foreground leading-snug">
+                          {isStandalone
+                            ? "You're running in app mode — browser bars are already hidden"
+                            : "Remove the address bar and toolbars for a distraction-free experience. Swipe from the top or bottom edge to reveal the exit button."}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={isActive}
+                        onCheckedChange={toggleImmersive}
+                        disabled={isStandalone}
+                      />
+                    </div>
+                    {!isStandalone && !isActive && (
+                      <p className="text-[10px] text-muted-foreground/60 italic">
+                        Tip: Add KeepPray.ing to your Home Screen for a permanent app-like experience
+                      </p>
+                    )}
+                  </>
                 )}
               </section>
             </>
