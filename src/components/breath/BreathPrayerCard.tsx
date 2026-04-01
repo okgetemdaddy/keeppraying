@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Heart, Bookmark } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useToast } from "@/hooks/use-toast";
 import VerseLink from "@/components/VerseLink";
 import { PrayedButton } from "@/components/PrayedButton";
@@ -90,6 +91,8 @@ export default function BreathPrayerCard({
     e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to like" }); return; }
     if (liked) {
+      const { data: snap } = await supabase.from("likes").select("*").eq("prayer_id", id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "like", snap.id, snap as any);
       await supabase.from("likes").delete().eq("prayer_id", id).eq("user_id", userId);
       setLiked(false);
       setLikesLocal(c => Math.max(0, c - 1));
@@ -104,6 +107,8 @@ export default function BreathPrayerCard({
     e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to save" }); return; }
     if (saved) {
+      const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("prayer_id", id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "saved_prayer", snap.id, snap as any);
       await supabase.from("user_saved_prayers").delete().eq("prayer_id", id).eq("user_id", userId);
       setSaved(false);
     } else {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { trashItem } from "@/hooks/useTrashBin";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useSearchParams } from "react-router-dom";
@@ -156,6 +157,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     setLikeAnim(true);
     setTimeout(() => setLikeAnim(false), 400);
     if (liked) {
+      const { data: snap } = await supabase.from("likes").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "like", snap.id, snap as any);
       await supabase.from("likes").delete().eq("prayer_id", card.id).eq("user_id", userId);
       setLiked(false); setLikesCount(c => Math.max(0, c - 1));
     } else {
@@ -174,6 +177,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     setPrayAnim(true);
     setTimeout(() => setPrayAnim(false), 400);
     if (prayed) {
+      const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "prayed_action", snap.id, snap as any);
       await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
       setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
     } else {
@@ -188,6 +193,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to save prayers" }); return; }
     if (saved) {
+      const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "saved_prayer", snap.id, snap as any);
       await supabase.from("user_saved_prayers").delete().eq("prayer_id", card.id).eq("user_id", userId);
       setSaved(false);
     } else {

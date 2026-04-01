@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -233,6 +234,8 @@ export default function Prayer() {
     if (!user) { toast({ title: "Sign in to like prayers" }); return; }
     setLikeAnim(true); setTimeout(() => setLikeAnim(false), 400);
     if (liked) {
+      const { data: snap } = await supabase.from("likes").select("*").eq("prayer_id", id!).eq("user_id", user.id).maybeSingle();
+      if (snap) await trashItem(user.id, "like", snap.id, snap as any);
       await supabase.from("likes").delete().eq("prayer_id", id!).eq("user_id", user.id);
       setLiked(false); setLikesCount(c => Math.max(0, c - 1));
     } else {
@@ -249,6 +252,8 @@ export default function Prayer() {
     setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
     setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
     if (prayed) {
+      const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", id!).eq("user_id", user.id).maybeSingle();
+      if (snap) await trashItem(user.id, "prayed_action", snap.id, snap as any);
       await supabase.from("prayed_actions").delete().eq("prayer_id", id!).eq("user_id", user.id);
       setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
     } else {
@@ -262,6 +267,8 @@ export default function Prayer() {
   const toggleSave = async () => {
     if (!user) { toast({ title: "Sign in to save prayers" }); return; }
     if (saved) {
+      const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("prayer_id", id!).eq("user_id", user.id).maybeSingle();
+      if (snap) await trashItem(user.id, "saved_prayer", snap.id, snap as any);
       await supabase.from("user_saved_prayers").delete().eq("prayer_id", id!).eq("user_id", user.id);
       setSaved(false);
     } else {

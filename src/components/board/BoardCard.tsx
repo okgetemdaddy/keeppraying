@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { trashItem } from "@/hooks/useTrashBin";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -813,6 +814,8 @@ export function BoardCard({
                   setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
                   setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
                   if (prayed) {
+                    const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+                    if (snap) await trashItem(userId, "prayed_action", snap.id, snap as any);
                     await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
                     setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
                   } else {
@@ -1325,7 +1328,14 @@ function ActionButtons({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className={`text-xs gap-2 ${isSharedRecipient ? '' : 'text-destructive focus:text-destructive'}`}
-            onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }}
+            onClick={async () => {
+              if (userId) {
+                const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("id", item.id).single();
+                if (snap) await trashItem(userId, "saved_prayer", item.id, snap as any);
+              }
+              onRemove(item.id);
+              supabase.from("user_saved_prayers").delete().eq("id", item.id);
+            }}
           >
             {isSharedRecipient ? (
               <><BookmarkX className="w-3.5 h-3.5" /> Unbookmark</>

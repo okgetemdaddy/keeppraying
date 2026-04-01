@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
 import TtsLoadingPopup from "@/components/TtsLoadingPopup";
@@ -106,7 +107,11 @@ function StandaloneTestimonyCard({
     setTimeout(() => setPraiseAnimating(false), 400);
     if (userPraised) {
       setUserPraised(false); setPraiseCount(c => Math.max(0, c - 1));
+      const { data: praiseSnap } = await supabase.from("testimony_praises").select("*").eq("testimony_id", testimony.id).eq("user_id", user.id).maybeSingle();
+      if (praiseSnap) await trashItem(user.id, "testimony_praise", praiseSnap.id, praiseSnap as any);
       await supabase.from("testimony_praises").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
+      const { data: savedSnap } = await supabase.from("user_saved_testimonies").select("*").eq("testimony_id", testimony.id).eq("user_id", user.id).maybeSingle();
+      if (savedSnap) await trashItem(user.id, "saved_testimony", (savedSnap as any).id, savedSnap as any);
       await supabase.from("user_saved_testimonies").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
     } else {
       // Show save dialog

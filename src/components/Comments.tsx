@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -125,6 +126,10 @@ export default function Comments({ prayerId, uploaderId }: CommentsProps) {
   };
 
   const deleteComment = async (id: string) => {
+    if (user) {
+      const { data: snap } = await supabase.from("comments").select("*").eq("id", id).single();
+      if (snap) await trashItem(user.id, "comment", id, snap as any);
+    }
     await supabase.from("comments").delete().eq("id", id).eq("user_id", user!.id);
   };
 

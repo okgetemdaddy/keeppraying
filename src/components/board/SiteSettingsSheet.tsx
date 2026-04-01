@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle, ResponsiveSheetDescription as SheetDescription } from "@/components/ui/responsive-sheet";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon } from "lucide-react";
+import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon, Trash2 as Trash2Icon } from "lucide-react";
 import type { BoardPrefs } from "@/hooks/useBoardPreferences";
+import { TrashBinSheet } from "@/components/TrashBinSheet";
 
 interface SiteSettingsSheetProps {
   open: boolean;
@@ -28,7 +30,9 @@ export function SiteSettingsSheet({
   bibleTextMin = 14,
   bibleTextMax = 28,
 }: SiteSettingsSheetProps) {
+  const [trashOpen, setTrashOpen] = useState(false);
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[340px] sm:w-[380px] flex flex-col">
         <SheetHeader className="pb-4">
@@ -244,8 +248,32 @@ export function SiteSettingsSheet({
               />
             </div>
           </section>
+
+          <Separator />
+
+          {/* ── Trash Bin ──────────────────── */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Trash2Icon className="w-3.5 h-3.5" />
+              Trash Bin
+            </h3>
+            <button
+              onClick={() => setTrashOpen(true)}
+              className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors border border-border"
+            >
+              <Trash2Icon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-foreground">Open Trash Bin</span>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Restore deleted items within 30 days
+                </p>
+              </div>
+            </button>
+          </section>
         </div>
       </SheetContent>
     </Sheet>
+    <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="board" />
+    </>
   );
 }

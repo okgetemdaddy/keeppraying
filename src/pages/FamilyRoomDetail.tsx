@@ -3,6 +3,7 @@ import SacredSpinner from "@/components/SacredSpinner";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useAuth } from "@/contexts/AuthContext";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
@@ -170,6 +171,10 @@ export default function FamilyRoomDetail() {
   };
 
   const deleteHomework = async (hwId: string) => {
+    if (user) {
+      const { data: snap } = await supabase.from("family_homework").select("*").eq("id", hwId).single();
+      if (snap) await trashItem(user.id, "family_homework", hwId, snap as any);
+    }
     await supabase.from("family_homework").delete().eq("id", hwId);
     toast({ title: "Homework removed" });
     fetchRoom();

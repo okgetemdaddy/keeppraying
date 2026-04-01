@@ -2135,6 +2135,36 @@ export type Database = {
           },
         ]
       }
+      trash_bin: {
+        Row: {
+          deleted_at: string
+          expires_at: string
+          id: string
+          item_id: string
+          item_snapshot: Json
+          item_type: string
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          expires_at?: string
+          id?: string
+          item_id: string
+          item_snapshot: Json
+          item_type: string
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          expires_at?: string
+          id?: string
+          item_id?: string
+          item_snapshot?: Json
+          item_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       update_logs: {
         Row: {
           created_at: string

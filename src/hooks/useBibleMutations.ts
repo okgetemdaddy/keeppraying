@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { trashItem } from "@/hooks/useTrashBin";
 import type {
   UserHighlight,
   UserNote,
@@ -117,6 +118,10 @@ export function useBibleMutations(ref: ScriptureRef | null) {
   /* ── HIGHLIGHT: Remove ── */
   const removeHighlight = useMutation({
     mutationFn: async (highlightId: string) => {
+      if (user) {
+        const { data: snap } = await supabase.from("user_highlights").select("*").eq("id", highlightId).single();
+        if (snap) await trashItem(user.id, "highlight", highlightId, snap as any);
+      }
       const { error } = await supabase
         .from("user_highlights")
         .delete()
@@ -146,6 +151,10 @@ export function useBibleMutations(ref: ScriptureRef | null) {
 
       // Remove existing bookmark if present
       if (params.existingId) {
+        if (user) {
+          const { data: snap } = await supabase.from("user_bookmarks").select("*").eq("id", params.existingId).single();
+          if (snap) await trashItem(user.id, "bookmark", params.existingId, snap as any);
+        }
         const { error } = await supabase
           .from("user_bookmarks")
           .delete()
@@ -310,6 +319,10 @@ export function useBibleMutations(ref: ScriptureRef | null) {
   /* ── NOTE: Delete ── */
   const deleteNote = useMutation({
     mutationFn: async (noteId: string) => {
+      if (user) {
+        const { data: snap } = await supabase.from("user_notes").select("*").eq("id", noteId).single();
+        if (snap) await trashItem(user.id, "note", noteId, snap as any);
+      }
       const { error } = await supabase
         .from("user_notes")
         .delete()
@@ -446,6 +459,11 @@ export function useBibleMutations(ref: ScriptureRef | null) {
   /* ── VERSE BUNCH: Delete bunch ── */
   const deleteBunch = useMutation({
     mutationFn: async (bunchId: string) => {
+      if (user) {
+        const { data: snap } = await supabase.from("verse_bunches").select("*").eq("id", bunchId).single();
+        const { data: itemsSnap } = await supabase.from("verse_bunch_items").select("*").eq("bunch_id", bunchId);
+        if (snap) await trashItem(user.id, "verse_bunch", bunchId, { ...snap as any, _items: itemsSnap || [] });
+      }
       const { error } = await supabase
         .from("verse_bunches")
         .delete()

@@ -18,6 +18,7 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
+import { TrashBinSheet } from "@/components/TrashBinSheet";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -114,6 +115,7 @@ export function BibleSleeveSheet({
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
+  const [trashOpen, setTrashOpen] = useState(false);
   const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Group highlights by color
   const highlightsByColor = React.useMemo(() => {
@@ -127,6 +129,7 @@ export function BibleSleeveSheet({
   }, [highlights]);
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-[320px] sm:w-[360px] p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
@@ -440,9 +443,25 @@ export function BibleSleeveSheet({
                 </div>
               )}
             </section>
+
+            <div className="h-px bg-border" />
+
+            {/* ── Trash Bin ── */}
+            <section>
+              <button
+                onClick={() => setTrashOpen(true)}
+                className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
+              >
+                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Trash Bin</span>
+                <span className="ml-auto text-xs text-muted-foreground">30 days</span>
+              </button>
+            </section>
           </div>
         </ScrollArea>
       </SheetContent>
     </Sheet>
+    <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="bible" />
+  </>
   );
 }

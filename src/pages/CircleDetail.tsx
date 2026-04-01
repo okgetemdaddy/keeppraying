@@ -4,6 +4,7 @@ import VerseLink from "@/components/VerseLink";
 import SacredSpinner from "@/components/SacredSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useCircleDetail } from "@/hooks/useAccountabilityCircles";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -176,6 +177,10 @@ export default function CircleDetail() {
   };
 
   const deleteHomework = async (hwId: string) => {
+    if (user) {
+      const { data: snap } = await supabase.from("circle_homework").select("*").eq("id", hwId).single();
+      if (snap) await trashItem(user.id, "circle_homework", hwId, snap as any);
+    }
     await supabase.from("circle_homework").delete().eq("id", hwId);
     toast({ title: "Homework removed" });
     refetch();
