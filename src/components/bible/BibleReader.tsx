@@ -415,7 +415,25 @@ export function BibleReader() {
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
 
-  // ── Bible Search dialog ──
+  // ── Premium Dark Mode ──
+  const [premiumDark, setPremiumDark] = useState(() => {
+    try { return localStorage.getItem("bible_premium_dark") === "true"; } catch { return false; }
+  });
+  const [oledMode, setOledMode] = useState(() => {
+    try { return localStorage.getItem("bible_oled_mode") === "true"; } catch { return false; }
+  });
+  const handleTogglePremiumDark = useCallback((v: boolean) => {
+    setPremiumDark(v);
+    try { localStorage.setItem("bible_premium_dark", String(v)); } catch {}
+    if (!v) {
+      setOledMode(false);
+      try { localStorage.setItem("bible_oled_mode", "false"); } catch {}
+    }
+  }, []);
+  const handleToggleOled = useCallback((v: boolean) => {
+    setOledMode(v);
+    try { localStorage.setItem("bible_oled_mode", String(v)); } catch {}
+  }, []);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
@@ -1023,7 +1041,7 @@ export function BibleReader() {
   );
 
   return (
-    <article className="min-h-screen bg-background">
+    <article className={`min-h-screen bg-background transition-colors duration-300 ${premiumDark ? 'bible-dark' : ''} ${premiumDark && oledMode ? 'bible-oled' : ''}`}>
       {/* ── Verse Bunch strip (saved bunches) ── */}
       {!hideBunchRefs && <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />}
 
@@ -1228,7 +1246,7 @@ export function BibleReader() {
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
               style={{ fontSize: `${textSize}px` }}
-              className="font-body"
+              className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                 {verses.map((v) => {
@@ -1396,6 +1414,10 @@ export function BibleReader() {
         onToggleCrossTranslation={toggleCrossTranslation}
         hideBunches={hideBunchRefs}
         onToggleHideBunches={toggleHideBunches}
+        premiumDark={premiumDark}
+        oledMode={oledMode}
+        onTogglePremiumDark={handleTogglePremiumDark}
+        onToggleOled={handleToggleOled}
         highlights={chapterData?.highlights ?? []}
         bookmarks={chapterData?.bookmarks ?? []}
         notes={chapterData?.notes ?? []}
