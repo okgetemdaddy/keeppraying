@@ -17,6 +17,7 @@ import {
   Smartphone,
   Star,
   Trash2,
+  Maximize,
 } from "lucide-react";
 import { TrashBinSheet } from "@/components/TrashBinSheet";
 import { Button } from "@/components/ui/button";
