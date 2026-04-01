@@ -443,9 +443,25 @@ export function BibleSleeveSheet({
                 </div>
               )}
             </section>
+
+            <div className="h-px bg-border" />
+
+            {/* ── Trash Bin ── */}
+            <section>
+              <button
+                onClick={() => setTrashOpen(true)}
+                className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
+              >
+                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Trash Bin</span>
+                <span className="ml-auto text-xs text-muted-foreground">30 days</span>
+              </button>
+            </section>
           </div>
         </ScrollArea>
       </SheetContent>
     </Sheet>
+    <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="bible" />
+  </>
   );
 }
