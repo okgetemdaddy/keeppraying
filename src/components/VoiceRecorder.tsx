@@ -55,6 +55,10 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const transcriptRef = useRef("");
+  const stateRef = useRef<RecordingState>("idle");
+
+  // Keep stateRef in sync
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   // MediaRecorder for actual audio capture
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -117,15 +121,16 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
 
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
-      if (event.error !== "no-speech") {
+      const harmless = ["no-speech", "aborted", "network"];
+      if (!harmless.includes(event.error)) {
         toast({ title: "Recording error", description: event.error, variant: "destructive" });
+        stopRecording();
       }
-      stopRecording();
     };
 
     recognition.onend = () => {
-      // Auto-restart if still in recording state
-      if (recognitionRef.current && state === "recording") {
+      // Auto-restart if still in recording state (use ref to avoid stale closure)
+      if (recognitionRef.current && stateRef.current === "recording") {
         try { recognition.start(); } catch { /* ignore */ }
       }
     };
