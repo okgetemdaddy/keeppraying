@@ -205,10 +205,12 @@ function NoteMarginalia({ notes }: { notes: UserNote[] }) {
 }
 
 /* ── Bookmark ribbon ── */
-function BookmarkRibbon({ isBookmarked }: { isBookmarked: boolean }) {
-  if (!isBookmarked) return null;
+function BookmarkRibbon({ bookmark }: { bookmark?: UserBookmark }) {
+  if (!bookmark) return null;
+  const { getBookmarkColorDef } = require("@/components/bible/bookmarkColors");
+  const colorDef = getBookmarkColorDef(bookmark.color);
   return (
-    <span className="inline-flex items-center mr-0.5 text-primary" title="Bookmarked">
+    <span className={`inline-flex items-center mr-0.5 ${colorDef.icon}`} title="Bookmarked">
       <BookmarkCheck className="h-3.5 w-3.5" />
     </span>
   );
