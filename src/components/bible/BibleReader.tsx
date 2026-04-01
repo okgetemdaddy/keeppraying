@@ -447,6 +447,15 @@ export function BibleReader() {
     try { localStorage.setItem("bible_oled_mode", String(v)); } catch {}
   }, []);
 
+  // ── Ease the Eyes dimmer ──
+  const [easeEyesDim, setEaseEyesDim] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ease_eyes") ?? "1"); } catch { return 1; }
+  });
+  const handleEaseEyesDimChange = useCallback((v: number) => {
+    setEaseEyesDim(v);
+    try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
+  }, []);
+
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
     const root = document.documentElement;
