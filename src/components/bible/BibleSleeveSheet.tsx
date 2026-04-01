@@ -126,6 +126,7 @@ export function BibleSleeveSheet({
   onNavigateToVerse,
   immersiveSupported,
   immersiveStandalone,
+  immersiveIOSLimited,
   immersiveActive,
   onToggleImmersive,
 }: BibleSleeveSheetProps) {
