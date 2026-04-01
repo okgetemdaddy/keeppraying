@@ -12,7 +12,7 @@ import {
   Globe,
   Eye,
   EyeOff,
-  Moon,
+  Sun,
   Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -213,13 +213,13 @@ export function BibleSleeveSheet({
             {/* ── Appearance ── */}
             <section className="space-y-3">
               <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                <Moon className="h-3.5 w-3.5" /> Appearance
+                <Sun className="h-3.5 w-3.5" /> Appearance
               </h3>
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Moon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <Sun className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="text-sm text-foreground font-medium">Premium Dark Mode</span>
                     </div>
                     <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
