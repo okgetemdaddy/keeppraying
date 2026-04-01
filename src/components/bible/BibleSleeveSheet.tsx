@@ -18,6 +18,7 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
+import { TrashBinSheet } from "@/components/TrashBinSheet";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
