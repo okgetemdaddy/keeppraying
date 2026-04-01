@@ -53,6 +53,27 @@ interface AddPrayerModalProps {
 }
 
 export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
+  const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { region: userRegion } = useAutoRegion();
+
+  // Mobile gets a completely different experience
+  if (isMobile) {
+    return (
+      <MobileWritePrayerDrawer
+        open={open}
+        onOpenChange={onOpenChange}
+        onSuccess={onSuccess}
+      />
+    );
+  }
+
+  return <DesktopAddPrayerModal open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />;
+}
+
+function DesktopAddPrayerModal({ open, onOpenChange, onSuccess }: AddPrayerModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
