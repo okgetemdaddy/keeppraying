@@ -219,7 +219,7 @@ export function BibleSleeveSheet({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <Sun className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <Moon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="text-sm text-foreground font-medium">Premium Dark Mode</span>
                     </div>
                     <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
