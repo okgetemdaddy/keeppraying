@@ -51,6 +51,8 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const [refined, setRefined] = useState<{ title: string; prayer_text: string; verses: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const micErrorTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
