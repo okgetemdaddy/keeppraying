@@ -11,6 +11,7 @@ import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, R
 import { ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle, ResponsiveSheetDescription as SheetDescription } from "@/components/ui/responsive-sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AddPrayerModal from "@/components/AddPrayerModal";
+import { PrayerMethodChooser } from "@/components/board/PrayerMethodChooser";
 import VerseLink from "@/components/VerseLink";
 import { BoardCard } from "@/components/board/BoardCard";
 import { PrayerViewerModal } from "@/components/board/PrayerViewerModal";
