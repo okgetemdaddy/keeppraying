@@ -55,6 +55,10 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const transcriptRef = useRef("");
+  const stateRef = useRef<RecordingState>("idle");
+
+  // Keep stateRef in sync
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   // MediaRecorder for actual audio capture
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
