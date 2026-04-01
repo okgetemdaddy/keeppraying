@@ -331,11 +331,21 @@ function EnrichedVerse({
     <div
       id={`verse-${verse.number}`}
       data-verse={verse.number}
-      className={`group relative leading-relaxed text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
+      className={`group relative ${studyMode ? 'leading-[2.8]' : 'leading-relaxed'} text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
       onClick={(e) => onTapSelect(verse.number, e)}
     >
       <p>
         <BookmarkRibbon bookmark={bookmark} />
+        {/* Annotation indicator */}
+        {verseAnnotation && !studyMode && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowAnnotation(!showAnnotation); }}
+            className="inline-flex items-center justify-center h-4 w-4 mr-0.5 text-amber-600 hover:text-amber-700 align-middle"
+            title="View handwritten note"
+          >
+            <PenTool className="h-3 w-3" />
+          </button>
+        )}
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
@@ -343,6 +353,36 @@ function EnrichedVerse({
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
+
+      {/* Read-only annotation preview (when not in study mode) */}
+      {showAnnotation && verseAnnotation && !studyMode && (
+        <div className="mt-1 rounded-xl overflow-hidden border border-amber-200/40" style={{ height: 60 }}>
+          <HandwritingEngine
+            height={60}
+            variant="margin"
+            initialStrokes={verseAnnotation.strokes}
+            showToolbar={false}
+            className="pointer-events-none opacity-80"
+          />
+        </div>
+      )}
+
+      {/* Study mode: inline annotation canvas */}
+      {studyMode && (
+        <div className="mt-1" style={{ height: 60 }}>
+          <HandwritingEngine
+            height={60}
+            variant="margin"
+            initialStrokes={verseAnnotation?.strokes ?? []}
+            showToolbar={false}
+            onSave={(strokes) => {
+              if (verseIdString && onAnnotationSave) {
+                onAnnotationSave(verseIdString, strokes, verseAnnotation?.id);
+              }
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
