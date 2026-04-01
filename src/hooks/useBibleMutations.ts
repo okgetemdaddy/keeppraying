@@ -118,6 +118,10 @@ export function useBibleMutations(ref: ScriptureRef | null) {
   /* ── HIGHLIGHT: Remove ── */
   const removeHighlight = useMutation({
     mutationFn: async (highlightId: string) => {
+      if (user) {
+        const { data: snap } = await supabase.from("user_highlights").select("*").eq("id", highlightId).single();
+        if (snap) await trashItem(user.id, "highlight", highlightId, snap as any);
+      }
       const { error } = await supabase
         .from("user_highlights")
         .delete()
