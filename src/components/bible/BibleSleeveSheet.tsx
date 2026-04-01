@@ -12,6 +12,8 @@ import {
   Globe,
   Eye,
   EyeOff,
+  Moon,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -54,6 +56,12 @@ interface BibleSleeveSheetProps {
   onToggleCrossTranslation: () => void;
   hideBunches: boolean;
   onToggleHideBunches: () => void;
+
+  /* dark mode */
+  premiumDark: boolean;
+  oledMode: boolean;
+  onTogglePremiumDark: (v: boolean) => void;
+  onToggleOled: (v: boolean) => void;
 
   /* annotations for current chapter */
   highlights: UserHighlight[];
