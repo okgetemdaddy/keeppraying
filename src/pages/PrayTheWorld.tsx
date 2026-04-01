@@ -33,10 +33,10 @@ export default function PrayTheWorld() {
           className="font-display text-3xl sm:text-4xl font-bold mb-2"
           style={{ color: "hsl(42, 78%, 60%)" }}
         >
-          🌍 We Pray
+          🌍 Prayer Warriors
         </motion.h1>
         <p className="text-white/50 text-sm mb-4">
-          See prayers rise across the globe in real time
+          Warriors of faith, praying across the globe in real time
         </p>
         <div className="flex justify-center gap-6 text-sm mb-6">
           <div>

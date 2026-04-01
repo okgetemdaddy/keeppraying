@@ -28,7 +28,7 @@ const MORE_LINKS = [
   { label: "Circles", href: "/circles", icon: Users, description: "Prayer groups & accountability" },
   { label: "Family", href: "/family", icon: Home, description: "Family prayer rooms" },
   { label: "KeepFight.ing", href: "/war-room", icon: Swords, description: "Spiritual warfare room" },
-  { label: "We Pray", href: "/we-pray", icon: Globe, description: "Pray for the world together" },
+  { label: "Prayer Warriors", href: "/prayer-warriors", icon: Globe, description: "Warriors praying across the globe" },
   { label: "KeepGrow.ing", href: "/blog", icon: BookOpen, description: "Faith articles & devotionals" },
   { label: "Support Us", href: "/support", icon: Heart, description: "Partner with this ministry" },
 ];

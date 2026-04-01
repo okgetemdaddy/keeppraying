@@ -197,8 +197,9 @@ function AppShell() {
         <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/testify" element={<Testify />} />
         <Route path="/testimony/:id" element={<TestimonyDetail />} />
-        <Route path="/we-pray" element={<PrayTheWorld />} />
-        <Route path="/pray-the-world" element={<Navigate to="/we-pray" replace />} />
+        <Route path="/prayer-warriors" element={<PrayTheWorld />} />
+        <Route path="/we-pray" element={<Navigate to="/prayer-warriors" replace />} />
+        <Route path="/pray-the-world" element={<Navigate to="/prayer-warriors" replace />} />
         <Route path="/sermon-sync" element={<SermonSync />} />
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />

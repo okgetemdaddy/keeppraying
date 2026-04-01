@@ -5,16 +5,15 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAutoRegion } from "@/hooks/useAutoRegion";
 import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, ResponsiveDialogHeader as DialogHeader, ResponsiveDialogTitle as DialogTitle, ResponsiveDialogDescription as DialogDescription } from "@/components/ui/responsive-dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Sparkles, Upload, ChevronDown, Globe } from "lucide-react";
+import { Loader2, Sparkles, Upload, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { REGION_COORDS } from "@/hooks/usePrayerMapData";
 
 const TEXT_STYLES = [
   { value: "classic",       label: "Classic",             preview: "font-body text-base" },
@@ -55,9 +54,9 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { region: userRegion } = useAutoRegion();
   const [submitting, setSubmitting] = useState(false);
   const [bgFile, setBgFile] = useState<File | null>(null);
-  const [region, setRegion] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const form = useForm<FormValues>({
@@ -97,7 +96,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         labels: [],
         status: "private",
         created_by: user.id,
-        region: region || null,
+        region: userRegion || null,
       }).select("id").single();
 
       if (error) throw error;
@@ -125,7 +124,6 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
       form.reset();
       setBgFile(null);
-      setRegion("");
       if (textareaRef.current) textareaRef.current.style.height = "280px";
       onOpenChange(false);
       onSuccess?.(card?.id);
@@ -142,7 +140,6 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
   const prayerText = form.watch("prayer_text") || "";
   const wordCount = countWords(prayerText);
-  const charCount = prayerText.length;
   const selectedStyle = TEXT_STYLES.find(s => s.value === form.watch("text_style"));
 
   return (
@@ -150,7 +147,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
       <DialogContent
         className="w-full max-h-[95vh] overflow-y-auto border-0 shadow-2xl p-0"
         style={{
-          maxWidth: "min(56rem, 95vw)",
+          maxWidth: "min(40rem, 95vw)",
           background: "hsl(42 55% 99%)",
           boxShadow: "0 32px 80px -16px rgba(0,0,0,0.22), 0 0 0 1px hsl(38 22% 90%)",
         }}
@@ -172,242 +169,182 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            {/* Two-column layout on desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] min-h-[400px]">
+            {/* Single column layout */}
+            <div className="p-6 space-y-5">
+              {/* Title */}
+              <FormField control={form.control} name="title" render={({ field }) => (
+                <FormItem className="space-y-1">
+                  <FormControl>
+                    <input
+                      {...field}
+                      placeholder="A title for this prayer… (optional)"
+                      className="w-full outline-none bg-transparent text-xl font-display font-semibold placeholder:font-normal transition-colors"
+                      style={{ color: "hsl(25 35% 14%)" }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-              {/* ── Left column — writing area ─────────────────────────── */}
-              <div className="p-6 space-y-5 border-r" style={{ borderColor: "hsl(38 22% 92%)" }}>
-                {/* Title */}
-                <FormField control={form.control} name="title" render={({ field }) => (
-                  <FormItem className="space-y-1">
-                    <FormControl>
-                      <input
+              {/* Divider */}
+              <div style={{ height: 1, background: "hsl(38 22% 90%)" }} />
+
+              {/* Text Style selector — inline pills */}
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "hsl(25 18% 52%)" }}>
+                  Text Style
+                </p>
+                <FormField control={form.control} name="text_style" render={({ field }) => (
+                  <FormItem>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TEXT_STYLES.map(s => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => field.onChange(s.value)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
+                            field.value === s.value
+                              ? "shadow-sm"
+                              : "hover:bg-black/[0.03]"
+                          )}
+                          style={{
+                            background: field.value === s.value
+                              ? "linear-gradient(145deg, hsl(42 85% 52%), hsl(35 82% 44%))"
+                              : "hsl(38 50% 96%)",
+                            color: field.value === s.value ? "white" : "hsl(25 18% 46%)",
+                            border: `1px solid ${field.value === s.value ? "transparent" : "hsl(38 22% 88%)"}`,
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              {/* Prayer textarea — the hero — with live text style */}
+              <FormField control={form.control} name="prayer_text" render={({ field }) => (
+                <FormItem className="space-y-0">
+                  <FormControl>
+                    <div className="relative">
+                      <textarea
                         {...field}
-                        placeholder="A title for this prayer… (optional)"
-                        className="w-full outline-none bg-transparent text-xl font-display font-semibold placeholder:font-normal transition-colors"
+                        ref={textareaRef}
+                        placeholder="Lord, I come before you today…"
+                        rows={12}
+                        onInput={autoGrow}
+                        onChange={e => { field.onChange(e); autoGrow(); }}
+                        className={cn(
+                          "w-full resize-none outline-none text-lg leading-[1.9] transition-shadow rounded-2xl",
+                          selectedStyle?.preview || "font-display"
+                        )}
                         style={{
-                          color: "hsl(25 35% 14%)",
+                          minHeight: 280,
+                          padding: "1.25rem 1.25rem",
+                          background: "hsl(38 55% 99%)",
+                          boxShadow: "inset 0 2px 12px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)",
+                          color: "hsl(25 30% 18%)",
+                        }}
+                        onFocus={e => {
+                          e.target.style.boxShadow = "inset 0 2px 16px hsl(42 75% 46% / 0.10), 0 0 0 2px hsl(42 75% 55%)";
+                        }}
+                        onBlur={e => {
+                          e.target.style.boxShadow = "inset 0 2px 12px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)";
                         }}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                {/* Divider */}
-                <div style={{ height: 1, background: "hsl(38 22% 90%)" }} />
-
-                {/* Prayer textarea — the hero */}
-                <FormField control={form.control} name="prayer_text" render={({ field }) => (
-                  <FormItem className="space-y-0">
-                    <FormControl>
-                      <div className="relative">
-                        <textarea
-                          {...field}
-                          ref={textareaRef}
-                          placeholder="Lord, I come before you today…"
-                          rows={12}
-                          onInput={autoGrow}
-                          onChange={e => { field.onChange(e); autoGrow(); }}
-                          className="w-full resize-none outline-none font-display text-lg leading-[1.9] transition-shadow rounded-2xl"
-                          style={{
-                            minHeight: 280,
-                            padding: "1.25rem 1.25rem",
-                            background: "hsl(38 55% 99%)",
-                            boxShadow: "inset 0 2px 12px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)",
-                            color: "hsl(25 30% 18%)",
-                          }}
-                          onFocus={e => {
-                            e.target.style.boxShadow = "inset 0 2px 16px hsl(42 75% 46% / 0.10), 0 0 0 2px hsl(42 75% 55%)";
-                          }}
-                          onBlur={e => {
-                            e.target.style.boxShadow = "inset 0 2px 12px hsl(42 75% 46% / 0.07), 0 0 0 1.5px hsl(38 22% 88%)";
-                          }}
-                        />
-                        {/* Word counter — floating in corner */}
-                        <span
-                          className={cn(
-                            "absolute bottom-3 right-4 text-[11px] pointer-events-none select-none transition-colors",
-                            wordCount > 4500 ? "text-destructive" : "opacity-40"
-                          )}
-                          style={{ color: wordCount > 4500 ? undefined : "hsl(25 18% 40%)" }}
-                        >
-                          {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words
-                        </span>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                {/* Collapsible extras */}
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="extras" className="border rounded-2xl px-4" style={{ borderColor: "hsl(38 22% 90%)" }}>
-                    <AccordionTrigger
-                      className="text-sm font-medium py-3 hover:no-underline"
-                      style={{ color: "hsl(25 18% 52%)" }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <ChevronDown className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                        Scripture & extended context
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-4 space-y-4">
-                      <FormField control={form.control} name="extended_prayer" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs font-medium" style={{ color: "hsl(25 18% 52%)" }}>
-                            Bible verse or extended prayer
-                          </FormLabel>
-                          <FormControl>
-                            <textarea
-                              {...field}
-                              placeholder="Add a supporting verse, context, or continued prayer…"
-                              rows={4}
-                              className="w-full resize-none rounded-xl text-sm leading-relaxed outline-none transition-shadow"
-                              style={{
-                                padding: "0.75rem 1rem",
-                                background: "hsl(38 50% 98%)",
-                                boxShadow: "inset 0 1px 6px hsl(42 75% 46% / 0.05), 0 0 0 1.5px hsl(38 22% 88%)",
-                                color: "hsl(25 28% 24%)",
-                              }}
-                              onFocus={e => { e.target.style.boxShadow = "inset 0 1px 8px hsl(42 75% 46% / 0.08), 0 0 0 2px hsl(42 75% 55%)"; }}
-                              onBlur={e => { e.target.style.boxShadow = "inset 0 1px 6px hsl(42 75% 46% / 0.05), 0 0 0 1.5px hsl(38 22% 88%)"; }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="media" className="border rounded-2xl px-4 mt-2" style={{ borderColor: "hsl(38 22% 90%)" }}>
-                    <AccordionTrigger
-                      className="text-sm font-medium py-3 hover:no-underline"
-                      style={{ color: "hsl(25 18% 52%)" }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <ChevronDown className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                        Background image
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-4">
-                      <div className="flex items-center gap-3">
-                        <label
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer hover:bg-accent/40 transition-colors text-sm"
-                          style={{ borderColor: "hsl(38 22% 88%)", color: "hsl(25 18% 46%)" }}
-                        >
-                          <Upload className="w-4 h-4" />
-                          {bgFile ? bgFile.name : "Choose image"}
-                          <input type="file" accept="image/*" className="hidden" onChange={e => setBgFile(e.target.files?.[0] || null)} />
-                        </label>
-                        {bgFile && (
-                          <button
-                            type="button"
-                            onClick={() => setBgFile(null)}
-                            className="text-xs hover:text-destructive transition-colors"
-                            style={{ color: "hsl(25 18% 56%)" }}
-                          >
-                            Remove
-                          </button>
+                      {/* Word counter — floating in corner */}
+                      <span
+                        className={cn(
+                          "absolute bottom-3 right-4 text-[11px] pointer-events-none select-none transition-colors",
+                          wordCount > 4500 ? "text-destructive" : "opacity-40"
                         )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-
-              {/* ── Right column — style picker + region + preview ────────────────── */}
-              <div className="p-6 flex flex-col gap-5" style={{ background: "hsl(42 50% 98%)" }}>
-                {/* Region picker */}
-                <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase tracking-wide flex items-center gap-1.5" style={{ color: "hsl(25 18% 52%)" }}>
-                    <Globe className="w-3 h-3" /> Region
-                  </p>
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger
-                      className="rounded-xl text-sm h-10"
-                      style={{ background: "hsl(42 55% 99%)", borderColor: "hsl(38 22% 88%)" }}
-                    >
-                      <SelectValue placeholder="Where is this prayer from?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(REGION_COORDS).map(r => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Style picker */}
-                <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "hsl(25 18% 52%)" }}>
-                    Text Style
-                  </p>
-                  <FormField control={form.control} name="text_style" render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger
-                            className="rounded-xl text-sm h-10"
-                            style={{ background: "hsl(42 55% 99%)", borderColor: "hsl(38 22% 88%)" }}
-                          >
-                            <SelectValue placeholder="Choose a style" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {TEXT_STYLES.map(s => (
-                            <SelectItem key={s.value} value={s.value}>
-                              <span className={s.preview}>{s.label}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-
-                {/* Live preview */}
-                <div className="flex-1 flex flex-col gap-2">
-                  <p className="text-xs font-medium uppercase tracking-wide" style={{ color: "hsl(25 18% 52%)" }}>
-                    Preview
-                  </p>
-                  <div
-                    className="flex-1 rounded-2xl p-4 relative overflow-hidden"
-                    style={{
-                      background: "hsl(42 55% 97%)",
-                      boxShadow: "inset 0 1px 8px hsl(42 75% 46% / 0.06), 0 0 0 1px hsl(38 22% 88%)",
-                      minHeight: 160,
-                    }}
-                  >
-                    {/* Decorative quote */}
-                    <div
-                      className="absolute top-1 right-2 font-display font-bold leading-none pointer-events-none"
-                      style={{ fontSize: "4rem", color: "hsl(42 80% 60% / 0.10)" }}
-                      aria-hidden
-                    >
-                      "
-                    </div>
-                    {prayerText ? (
-                      <p
-                        className={cn("text-sm leading-relaxed relative", selectedStyle?.preview || "")}
-                        style={{ color: "hsl(25 28% 28%)" }}
+                        style={{ color: wordCount > 4500 ? undefined : "hsl(25 18% 40%)" }}
                       >
-                        {prayerText.length > 300 ? prayerText.slice(0, 297) + "…" : prayerText}
-                      </p>
-                    ) : (
-                      <p className="text-sm italic" style={{ color: "hsl(25 18% 66%)" }}>
-                        Your prayer will appear here…
-                      </p>
-                    )}
-                  </div>
-                </div>
+                        {wordCount.toLocaleString()} / {MAX_WORDS.toLocaleString()} words
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
-                {/* Char stat */}
-                <div className="text-xs text-center" style={{ color: "hsl(25 18% 66%)" }}>
-                  {charCount > 0 && `${charCount.toLocaleString()} characters`}
-                </div>
-              </div>
+              {/* Collapsible extras */}
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="extras" className="border rounded-2xl px-4" style={{ borderColor: "hsl(38 22% 90%)" }}>
+                  <AccordionTrigger
+                    className="text-sm font-medium py-3 hover:no-underline"
+                    style={{ color: "hsl(25 18% 52%)" }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <ChevronDown className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      Scripture & extended context
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 space-y-4">
+                    <FormField control={form.control} name="extended_prayer" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-medium" style={{ color: "hsl(25 18% 52%)" }}>
+                          Bible verse or extended prayer
+                        </FormLabel>
+                        <FormControl>
+                          <textarea
+                            {...field}
+                            placeholder="Add a supporting verse, context, or continued prayer…"
+                            rows={4}
+                            className="w-full resize-none rounded-xl text-sm leading-relaxed outline-none transition-shadow"
+                            style={{
+                              padding: "0.75rem 1rem",
+                              background: "hsl(38 50% 98%)",
+                              boxShadow: "inset 0 1px 6px hsl(42 75% 46% / 0.05), 0 0 0 1.5px hsl(38 22% 88%)",
+                              color: "hsl(25 28% 24%)",
+                            }}
+                            onFocus={e => { e.target.style.boxShadow = "inset 0 1px 8px hsl(42 75% 46% / 0.08), 0 0 0 2px hsl(42 75% 55%)"; }}
+                            onBlur={e => { e.target.style.boxShadow = "inset 0 1px 6px hsl(42 75% 46% / 0.05), 0 0 0 1.5px hsl(38 22% 88%)"; }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="media" className="border rounded-2xl px-4 mt-2" style={{ borderColor: "hsl(38 22% 90%)" }}>
+                  <AccordionTrigger
+                    className="text-sm font-medium py-3 hover:no-underline"
+                    style={{ color: "hsl(25 18% 52%)" }}
+                  >
+                    <span className="flex items-center gap-2">
+                      <ChevronDown className="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      Background image
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <label
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer hover:bg-accent/40 transition-colors text-sm"
+                        style={{ borderColor: "hsl(38 22% 88%)", color: "hsl(25 18% 46%)" }}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {bgFile ? bgFile.name : "Choose image"}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => setBgFile(e.target.files?.[0] || null)} />
+                      </label>
+                      {bgFile && (
+                        <button
+                          type="button"
+                          onClick={() => setBgFile(null)}
+                          className="text-xs hover:text-destructive transition-colors"
+                          style={{ color: "hsl(25 18% 56%)" }}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
 
             {/* Footer actions */}
