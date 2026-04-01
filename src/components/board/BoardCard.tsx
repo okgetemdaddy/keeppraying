@@ -115,6 +115,8 @@ interface BoardCardProps {
   onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
   captionModeTts?: boolean;
   captionModeRecorded?: boolean;
+  onToggleCaptionTts?: () => void;
+  onToggleCaptionRecorded?: () => void;
   defaultCardLayout?: string;
 }
 
