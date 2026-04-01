@@ -859,6 +859,12 @@ export default function Board() {
         </DialogContent>
       </Dialog>
 
+      <PrayerMethodChooser
+        open={chooserOpen}
+        onOpenChange={setChooserOpen}
+        onSpeak={() => setVoiceRecorderOpen(true)}
+        onWrite={() => setAddOpen(true)}
+      />
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchSaved} />
       <ClassicalPrayersLibrary open={classicalOpen} onOpenChange={setClassicalOpen} />
 
