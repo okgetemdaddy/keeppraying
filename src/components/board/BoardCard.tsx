@@ -1174,18 +1174,21 @@ function ActionButtons({
 
       {/* Listen / Speaker button */}
       {onListen && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onListen(); }}
-          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-          style={{ color: listenPlaying ? accentColor : `${textColor}55` }}
-          aria-label="Listen"
-        >
-          {listenLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Volume2 className={`w-3.5 h-3.5 ${listenPlaying ? 'fill-current' : ''}`} />
-          )}
-        </button>
+        <div className="relative">
+          <TtsLoadingPopup visible={!!listenLoading && !listenPlaying} />
+          <button
+            onClick={(e) => { e.stopPropagation(); onListen(); }}
+            className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+            style={{ color: listenPlaying ? accentColor : `${textColor}55` }}
+            aria-label="Listen"
+          >
+            {listenLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Volume2 className={`w-3.5 h-3.5 ${listenPlaying ? 'fill-current' : ''}`} />
+            )}
+          </button>
+        </div>
       )}
 
 
