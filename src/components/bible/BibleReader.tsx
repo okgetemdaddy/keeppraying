@@ -64,6 +64,7 @@ import {
   clearPendingBunch,
 } from "@/components/bible/VerseBunchDialog";
 import { VerseBunchStrip, useUserVerseBunches, type BunchWithCount } from "@/components/bible/VerseBunchStrip";
+import { AddToBunchDrawer, VerseAddedToast } from "@/components/bible/AddToBunchDrawer";
 import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
