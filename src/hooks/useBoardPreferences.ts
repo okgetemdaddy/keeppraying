@@ -40,6 +40,7 @@ const DEFAULTS: BoardPrefs = {
   caption_mode_tts: true,
   caption_mode_recorded: true,
   default_card_layout: "standard",
+  tts_voice_id: "sal",
 };
 
 export function useBoardPreferences() {
