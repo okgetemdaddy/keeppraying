@@ -12,7 +12,7 @@ import {
   Globe,
   Eye,
   EyeOff,
-  Moon,
+  Sun,
   Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
