@@ -1515,11 +1515,24 @@ export function BibleReader() {
         currentChapter={currentChapter?.title}
         bunches={bunches ?? []}
         onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
+        onSetActiveBunch={handleSetActiveBunch}
+        onDeleteBunch={handleDeleteBunch}
         onNavigateToVerse={(vn) => {
           setSleeveOpen(false);
           pendingScrollVerseRef.current = vn;
         }}
       />
+
+      {/* ── Add to Bunch Drawer ── */}
+      <AddToBunchDrawer
+        open={addToBunchOpen}
+        onOpenChange={setAddToBunchOpen}
+        bunches={bunches ?? []}
+        onSelect={handleAddToBunchConfirm}
+      />
+
+      {/* ── Verse Added Toast ── */}
+      <VerseAddedToast bunchName={verseAddedToast.name} visible={verseAddedToast.visible} />
 
       {/* ── First-Click Feature Tour ── */}
       <BibleFeaturesTour
