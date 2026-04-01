@@ -38,7 +38,6 @@ export function SiteSettingsSheet({
   return (
     <>
     {isActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
-    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[340px] sm:w-[380px] flex flex-col">
         <SheetHeader className="pb-4">
