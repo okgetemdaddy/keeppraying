@@ -77,7 +77,8 @@ import { useImmersiveMode } from "@/hooks/useImmersiveMode";
 import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
 import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
-import { useChapterAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { JournalPanel } from "@/components/bible/JournalPanel";
+import { useChapterAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
