@@ -55,8 +55,10 @@ export interface FloatingToolbarProps {
   onToggleBookmark: (verseNumber: number, color: string, existingId?: string) => void;
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
+  onAddToBunch?: () => void;
   onDismiss: () => void;
   isAuthenticated: boolean;
+  hasBunches?: boolean;
   /** All bookmark colors used by the user (for "+" auto-assign) */
   usedBookmarkColors?: Set<string>;
   /** Current bookmark on this verse, if any */
