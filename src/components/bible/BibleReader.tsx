@@ -77,7 +77,8 @@ import { useImmersiveMode } from "@/hooks/useImmersiveMode";
 import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
 import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
-import { useChapterAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { JournalPanel } from "@/components/bible/JournalPanel";
+import { useChapterAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
@@ -520,18 +521,21 @@ export function BibleReader() {
   });
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
   const handleToggleStudyMode = useCallback((v: boolean) => {
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
     // If turning on with canvas variant, open canvas
     if (v && studyModeVariant === "canvas") setCanvasOpen(true);
-    if (!v) setCanvasOpen(false);
+    if (v && studyModeVariant === "journal") setJournalOpen(true);
+    if (!v) { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyModeVariant]);
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
     try { localStorage.setItem("bible_study_variant", v); } catch {}
-    if (v === "canvas" && studyMode) setCanvasOpen(true);
-    else setCanvasOpen(false);
+    if (v === "canvas" && studyMode) { setCanvasOpen(true); setJournalOpen(false); }
+    else if (v === "journal" && studyMode) { setJournalOpen(true); setCanvasOpen(false); }
+    else { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyMode]);
 
   // Auto-detect Apple Pencil
@@ -626,7 +630,8 @@ export function BibleReader() {
 
   // ── Chapter annotations (handwriting) ──
   const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
-  const { saveAnnotation: saveAnnotationMut } = useAnnotationMutations();
+  const { data: journalAnnotations } = useJournalAnnotations(bookUsfm, currentChapter?.id);
+  const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
   // Build a map: verseNumber → annotation
   const annotationMap = useMemo(() => {
@@ -676,6 +681,20 @@ export function BibleReader() {
       toast.success("Canvas annotations saved ✨");
     },
     [saveAnnotationMut, bookUsfm, currentChapter, canvasAnnotationId],
+  );
+
+  const handleJournalSave = useCallback(
+    (entry: { verseIds: string[]; strokes: StrokeData[]; svg?: string; typedText?: string; existingId?: string }) => {
+      saveAnnotationMut.mutate({
+        verseIds: entry.verseIds,
+        strokes: entry.strokes,
+        svg: entry.svg,
+        typedText: entry.typedText,
+        existingId: entry.existingId,
+      });
+      toast.success("Journal entry saved ✨");
+    },
+    [saveAnnotationMut],
   );
 
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
@@ -1410,6 +1429,8 @@ export function BibleReader() {
               onClick={() => {
                 if (studyMode && studyModeVariant === "canvas") {
                   setCanvasOpen(!canvasOpen);
+                } else if (studyMode && studyModeVariant === "journal") {
+                  setJournalOpen(!journalOpen);
                 } else {
                   handleToggleStudyMode(!studyMode);
                 }
@@ -1748,6 +1769,18 @@ export function BibleReader() {
           textSize={textSize}
         />
       )}
+
+      {/* ── Journal Panel (Mode 3) ── */}
+      <JournalPanel
+        open={journalOpen && studyMode && studyModeVariant === "journal"}
+        onOpenChange={setJournalOpen}
+        chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+        bookUsfm={bookUsfm}
+        chapterId={currentChapter?.id}
+        journalAnnotations={journalAnnotations ?? []}
+        onSave={handleJournalSave}
+        onDelete={(id) => deleteAnnotationMut.mutate(id)}
+      />
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 

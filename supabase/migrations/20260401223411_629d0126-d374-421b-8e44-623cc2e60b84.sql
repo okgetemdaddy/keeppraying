@@ -1,0 +1,1 @@
+ALTER TABLE public.annotations ADD COLUMN IF NOT EXISTS typed_text text;

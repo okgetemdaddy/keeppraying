@@ -251,6 +251,7 @@ export type Database = {
           strokes: Json
           svg: string | null
           tags: string[] | null
+          typed_text: string | null
           updated_at: string
           user_id: string
           verse_ids: string[]
@@ -262,6 +263,7 @@ export type Database = {
           strokes: Json
           svg?: string | null
           tags?: string[] | null
+          typed_text?: string | null
           updated_at?: string
           user_id: string
           verse_ids: string[]
@@ -273,6 +275,7 @@ export type Database = {
           strokes?: Json
           svg?: string | null
           tags?: string[] | null
+          typed_text?: string | null
           updated_at?: string
           user_id?: string
           verse_ids?: string[]
