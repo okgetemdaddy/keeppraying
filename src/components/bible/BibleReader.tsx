@@ -683,6 +683,20 @@ export function BibleReader() {
     [saveAnnotationMut, bookUsfm, currentChapter, canvasAnnotationId],
   );
 
+  const handleJournalSave = useCallback(
+    (entry: { verseIds: string[]; strokes: StrokeData[]; svg?: string; typedText?: string; existingId?: string }) => {
+      saveAnnotationMut.mutate({
+        verseIds: entry.verseIds,
+        strokes: entry.strokes,
+        svg: entry.svg,
+        typedText: entry.typedText,
+        existingId: entry.existingId,
+      });
+      toast.success("Journal entry saved ✨");
+    },
+    [saveAnnotationMut],
+  );
+
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
 
