@@ -911,6 +911,15 @@ export default function Prayers() {
       </main>
 
       <AddPrayerModal open={addOpen} onOpenChange={setAddOpen} onSuccess={fetchPrayers} />
+      <PrayerMethodChooser
+        open={chooserOpen}
+        onOpenChange={setChooserOpen}
+        onSpeak={() => setVoiceOpen(true)}
+        onWrite={() => setAddOpen(true)}
+      />
+      {voiceOpen && (
+        <VoiceRecorder onClose={() => setVoiceOpen(false)} onSaved={fetchPrayers} />
+      )}
     </div>
   );
 }
