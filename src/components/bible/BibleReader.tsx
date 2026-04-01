@@ -1248,7 +1248,6 @@ export function BibleReader() {
               style={{ fontSize: `${textSize}px` }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
-            >
               <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                 {verses.map((v) => {
                   const vNotes = noteMap.get(v.number) ?? [];
