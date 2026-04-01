@@ -1042,14 +1042,19 @@ export function BoardCard({
   );
 }
 
-// ── Shared action buttons ────────────────────────────────────────────────────
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * ActionButtons — DROPDOWN MENU ONLY (⋯ button)
+ *
+ * SAFEGUARD: All inline action icons (Heart, Pin, Listen, Share, Testify, Prayed)
+ * live in the unified footer above. This component renders ONLY the ⋯ dropdown.
+ * Do NOT add inline icon buttons here — add them to the unified footer instead.
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
 interface ActionButtonsProps {
   item: SavedPrayer & { card_size?: CardSize };
   accentColor: string;
   textColor: string;
-  onFavorite: () => void;
-  onPin: () => void;
-  onShare: (e: React.MouseEvent) => void;
   onCardSize: (s: CardSize) => void;
   onEnrich: () => void;
   onRemove: (id: string) => void;
@@ -1068,22 +1073,15 @@ interface ActionButtonsProps {
   onRefresh: () => void;
   onSharePrivately?: () => void;
   isSharedRecipient?: boolean;
-  onListen?: () => void;
-  ttsLoading?: boolean;
-  ttsPlaying?: boolean;
-
-
 }
 
 function ActionButtons({
   item, accentColor, textColor,
-  onFavorite, onPin, onShare, onCardSize, onEnrich, onRemove, isOwner, size,
+  onCardSize, onEnrich, onRemove, isOwner, size,
   onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
   hasBgImage, overlayOpacity, onOverlayOpacityChange,
   cardBgPreset, onCardBgPresetChange,
   userId, onRefresh, onSharePrivately, isSharedRecipient,
-  onListen, ttsLoading: listenLoading, ttsPlaying: listenPlaying,
-  
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1135,57 +1133,6 @@ function ActionButtons({
 
   return (
     <>
-      <button
-        onClick={onFavorite}
-        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-        style={{ color: item.favorite ? "hsl(0 72% 51%)" : `${textColor}55` }}
-        aria-label="Favourite"
-      >
-        <Heart className={`w-3.5 h-3.5 ${item.favorite ? "fill-current" : ""}`} />
-      </button>
-
-      <button
-        onClick={onPin}
-        className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-        style={{ color: item.pinned ? accentColor : `${textColor}55` }}
-        aria-label="Pin"
-      >
-        <Pin className="w-3.5 h-3.5" />
-      </button>
-
-      {/* Listen / Speaker button */}
-      {onListen && (
-        <div className="relative">
-          <TtsLoadingPopup visible={!!listenLoading && !listenPlaying} />
-          <button
-            onClick={(e) => { e.stopPropagation(); onListen(); }}
-            className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-            style={{ color: listenPlaying ? accentColor : `${textColor}55` }}
-            aria-label="Listen"
-          >
-            {listenLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Volume2 className={`w-3.5 h-3.5 ${listenPlaying ? 'fill-current' : ''}`} />
-            )}
-          </button>
-        </div>
-      )}
-
-
-
-
-      {!isSharedRecipient && (
-        <button
-          onClick={onShare}
-          className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
-          style={{ color: `${textColor}55` }}
-          aria-label="Share"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-        </button>
-      )}
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
@@ -1323,7 +1270,6 @@ function ActionButtons({
                   <span>Card color</span>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Default / clear button */}
                   <button
                     onClick={() => onCardBgPresetChange(null)}
                     className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
