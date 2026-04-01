@@ -141,6 +141,7 @@ export function useAnnotationMutations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["annotations"] });
       queryClient.invalidateQueries({ queryKey: ["annotations-chapter"] });
+      queryClient.invalidateQueries({ queryKey: ["annotations-journal"] });
     },
   });
 
