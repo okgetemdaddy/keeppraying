@@ -457,7 +457,7 @@ export default function Board() {
       {/* Hero Section */}
       <PrayerStationHero
         firstName={firstName}
-        onAddPrayer={() => setAddOpen(true)}
+        onAddPrayer={() => setChooserOpen(true)}
         onPlaylist={() => openPlaylist()}
         onClassical={() => setClassicalOpen(true)}
         hasPrayers={saved.length > 0}
