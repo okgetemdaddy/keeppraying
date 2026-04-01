@@ -87,6 +87,8 @@ interface BibleSleeveSheetProps {
   /* all bunches */
   bunches: BunchWithCount[];
   onNavigateToBunch: (bunch: BunchWithCount) => void;
+  onSetActiveBunch?: (bunchId: string) => void;
+  onDeleteBunch?: (bunchId: string) => void;
 
   /* verse navigation */
   onNavigateToVerse?: (verseNumber: number) => void;
