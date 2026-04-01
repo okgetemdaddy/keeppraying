@@ -58,6 +58,8 @@ interface BibleSleeveSheetProps {
   onReadingModeChange: (mode: "verse" | "paragraph") => void;
   crossTranslation: boolean;
   onToggleCrossTranslation: () => void;
+  crossBunchTranslation: boolean;
+  onToggleCrossBunchTranslation: () => void;
   hideBunches: boolean;
   onToggleHideBunches: () => void;
 
