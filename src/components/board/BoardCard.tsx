@@ -887,6 +887,8 @@ export function BoardCard({
                 onListen={handleListen}
                 ttsLoading={ttsLoading}
                 ttsPlaying={ttsPlaying}
+                captionModeTts={localCaptionTts}
+                onToggleCaptionsTts={() => setLocalCaptionTts(v => !v)}
               />
             </div>
           </div>
