@@ -38,7 +38,7 @@ export function SiteSettingsSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 pb-8">
+        <div className="space-y-6 pb-8 overflow-y-auto flex-1">
           {/* ── Appearance ─────────────────── */}
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
