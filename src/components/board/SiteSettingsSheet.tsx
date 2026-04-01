@@ -34,7 +34,7 @@ export function SiteSettingsSheet({
 }: SiteSettingsSheetProps) {
   const [trashOpen, setTrashOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { isSupported, isStandalone, isActive, toggleImmersive } = useImmersiveMode(prefs, onSave);
+  const { isSupported, isStandalone, isIOSLimited, isActive, toggleImmersive } = useImmersiveMode(prefs, onSave);
   return (
     <>
     {isActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}

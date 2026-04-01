@@ -89,6 +89,7 @@ interface BibleSleeveSheetProps {
   /* immersive mode */
   immersiveSupported?: boolean;
   immersiveStandalone?: boolean;
+  immersiveIOSLimited?: boolean;
   immersiveActive?: boolean;
   onToggleImmersive?: (v: boolean) => void;
 }
