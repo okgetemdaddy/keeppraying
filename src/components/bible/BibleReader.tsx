@@ -318,7 +318,7 @@ function EnrichedVerse({
       onClick={(e) => onTapSelect(verse.number, e)}
     >
       <p>
-        <BookmarkRibbon isBookmarked={isBookmarked} />
+        <BookmarkRibbon bookmark={bookmark} />
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
