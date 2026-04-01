@@ -1094,6 +1094,7 @@ function ActionButtons({
   cardBgPreset, onCardBgPresetChange,
   userId, onRefresh, onSharePrivately, isSharedRecipient,
   onListen, ttsLoading: listenLoading, ttsPlaying: listenPlaying,
+  captionModeTts, onToggleCaptionsTts,
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
