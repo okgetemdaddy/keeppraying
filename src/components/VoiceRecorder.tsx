@@ -10,7 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 interface VoiceRecorderProps {
   variant?: "fab" | "inline" | "compact";
   dark?: boolean;
+  autoStart?: boolean;
   onPrayerCreated?: (prayerId: string) => void;
+  onClose?: () => void;
 }
 
 // Offline queue
@@ -31,7 +33,7 @@ const SpeechRecognition =
     ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     : null;
 
-export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }: VoiceRecorderProps) {
+export function VoiceRecorder({ variant = "fab", dark = false, autoStart = false, onPrayerCreated, onClose }: VoiceRecorderProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -206,7 +208,16 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     setSavedText(false);
     setSavedRefined(false);
     audioBlobRef.current = null;
-  }, [stopAllRecording]);
+    onClose?.();
+  }, [stopAllRecording, onClose]);
+
+  // Auto-start recording when mounted with autoStart prop
+  useEffect(() => {
+    if (autoStart && state === "idle") {
+      startRecording();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Save as Voice Prayer (audio + original transcript, no edits) ──
   const saveVoicePrayer = async () => {
@@ -372,8 +383,8 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     ? "bg-zinc-900/95 backdrop-blur-2xl border-white/10"
     : "bg-card/98 backdrop-blur-2xl border-border";
 
-  // ── Idle: just the mic button ──
-  if (state === "idle") {
+  // ── Idle: just the mic button (skip if autoStart — will transition to recording) ──
+  if (state === "idle" && !autoStart) {
     return (
       <div className="relative">
         <motion.button
@@ -417,6 +428,9 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       </div>
     );
   }
+
+  // If autoStart and still idle (brief mount moment), render nothing
+  if (state === "idle" && autoStart) return null;
 
   // ── Full-screen centered overlay for all active states ──
   return (
