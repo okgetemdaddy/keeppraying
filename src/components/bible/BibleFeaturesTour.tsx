@@ -132,7 +132,7 @@ export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProp
             className="mt-6 w-full"
             size="lg"
           >
-            Thanks for letting me know
+            {kr ? "Start Reading" : "Thanks for letting me know"}
           </Button>
         </SheetContent>
       </Sheet>
