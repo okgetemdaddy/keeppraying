@@ -82,6 +82,8 @@ function ToolbarActions({
   onToggleBookmark,
   onAddNote,
   onCreateBunch,
+  onAddToBunch,
+  hasBunches,
   onDismiss,
   layout = "horizontal",
 }: Omit<FloatingToolbarProps, "position" | "isAuthenticated"> & { layout?: "horizontal" | "vertical" }) {
