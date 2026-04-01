@@ -162,7 +162,7 @@ export function BibleSleeveSheet({
           </p>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 px-5 py-4">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4">
           <div className="space-y-6 pb-8">
 
             {/* ── Text Size ── */}
