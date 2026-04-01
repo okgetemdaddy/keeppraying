@@ -30,7 +30,7 @@ export function SiteSettingsSheet({
 }: SiteSettingsSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-[340px] sm:w-[380px] overflow-y-auto">
+      <SheetContent side="right" className="w-[340px] sm:w-[380px] flex flex-col">
         <SheetHeader className="pb-4">
           <SheetTitle className="font-display text-lg">Site Settings</SheetTitle>
           <SheetDescription className="text-xs">
@@ -38,7 +38,7 @@ export function SiteSettingsSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 pb-8">
+        <div className="space-y-6 pb-8 overflow-y-auto flex-1">
           {/* ── Appearance ─────────────────── */}
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">

@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Mic, PenLine, X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
+import { Mic, PenLine } from "lucide-react";
+import { ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent } from "@/components/ui/responsive-dialog";
 
 interface PrayerMethodChooserProps {
   open: boolean;

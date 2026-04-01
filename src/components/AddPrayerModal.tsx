@@ -145,7 +145,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-full max-h-[95vh] overflow-y-auto border-0 shadow-2xl p-0"
+        className="w-full border-0 shadow-2xl p-0"
         style={{
           maxWidth: "min(40rem, 95vw)",
           background: "hsl(42 55% 99%)",
@@ -170,7 +170,7 @@ export default function AddPrayerModal({ open, onOpenChange, onSuccess }: AddPra
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             {/* Single column layout */}
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto" style={{ maxHeight: "calc(85vh - 10rem)" }}>
               {/* Title */}
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem className="space-y-1">
