@@ -186,7 +186,7 @@ export function BoardCard({
     const text = card.extended_prayer
       ? `${card.prayer_text}\n\n${card.extended_prayer}`
       : card.prayer_text;
-    toggleTts(text, card.id);
+    toggleTts(text);
   }, [card, toggleTts]);
 
   // Font picker state
