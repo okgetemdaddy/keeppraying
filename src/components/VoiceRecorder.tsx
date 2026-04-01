@@ -1,41 +1,31 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Loader2, X, Sparkles, Check } from "lucide-react";
+import { Mic, MicOff, Loader2, Sparkles, Check, ArrowLeft, Save, AudioLines, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 
 interface VoiceRecorderProps {
-  /** Visual variant */
   variant?: "fab" | "inline" | "compact";
-  /** Dark mode (for Board/WarRoom overlays) */
   dark?: boolean;
-  /** Called after prayer card is created */
   onPrayerCreated?: (prayerId: string) => void;
 }
 
-// Offline queue stored in localStorage
+// Offline queue
 const OFFLINE_KEY = "keeppraying_voice_queue";
-
 function getOfflineQueue(): { text: string; timestamp: number }[] {
-  try {
-    return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]"); } catch { return []; }
 }
-
 function addToOfflineQueue(text: string) {
   const queue = getOfflineQueue();
   queue.push({ text, timestamp: Date.now() });
   localStorage.setItem(OFFLINE_KEY, JSON.stringify(queue));
 }
 
-type RecordingState = "idle" | "recording" | "transcribing" | "refining" | "preview";
+type RecordingState = "idle" | "recording" | "results" | "refining" | "refined";
 
-// Check for SpeechRecognition support
 const SpeechRecognition =
   typeof window !== "undefined"
     ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -44,46 +34,47 @@ const SpeechRecognition =
 export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }: VoiceRecorderProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const [state, setState] = useState<RecordingState>("idle");
   const [transcript, setTranscript] = useState("");
+  const [originalTranscript, setOriginalTranscript] = useState("");
+  const [editedTranscript, setEditedTranscript] = useState("");
   const [refined, setRefined] = useState<{ title: string; prayer_text: string; verses: string } | null>(null);
+  const [viewingRefined, setViewingRefined] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [saving, setSaving] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
-  const micErrorTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Save tracking
+  const [savedVoice, setSavedVoice] = useState(false);
+  const [savedText, setSavedText] = useState(false);
+  const [savedRefined, setSavedRefined] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
+  const [savingText, setSavingText] = useState(false);
+  const [savingRefined, setSavingRefined] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const transcriptRef = useRef("");
   const stateRef = useRef<RecordingState>("idle");
+  const micErrorTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Keep stateRef in sync
-  useEffect(() => { stateRef.current = state; }, [state]);
-
-  // MediaRecorder for actual audio capture
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioBlobRef = useRef<Blob | null>(null);
 
-  // Process offline queue on mount + listen for reconnect
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // Process offline queue
   useEffect(() => {
     if (!user) return;
-
     const processOfflineQueue = async () => {
       const queue = getOfflineQueue();
       if (queue.length === 0) return;
       localStorage.removeItem(OFFLINE_KEY);
       for (const item of queue) {
-        try {
-          await refineAndSave(item.text);
-        } catch {
-          addToOfflineQueue(item.text);
-        }
+        try { await refineAndSave(item.text); } catch { addToOfflineQueue(item.text); }
       }
     };
-
     processOfflineQueue();
     window.addEventListener("online", processOfflineQueue);
     return () => window.removeEventListener("online", processOfflineQueue);
@@ -92,11 +83,7 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
 
   const startRecording = useCallback(() => {
     if (!SpeechRecognition) {
-      toast({
-        title: "Voice not supported",
-        description: "Your browser doesn't support speech recognition. Try Chrome or Edge.",
-        variant: "destructive",
-      });
+      toast({ title: "Voice not supported", description: "Your browser doesn't support speech recognition. Try Chrome or Edge.", variant: "destructive" });
       return;
     }
 
@@ -125,22 +112,20 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       console.error("Speech recognition error:", event.error);
       const harmless = ["no-speech", "aborted", "network"];
       if (harmless.includes(event.error)) return;
-
       const micBlocked = ["audio-capture", "not-allowed"];
       if (micBlocked.includes(event.error)) {
-        cancel();
+        stopAllRecording();
+        setState("idle");
         if (micErrorTimerRef.current) clearTimeout(micErrorTimerRef.current);
         setMicError("Please allow microphone access in your browser settings.");
         micErrorTimerRef.current = setTimeout(() => setMicError(null), 4000);
         return;
       }
-
       toast({ title: "Recording error", description: event.error, variant: "destructive" });
-      stopRecording();
+      handleStopRecording();
     };
 
     recognition.onend = () => {
-      // Auto-restart if still in recording state (use ref to avoid stale closure)
       if (recognitionRef.current && stateRef.current === "recording") {
         try { recognition.start(); } catch { /* ignore */ }
       }
@@ -150,49 +135,51 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     recognition.start();
     setState("recording");
     setTranscript("");
+    setOriginalTranscript("");
+    setEditedTranscript("");
     setRefined(null);
+    setViewingRefined(false);
+    setSavedVoice(false);
+    setSavedText(false);
+    setSavedRefined(false);
     transcriptRef.current = "";
     setElapsed(0);
     audioBlobRef.current = null;
     audioChunksRef.current = [];
 
-    // Start MediaRecorder in parallel
     navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm" });
+      const mr = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm",
+      });
       audioChunksRef.current = [];
       mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       mr.onstop = () => {
         audioBlobRef.current = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        stream.getTracks().forEach(t => t.stop());
+        stream.getTracks().forEach((t) => t.stop());
       };
       mr.start();
       mediaRecorderRef.current = mr;
-    }).catch(() => {
-      // If mic access denied, we still have speech recognition
-    });
+    }).catch(() => { /* mic denied, speech recognition may still work */ });
 
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
-
-    // Haptic feedback
     if (navigator.vibrate) navigator.vibrate(50);
-  }, [toast, state]);
+  }, [toast]);
 
-  const stopRecording = useCallback(() => {
+  const stopAllRecording = useCallback(() => {
     if (recognitionRef.current) {
       recognitionRef.current.onend = null;
       recognitionRef.current.stop();
       recognitionRef.current = null;
     }
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = undefined;
-    }
-    // Stop MediaRecorder
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = undefined; }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current = null;
     }
+  }, []);
 
+  const handleStopRecording = useCallback(() => {
+    stopAllRecording();
     if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
 
     const text = transcriptRef.current.trim();
@@ -202,100 +189,40 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
       return;
     }
 
-    setState("refining");
-    refineTranscript(text);
-  }, []);
+    setOriginalTranscript(text);
+    setEditedTranscript(text);
+    setState("results");
+  }, [stopAllRecording, toast]);
 
-  const refineTranscript = async (text: string) => {
-    try {
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/refine-voice-prayer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: text }),
-      });
+  const handleDone = useCallback(() => {
+    stopAllRecording();
+    setState("idle");
+    setTranscript("");
+    setOriginalTranscript("");
+    setEditedTranscript("");
+    setRefined(null);
+    setViewingRefined(false);
+    setSavedVoice(false);
+    setSavedText(false);
+    setSavedRefined(false);
+    audioBlobRef.current = null;
+  }, [stopAllRecording]);
 
-      if (!resp.ok) {
-        throw new Error("Refinement failed");
-      }
-
-      const data = await resp.json();
-      setRefined({
-        title: data.title || "",
-        prayer_text: data.prayer_text || text,
-        verses: data.verses || "",
-      });
-      setState("preview");
-    } catch {
-      // Offline fallback — save raw text
-      if (!navigator.onLine) {
-        addToOfflineQueue(text);
-        toast({
-          title: "Saved offline 📴",
-          description: "Your prayer will be refined and saved when you're back online.",
-        });
-        setState("idle");
-        return;
-      }
-      // Use raw text as fallback
-      setRefined({
-        title: "",
-        prayer_text: text,
-        verses: "",
-      });
-      setState("preview");
-      toast({
-        title: "Using your raw words",
-        description: "AI refinement wasn't available, but your heartfelt words are perfect as they are.",
-      });
-    }
-  };
-
-  const refineAndSave = async (text: string) => {
-    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-    const resp = await fetch(`${SUPABASE_URL}/functions/v1/refine-voice-prayer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcript: text }),
-    });
-    const data = resp.ok ? await resp.json() : { prayer_text: text, title: "", verses: "" };
-
-    if (!user) return;
-    const { data: card } = await supabase.from("prayer_cards").insert({
-      title: data.title || null,
-      prayer_text: data.prayer_text || text,
-      extended_prayer: data.verses || null,
-      labels: ["voice-prayer"],
-      status: "private",
-      created_by: user.id,
-    }).select("id").single();
-
-    if (card?.id) {
-      await supabase.from("user_saved_prayers").insert({
-        user_id: user.id,
-        prayer_id: card.id,
-        position: 0,
-      });
-    }
-  };
-
-  const savePrayer = async () => {
-    if (!user || !refined) return;
-    setSaving(true);
+  // ── Save as Voice Prayer (audio + original transcript, no edits) ──
+  const saveVoicePrayer = async () => {
+    if (!user || savedVoice) return;
+    setSavingVoice(true);
     try {
       const { data: card, error } = await supabase.from("prayer_cards").insert({
-        title: refined.title || null,
-        prayer_text: refined.prayer_text,
-        extended_prayer: refined.verses || null,
+        title: null,
+        prayer_text: originalTranscript,
         labels: ["voice-prayer"],
         status: "private",
         created_by: user.id,
       } as any).select("id").single();
-
       if (error) throw error;
 
       if (card?.id) {
-        // Upload voice audio blob if available
         if (audioBlobRef.current) {
           const path = `voice_${card.id}.webm`;
           const { error: uploadErr } = await supabase.storage
@@ -308,51 +235,144 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
               .eq("id", card.id);
           }
         }
-
-        await supabase.from("user_saved_prayers").insert({
-          user_id: user.id,
-          prayer_id: card.id,
-          position: 0,
-        });
+        await supabase.from("user_saved_prayers").insert({ user_id: user.id, prayer_id: card.id, position: 0 });
         onPrayerCreated?.(card.id);
       }
 
-      toast({ title: "Prayer saved to your board 🙏" });
-      setState("idle");
-      setRefined(null);
-      setTranscript("");
-      audioBlobRef.current = null;
+      setSavedVoice(true);
+      toast({ title: "Voice prayer saved 🎙️" });
     } catch {
-      toast({ title: "Failed to save", variant: "destructive" });
+      toast({ title: "Failed to save voice prayer", variant: "destructive" });
     } finally {
-      setSaving(false);
+      setSavingVoice(false);
     }
   };
 
-  const cancel = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.onend = null;
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+  // ── Save as Text Prayer Card (edited transcript) ──
+  const saveTextPrayer = async () => {
+    if (!user || savedText) return;
+    setSavingText(true);
+    try {
+      const { data: card, error } = await supabase.from("prayer_cards").insert({
+        title: null,
+        prayer_text: editedTranscript,
+        labels: ["transcribed-prayer"],
+        status: "private",
+        created_by: user.id,
+      } as any).select("id").single();
+      if (error) throw error;
+
+      if (card?.id) {
+        await supabase.from("user_saved_prayers").insert({ user_id: user.id, prayer_id: card.id, position: 0 });
+        onPrayerCreated?.(card.id);
+      }
+
+      setSavedText(true);
+      toast({ title: "Prayer card saved 📝" });
+    } catch {
+      toast({ title: "Failed to save prayer card", variant: "destructive" });
+    } finally {
+      setSavingText(false);
     }
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current = null;
+  };
+
+  // ── Refine with PrayerAssist ──
+  const triggerRefine = async () => {
+    setState("refining");
+    try {
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/refine-voice-prayer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: originalTranscript }),
+      });
+      if (!resp.ok) throw new Error("Refinement failed");
+      const data = await resp.json();
+      setRefined({
+        title: data.title || "",
+        prayer_text: data.prayer_text || originalTranscript,
+        verses: data.verses || "",
+      });
+      setState("refined");
+      setViewingRefined(true);
+    } catch {
+      if (!navigator.onLine) {
+        addToOfflineQueue(originalTranscript);
+        toast({ title: "Saved offline 📴", description: "Your prayer will be refined when you're back online." });
+        setState("results");
+        return;
+      }
+      toast({ title: "Refinement unavailable", description: "Try again later.", variant: "destructive" });
+      setState("results");
     }
-    setState("idle");
-    setTranscript("");
-    setRefined(null);
-    audioBlobRef.current = null;
+  };
+
+  // ── Save refined prayer ──
+  const saveRefinedPrayer = async () => {
+    if (!user || !refined || savedRefined) return;
+    setSavingRefined(true);
+    try {
+      const { data: card, error } = await supabase.from("prayer_cards").insert({
+        title: refined.title || null,
+        prayer_text: refined.prayer_text,
+        extended_prayer: refined.verses || null,
+        labels: ["voice-prayer", "ai-refined"],
+        status: "private",
+        created_by: user.id,
+      } as any).select("id").single();
+      if (error) throw error;
+
+      if (card?.id) {
+        await supabase.from("user_saved_prayers").insert({ user_id: user.id, prayer_id: card.id, position: 0 });
+        onPrayerCreated?.(card.id);
+      }
+
+      setSavedRefined(true);
+      toast({ title: "Refined prayer saved ✨" });
+      // Slide back to results so user can still save other types
+      setTimeout(() => {
+        setViewingRefined(false);
+        setState("results");
+      }, 800);
+    } catch {
+      toast({ title: "Failed to save refined prayer", variant: "destructive" });
+    } finally {
+      setSavingRefined(false);
+    }
+  };
+
+  // ── Offline queue background save ──
+  const refineAndSave = async (text: string) => {
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/refine-voice-prayer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript: text }),
+    });
+    const data = resp.ok ? await resp.json() : { prayer_text: text, title: "", verses: "" };
+    if (!user) return;
+    const { data: card } = await supabase.from("prayer_cards").insert({
+      title: data.title || null,
+      prayer_text: data.prayer_text || text,
+      extended_prayer: data.verses || null,
+      labels: ["voice-prayer"],
+      status: "private",
+      created_by: user.id,
+    }).select("id").single();
+    if (card?.id) {
+      await supabase.from("user_saved_prayers").insert({ user_id: user.id, prayer_id: card.id, position: 0 });
+    }
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   const baseColor = dark ? "text-white" : "text-foreground";
   const mutedColor = dark ? "text-white/60" : "text-muted-foreground";
-  const bgPanel = dark ? "bg-black/60 backdrop-blur-xl border-white/10" : "bg-card/95 backdrop-blur-xl border-border";
+  const bgPanel = dark
+    ? "bg-zinc-900/95 backdrop-blur-2xl border-white/10"
+    : "bg-card/98 backdrop-blur-2xl border-border";
 
-  // ── FAB button (default) ──
+  // ── Idle: just the mic button ──
   if (state === "idle") {
     return (
       <div className="relative">
@@ -386,7 +406,6 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
                   : "bg-card border-border text-foreground shadow-lg"
               }`}
             >
-              {/* Caret arrow */}
               <div className={`absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 ${
                 dark ? "bg-zinc-900 border-l border-t border-amber-500/30" : "bg-card border-l border-t border-border"
               }`} />
@@ -399,112 +418,249 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     );
   }
 
-  // ── Recording / Refining / Preview overlay ──
+  // ── Full-screen centered overlay for all active states ──
   return (
-    <AnimatePresence>
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <motion.div
-        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-        className={`fixed inset-x-4 bottom-24 sm:bottom-8 sm:right-8 sm:left-auto sm:w-[420px] z-[60] rounded-3xl border p-5 shadow-2xl ${bgPanel}`}
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={`relative w-full max-w-lg mx-4 rounded-3xl border shadow-2xl overflow-hidden ${bgPanel}`}
       >
-        {/* Close button */}
-        <button
-          onClick={cancel}
-          className={`absolute top-3 right-3 p-1.5 rounded-full hover:bg-white/10 transition-colors ${mutedColor}`}
-        >
-          <X className="w-4 h-4" />
-        </button>
-
         {/* ── Recording state ── */}
-        {state === "recording" && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <motion.div
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center"
-              >
-                <div className="w-4 h-4 rounded-full bg-red-500" />
-              </motion.div>
-              <div>
-                <p className={`text-sm font-semibold ${baseColor}`}>Listening…</p>
-                <p className={`text-xs ${mutedColor}`}>{formatTime(elapsed)}</p>
-              </div>
-            </div>
-
-            {transcript && (
-              <p className={`text-sm leading-relaxed max-h-32 overflow-y-auto ${mutedColor}`}>
-                {transcript}
-              </p>
-            )}
-
-            <Button
-              onClick={stopRecording}
-              className="w-full rounded-xl gap-2"
-              variant="destructive"
-            >
-              <MicOff className="w-4 h-4" /> Stop & Refine
-            </Button>
-          </div>
-        )}
-
-        {/* ── Refining state ── */}
-        {state === "refining" && (
-          <div className="flex flex-col items-center gap-3 py-4">
+        <AnimatePresence mode="wait">
+          {state === "recording" && (
             <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              key="recording"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, x: -40 }}
+              className="p-6 sm:p-8 space-y-5"
             >
-              <Sparkles className="w-8 h-8 text-primary" />
+              <div className="flex items-center gap-4">
+                <motion.div
+                  animate={{ scale: [1, 1.35, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shrink-0"
+                >
+                  <div className="w-5 h-5 rounded-full bg-red-500" />
+                </motion.div>
+                <div>
+                  <p className={`text-lg font-semibold ${baseColor}`}>Listening…</p>
+                  <p className={`text-sm ${mutedColor}`}>{formatTime(elapsed)}</p>
+                </div>
+              </div>
+
+              {transcript && (
+                <div className={`rounded-2xl p-4 max-h-48 overflow-y-auto ${
+                  dark ? "bg-white/5" : "bg-muted/50"
+                }`}>
+                  <p className={`text-base leading-relaxed font-sans ${mutedColor}`}>
+                    {transcript}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleStopRecording}
+                className="w-full rounded-2xl gap-2 h-12 text-base"
+                variant="destructive"
+              >
+                <MicOff className="w-5 h-5" /> Stop Recording
+              </Button>
             </motion.div>
-            <p className={`text-sm font-medium ${baseColor}`}>Refining your prayer…</p>
-            <p className={`text-xs ${mutedColor}`}>Adding verses and polishing your words</p>
-          </div>
-        )}
+          )}
 
-        {/* ── Preview state ── */}
-        {state === "preview" && refined && (
-          <div className="space-y-4">
-            <div>
-              <p className={`text-xs uppercase tracking-wider font-semibold mb-2 ${mutedColor}`}>
-                ✨ Your refined prayer
+          {/* ── Refining state ── */}
+          {state === "refining" && (
+            <motion.div
+              key="refining"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="p-8 flex flex-col items-center gap-4 py-12"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Sparkles className="w-10 h-10 text-primary" />
+              </motion.div>
+              <p className={`text-lg font-semibold ${baseColor}`}>PrayerAssist is refining…</p>
+              <p className={`text-sm text-center ${mutedColor}`}>
+                Adding Scripture and polishing your heartfelt words
               </p>
-              {refined.title && (
-                <h3 className={`font-display text-lg font-semibold mb-1 ${baseColor}`}>
-                  {refined.title}
-                </h3>
-              )}
-              <p className={`text-sm leading-relaxed max-h-40 overflow-y-auto ${baseColor}`}>
-                {refined.prayer_text}
-              </p>
-              {refined.verses && (
-                <p className={`text-xs mt-2 italic ${mutedColor}`}>
-                  {refined.verses}
-                </p>
-              )}
-            </div>
+            </motion.div>
+          )}
 
-            <div className="flex gap-2">
-              <Button
-                onClick={savePrayer}
-                disabled={saving}
-                className="flex-1 rounded-xl gap-2 btn-gold"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                Save to Board
-              </Button>
-              <Button
-                onClick={cancel}
-                variant="ghost"
-                className={`rounded-xl ${mutedColor}`}
-              >
-                Discard
-              </Button>
-            </div>
-          </div>
-        )}
+          {/* ── Results state (with possible refined slide-over) ── */}
+          {(state === "results" || state === "refined") && (
+            <motion.div
+              key="results-container"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="relative overflow-hidden"
+            >
+              <AnimatePresence mode="wait">
+                {!viewingRefined ? (
+                  <motion.div
+                    key="results"
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -30 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="p-6 sm:p-8 space-y-5"
+                  >
+                    <p className={`text-xs uppercase tracking-widest font-semibold ${mutedColor}`}>
+                      Your transcribed prayer
+                    </p>
+
+                    <Textarea
+                      value={editedTranscript}
+                      onChange={(e) => setEditedTranscript(e.target.value)}
+                      className={`min-h-[120px] max-h-[200px] rounded-2xl text-base font-sans leading-relaxed resize-none ${
+                        dark
+                          ? "bg-white/5 border-white/10 text-white placeholder:text-white/30"
+                          : "bg-muted/40 border-border text-foreground"
+                      }`}
+                      placeholder="Edit your prayer here…"
+                    />
+
+                    <div className="space-y-3">
+                      {/* Save as Voice Prayer */}
+                      <Button
+                        onClick={saveVoicePrayer}
+                        disabled={savingVoice || savedVoice}
+                        className={`w-full rounded-2xl gap-2 h-11 justify-start ${
+                          savedVoice
+                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/20"
+                            : dark
+                              ? "bg-white/10 hover:bg-white/15 text-white border border-white/10"
+                              : ""
+                        }`}
+                        variant={savedVoice ? "ghost" : "outline"}
+                      >
+                        {savingVoice ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                          savedVoice ? <Check className="w-4 h-4" /> : <AudioLines className="w-4 h-4" />}
+                        {savedVoice ? "Voice Prayer Saved" : "Save as Voice Prayer"}
+                      </Button>
+
+                      {/* Save as Prayer Card */}
+                      <Button
+                        onClick={saveTextPrayer}
+                        disabled={savingText || savedText || !editedTranscript.trim()}
+                        className={`w-full rounded-2xl gap-2 h-11 justify-start ${
+                          savedText
+                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/20"
+                            : dark
+                              ? "bg-white/10 hover:bg-white/15 text-white border border-white/10"
+                              : ""
+                        }`}
+                        variant={savedText ? "ghost" : "outline"}
+                      >
+                        {savingText ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                          savedText ? <Check className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                        {savedText ? "Prayer Card Saved" : "Save as Prayer Card"}
+                      </Button>
+
+                      {/* PrayerAssist Refine */}
+                      <Button
+                        onClick={triggerRefine}
+                        disabled={savedRefined}
+                        className={`w-full rounded-2xl gap-2 h-11 justify-start ${
+                          savedRefined
+                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/20"
+                            : "bg-primary/90 hover:bg-primary text-primary-foreground"
+                        }`}
+                        variant={savedRefined ? "ghost" : "default"}
+                      >
+                        {savedRefined ? <Check className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                        {savedRefined ? "Refined Prayer Saved" : "PrayerAssist refined your prayer →"}
+                      </Button>
+                    </div>
+
+                    {/* I'm Done */}
+                    <div className={`pt-3 border-t ${dark ? "border-white/10" : "border-border"}`}>
+                      <Button
+                        onClick={handleDone}
+                        variant="ghost"
+                        className={`w-full rounded-2xl h-10 text-sm ${mutedColor} hover:text-white`}
+                      >
+                        I'm Done
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  /* ── Refined prayer slide ── */
+                  <motion.div
+                    key="refined-view"
+                    initial={{ opacity: 0, x: 60 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 60 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="p-6 sm:p-8 space-y-5"
+                  >
+                    <button
+                      onClick={() => { setViewingRefined(false); setState("results"); }}
+                      className={`flex items-center gap-1.5 text-sm ${mutedColor} hover:text-white transition-colors`}
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Go Back
+                    </button>
+
+                    <p className={`text-xs uppercase tracking-widest font-semibold ${mutedColor}`}>
+                      ✨ Your refined prayer
+                    </p>
+
+                    {refined && (
+                      <div className={`rounded-2xl p-5 space-y-3 ${
+                        dark ? "bg-white/5" : "bg-muted/40"
+                      }`}>
+                        {refined.title && (
+                          <h3 className={`font-display text-xl font-semibold ${baseColor}`}>
+                            {refined.title}
+                          </h3>
+                        )}
+                        <p className={`text-base leading-relaxed ${baseColor}`}>
+                          {refined.prayer_text}
+                        </p>
+                        {refined.verses && (
+                          <p className={`text-sm italic pt-2 ${mutedColor}`}>
+                            {refined.verses}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={saveRefinedPrayer}
+                      disabled={savingRefined || savedRefined}
+                      className={`w-full rounded-2xl gap-2 h-12 text-base ${
+                        savedRefined
+                          ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30"
+                          : "bg-primary/90 hover:bg-primary text-primary-foreground"
+                      }`}
+                    >
+                      {savingRefined ? <Loader2 className="w-5 h-5 animate-spin" /> :
+                        savedRefined ? <Check className="w-5 h-5" /> : <Save className="w-5 h-5" />}
+                      {savedRefined ? "Saved to Board ✨" : "Save to Board"}
+                    </Button>
+
+                    {/* I'm Done (always visible) */}
+                    <div className={`pt-3 border-t ${dark ? "border-white/10" : "border-border"}`}>
+                      <Button
+                        onClick={handleDone}
+                        variant="ghost"
+                        className={`w-full rounded-2xl h-10 text-sm ${mutedColor} hover:text-white`}
+                      >
+                        I'm Done
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
-    </AnimatePresence>
+    </div>
   );
 }
