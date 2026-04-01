@@ -1232,7 +1232,6 @@ export function BibleReader() {
                         verse={v}
                         highlights={highlightMap.get(v.number) ?? []}
                         notes={vNotes}
-                        isBookmarked={bookmarkMap.has(v.number)}
                         bookmark={bookmarkMap.get(v.number)}
                         bunchItems={bunchMap.get(v.number) ?? []}
                         bunchColorMap={bunchColorMap}
