@@ -1540,6 +1540,8 @@ export function BibleReader() {
         oledMode={oledMode}
         onTogglePremiumDark={handleTogglePremiumDark}
         onToggleOled={handleToggleOled}
+        easeEyesDim={easeEyesDim}
+        onEaseEyesDimChange={handleEaseEyesDimChange}
         highlights={chapterData?.highlights ?? []}
         bookmarks={chapterData?.bookmarks ?? []}
         notes={chapterData?.notes ?? []}
