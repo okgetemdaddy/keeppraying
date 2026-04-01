@@ -677,7 +677,8 @@ export default function Board() {
                       captionModeRecorded={prefs.caption_mode_recorded}
                       onToggleCaptionTts={() => savePrefs({ caption_mode_tts: !prefs.caption_mode_tts })}
                       onToggleCaptionRecorded={() => savePrefs({ caption_mode_recorded: !prefs.caption_mode_recorded })}
-                      defaultCardLayout={prefs.default_card_layout}
+                       defaultCardLayout={prefs.default_card_layout}
+                       ttsVoiceId={prefs.tts_voice_id}
                     />
                   </div>
                 );

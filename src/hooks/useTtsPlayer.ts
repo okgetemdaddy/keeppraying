@@ -14,6 +14,8 @@ interface UseTtsPlayerOptions {
   cacheId?: string;
   /** Pre-existing audio URL (e.g. prayer_cards.audio_url) */
   audioUrl?: string | null;
+  /** xAI TTS voice ID (e.g. "sal", "eve", "ara", "rex", "leo") */
+  voiceId?: string;
 }
 
 /** Fetch a URL as a Blob, returning null on failure. */
@@ -172,7 +174,7 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, voiceId: options.voiceId }),
         }
       );
       if (!resp.ok) throw new Error("Could not generate speech");
@@ -217,7 +219,7 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
     } finally {
       setTtsLoading(false);
     }
-  }, [ttsPlaying, ttsLoading, playbackRate, options.audioUrl, options.cacheId, toast]);
+  }, [ttsPlaying, ttsLoading, playbackRate, options.audioUrl, options.cacheId, options.voiceId, toast]);
 
   return {
     ttsLoading,

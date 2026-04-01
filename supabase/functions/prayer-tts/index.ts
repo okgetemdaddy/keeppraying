@@ -233,7 +233,7 @@ serve(async (req) => {
       });
     }
 
-    const { text } = await req.json();
+    const { text, voiceId } = await req.json();
     if (!text || typeof text !== "string" || text.trim().length === 0) {
       return new Response(JSON.stringify({ error: "No prayer text provided." }), {
         status: 400,
@@ -253,7 +253,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         text: prayerText,
-        voice_id: "sal",
+        voice_id: (voiceId && typeof voiceId === "string" && ["sal","eve","ara","rex","leo"].includes(voiceId)) ? voiceId : "sal",
         language: "en",
       }),
     });

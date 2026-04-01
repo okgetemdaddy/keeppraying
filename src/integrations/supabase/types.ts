@@ -355,6 +355,7 @@ export type Database = {
           theme_preset: string | null
           theme_scope: string | null
           theme_text: string | null
+          tts_voice_id: string
           updated_at: string
           user_id: string
         }
@@ -379,6 +380,7 @@ export type Database = {
           theme_preset?: string | null
           theme_scope?: string | null
           theme_text?: string | null
+          tts_voice_id?: string
           updated_at?: string
           user_id: string
         }
@@ -403,6 +405,7 @@ export type Database = {
           theme_preset?: string | null
           theme_scope?: string | null
           theme_text?: string | null
+          tts_voice_id?: string
           updated_at?: string
           user_id?: string
         }
