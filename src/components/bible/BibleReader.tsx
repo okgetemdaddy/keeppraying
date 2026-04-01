@@ -1414,6 +1414,10 @@ export function BibleReader() {
         onToggleCrossTranslation={toggleCrossTranslation}
         hideBunches={hideBunchRefs}
         onToggleHideBunches={toggleHideBunches}
+        premiumDark={premiumDark}
+        oledMode={oledMode}
+        onTogglePremiumDark={handleTogglePremiumDark}
+        onToggleOled={handleToggleOled}
         highlights={chapterData?.highlights ?? []}
         bookmarks={chapterData?.bookmarks ?? []}
         notes={chapterData?.notes ?? []}
