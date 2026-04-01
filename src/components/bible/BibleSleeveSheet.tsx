@@ -98,6 +98,8 @@ export function BibleSleeveSheet({
   onReadingModeChange,
   crossTranslation,
   onToggleCrossTranslation,
+  crossBunchTranslation,
+  onToggleCrossBunchTranslation,
   hideBunches,
   onToggleHideBunches,
   premiumDark,
