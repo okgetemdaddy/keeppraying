@@ -230,6 +230,21 @@ function ToolbarActions({
             <span className={`font-medium ${isVertical ? "text-sm" : "text-xs"}`}>Bunch</span>
           </button>
         )}
+
+        {/* ── Add to existing Bunch ── */}
+        {hasBunches && onAddToBunch && (
+          <button
+            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
+            title="Add to a Bunch"
+            onClick={() => {
+              onAddToBunch();
+              onDismiss();
+            }}
+          >
+            <Package className="h-4 w-4" />
+            <span className={`font-medium ${isVertical ? "text-sm" : "text-xs"}`}>+ Bunch</span>
+          </button>
+        )}
       </div>
     </div>
   );
