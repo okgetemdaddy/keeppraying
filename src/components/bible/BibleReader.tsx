@@ -458,7 +458,7 @@ export function BibleReader() {
   // ── Floating "Verse Added" toast ──
   const [verseAddedToast, setVerseAddedToast] = useState<{ name: string; visible: boolean }>({ name: "", visible: false });
 
-
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
