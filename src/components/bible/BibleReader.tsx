@@ -1546,6 +1546,7 @@ export function BibleReader() {
         }}
         immersiveSupported={immersiveSupported}
         immersiveStandalone={immersiveStandalone}
+        immersiveIOSLimited={immersiveIOSLimited}
         immersiveActive={immersiveActive}
         onToggleImmersive={toggleImmersive}
       />
