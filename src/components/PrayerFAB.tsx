@@ -200,7 +200,7 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
               right: "calc(var(--fab-right, 1rem) + 13rem)",
             }}
           >
-            {/* God's Word */}
+            {/* KeepRead.ing */}
             <motion.button
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -215,7 +215,7 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
               }}
             >
               <BookOpenCheck className="w-3.5 h-3.5" />
-              God's Word
+              KeepRead.ing
             </motion.button>
 
             {/* Add a Prayer */}
