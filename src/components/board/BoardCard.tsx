@@ -132,8 +132,6 @@ export function BoardCard({
   onOpenViewer,
   captionModeTts = true,
   captionModeRecorded = true,
-  onToggleCaptionTts,
-  onToggleCaptionRecorded,
   defaultCardLayout = "standard",
   ttsVoiceId,
 }: BoardCardProps) {
