@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Captions } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 
 interface VoiceWaveformPlayerProps {
   audioUrl: string;
