@@ -449,7 +449,16 @@ export function BibleReader() {
     return () => { root.classList.remove("bible-dark", "bible-oled"); };
   }, [premiumDark, oledMode]);
 
-  const [searchOpen, setSearchOpen] = useState(false);
+  // ── Active Bunch (session-only, resets on reload) ──
+  const [activeBunchId, setActiveBunchId] = useState<string | null>(null);
+
+  // ── Add to Bunch drawer ──
+  const [addToBunchOpen, setAddToBunchOpen] = useState(false);
+
+  // ── Floating "Verse Added" toast ──
+  const [verseAddedToast, setVerseAddedToast] = useState<{ name: string; visible: boolean }>({ name: "", visible: false });
+
+
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
