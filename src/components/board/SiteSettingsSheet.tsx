@@ -5,10 +5,12 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon, Trash2 as Trash2Icon } from "lucide-react";
+import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon, Trash2 as Trash2Icon, Maximize } from "lucide-react";
 import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 import { TrashBinSheet } from "@/components/TrashBinSheet";
-
+import { useImmersiveMode } from "@/hooks/useImmersiveMode";
+import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface SiteSettingsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
