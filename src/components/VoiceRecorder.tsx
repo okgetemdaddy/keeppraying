@@ -208,7 +208,16 @@ export function VoiceRecorder({ variant = "fab", dark = false, autoStart = false
     setSavedText(false);
     setSavedRefined(false);
     audioBlobRef.current = null;
-  }, [stopAllRecording]);
+    onClose?.();
+  }, [stopAllRecording, onClose]);
+
+  // Auto-start recording when mounted with autoStart prop
+  useEffect(() => {
+    if (autoStart && state === "idle") {
+      startRecording();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Save as Voice Prayer (audio + original transcript, no edits) ──
   const saveVoicePrayer = async () => {
