@@ -179,7 +179,7 @@ export function BoardCard({
   const {
     ttsLoading, ttsPlaying, toggleTts, stopTts, pauseTts, resumeTts,
     timedPhrases, audioRef, playbackRate, changePlaybackRate,
-  } = useTtsPlayer({ cacheId: card?.id, audioUrl: card?.audio_url });
+  } = useTtsPlayer({ cacheId: card?.id, audioUrl: card?.audio_url, voiceId: ttsVoiceId });
 
   const handleListen = useCallback(() => {
     if (!card) return;
