@@ -21,6 +21,7 @@ import {
   ResponsiveSheetDescription as SheetDescription,
 } from "@/components/ui/responsive-sheet";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
+import { isKeepReading } from "@/lib/hostDetect";
 
 const FEATURES = [
   {
