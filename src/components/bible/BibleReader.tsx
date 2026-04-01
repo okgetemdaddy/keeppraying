@@ -1414,6 +1414,8 @@ export function BibleReader() {
               onClick={() => {
                 if (studyMode && studyModeVariant === "canvas") {
                   setCanvasOpen(!canvasOpen);
+                } else if (studyMode && studyModeVariant === "journal") {
+                  setJournalOpen(!journalOpen);
                 } else {
                   handleToggleStudyMode(!studyMode);
                 }
