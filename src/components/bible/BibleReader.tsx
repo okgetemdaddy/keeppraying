@@ -515,11 +515,24 @@ export function BibleReader() {
   const [studyMode, setStudyMode] = useState(() => {
     try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
   });
+  const [studyModeVariant, setStudyModeVariant] = useState<StudyModeVariant>(() => {
+    try { return (localStorage.getItem("bible_study_variant") as StudyModeVariant) || "margin"; } catch { return "margin"; }
+  });
   const [pencilDetected, setPencilDetected] = useState(false);
+  const [canvasOpen, setCanvasOpen] = useState(false);
   const handleToggleStudyMode = useCallback((v: boolean) => {
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-  }, []);
+    // If turning on with canvas variant, open canvas
+    if (v && studyModeVariant === "canvas") setCanvasOpen(true);
+    if (!v) setCanvasOpen(false);
+  }, [studyModeVariant]);
+  const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
+    setStudyModeVariant(v);
+    try { localStorage.setItem("bible_study_variant", v); } catch {}
+    if (v === "canvas" && studyMode) setCanvasOpen(true);
+    else setCanvasOpen(false);
+  }, [studyMode]);
 
   // Auto-detect Apple Pencil
   useEffect(() => {
