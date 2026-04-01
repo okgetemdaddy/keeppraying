@@ -22,6 +22,7 @@ export interface BoardPrefs {
   default_card_layout: string;
   tts_voice_id: string;
   show_add_prayer_fab: boolean;
+  immersive_mode: boolean;
 }
 
 const DEFAULTS: BoardPrefs = {
