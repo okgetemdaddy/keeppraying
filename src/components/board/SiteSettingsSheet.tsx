@@ -69,7 +69,7 @@ export function SiteSettingsSheet({
 
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-0.5 flex-1">
-                <Label className="text-sm font-medium">KeepPray.ing Voices</Label>
+                <Label className="text-sm font-medium">keepPray.ing Voices</Label>
                 <p className="text-[11px] text-muted-foreground leading-snug">
                   Show full-screen caption overlay when listening to prayers read by KeepPray.ing
                 </p>
