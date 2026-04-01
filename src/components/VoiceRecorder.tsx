@@ -122,10 +122,20 @@ export function VoiceRecorder({ variant = "fab", dark = false, onPrayerCreated }
     recognition.onerror = (event: any) => {
       console.error("Speech recognition error:", event.error);
       const harmless = ["no-speech", "aborted", "network"];
-      if (!harmless.includes(event.error)) {
-        toast({ title: "Recording error", description: event.error, variant: "destructive" });
-        stopRecording();
+      if (harmless.includes(event.error)) return;
+
+      const micBlocked = ["audio-capture", "not-allowed"];
+      if (micBlocked.includes(event.error)) {
+        toast({
+          title: "Microphone not available",
+          description: "Please allow microphone access in your browser settings and try again.",
+        });
+        cancel();
+        return;
       }
+
+      toast({ title: "Recording error", description: event.error, variant: "destructive" });
+      stopRecording();
     };
 
     recognition.onend = () => {
