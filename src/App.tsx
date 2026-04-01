@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { isKeepReading } from "@/lib/hostDetect";
 import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -39,7 +40,7 @@ import { PrayerFAB } from "@/components/PrayerFAB";
 import { MobileTabBar } from "@/components/MobileTabBar";
 import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
 import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
-
+import { KeepReadingShell } from "@/components/keepreading/KeepReadingShell";
 
 import {
   LayoutGrid, Users, Heart, Home, Shield, BookOpen,
