@@ -139,18 +139,45 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     onSettled: () => qc.invalidateQueries({ queryKey: key }),
   });
 
-  /* ── BOOKMARK: Toggle ── */
+  /* ── BOOKMARK: Toggle (add / remove / change color) ── */
   const toggleBookmark = useMutation({
     mutationFn: async (params: { verseNumber: number; color: string; existingId?: string }) => {
       if (!user || !ref) throw new Error("Not authenticated");
+
+      // Remove existing bookmark if present
       if (params.existingId) {
         const { error } = await supabase
           .from("user_bookmarks")
           .delete()
           .eq("id", params.existingId);
         if (error) throw error;
-        return { action: "removed" as const };
+
+        // Check if existing bookmark has same color → pure remove
+        // We check via the cache to avoid an extra query
+        const cached = qc.getQueryData<BibleChapterData>(key);
+        const existing = cached?.bookmarks.find((b) => b.id === params.existingId);
+        if (existing?.color === params.color) {
+          return { action: "removed" as const };
+        }
+
+        // Different color → re-add with new color
+        const { data, error: insertErr } = await supabase
+          .from("user_bookmarks")
+          .insert({
+            user_id: user.id,
+            version_id: ref.versionId,
+            book_usfm: ref.bookUsfm,
+            chapter_number: ref.chapterNumber,
+            verse_number: params.verseNumber,
+            color: params.color,
+          } as any)
+          .select("id, verse_number, color, created_at")
+          .single();
+        if (insertErr) throw insertErr;
+        return { action: "replaced" as const, data };
       }
+
+      // Fresh bookmark
       const { data, error } = await supabase
         .from("user_bookmarks")
         .insert({
@@ -169,11 +196,28 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     onMutate: async (params) => {
       await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<BibleChapterData>(key);
+
       if (params.existingId) {
-        updateChapterCache(qc, key, (old) => ({
-          ...old,
-          bookmarks: old.bookmarks.filter((b) => b.id !== params.existingId),
-        }));
+        const existing = prev?.bookmarks.find((b) => b.id === params.existingId);
+        if (existing?.color === params.color) {
+          // Same color → removing
+          updateChapterCache(qc, key, (old) => ({
+            ...old,
+            bookmarks: old.bookmarks.filter((b) => b.id !== params.existingId),
+          }));
+        } else {
+          // Different color → replace optimistically
+          const optimistic: UserBookmark = {
+            id: `temp-${Date.now()}`,
+            verse_number: params.verseNumber,
+            color: params.color,
+            created_at: new Date().toISOString(),
+          };
+          updateChapterCache(qc, key, (old) => ({
+            ...old,
+            bookmarks: [...old.bookmarks.filter((b) => b.id !== params.existingId), optimistic],
+          }));
+        }
       } else {
         const optimistic: UserBookmark = {
           id: `temp-${Date.now()}`,
