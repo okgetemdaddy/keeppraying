@@ -379,21 +379,62 @@ export function BibleSleeveSheet({
                   {bunches.map((b, idx) => {
                     const color = getBunchColor(idx);
                     const classes = BUNCH_COLOR_CLASSES[color];
+                    const showContext = contextBunchId === b.id;
                     return (
-                      <button
-                        key={b.id}
-                        onClick={() => onNavigateToBunch(b)}
-                        className={`flex items-center gap-2.5 w-full text-left rounded-lg border ${classes.pill} px-3 py-2.5 hover:opacity-80 transition-colors`}
-                      >
-                        <Package className={`h-4 w-4 shrink-0 ${classes.pillText}`} />
-                        <div className="min-w-0 flex-1">
-                          <p className={`text-sm font-semibold ${classes.pillText} truncate`}>{b.bunch_name}</p>
-                          {b.description && (
-                            <p className="text-[0.65rem] text-muted-foreground line-clamp-1">{b.description}</p>
-                          )}
-                          <p className="text-[0.6rem] text-muted-foreground mt-0.5">{b.item_count} verse{b.item_count !== 1 ? "s" : ""}</p>
-                        </div>
-                      </button>
+                      <div key={b.id} className="relative">
+                        <button
+                          onClick={() => onNavigateToBunch(b)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setContextBunchId(showContext ? null : b.id);
+                          }}
+                          onTouchStart={() => {
+                            longPressTimer.current = setTimeout(() => setContextBunchId(b.id), 500);
+                          }}
+                          onTouchEnd={() => {
+                            if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                          }}
+                          onTouchMove={() => {
+                            if (longPressTimer.current) clearTimeout(longPressTimer.current);
+                          }}
+                          className={`flex items-center gap-2.5 w-full text-left rounded-lg border ${classes.pill} px-3 py-2.5 hover:opacity-80 transition-colors opacity-80`}
+                        >
+                          <Package className={`h-4 w-4 shrink-0 ${classes.pillText}`} />
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-sm font-semibold ${classes.pillText} truncate`}>{b.bunch_name}</p>
+                            {b.description && (
+                              <p className="text-[0.65rem] text-muted-foreground line-clamp-1">{b.description}</p>
+                            )}
+                            <p className="text-[0.6rem] text-muted-foreground mt-0.5">{b.item_count} verse{b.item_count !== 1 ? "s" : ""}</p>
+                          </div>
+                        </button>
+                        {/* Context menu overlay */}
+                        {showContext && (
+                          <div className="absolute right-2 top-1 z-10 rounded-lg border border-border bg-card shadow-lg py-1 min-w-[180px]">
+                            <button
+                              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                              onClick={() => {
+                                setContextBunchId(null);
+                                onSetActiveBunch?.(b.id);
+                                onOpenChange(false);
+                              }}
+                            >
+                              <Star className="h-3.5 w-3.5 text-amber-500" />
+                              Make my Active Bunch
+                            </button>
+                            <button
+                              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-muted transition-colors"
+                              onClick={() => {
+                                setContextBunchId(null);
+                                onDeleteBunch?.(b.id);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
