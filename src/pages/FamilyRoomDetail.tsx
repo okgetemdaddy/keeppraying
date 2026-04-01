@@ -3,6 +3,7 @@ import SacredSpinner from "@/components/SacredSpinner";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useAuth } from "@/contexts/AuthContext";
 import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
