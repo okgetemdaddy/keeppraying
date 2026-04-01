@@ -1041,7 +1041,7 @@ export function BibleReader() {
   );
 
   return (
-    <article className="min-h-screen bg-background">
+    <article className={`min-h-screen bg-background transition-colors duration-300 ${premiumDark ? 'bible-dark' : ''} ${premiumDark && oledMode ? 'bible-oled' : ''}`}>
       {/* ── Verse Bunch strip (saved bunches) ── */}
       {!hideBunchRefs && <VerseBunchStrip onNavigateToBunch={handleNavigateToBunch} />}
 
