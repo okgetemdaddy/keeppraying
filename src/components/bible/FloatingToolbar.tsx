@@ -52,11 +52,15 @@ export interface FloatingToolbarProps {
   existingHighlightId?: string;
   onHighlight: (color: string, verseNumber: number, start?: number, end?: number) => void;
   onRemoveHighlight?: (highlightId: string) => void;
-  onToggleBookmark: (verseNumber: number, existingId?: string) => void;
+  onToggleBookmark: (verseNumber: number, color: string, existingId?: string) => void;
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
   onDismiss: () => void;
   isAuthenticated: boolean;
+  /** All bookmark colors used by the user (for "+" auto-assign) */
+  usedBookmarkColors?: Set<string>;
+  /** Current bookmark on this verse, if any */
+  existingBookmarkColor?: string;
 }
 
 /* ── Shared actions content (used in both desktop floating + mobile sheet) ── */
