@@ -1008,6 +1008,13 @@ export function BibleReader() {
   const existingHighlightColor = primaryHighlights.length === 1 ? primaryHighlights[0].color : undefined;
   const existingHighlightId = primaryHighlights.length === 1 ? primaryHighlights[0].id : undefined;
 
+  // Compute used bookmark colors for the "+" auto-assign
+  const usedBookmarkColors = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of chapterData?.bookmarks ?? []) set.add(b.color);
+    return set;
+  }, [chapterData?.bookmarks]);
+
   const handleRemoveHighlight = useCallback(
     (highlightId: string) => {
       mutations.removeHighlight.mutate(highlightId);
