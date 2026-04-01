@@ -210,6 +210,51 @@ export function BibleSleeveSheet({
 
             <div className="h-px bg-border" />
 
+            {/* ── Appearance ── */}
+            <section className="space-y-3">
+              <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                <Moon className="h-3.5 w-3.5" /> Appearance
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Moon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground font-medium">Premium Dark Mode</span>
+                    </div>
+                    <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                      Elegant charcoal dark theme optimized for long Bible study and eye comfort
+                    </p>
+                  </div>
+                  <Switch
+                    checked={premiumDark}
+                    onCheckedChange={onTogglePremiumDark}
+                    className="shrink-0 mt-0.5"
+                  />
+                </div>
+
+                <div className={`flex items-start justify-between gap-3 transition-opacity duration-200 ${!premiumDark ? 'opacity-40 pointer-events-none' : ''}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground font-medium">True Black OLED</span>
+                    </div>
+                    <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                      Extra battery life on OLED screens
+                    </p>
+                  </div>
+                  <Switch
+                    checked={oledMode}
+                    onCheckedChange={onToggleOled}
+                    disabled={!premiumDark}
+                    className="shrink-0 mt-0.5"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <div className="h-px bg-border" />
+
             {/* ── Your Highlights ── */}
             <section>
               <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
