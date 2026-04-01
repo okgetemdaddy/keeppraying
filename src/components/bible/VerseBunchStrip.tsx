@@ -59,7 +59,8 @@ export function useUserVerseBunches() {
       });
     },
     enabled: !!user,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
   });
 }
 
