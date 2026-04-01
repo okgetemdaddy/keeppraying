@@ -40,6 +40,7 @@ interface BookmarkRow {
   book_usfm: string;
   chapter_number: number;
   verse_number: number;
+  color: string;
   version_id: number;
   created_at: string;
 }
