@@ -4,7 +4,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Volume2, Mic, Eye, Sparkles, Type, AudioLines } from "lucide-react";
+import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon } from "lucide-react";
 import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 
 interface SiteSettingsSheetProps {
@@ -39,6 +39,27 @@ export function SiteSettingsSheet({
         </SheetHeader>
 
         <div className="space-y-6 pb-8">
+          {/* ── Appearance ─────────────────── */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Sun className="w-3.5 h-3.5" />
+              Appearance
+            </h3>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-0.5 flex-1">
+                <Label className="text-sm font-medium">Dark Mode</Label>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Switch between light and dark theme
+                </p>
+              </div>
+              <Switch checked={false} disabled />
+            </div>
+            <p className="text-[10px] text-muted-foreground/60 italic">Coming soon</p>
+          </section>
+
+          <Separator />
+
           {/* ── Caption Mode ─────────────────── */}
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
