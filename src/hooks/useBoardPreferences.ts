@@ -21,6 +21,7 @@ export interface BoardPrefs {
   caption_mode_recorded: boolean;
   default_card_layout: string;
   tts_voice_id: string;
+  show_add_prayer_fab: boolean;
 }
 
 const DEFAULTS: BoardPrefs = {
