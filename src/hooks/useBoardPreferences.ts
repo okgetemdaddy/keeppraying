@@ -77,6 +77,7 @@ export function useBoardPreferences() {
             caption_mode_tts: (data as any).caption_mode_tts ?? DEFAULTS.caption_mode_tts,
             caption_mode_recorded: (data as any).caption_mode_recorded ?? DEFAULTS.caption_mode_recorded,
             default_card_layout: (data as any).default_card_layout ?? DEFAULTS.default_card_layout,
+            tts_voice_id: (data as any).tts_voice_id ?? DEFAULTS.tts_voice_id,
           };
           setPrefs(fresh);
           setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);

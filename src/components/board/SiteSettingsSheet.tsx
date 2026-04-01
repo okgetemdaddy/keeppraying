@@ -77,6 +77,45 @@ export function SiteSettingsSheet({
 
           <Separator />
 
+          {/* ── AI Voice ─────────────────────── */}
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <AudioLines className="w-3.5 h-3.5" />
+              AI Voice
+            </h3>
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Choose the voice that reads your prayers aloud
+            </p>
+
+            <RadioGroup
+              value={prefs.tts_voice_id}
+              onValueChange={(v) => onSave({ tts_voice_id: v })}
+              className="space-y-3"
+            >
+              {[
+                { id: "sal", name: "Sal", desc: "Smooth, balanced" },
+                { id: "eve", name: "Eve", desc: "Energetic, upbeat" },
+                { id: "ara", name: "Ara", desc: "Warm, friendly" },
+                { id: "rex", name: "Rex", desc: "Confident, clear" },
+                { id: "leo", name: "Leo", desc: "Authoritative, strong" },
+              ].map((voice) => (
+                <div key={voice.id} className="flex items-start gap-3">
+                  <RadioGroupItem value={voice.id} id={`voice-${voice.id}`} className="mt-0.5" />
+                  <div className="space-y-0.5">
+                    <Label htmlFor={`voice-${voice.id}`} className="text-sm font-medium cursor-pointer">
+                      {voice.name}
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {voice.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
+          </section>
+
+          <Separator />
+
           {/* ── Card Display Mode ─────────────── */}
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">

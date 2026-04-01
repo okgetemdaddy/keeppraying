@@ -253,7 +253,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         text: prayerText,
-        voice_id: "sal",
+        voice_id: (voiceId && typeof voiceId === "string" && ["sal","eve","ara","rex","leo"].includes(voiceId)) ? voiceId : "sal",
         language: "en",
       }),
     });

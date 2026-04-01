@@ -219,7 +219,7 @@ export function useTtsPlayer(options: UseTtsPlayerOptions = {}) {
     } finally {
       setTtsLoading(false);
     }
-  }, [ttsPlaying, ttsLoading, playbackRate, options.audioUrl, options.cacheId, toast]);
+  }, [ttsPlaying, ttsLoading, playbackRate, options.audioUrl, options.cacheId, options.voiceId, toast]);
 
   return {
     ttsLoading,
