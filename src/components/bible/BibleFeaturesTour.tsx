@@ -81,6 +81,7 @@ interface BibleFeaturesTourProps {
 
 export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProps) {
   const [showSuggestion, setShowSuggestion] = useState(false);
+  const kr = isKeepReading();
 
   return (
     <>
