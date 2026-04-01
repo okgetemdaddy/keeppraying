@@ -252,6 +252,8 @@ export default function Prayer() {
     setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
     setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
     if (prayed) {
+      const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", id!).eq("user_id", user.id).maybeSingle();
+      if (snap) await trashItem(user.id, "prayed_action", snap.id, snap as any);
       await supabase.from("prayed_actions").delete().eq("prayer_id", id!).eq("user_id", user.id);
       setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
     } else {
