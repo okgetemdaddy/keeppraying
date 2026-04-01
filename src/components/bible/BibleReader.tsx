@@ -383,7 +383,7 @@ export function BibleReader() {
   const isMobile = useIsMobile();
   const { size: textSize, setTextSize, MIN_SIZE, MAX_SIZE } = useBibleTextSize();
   const { prefs: boardPrefs, savePrefs: saveBoardPrefs } = useBoardPreferences();
-  const { isSupported: immersiveSupported, isStandalone: immersiveStandalone, isActive: immersiveActive, toggleImmersive } = useImmersiveMode(boardPrefs, saveBoardPrefs);
+  const { isSupported: immersiveSupported, isStandalone: immersiveStandalone, isIOSLimited: immersiveIOSLimited, isActive: immersiveActive, toggleImmersive } = useImmersiveMode(boardPrefs, saveBoardPrefs);
   const [versionId, setVersionId] = useState<number | undefined>(undefined);
   const [bookUsfm, setBookUsfm] = useState<string | undefined>(undefined);
   const [chapterIdx, setChapterIdx] = useState<number>(0);
