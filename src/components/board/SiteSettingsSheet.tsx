@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { ResponsiveSheet as Sheet, ResponsiveSheetContent as SheetContent, ResponsiveSheetHeader as SheetHeader, ResponsiveSheetTitle as SheetTitle, ResponsiveSheetDescription as SheetDescription } from "@/components/ui/responsive-sheet";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon } from "lucide-react";
+import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon, Trash2 as Trash2Icon } from "lucide-react";
 import type { BoardPrefs } from "@/hooks/useBoardPreferences";
+import { TrashBinSheet } from "@/components/TrashBinSheet";
 
 interface SiteSettingsSheetProps {
   open: boolean;
