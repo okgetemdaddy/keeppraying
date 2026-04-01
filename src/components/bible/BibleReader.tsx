@@ -71,6 +71,9 @@ import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
 import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
 import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
 import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
+import { useBoardPreferences } from "@/hooks/useBoardPreferences";
+import { useImmersiveMode } from "@/hooks/useImmersiveMode";
+import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -379,6 +382,8 @@ export function BibleReader() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const { size: textSize, setTextSize, MIN_SIZE, MAX_SIZE } = useBibleTextSize();
+  const { prefs: boardPrefs, savePrefs: saveBoardPrefs } = useBoardPreferences();
+  const { isSupported: immersiveSupported, isStandalone: immersiveStandalone, isActive: immersiveActive, toggleImmersive } = useImmersiveMode(boardPrefs, saveBoardPrefs);
   const [versionId, setVersionId] = useState<number | undefined>(undefined);
   const [bookUsfm, setBookUsfm] = useState<string | undefined>(undefined);
   const [chapterIdx, setChapterIdx] = useState<number>(0);
@@ -1539,7 +1544,13 @@ export function BibleReader() {
           setSleeveOpen(false);
           pendingScrollVerseRef.current = vn;
         }}
+        immersiveSupported={immersiveSupported}
+        immersiveStandalone={immersiveStandalone}
+        immersiveActive={immersiveActive}
+        onToggleImmersive={toggleImmersive}
       />
+
+      {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer

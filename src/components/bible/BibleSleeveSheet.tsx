@@ -17,6 +17,7 @@ import {
   Smartphone,
   Star,
   Trash2,
+  Maximize,
 } from "lucide-react";
 import { TrashBinSheet } from "@/components/TrashBinSheet";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,12 @@ interface BibleSleeveSheetProps {
 
   /* verse navigation */
   onNavigateToVerse?: (verseNumber: number) => void;
+
+  /* immersive mode */
+  immersiveSupported?: boolean;
+  immersiveStandalone?: boolean;
+  immersiveActive?: boolean;
+  onToggleImmersive?: (v: boolean) => void;
 }
 
 export function BibleSleeveSheet({
@@ -116,6 +123,10 @@ export function BibleSleeveSheet({
   onSetActiveBunch,
   onDeleteBunch,
   onNavigateToVerse,
+  immersiveSupported,
+  immersiveStandalone,
+  immersiveActive,
+  onToggleImmersive,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -284,6 +295,39 @@ export function BibleSleeveSheet({
                 </div>
               </div>
             </section>
+
+            {/* ── Immersive Mode ── */}
+            {immersiveSupported && onToggleImmersive && (
+              <>
+                <div className="h-px bg-border" />
+                <section className="space-y-3">
+                  <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    <Maximize className="h-3.5 w-3.5" /> Immersive Mode
+                  </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-foreground font-medium">Hide Browser Bars</span>
+                      <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                        {immersiveStandalone
+                          ? "You're running in app mode — browser bars are already hidden"
+                          : "Remove the address bar and toolbars for distraction-free reading. Swipe from top or bottom edge to exit."}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={!!immersiveActive}
+                      onCheckedChange={onToggleImmersive}
+                      disabled={immersiveStandalone}
+                      className="shrink-0 mt-0.5"
+                    />
+                  </div>
+                  {!immersiveStandalone && !immersiveActive && (
+                    <p className="text-[0.6rem] text-muted-foreground/60 italic">
+                      Tip: Add to your Home Screen for a permanent app-like experience
+                    </p>
+                  )}
+                </section>
+              </>
+            )}
 
             <div className="h-px bg-border" />
 

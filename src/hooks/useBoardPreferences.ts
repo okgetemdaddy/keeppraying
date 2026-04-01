@@ -22,6 +22,7 @@ export interface BoardPrefs {
   default_card_layout: string;
   tts_voice_id: string;
   show_add_prayer_fab: boolean;
+  immersive_mode: boolean;
 }
 
 const DEFAULTS: BoardPrefs = {
@@ -43,6 +44,7 @@ const DEFAULTS: BoardPrefs = {
   default_card_layout: "standard",
   tts_voice_id: "sal",
   show_add_prayer_fab: true,
+  immersive_mode: false,
 };
 
 export function useBoardPreferences() {
@@ -81,6 +83,7 @@ export function useBoardPreferences() {
             default_card_layout: (data as any).default_card_layout ?? DEFAULTS.default_card_layout,
             tts_voice_id: (data as any).tts_voice_id ?? DEFAULTS.tts_voice_id,
             show_add_prayer_fab: (data as any).show_add_prayer_fab ?? DEFAULTS.show_add_prayer_fab,
+            immersive_mode: (data as any).immersive_mode ?? DEFAULTS.immersive_mode,
           };
           setPrefs(fresh);
           setLocalCache(cacheKeys.boardPrefs(user!.id), fresh);

@@ -5,10 +5,12 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon, Trash2 as Trash2Icon } from "lucide-react";
+import { Volume2, Mic, Eye, Sparkles, Type, AudioLines, Sun, Moon, Trash2 as Trash2Icon, Maximize } from "lucide-react";
 import type { BoardPrefs } from "@/hooks/useBoardPreferences";
 import { TrashBinSheet } from "@/components/TrashBinSheet";
-
+import { useImmersiveMode } from "@/hooks/useImmersiveMode";
+import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
+import { useIsMobile } from "@/hooks/use-mobile";
 interface SiteSettingsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -31,8 +33,11 @@ export function SiteSettingsSheet({
   bibleTextMax = 28,
 }: SiteSettingsSheetProps) {
   const [trashOpen, setTrashOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const { isSupported, isStandalone, isActive, toggleImmersive } = useImmersiveMode(prefs, onSave);
   return (
     <>
+    {isActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[340px] sm:w-[380px] flex flex-col">
         <SheetHeader className="pb-4">
@@ -249,9 +254,43 @@ export function SiteSettingsSheet({
             </div>
           </section>
 
+          {/* ── Immersive Mode ─────────────── */}
+          {isMobile && isSupported && (
+            <>
+              <Separator />
+              <section className="space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Maximize className="w-3.5 h-3.5" />
+                  Immersive Mode
+                </h3>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm font-medium">Hide Browser Bars</Label>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {isStandalone
+                        ? "You're running in app mode — browser bars are already hidden"
+                        : "Remove the address bar and toolbars for a distraction-free experience. Swipe from the top or bottom edge to reveal the exit button."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={toggleImmersive}
+                    disabled={isStandalone}
+                  />
+                </div>
+                {!isStandalone && !isActive && (
+                  <p className="text-[10px] text-muted-foreground/60 italic">
+                    Tip: Add KeepPray.ing to your Home Screen for a permanent app-like experience
+                  </p>
+                )}
+              </section>
+            </>
+          )}
+
           <Separator />
 
-          {/* ── Trash Bin ──────────────────── */}
+
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <Trash2Icon className="w-3.5 h-3.5" />
