@@ -1180,6 +1180,18 @@ function ActionButtons({
         </button>
       )}
 
+      {/* CC toggle for TTS */}
+      {onToggleCaptionsTts && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleCaptionsTts(); }}
+          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
+          style={{ color: captionModeTts ? accentColor : `${textColor}55` }}
+          aria-label="Toggle captions"
+        >
+          <Captions className="w-3.5 h-3.5" />
+        </button>
+      )}
+
       {!isSharedRecipient && (
         <button
           onClick={onShare}
