@@ -361,20 +361,23 @@ export function BoardBibleAnnotations({ textColor }: { textColor: string }) {
           >
             <ScrollArea className="w-full">
               <div className="flex gap-2 pb-2">
-                {bookmarks.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => goToVerse(b.version_id, b.book_usfm, b.chapter_number, b.verse_number)}
-                    className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:scale-105"
-                    style={{ background: "rgba(255,255,255,0.1)" }}
-                  >
-                    <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-xs font-medium whitespace-nowrap" style={{ color: textColor }}>
-                      {bookAbbr(b.book_usfm)} {b.chapter_number}:{b.verse_number}
-                    </span>
-                    <ChevronRight className="h-3 w-3 opacity-40" style={{ color: textColor }} />
-                  </button>
-                ))}
+                {bookmarks.map((b) => {
+                  const colorDef = getBookmarkColorDef(b.color);
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => goToVerse(b.version_id, b.book_usfm, b.chapter_number, b.verse_number)}
+                      className="shrink-0 flex items-center gap-2 rounded-xl px-3 py-2.5 transition-all hover:scale-105"
+                      style={{ background: "rgba(255,255,255,0.1)" }}
+                    >
+                      <span className={`h-3 w-3 rounded-full ${colorDef.dot} shrink-0`} />
+                      <span className="text-xs font-medium whitespace-nowrap" style={{ color: textColor }}>
+                        {bookAbbr(b.book_usfm)} {b.chapter_number}:{b.verse_number}
+                      </span>
+                      <ChevronRight className="h-3 w-3 opacity-40" style={{ color: textColor }} />
+                    </button>
+                  );
+                })}
               </div>
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
