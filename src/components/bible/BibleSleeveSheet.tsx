@@ -24,6 +24,7 @@ import {
   ResponsiveSheetTitle as SheetTitle,
 } from "@/components/ui/responsive-sheet";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
+import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import type { UserHighlight, UserNote, UserBookmark } from "@/hooks/useBibleChapterData";
 import type { BunchWithCount } from "@/components/bible/VerseBunchStrip";
 
@@ -243,18 +244,21 @@ export function BibleSleeveSheet({
                 <p className="text-xs text-muted-foreground italic">No bookmarks in this chapter yet.</p>
               ) : (
                 <div className="space-y-1">
-                  {bookmarks.map((b) => (
-                    <button
-                      key={b.id}
-                      onClick={() => onNavigateToVerse?.(b.verse_number)}
-                      className="flex items-center gap-2 w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
-                    >
-                      <Bookmark className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span className="text-sm text-foreground">
-                        {currentBook} {currentChapter}:{b.verse_number}
-                      </span>
-                    </button>
-                  ))}
+                  {bookmarks.map((b) => {
+                    const colorDef = getBookmarkColorDef(b.color);
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={() => onNavigateToVerse?.(b.verse_number)}
+                        className="flex items-center gap-2 w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className={`h-3 w-3 rounded-full ${colorDef.dot} shrink-0`} />
+                        <span className="text-sm text-foreground">
+                          {currentBook} {currentChapter}:{b.verse_number}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </section>

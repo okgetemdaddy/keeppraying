@@ -25,6 +25,7 @@ export interface UserNote {
 export interface UserBookmark {
   id: string;
   verse_number: number;
+  color: string;
   created_at: string;
 }
 
@@ -151,7 +152,7 @@ export function useBibleChapterData(
         if (!user) return [];
         let q = supabase
           .from("user_bookmarks")
-          .select("id, verse_number, created_at")
+          .select("id, verse_number, color, created_at")
           .eq("user_id", user.id)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);

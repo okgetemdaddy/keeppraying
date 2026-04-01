@@ -151,7 +151,7 @@ export function PrayerCalendar({ textColor: _themeText, accentColor: _accentColo
           .eq("user_id", user.id)
           .gte("created_at", rangeStart).lte("created_at", rangeEnd),
         // Bible bookmarks
-        supabase.from("user_bookmarks").select("id, book_usfm, chapter_number, verse_number, created_at")
+        supabase.from("user_bookmarks").select("id, book_usfm, chapter_number, verse_number, color, created_at")
           .eq("user_id", user.id)
           .gte("created_at", rangeStart).lte("created_at", rangeEnd),
       ]);

@@ -1,0 +1,1 @@
+ALTER TABLE public.user_bookmarks ADD COLUMN color text NOT NULL DEFAULT 'gold';

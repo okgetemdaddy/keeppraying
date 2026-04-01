@@ -69,6 +69,7 @@ import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColo
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
 import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
 import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
+import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 
 type ReadingMode = "verse" | "paragraph";
 
@@ -205,10 +206,11 @@ function NoteMarginalia({ notes }: { notes: UserNote[] }) {
 }
 
 /* ── Bookmark ribbon ── */
-function BookmarkRibbon({ isBookmarked }: { isBookmarked: boolean }) {
-  if (!isBookmarked) return null;
+function BookmarkRibbon({ bookmark }: { bookmark?: UserBookmark }) {
+  if (!bookmark) return null;
+  const colorDef = getBookmarkColorDef(bookmark.color);
   return (
-    <span className="inline-flex items-center mr-0.5 text-primary" title="Bookmarked">
+    <span className={`inline-flex items-center mr-0.5 ${colorDef.icon}`} title="Bookmarked">
       <BookmarkCheck className="h-3.5 w-3.5" />
     </span>
   );
@@ -238,7 +240,7 @@ interface EnrichedVerseProps {
   verse: NormalisedVerse;
   highlights: UserHighlight[];
   notes: UserNote[];
-  isBookmarked: boolean;
+  bookmark?: UserBookmark;
   bunchItems: VerseBunchItemWithName[];
   bunchColorMap: Map<string, number>;
   bunchGroupPosition: "first" | "middle" | "last" | "single" | null;
@@ -252,7 +254,7 @@ function EnrichedVerse({
   verse,
   highlights,
   notes,
-  isBookmarked,
+  bookmark,
   bunchItems,
   bunchColorMap,
   bunchGroupPosition,
@@ -298,7 +300,7 @@ function EnrichedVerse({
         onClick={(e) => onTapSelect(verse.number, e)}
       >
         <sup className="mx-0.5 text-[0.65rem] font-semibold text-primary/60 select-none align-super">
-          <BookmarkRibbon isBookmarked={isBookmarked} />
+          <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
         <HighlightedText text={verse.text} highlights={highlights} />
@@ -316,7 +318,7 @@ function EnrichedVerse({
       onClick={(e) => onTapSelect(verse.number, e)}
     >
       <p>
-        <BookmarkRibbon isBookmarked={isBookmarked} />
+        <BookmarkRibbon bookmark={bookmark} />
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
@@ -839,8 +841,8 @@ export function BibleReader() {
   );
 
   const handleToggleBookmark = useCallback(
-    (verseNumber: number, existingId?: string) => {
-      mutations.toggleBookmark.mutate({ verseNumber, existingId });
+    (verseNumber: number, color: string, existingId?: string) => {
+      mutations.toggleBookmark.mutate({ verseNumber, color, existingId });
     },
     [mutations.toggleBookmark],
   );
@@ -1005,6 +1007,13 @@ export function BibleReader() {
   const primaryHighlights = primaryVerse ? highlightMap.get(primaryVerse) ?? [] : [];
   const existingHighlightColor = primaryHighlights.length === 1 ? primaryHighlights[0].color : undefined;
   const existingHighlightId = primaryHighlights.length === 1 ? primaryHighlights[0].id : undefined;
+
+  // Compute used bookmark colors for the "+" auto-assign
+  const usedBookmarkColors = useMemo(() => {
+    const set = new Set<string>();
+    for (const b of chapterData?.bookmarks ?? []) set.add(b.color);
+    return set;
+  }, [chapterData?.bookmarks]);
 
   const handleRemoveHighlight = useCallback(
     (highlightId: string) => {
@@ -1230,7 +1239,7 @@ export function BibleReader() {
                         verse={v}
                         highlights={highlightMap.get(v.number) ?? []}
                         notes={vNotes}
-                        isBookmarked={bookmarkMap.has(v.number)}
+                        bookmark={bookmarkMap.get(v.number)}
                         bunchItems={bunchMap.get(v.number) ?? []}
                         bunchColorMap={bunchColorMap}
                         bunchGroupPosition={bunchPositions.get(v.number) ?? null}
@@ -1303,6 +1312,8 @@ export function BibleReader() {
             partialSelectionRange={partialSelection ? { start: partialSelection.start, end: partialSelection.end } : undefined}
             isBookmarked={!!primaryBookmark}
             bookmarkId={primaryBookmark?.id}
+            existingBookmarkColor={primaryBookmark?.color}
+            usedBookmarkColors={usedBookmarkColors}
             existingHighlightColor={existingHighlightColor}
             existingHighlightId={existingHighlightId}
             onHighlight={handleHighlight}

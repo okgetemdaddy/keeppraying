@@ -2175,6 +2175,7 @@ export type Database = {
         Row: {
           book_usfm: string
           chapter_number: number
+          color: string
           created_at: string
           id: string
           user_id: string
@@ -2184,6 +2185,7 @@ export type Database = {
         Insert: {
           book_usfm: string
           chapter_number: number
+          color?: string
           created_at?: string
           id?: string
           user_id: string
@@ -2193,6 +2195,7 @@ export type Database = {
         Update: {
           book_usfm?: string
           chapter_number?: number
+          color?: string
           created_at?: string
           id?: string
           user_id?: string
