@@ -918,7 +918,7 @@ export default function Prayers() {
         onWrite={() => setAddOpen(true)}
       />
       {voiceOpen && (
-        <VoiceRecorder onClose={() => setVoiceOpen(false)} onSaved={fetchPrayers} />
+        <VoiceRecorder onClose={() => setVoiceOpen(false)} onPrayerCreated={() => fetchPrayers()} />
       )}
     </div>
   );
