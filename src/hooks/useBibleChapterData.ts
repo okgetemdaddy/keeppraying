@@ -68,6 +68,7 @@ export function useBibleChapterData(
   chapterNumber: string | undefined, // e.g. "1"
   verseIds: string[] | undefined,    // e.g. ["GEN.1.1", "GEN.1.2", ...]
   crossTranslation: boolean = false, // when true, annotations show across all versions
+  crossBunchTranslation: boolean = false, // when true, bunch markers show across all versions
 ) {
   const { user } = useAuth();
 
