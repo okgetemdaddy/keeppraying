@@ -71,6 +71,9 @@ import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
 import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
 import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
 import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
+import { useBoardPreferences } from "@/hooks/useBoardPreferences";
+import { useImmersiveMode } from "@/hooks/useImmersiveMode";
+import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 
 type ReadingMode = "verse" | "paragraph";
 
