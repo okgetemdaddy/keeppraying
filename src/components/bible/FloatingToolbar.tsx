@@ -73,6 +73,8 @@ function ToolbarActions({
   bookmarkId,
   existingHighlightColor,
   existingHighlightId,
+  existingBookmarkColor,
+  usedBookmarkColors,
   onHighlight,
   onRemoveHighlight,
   onToggleBookmark,
@@ -90,7 +92,7 @@ function ToolbarActions({
 
   return (
     <div className={isVertical ? "space-y-4" : "flex items-center"}>
-      {/* ── Colour swatches ── */}
+      {/* ── Highlight colour swatches ── */}
       <div className={isVertical ? "space-y-3" : "flex items-center gap-1"}>
         {isVertical && (
           <p className="text-xs font-medium text-muted-foreground mb-2">Highlight Color</p>
@@ -135,29 +137,66 @@ function ToolbarActions({
 
       {isVertical ? <div className="h-px bg-border" /> : <div className="mx-1 h-6 w-px bg-border" />}
 
+      {/* ── Bookmark colour swatches ── */}
+      {primaryVerse && (
+        <div className={isVertical ? "space-y-3" : "flex items-center gap-1"}>
+          {isVertical && (
+            <p className="text-xs font-medium text-muted-foreground mb-2">Bookmark Color</p>
+          )}
+          <div className={`flex items-center ${isVertical ? "gap-3" : "gap-1"}`}>
+            {DEFAULT_BOOKMARK_COLORS.map((bmc) => {
+              const isActive = isBookmarked && existingBookmarkColor === bmc.key;
+              return (
+                <button
+                  key={bmc.key}
+                  className={`relative ${isVertical ? "h-9 w-9" : "h-6 w-6"} rounded-full ${bmc.dot} hover:ring-2 ${bmc.ring} ring-offset-1 ring-offset-card transition-all ${isActive ? "ring-2 " + bmc.ring : ""}`}
+                  title={isActive ? `Remove ${bmc.label} bookmark` : `Bookmark ${bmc.label}`}
+                  onClick={() => {
+                    if (isActive && bookmarkId) {
+                      onToggleBookmark(primaryVerse, bmc.key, bookmarkId);
+                    } else if (isBookmarked && bookmarkId) {
+                      // Already bookmarked in different color — remove old, add new
+                      onToggleBookmark(primaryVerse, bmc.key, bookmarkId);
+                    } else {
+                      onToggleBookmark(primaryVerse, bmc.key);
+                    }
+                    onDismiss();
+                  }}
+                >
+                  <Bookmark className={`absolute inset-0 m-auto ${isVertical ? "h-4 w-4" : "h-3 w-3"} text-white drop-shadow-sm`} />
+                  {isActive && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <X className={`${isVertical ? "h-4 w-4" : "h-3.5 w-3.5"} text-white drop-shadow-sm`} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            {/* ── "+" expansion button ── */}
+            <button
+              className={`flex ${isVertical ? "h-9 w-9" : "h-6 w-6"} items-center justify-center rounded-full border border-dashed border-muted-foreground/40 hover:bg-muted transition-colors text-muted-foreground`}
+              title="Bookmark with next color"
+              onClick={() => {
+                const nextColor = getNextExpansionColor(usedBookmarkColors ?? new Set());
+                if (isBookmarked && bookmarkId) {
+                  // Replace with expansion color
+                  onToggleBookmark(primaryVerse, nextColor.key, bookmarkId);
+                } else {
+                  onToggleBookmark(primaryVerse, nextColor.key);
+                }
+                onDismiss();
+              }}
+            >
+              <Plus className={`${isVertical ? "h-4 w-4" : "h-3 w-3"}`} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isVertical ? <div className="h-px bg-border" /> : <div className="mx-1 h-6 w-px bg-border" />}
+
       {/* ── Action buttons ── */}
       <div className={`flex items-center ${isVertical ? "gap-3" : "gap-1"}`}>
-        {/* ── Bookmark toggle ── */}
-        {primaryVerse && (
-          <button
-            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 w-8"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
-            title={isBookmarked ? "Remove bookmark" : "Bookmark verse"}
-            onClick={() => {
-              onToggleBookmark(primaryVerse, bookmarkId);
-              onDismiss();
-            }}
-          >
-            {isBookmarked ? (
-              <BookmarkCheck className="h-4 w-4 text-primary" />
-            ) : (
-              <Bookmark className="h-4 w-4" />
-            )}
-            {isVertical && (
-              <span className="text-sm">{isBookmarked ? "Remove Bookmark" : "Bookmark"}</span>
-            )}
-          </button>
-        )}
-
         {/* ── Add Note ── */}
         {primaryVerse && (
           <button
