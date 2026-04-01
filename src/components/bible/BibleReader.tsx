@@ -609,6 +609,35 @@ export function BibleReader() {
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
 
+  // ── Chapter annotations (handwriting) ──
+  const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
+  const { saveAnnotation: saveAnnotationMut } = useAnnotationMutations();
+
+  // Build a map: verseNumber → annotation
+  const annotationMap = useMemo(() => {
+    const map = new Map<number, { id: string; strokes: StrokeData[] }>();
+    if (!chapterAnnotations || !bookUsfm || !currentChapter) return map;
+    const prefix = `${bookUsfm}.${currentChapter.id}.`;
+    for (const ann of chapterAnnotations) {
+      for (const vid of ann.verse_ids) {
+        if (vid.startsWith(prefix)) {
+          const vn = parseInt(vid.slice(prefix.length), 10);
+          if (!isNaN(vn)) {
+            map.set(vn, { id: ann.id, strokes: ann.strokes as StrokeData[] });
+          }
+        }
+      }
+    }
+    return map;
+  }, [chapterAnnotations, bookUsfm, currentChapter]);
+
+  const handleAnnotationSave = useCallback(
+    (verseId: string, strokes: StrokeData[], existingId?: string) => {
+      saveAnnotationMut.mutate({ verseIds: [verseId], strokes, existingId });
+    },
+    [saveAnnotationMut],
+  );
+
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
 
