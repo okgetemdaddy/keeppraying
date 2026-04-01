@@ -89,7 +89,7 @@ export function BibleFeaturesTour({ open, onAcknowledge }: BibleFeaturesTourProp
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto pb-8 px-5">
           <SheetHeader className="text-left">
             <SheetTitle className="text-lg font-bold tracking-tight">
-              {kr ? "Welcome to KeepRead.ing ✨" : "Welcome to God's Word ✨"}
+              Welcome to KeepRead.ing ✨
             </SheetTitle>
             <SheetDescription className="text-sm text-muted-foreground leading-relaxed">
               {kr
