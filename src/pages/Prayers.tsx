@@ -193,6 +193,8 @@ function PrayerCardItem({ card, userId }: { card: PrayerCard; userId: string | n
     e.stopPropagation();
     if (!userId) { toast({ title: "Sign in to save prayers" }); return; }
     if (saved) {
+      const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "saved_prayer", snap.id, snap as any);
       await supabase.from("user_saved_prayers").delete().eq("prayer_id", card.id).eq("user_id", userId);
       setSaved(false);
     } else {
