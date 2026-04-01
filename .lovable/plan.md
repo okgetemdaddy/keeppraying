@@ -1,38 +1,54 @@
 
 
-# Fix: Immersive Mode Not Showing on iOS Mobile
+# "Ease the Eyes" Dimmer + Collapsible Bible Sleeve Sections
 
-## Problem
+## Feature 1: "Ease the Eyes" Slider
 
-The Immersive Mode toggle does not appear on iOS devices because `document.fullscreenEnabled` and `document.webkitFullscreenEnabled` both return `false` on iOS Safari. Apple only supports the Fullscreen API for `<video>` elements, not the document. Since `useImmersiveMode` relies on these APIs, `isSupported` evaluates to `false`, and both the Bible Sleeve and Site Settings hide the section.
+A dimming slider that sits between Premium Dark Mode and True Black OLED in the Appearance section. When active (only available when Premium Dark is on), it reduces the opacity/brightness of all non-background elements (text, icons, borders, cards) — making late-night reading gentler.
 
-## Solution
+### Implementation
 
-Since true fullscreen is impossible on iOS Safari, the toggle should not promise "hide browser bars" on iOS. Instead, we have two options:
+**`src/index.css`** — Add a CSS custom property `--ease-eyes-dim` and apply it:
+```css
+.bible-dark {
+  --ease-eyes-dim: 1;
+}
+.bible-dark .bible-ease-eyes-target {
+  opacity: var(--ease-eyes-dim);
+}
+```
+The dimming will be applied via a CSS filter on the reader content area: `filter: brightness(var(--ease-eyes-dim))` — this dims everything (text, highlights, icons) without touching the background.
 
-1. **Show a "Add to Home Screen" tip on iOS** — replace the toggle with a helpful prompt explaining that iOS users can get an immersive experience by adding the site to their Home Screen (which launches in standalone mode with no browser UI).
+**`src/components/bible/BibleReader.tsx`**:
+- Add `easeEyesDim` state (0.4–1.0, default 1.0) persisted to localStorage key `bible_ease_eyes`
+- Apply `style={{ filter: brightness(${easeEyesDim}) }}` to the reader content wrapper (not the background)
+- Pass value + setter to BibleSleeveSheet
 
-2. **Use scroll-based hiding** — on iOS Safari, scrolling down naturally hides the address bar. We could add a "scroll to hide" behavior trigger, but this is browser-native and doesn't need a toggle.
+**`src/components/bible/BibleSleeveSheet.tsx`**:
+- Add new props: `easeEyesDim: number`, `onEaseEyesDimChange: (v: number) => void`
+- Insert a slider between Premium Dark and True Black OLED rows, disabled when dark mode is off
+- Label: "Ease the Eyes" with icon (Eclipse/EyeOff), description: "Dim text and UI elements for comfortable night reading"
+- Slider range: 0.4 to 1.0, step 0.05
 
-## Recommended Approach — Option 1
+## Feature 2: Collapsible Sections in Bible Sleeve
 
-### `src/hooks/useImmersiveMode.ts`
-- Add an `isIOS` detection flag (check `navigator.userAgent` for iPhone/iPad)
-- Change `isSupported` to return `true` on iOS even though fullscreen isn't available, but add a new `isIOSLimited` flag
-- This allows the UI to show the section with an appropriate message
+Wrap each section (Text Size, Reading Mode, Toggles, Appearance, Highlights, Bookmarks, Notes, Verse Bunches) in a `Collapsible` component so users can collapse/expand them. Persist collapsed state in localStorage.
 
-### `src/components/bible/BibleSleeveSheet.tsx`
-- When `isIOSLimited` is true, show an informational block instead of the toggle:
-  - "On iPhone, add KeepRead.ing to your Home Screen for a full-screen, app-like experience with no browser bars."
-  - Include the existing "Add to Home Screen" tip text, styled prominently
+### Implementation
 
-### `src/components/board/SiteSettingsSheet.tsx`
-- Same treatment — show the Home Screen tip on iOS instead of the disabled toggle
+**`src/components/bible/BibleSleeveSheet.tsx`**:
+- Import `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` from `@/components/ui/collapsible`
+- Import `ChevronDown` icon
+- Add state: `collapsedSections` as a `Set<string>`, initialized from localStorage key `bible_sleeve_collapsed`
+- Toggle function that updates state + persists to localStorage
+- Wrap each `<section>` in `<Collapsible>`:
+  - The `<h3>` header becomes the `<CollapsibleTrigger>` with a rotating chevron
+  - Section content goes inside `<CollapsibleContent>`
+- Sections to make collapsible: Text Size, Reading Mode, Toggles, Appearance, Immersive Mode, Highlights, Bookmarks, Notes, Verse Bunches
+- Keep Trash Bin always visible (not collapsible)
 
-## Technical Details
-
-- Detection: `const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream`
-- No new dependencies needed
-- The toggle remains functional on Android (which supports the Fullscreen API)
-- Standalone mode detection stays the same — if already in standalone, show "already in app mode"
+### Files Changed
+1. `src/index.css` — brightness filter class
+2. `src/components/bible/BibleReader.tsx` — easeEyesDim state + pass to sleeve + apply filter
+3. `src/components/bible/BibleSleeveSheet.tsx` — slider UI + collapsible sections
 
