@@ -31,7 +31,6 @@ export function VoiceWaveformPlayer({
   onPlay,
   accentColor = "hsl(42 75% 40%)",
   captionsEnabled,
-  onToggleCaptions,
 }: VoiceWaveformPlayerProps) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
