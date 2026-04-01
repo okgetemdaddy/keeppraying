@@ -19,7 +19,7 @@ import {
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
   SunDim, ImagePlus, ImageOff, Send, BookmarkX, AlertTriangle,
-  ExternalLink, Volume2, Captions,
+  ExternalLink, Volume2,
 } from "lucide-react";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
@@ -115,8 +115,6 @@ interface BoardCardProps {
   onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
   captionModeTts?: boolean;
   captionModeRecorded?: boolean;
-  onToggleCaptionTts?: () => void;
-  onToggleCaptionRecorded?: () => void;
   defaultCardLayout?: string;
   ttsVoiceId?: string;
 }
@@ -134,8 +132,6 @@ export function BoardCard({
   onOpenViewer,
   captionModeTts = true,
   captionModeRecorded = true,
-  onToggleCaptionTts,
-  onToggleCaptionRecorded,
   defaultCardLayout = "standard",
   ttsVoiceId,
 }: BoardCardProps) {
@@ -508,8 +504,7 @@ export function BoardCard({
                   audioUrl={(card as any).voice_audio_url}
                   large={defaultCardLayout === "voice-visual"}
                   accentColor={accentColor}
-                  captionsEnabled={captionModeRecorded}
-                  onToggleCaptions={onToggleCaptionRecorded}
+                   captionsEnabled={captionModeRecorded}
                   onPlay={captionModeRecorded ? () => {
                     const text = card.extended_prayer
                       ? `${card.prayer_text}\n\n${card.extended_prayer}`
@@ -622,8 +617,8 @@ export function BoardCard({
                 onListen={handleListen}
                 ttsLoading={ttsLoading}
                 ttsPlaying={ttsPlaying}
-                captionModeTts={captionModeTts}
-                onToggleCaptionsTts={onToggleCaptionTts}
+
+
               />
             </div>
           )}
@@ -892,8 +887,8 @@ export function BoardCard({
                 onListen={handleListen}
                 ttsLoading={ttsLoading}
                 ttsPlaying={ttsPlaying}
-                captionModeTts={captionModeTts}
-                onToggleCaptionsTts={onToggleCaptionTts}
+
+
               />
             </div>
           </div>
@@ -1094,8 +1089,8 @@ interface ActionButtonsProps {
   onListen?: () => void;
   ttsLoading?: boolean;
   ttsPlaying?: boolean;
-  captionModeTts?: boolean;
-  onToggleCaptionsTts?: () => void;
+
+
 }
 
 function ActionButtons({
@@ -1106,7 +1101,7 @@ function ActionButtons({
   cardBgPreset, onCardBgPresetChange,
   userId, onRefresh, onSharePrivately, isSharedRecipient,
   onListen, ttsLoading: listenLoading, ttsPlaying: listenPlaying,
-  captionModeTts, onToggleCaptionsTts,
+  
 }: ActionButtonsProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1192,17 +1187,8 @@ function ActionButtons({
         </button>
       )}
 
-      {/* CC toggle for TTS */}
-      {onToggleCaptionsTts && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleCaptionsTts(); }}
-          className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-          style={{ color: captionModeTts ? accentColor : `${textColor}55` }}
-          aria-label="Toggle captions"
-        >
-          <Captions className="w-3.5 h-3.5" />
-        </button>
-      )}
+
+
 
       {!isSharedRecipient && (
         <button

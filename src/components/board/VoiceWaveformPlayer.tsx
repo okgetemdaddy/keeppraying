@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Captions } from "lucide-react";
+import { Play, Pause } from "lucide-react";
 
 interface VoiceWaveformPlayerProps {
   audioUrl: string;
@@ -8,7 +8,6 @@ interface VoiceWaveformPlayerProps {
   onPlay?: () => boolean | void;
   accentColor?: string;
   captionsEnabled?: boolean;
-  onToggleCaptions?: () => void;
 }
 
 const BAR_COUNT = 40;
@@ -32,7 +31,6 @@ export function VoiceWaveformPlayer({
   onPlay,
   accentColor = "hsl(42 75% 40%)",
   captionsEnabled,
-  onToggleCaptions,
 }: VoiceWaveformPlayerProps) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -137,23 +135,8 @@ export function VoiceWaveformPlayer({
         {playing ? <Pause className={large ? "w-5 h-5" : "w-4 h-4"} /> : <Play className={`${large ? "w-5 h-5" : "w-4 h-4"} ml-0.5`} />}
       </motion.button>
 
-      {/* CC toggle */}
-      {onToggleCaptions && (
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={(e) => { e.stopPropagation(); onToggleCaptions(); }}
-          className="shrink-0 rounded-full flex items-center justify-center transition-colors"
-          style={{
-            width: large ? 36 : 28,
-            height: large ? 36 : 28,
-            background: captionsEnabled ? `${accentColor}25` : "transparent",
-            color: captionsEnabled ? accentColor : GREY,
-          }}
-          aria-label="Toggle captions"
-        >
-          <Captions className={large ? "w-4 h-4" : "w-3.5 h-3.5"} />
-        </motion.button>
-      )}
+
+
 
       {/* Waveform area */}
       <div className="flex-1 min-w-0">
