@@ -50,7 +50,7 @@ export function SiteSettingsSheet({
               <div className="space-y-0.5 flex-1">
                 <Label className="text-sm font-medium">KeepPray.ing Voices</Label>
                 <p className="text-[11px] text-muted-foreground leading-snug">
-                  Show full-screen caption overlay when listening to TTS prayers
+                  Show full-screen caption overlay when listening to prayers read by KeepPray.ing
                 </p>
               </div>
               <Switch
