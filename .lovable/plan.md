@@ -1,40 +1,51 @@
 
 
-# Fix Voice Recorder Overlay + Center the Chooser
+# Standardize Prayer Card Action Bars
 
-## Problems Identified
+## Problem
+Prayer cards have two completely separate action bar implementations based on card size:
+- **Small/Medium cards** (footer, lines 788-896): Shows Prayed button → Testify → ActionButtons (Heart, Pin, Listen, Share, ⋯ menu)
+- **Large cards** (lines 898-934): Shows only Visibility toggle → Testify in the bottom bar, while ActionButtons sit in the top-right header. No Prayed button in the bottom bar at all.
 
-1. **Double overlay**: Board.tsx wraps `VoiceRecorder` inside a `<Dialog>` ("Speak Your Prayer" header), but VoiceRecorder also creates its own `fixed inset-0` overlay when recording. Result: the "Speak Your Prayer" dialog is visible behind/underneath the recording UI, causing the cut-off mess in the screenshot.
+This means different cards on the same board show different icons in different places depending on their size. The user sees inconsistency.
 
-2. **PrayerMethodChooser** uses `ResponsiveDialog` which renders as a bottom drawer on mobile instead of a centered dialog.
+## Solution
+Extract a single unified `CardFooter` component used by ALL card sizes, so every prayer card shows the exact same action bar layout regardless of size.
 
-3. When recording starts, the parent "Speak Your Prayer" dialog title/description remain visible, cluttering the screen.
+### Unified Footer Layout (left-to-right)
 
-## Fix
+```text
+[ Visibility toggle (owner only) ] ---- [ Prayed | Heart | Pin | Listen | Share | Testify | ⋯ Menu ]
+```
 
-### 1. Board.tsx — Remove the Dialog wrapper around VoiceRecorder
+- **Left side**: Private/Public toggle with switch (owner only)
+- **Right side**: All action icons in a fixed, deterministic order — always the same set, same order
+- Voice cards and breath cards get the same footer — no special-casing
+- The `⋯` dropdown menu contents remain the same (size, font, enrich, image, etc.)
 
-Instead of wrapping VoiceRecorder in a Dialog, render it conditionally with no wrapper. VoiceRecorder already renders its own full-screen centered overlay when `state !== "idle"`. When `voiceRecorderOpen` is true, auto-start recording immediately (skip the idle mic button).
+### Safeguards Against Future Divergence
+- Delete the two separate rendering blocks (lines 788-896 and 898-934)
+- Replace with a single `<CardFooterBar>` inline component rendered unconditionally after the collapsible chrome section
+- Remove the `actionsInFooter` boolean entirely — there's only one path now
+- Remove the separate `ActionButtons` rendering in the top-right header for large cards (lines 598-625)
 
-**Changes (lines 870–896):**
-- Remove the `<Dialog>` / `<DialogContent>` / `<DialogHeader>` wrapper
-- Render `{voiceRecorderOpen && <VoiceRecorder variant="inline" autoStart onPrayerCreated={...} onClose={() => setVoiceRecorderOpen(false)} />}` directly
+### Changes — `src/components/board/BoardCard.tsx`
 
-### 2. VoiceRecorder.tsx — Add `autoStart` and `onClose` props
+1. **Remove** `const actionsInFooter = size !== "large"` (line 430)
+2. **Remove** the large-card top-right ActionButtons block (lines 598-625)
+3. **Remove** both separate footer sections:
+   - Small/medium footer (lines 788-896)
+   - Large card bottom bar (lines 898-934)
+4. **Add** a single unified footer section after the collapsible chrome `</AnimatePresence>`, containing:
+   - Left: visibility toggle (owner-only, same logic)
+   - Right: Prayed button, Heart, Pin, Listen, Share, Testify (if public), then ActionButtons `⋯` menu (dropdown only — the inline heart/pin/listen/share buttons move out of ActionButtons into the footer directly)
+5. **Simplify `ActionButtons`** to only render the `⋯` dropdown menu button + its contents (remove the inline heart/pin/listen/share from it since those are now in the unified footer)
 
-- New prop `autoStart?: boolean` — when true, call `startRecording()` on mount instead of showing the idle mic button
-- New prop `onClose?: () => void` — called when the user clicks "I'm Done" so the parent can set `voiceRecorderOpen = false`
-- When `variant="inline"` and `autoStart`, skip the idle state entirely — go straight to recording
-
-### 3. PrayerMethodChooser.tsx — Use standard Dialog instead of ResponsiveDialog
-
-Replace `ResponsiveDialog` (which becomes a drawer on mobile) with a regular `Dialog` from `@/components/ui/dialog` so it renders **centered** on all screen sizes. Add `items-center justify-center` positioning.
+This guarantees every card — regardless of size, type (standard, voice, breath), or ownership — renders the exact same action bar with the same icons in the same order.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/pages/Board.tsx` | Remove Dialog wrapper around VoiceRecorder; render conditionally with `autoStart` and `onClose` props |
-| `src/components/VoiceRecorder.tsx` | Add `autoStart` and `onClose` props; auto-start recording on mount when `autoStart` is true; call `onClose` from "I'm Done" button |
-| `src/components/board/PrayerMethodChooser.tsx` | Switch from `ResponsiveDialog` to standard centered `Dialog` |
+| `src/components/board/BoardCard.tsx` | Remove dual footer paths; create single unified footer; simplify ActionButtons to dropdown-only; remove `actionsInFooter` flag |
 
