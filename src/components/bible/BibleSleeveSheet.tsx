@@ -162,6 +162,11 @@ interface BibleSleeveSheetProps {
   immersiveIOSLimited?: boolean;
   immersiveActive?: boolean;
   onToggleImmersive?: (v: boolean) => void;
+
+  /* study mode */
+  studyMode?: boolean;
+  pencilDetected?: boolean;
+  onToggleStudyMode?: (v: boolean) => void;
 }
 
 export function BibleSleeveSheet({
