@@ -521,6 +521,7 @@ export function BibleReader() {
   });
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
   const handleToggleStudyMode = useCallback((v: boolean) => {
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
