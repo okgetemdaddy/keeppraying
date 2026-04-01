@@ -1328,7 +1328,14 @@ function ActionButtons({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className={`text-xs gap-2 ${isSharedRecipient ? '' : 'text-destructive focus:text-destructive'}`}
-            onClick={() => { onRemove(item.id); supabase.from("user_saved_prayers").delete().eq("id", item.id); }}
+            onClick={async () => {
+              if (userId) {
+                const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("id", item.id).single();
+                if (snap) await trashItem(userId, "saved_prayer", item.id, snap as any);
+              }
+              onRemove(item.id);
+              supabase.from("user_saved_prayers").delete().eq("id", item.id);
+            }}
           >
             {isSharedRecipient ? (
               <><BookmarkX className="w-3.5 h-3.5" /> Unbookmark</>

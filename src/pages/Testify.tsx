@@ -107,7 +107,11 @@ function StandaloneTestimonyCard({
     setTimeout(() => setPraiseAnimating(false), 400);
     if (userPraised) {
       setUserPraised(false); setPraiseCount(c => Math.max(0, c - 1));
+      const { data: praiseSnap } = await supabase.from("testimony_praises").select("*").eq("testimony_id", testimony.id).eq("user_id", user.id).maybeSingle();
+      if (praiseSnap) await trashItem(user.id, "testimony_praise", praiseSnap.id, praiseSnap as any);
       await supabase.from("testimony_praises").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
+      const { data: savedSnap } = await supabase.from("user_saved_testimonies").select("*").eq("testimony_id", testimony.id).eq("user_id", user.id).maybeSingle();
+      if (savedSnap) await trashItem(user.id, "saved_testimony", (savedSnap as any).id, savedSnap as any);
       await supabase.from("user_saved_testimonies").delete().eq("testimony_id", testimony.id).eq("user_id", user.id);
     } else {
       // Show save dialog

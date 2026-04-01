@@ -171,6 +171,10 @@ export default function FamilyRoomDetail() {
   };
 
   const deleteHomework = async (hwId: string) => {
+    if (user) {
+      const { data: snap } = await supabase.from("family_homework").select("*").eq("id", hwId).single();
+      if (snap) await trashItem(user.id, "family_homework", hwId, snap as any);
+    }
     await supabase.from("family_homework").delete().eq("id", hwId);
     toast({ title: "Homework removed" });
     fetchRoom();
