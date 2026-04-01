@@ -69,7 +69,7 @@ export function SiteSettingsSheet({
 
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-0.5 flex-1">
-                <Label className="text-sm font-medium">keepPray.ing Voices</Label>
+                <Label className="text-sm font-medium">KeepPray.ing Voices</Label>
                 <p className="text-[11px] text-muted-foreground leading-snug">
                   Show full-screen caption overlay when listening to prayers read by KeepPray.ing
                 </p>
@@ -102,7 +102,7 @@ export function SiteSettingsSheet({
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <AudioLines className="w-3.5 h-3.5" />
-              keepPray.ing Voice
+              KEEPPRAY.ING VOICE
             </h3>
             <p className="text-[11px] text-muted-foreground leading-snug">
               Choose the voice that reads your prayers aloud
