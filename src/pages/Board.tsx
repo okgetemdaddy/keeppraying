@@ -143,6 +143,8 @@ export default function Board() {
     })();
   }, [user]);
   const [addOpen, setAddOpen] = useState(false);
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [voiceRecorderOpen, setVoiceRecorderOpen] = useState(false);
   const [testifyOpen, setTestifyOpen] = useState(false);
   const [testifyBody, setTestifyBody] = useState("");
   const [testifySubmitting, setTestifySubmitting] = useState(false);
