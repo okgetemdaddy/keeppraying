@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Wind, HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { isKeepReading } from "@/lib/hostDetect";
 
 const TABS = [
   { id: "prayers", label: "Prayers", icon: BookOpen, path: "/prayers" },
