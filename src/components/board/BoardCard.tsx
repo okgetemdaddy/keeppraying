@@ -115,6 +115,8 @@ interface BoardCardProps {
   onOpenViewer?: (item: SavedPrayer & { card_size?: CardSize }) => void;
   captionModeTts?: boolean;
   captionModeRecorded?: boolean;
+  onToggleCaptionTts?: () => void;
+  onToggleCaptionRecorded?: () => void;
   defaultCardLayout?: string;
 }
 
@@ -131,6 +133,8 @@ export function BoardCard({
   onOpenViewer,
   captionModeTts = true,
   captionModeRecorded = true,
+  onToggleCaptionTts,
+  onToggleCaptionRecorded,
   defaultCardLayout = "standard",
 }: BoardCardProps) {
   const { toast } = useToast();
@@ -167,8 +171,7 @@ export function BoardCard({
   const [isSharedRecipient, setIsSharedRecipient] = useState(false);
   const [duplicateDialog, setDuplicateDialog] = useState<{ matchId: string } | null>(null);
   const [disputeSending, setDisputeSending] = useState(false);
-  const [localCaptionTts, setLocalCaptionTts] = useState(captionModeTts);
-  const [localCaptionRecorded, setLocalCaptionRecorded] = useState(captionModeRecorded);
+
 
   // TTS player
   const {
@@ -503,9 +506,9 @@ export function BoardCard({
                   audioUrl={(card as any).voice_audio_url}
                   large={defaultCardLayout === "voice-visual"}
                   accentColor={accentColor}
-                  captionsEnabled={localCaptionRecorded}
-                  onToggleCaptions={() => setLocalCaptionRecorded(v => !v)}
-                  onPlay={localCaptionRecorded ? () => {
+                  captionsEnabled={captionModeRecorded}
+                  onToggleCaptions={onToggleCaptionRecorded}
+                  onPlay={captionModeRecorded ? () => {
                     const text = card.extended_prayer
                       ? `${card.prayer_text}\n\n${card.extended_prayer}`
                       : card.prayer_text;
@@ -617,8 +620,8 @@ export function BoardCard({
                 onListen={handleListen}
                 ttsLoading={ttsLoading}
                 ttsPlaying={ttsPlaying}
-                captionModeTts={localCaptionTts}
-                onToggleCaptionsTts={() => setLocalCaptionTts(v => !v)}
+                captionModeTts={captionModeTts}
+                onToggleCaptionsTts={onToggleCaptionTts}
               />
             </div>
           )}
@@ -887,8 +890,8 @@ export function BoardCard({
                 onListen={handleListen}
                 ttsLoading={ttsLoading}
                 ttsPlaying={ttsPlaying}
-                captionModeTts={localCaptionTts}
-                onToggleCaptionsTts={() => setLocalCaptionTts(v => !v)}
+                captionModeTts={captionModeTts}
+                onToggleCaptionsTts={onToggleCaptionTts}
               />
             </div>
           </div>

@@ -675,6 +675,8 @@ export default function Board() {
                       onOpenViewer={(itm) => setViewerItem(itm as SavedPrayer)}
                       captionModeTts={prefs.caption_mode_tts}
                       captionModeRecorded={prefs.caption_mode_recorded}
+                      onToggleCaptionTts={() => savePrefs({ caption_mode_tts: !prefs.caption_mode_tts })}
+                      onToggleCaptionRecorded={() => savePrefs({ caption_mode_recorded: !prefs.caption_mode_recorded })}
                       defaultCardLayout={prefs.default_card_layout}
                     />
                   </div>
