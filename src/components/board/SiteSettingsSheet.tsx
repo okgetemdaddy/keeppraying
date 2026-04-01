@@ -30,7 +30,9 @@ export function SiteSettingsSheet({
   bibleTextMin = 14,
   bibleTextMax = 28,
 }: SiteSettingsSheetProps) {
+  const [trashOpen, setTrashOpen] = useState(false);
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[340px] sm:w-[380px] flex flex-col">
         <SheetHeader className="pb-4">
