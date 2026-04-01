@@ -170,13 +170,13 @@ export function useBibleChapterData(
       // ── Fetch E: Verse bunch items for this chapter ──
       const fetchBunchItems = async (): Promise<VerseBunchItemWithName[]> => {
         if (!user) return [];
-        const { data, error } = await supabase
+        let bq = supabase
           .from("verse_bunch_items")
           .select("id, bunch_id, verse_number, verse_bunches!inner(bunch_name)")
           .eq("user_id", user.id)
-          .eq("version_id", versionId)
           .eq("book_usfm", bookUsfm)
           .eq("chapter_number", chapterNum);
+        if (!crossBunchTranslation) bq = bq.eq("version_id", versionId!);
         if (error) {
           console.warn("Failed to fetch bunch items:", error.message);
           return [];
