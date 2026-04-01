@@ -76,10 +76,12 @@ import { useBoardPreferences } from "@/hooks/useBoardPreferences";
 import { useImmersiveMode } from "@/hooks/useImmersiveMode";
 import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
+import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
 import { useChapterAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
+type StudyModeVariant = "margin" | "canvas" | "journal";
 
 const fadeIn = {
   initial: { opacity: 0, y: 8 },
@@ -513,11 +515,24 @@ export function BibleReader() {
   const [studyMode, setStudyMode] = useState(() => {
     try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
   });
+  const [studyModeVariant, setStudyModeVariant] = useState<StudyModeVariant>(() => {
+    try { return (localStorage.getItem("bible_study_variant") as StudyModeVariant) || "margin"; } catch { return "margin"; }
+  });
   const [pencilDetected, setPencilDetected] = useState(false);
+  const [canvasOpen, setCanvasOpen] = useState(false);
   const handleToggleStudyMode = useCallback((v: boolean) => {
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-  }, []);
+    // If turning on with canvas variant, open canvas
+    if (v && studyModeVariant === "canvas") setCanvasOpen(true);
+    if (!v) setCanvasOpen(false);
+  }, [studyModeVariant]);
+  const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
+    setStudyModeVariant(v);
+    try { localStorage.setItem("bible_study_variant", v); } catch {}
+    if (v === "canvas" && studyMode) setCanvasOpen(true);
+    else setCanvasOpen(false);
+  }, [studyMode]);
 
   // Auto-detect Apple Pencil
   useEffect(() => {
@@ -636,6 +651,31 @@ export function BibleReader() {
       saveAnnotationMut.mutate({ verseIds: [verseId], strokes, existingId });
     },
     [saveAnnotationMut],
+  );
+
+  // Canvas-level annotation save (Mode 2) — saves all strokes for the whole chapter
+  const canvasAnnotationId = useMemo(() => {
+    if (!chapterAnnotations) return undefined;
+    const chapterKey = bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.canvas` : null;
+    if (!chapterKey) return undefined;
+    return chapterAnnotations.find((a) => a.verse_ids.includes(chapterKey))?.id;
+  }, [chapterAnnotations, bookUsfm, currentChapter]);
+
+  const canvasInitialStrokes = useMemo(() => {
+    if (!chapterAnnotations || !bookUsfm || !currentChapter) return [];
+    const chapterKey = `${bookUsfm}.${currentChapter.id}.canvas`;
+    const ann = chapterAnnotations.find((a) => a.verse_ids.includes(chapterKey));
+    return ann ? (ann.strokes as StrokeData[]) : [];
+  }, [chapterAnnotations, bookUsfm, currentChapter]);
+
+  const handleCanvasSave = useCallback(
+    (strokes: StrokeData[]) => {
+      if (!bookUsfm || !currentChapter) return;
+      const chapterKey = `${bookUsfm}.${currentChapter.id}.canvas`;
+      saveAnnotationMut.mutate({ verseIds: [chapterKey], strokes, existingId: canvasAnnotationId });
+      toast.success("Canvas annotations saved ✨");
+    },
+    [saveAnnotationMut, bookUsfm, currentChapter, canvasAnnotationId],
   );
 
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
@@ -1367,9 +1407,15 @@ export function BibleReader() {
             <Button
               variant={studyMode ? "default" : "ghost"}
               size="sm"
-              onClick={() => handleToggleStudyMode(!studyMode)}
+              onClick={() => {
+                if (studyMode && studyModeVariant === "canvas") {
+                  setCanvasOpen(!canvasOpen);
+                } else {
+                  handleToggleStudyMode(!studyMode);
+                }
+              }}
               className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
+              title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
             >
               <PenTool className="h-4 w-4" />
             </Button>
@@ -1685,9 +1731,23 @@ export function BibleReader() {
         immersiveActive={immersiveActive}
         onToggleImmersive={toggleImmersive}
         studyMode={studyMode}
+        studyModeVariant={studyModeVariant}
         pencilDetected={pencilDetected}
         onToggleStudyMode={handleToggleStudyMode}
+        onStudyModeVariantChange={handleStudyModeVariantChange}
       />
+
+      {/* ── Manuscript Canvas (Mode 2) ── */}
+      {canvasOpen && studyMode && studyModeVariant === "canvas" && (
+        <ManuscriptCanvas
+          chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+          verses={verses.map((v) => ({ number: v.number, text: v.text }))}
+          initialStrokes={canvasInitialStrokes}
+          onSave={handleCanvasSave}
+          onClose={() => setCanvasOpen(false)}
+          textSize={textSize}
+        />
+      )}
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 

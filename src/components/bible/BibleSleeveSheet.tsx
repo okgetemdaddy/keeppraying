@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { PenTool } from "lucide-react";
+import { PenTool, Layers, BookOpen } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
@@ -166,8 +166,10 @@ interface BibleSleeveSheetProps {
 
   /* study mode */
   studyMode?: boolean;
+  studyModeVariant?: "margin" | "canvas" | "journal";
   pencilDetected?: boolean;
   onToggleStudyMode?: (v: boolean) => void;
+  onStudyModeVariantChange?: (v: "margin" | "canvas" | "journal") => void;
 }
 
 export function BibleSleeveSheet({
@@ -208,8 +210,10 @@ export function BibleSleeveSheet({
   immersiveActive,
   onToggleImmersive,
   studyMode,
+  studyModeVariant = "margin",
   pencilDetected,
   onToggleStudyMode,
+  onStudyModeVariantChange,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -653,6 +657,38 @@ export function BibleSleeveSheet({
                         className="shrink-0 mt-0.5"
                       />
                     </div>
+
+                    {/* Mode picker */}
+                    {studyMode && onStudyModeVariantChange && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Annotation Mode</span>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {([
+                            { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write beside verses" },
+                            { key: "canvas" as const, icon: Layers, label: "Canvas", desc: "Full-page manuscript" },
+                            { key: "journal" as const, icon: BookOpen, label: "Journal", desc: "Coming soon" },
+                          ]).map(({ key, icon: Icon, label, desc }) => (
+                            <button
+                              key={key}
+                              onClick={() => key !== "journal" && onStudyModeVariantChange(key)}
+                              disabled={key === "journal"}
+                              className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center transition-all border ${
+                                studyModeVariant === key
+                                  ? "border-primary bg-primary/10 text-foreground"
+                                  : key === "journal"
+                                  ? "border-border/50 bg-muted/30 text-muted-foreground/50 cursor-not-allowed"
+                                  : "border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span className="text-[0.65rem] font-semibold leading-tight">{label}</span>
+                              <span className="text-[0.55rem] leading-tight opacity-70">{desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {pencilDetected && (
                       <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg">
                         <span>🍎</span>
