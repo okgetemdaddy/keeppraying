@@ -1089,8 +1089,8 @@ interface ActionButtonsProps {
   onListen?: () => void;
   ttsLoading?: boolean;
   ttsPlaying?: boolean;
-  captionModeTts?: boolean;
-  onToggleCaptionsTts?: () => void;
+
+
 }
 
 function ActionButtons({
