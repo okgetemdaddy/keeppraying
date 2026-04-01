@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { MapPin, Shield, Lock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { REGION_COORDS } from "@/hooks/usePrayerMapData";
+import { getNearestRegion } from "@/lib/regionDetect";
 
 interface RadarNode {
   angle: number;
