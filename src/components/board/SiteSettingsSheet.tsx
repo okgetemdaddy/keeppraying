@@ -254,9 +254,43 @@ export function SiteSettingsSheet({
             </div>
           </section>
 
+          {/* ── Immersive Mode ─────────────── */}
+          {isMobile && isSupported && (
+            <>
+              <Separator />
+              <section className="space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Maximize className="w-3.5 h-3.5" />
+                  Immersive Mode
+                </h3>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-sm font-medium">Hide Browser Bars</Label>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {isStandalone
+                        ? "You're running in app mode — browser bars are already hidden"
+                        : "Remove the address bar and toolbars for a distraction-free experience. Swipe from the top or bottom edge to reveal the exit button."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={toggleImmersive}
+                    disabled={isStandalone}
+                  />
+                </div>
+                {!isStandalone && !isActive && (
+                  <p className="text-[10px] text-muted-foreground/60 italic">
+                    Tip: Add KeepPray.ing to your Home Screen for a permanent app-like experience
+                  </p>
+                )}
+              </section>
+            </>
+          )}
+
           <Separator />
 
-          {/* ── Trash Bin ──────────────────── */}
+
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <Trash2Icon className="w-3.5 h-3.5" />
