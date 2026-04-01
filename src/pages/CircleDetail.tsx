@@ -4,6 +4,7 @@ import VerseLink from "@/components/VerseLink";
 import SacredSpinner from "@/components/SacredSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { trashItem } from "@/hooks/useTrashBin";
 import { useCircleDetail } from "@/hooks/useAccountabilityCircles";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
