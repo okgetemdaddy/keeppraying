@@ -114,11 +114,11 @@ export function SiteSettingsSheet({
               className="space-y-3"
             >
               {[
-                { id: "sal", name: "Sal", desc: "Smooth, balanced" },
+                { id: "sal", name: "Adam", desc: "Smooth, balanced" },
                 { id: "eve", name: "Eve", desc: "Energetic, upbeat" },
-                { id: "ara", name: "Ara", desc: "Warm, friendly" },
-                { id: "rex", name: "Rex", desc: "Confident, clear" },
-                { id: "leo", name: "Leo", desc: "Authoritative, strong" },
+                { id: "ara", name: "Mary", desc: "Warm, friendly" },
+                { id: "rex", name: "Lazarus", desc: "Confident, clear" },
+                { id: "leo", name: "Paul", desc: "Authoritative, strong" },
               ].map((voice) => (
                 <div key={voice.id} className="flex items-start gap-3">
                   <RadioGroupItem value={voice.id} id={`voice-${voice.id}`} className="mt-0.5" />
