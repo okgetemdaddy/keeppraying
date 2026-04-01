@@ -1,82 +1,102 @@
 
 
-# Premium Dark Mode for /bible
+# Universal Trash Bin — Full Scope
 
 ## Overview
-Add two toggles to the Bible Sleeve panel: **Premium Dark Mode** (charcoal theme) and **True Black OLED Mode** (pure black background). These are Bible-scoped — they don't affect the rest of the app. The current light theme remains the default.
+Every delete action across the app gets intercepted: the item is snapshotted into a `trash_bin` table before removal, so users can retrace any accidental action within 30 days. This covers all user-created content AND interaction undos (unlikes, un-prayed, unsaved, deleted comments).
 
-## Approach: Scoped CSS Custom Properties
-Rather than toggling Tailwind's global `dark` class (which would affect the entire app), we apply a scoped `.bible-dark` class to the Bible page's `<article>` wrapper. This overrides CSS custom properties only within the Bible reader. A second `.bible-oled` class changes only the background to `#000`.
+## Item Types Covered
 
-## Files Changed
+| Category | Item Types | Source Tables |
+|----------|-----------|---------------|
+| Bible | highlights, bookmarks, notes, verse bunches | user_highlights, user_bookmarks, user_notes, verse_bunches + verse_bunch_items |
+| Board | prayers (own), saved prayers (others'), testimonies | prayer_cards, user_saved_prayers, testimonies |
+| Interactions | likes, prayed actions, praise actions, comments | likes, prayed_actions, testimony_praises, comments |
+| Breath | breath collections | breath_collections |
+| Groups | homework items | family_homework, circle_homework |
 
-### 1. `index.html` — Load EB Garamond font
-Add EB Garamond to the existing Google Fonts link for the premium serif reading experience.
+## Database Migration
 
-### 2. `src/index.css` — Add Bible dark mode CSS variables
-New scoped block at the end of the components layer:
+New `trash_bin` table:
 
-```css
-.bible-dark {
-  --background: 0 0% 7%;          /* #121212 */
-  --foreground: 0 0% 88%;         /* #E0E0E0 */
-  --card: 0 0% 12%;               /* #1E1E1E */
-  --card-foreground: 0 0% 88%;
-  --popover: 0 0% 12%;
-  --popover-foreground: 0 0% 88%;
-  --primary: 213 100% 65%;        /* #4A9FFF */
-  --primary-foreground: 0 0% 7%;
-  --secondary: 0 0% 16%;          /* #2A2A2A */
-  --muted: 0 0% 14%;
-  --muted-foreground: 0 0% 63%;   /* #A0A0A0 */
-  --accent: 0 0% 16%;
-  --accent-foreground: 0 0% 88%;
-  --border: 0 0% 18%;
-  --input: 0 0% 18%;
-  --ring: 213 100% 65%;
-  /* Verse highlight/selection */
-  --bible-highlight-selection: hsla(43, 76%, 46%, 0.2); /* #D4A017 at 20% */
-}
-.bible-dark.bible-oled {
-  --background: 0 0% 0%;          /* #000000 */
-}
+```sql
+CREATE TABLE public.trash_bin (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  item_type text NOT NULL,
+  item_id text NOT NULL,
+  item_snapshot jsonb NOT NULL,
+  deleted_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL DEFAULT (now() + interval '30 days')
+);
+
+ALTER TABLE public.trash_bin ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own trash"
+  ON public.trash_bin FOR ALL TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE INDEX idx_trash_bin_user ON public.trash_bin(user_id, deleted_at DESC);
 ```
 
-Plus utility classes for the reading area serif font, soft inner glows, and smooth transitions.
+Note: `item_id` is `text` not `uuid` because some deletes use compound keys (e.g. likes deleted by `prayer_id + user_id`).
 
-### 3. `src/components/bible/BibleSleeveSheet.tsx` — Add two toggles
-- Accept new props: `premiumDark`, `oledMode`, `onTogglePremiumDark`, `onToggleOled`
-- Add a new "Appearance" section after the existing toggles:
-  - **Premium Dark Mode** toggle with moon icon and description text
-  - **True Black OLED Mode** toggle (disabled when Premium Dark is off) with monitor/smartphone icon and description
-- OLED toggle auto-disables and resets when Premium Dark is turned off
+## New Files
 
-### 4. `src/components/bible/BibleReader.tsx` — Wire state + apply classes
-- Add `premiumDark` and `oledMode` state (persisted in `localStorage` as `bible_premium_dark` and `bible_oled_mode`)
-- Apply `.bible-dark` and `.bible-oled` classes to the root `<article>` element
-- When dark mode is active, apply `font-[EB_Garamond]` serif font to the reading area with generous `leading-[2]` line height
-- Pass new props to `BibleSleeveSheet`
-- Apply the scoped highlight selection color via the CSS variable for verse selection styling
-- The toolbar, navigation bar, and all surface panels inherit the overridden CSS variables automatically since they're children of the `<article>` wrapper
+### `src/hooks/useTrashBin.ts`
+- `trashItem(itemType, itemId, snapshot)` — inserts into `trash_bin`
+- `useTrashItems(context: 'bible' | 'board' | 'all')` — query with 30-day filter, grouped by `item_type`
+- `restoreItem(trashId)` — reads `item_snapshot`, re-inserts into original table, deletes from `trash_bin`
+- `permanentDelete(trashId)` / `bulkDelete(ids)` / `emptyTrash(context)`
+- `bulkRestore(ids)`
+- Helper: `restoreToTable(itemType, snapshot)` — switch on item_type to insert back into the correct table
 
-### 5. Color Mapping (exact hex spec)
+### `src/components/TrashBinSheet.tsx`
+- Responsive sheet (drawer on mobile, side-sheet on desktop)
+- Header: "Trash Bin" + count + "Empty Trash" button
+- Items grouped by type with collapsible sections (Bible Annotations, Prayers, Interactions, etc.)
+- Each row: item preview snippet, "Xd left" badge, restore icon (RotateCcw), delete icon (Trash2)
+- Multi-select mode: checkboxes + bulk action bar ("Restore Selected" / "Delete Selected")
+- "Delete All Now" with confirmation dialog
+- Empty state message
 
-| Role | Hex | HSL (approx) |
-|------|-----|---------------|
-| Main background | #121212 | 0 0% 7% |
-| Surface panels | #1E1E1E | 0 0% 12% |
-| Elevated surfaces | #2A2A2A | 0 0% 16% |
-| Primary text | #E0E0E0 | 0 0% 88% |
-| Secondary text | #A0A0A0 | 0 0% 63% |
-| Accent | #4A9FFF | 213 100% 65% |
-| Highlight selection | #D4A017 @ 20% | hsla(43,76%,46%,0.2) |
-| OLED background | #000000 | 0 0% 0% |
+## Modified Files
 
-### 6. Quality Details
-- Smooth `transition-colors duration-300` on the article wrapper for seamless toggle
-- Soft `shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]` inner glow on cards/panels in dark mode
-- Verse numbers use `text-[#A0A0A0]` (muted-foreground maps to this)
-- All existing highlight colors already have `dark:` variants — they work within the scoped override
-- WCAG AA+ contrast: #E0E0E0 on #121212 = 15.3:1 ratio, #A0A0A0 on #121212 = 8.5:1 ratio
-- Existing features (highlighting, notes, bookmarks, cross-references, audio, bunches) remain fully intact — only CSS custom properties change
+### All delete sites across the app
+Every `.delete()` call for the covered item types gets wrapped with a pre-delete snapshot. Pattern:
+
+```typescript
+// Before deleting
+const { data: snapshot } = await supabase.from("table").select("*").eq("id", itemId).single();
+if (snapshot) await trashItem("item_type", itemId, snapshot);
+// Then delete as before
+await supabase.from("table").delete().eq("id", itemId);
+toast("Moved to Trash"); // optional undo link
+```
+
+**Files to modify** (adding `trashItem` calls before each delete):
+- `src/hooks/useBibleMutations.ts` — highlights, bookmarks, notes, verse bunches
+- `src/pages/Prayer.tsx` — likes, prayed_actions, saved prayers
+- `src/pages/Prayers.tsx` — likes, prayed_actions, saved prayers
+- `src/components/board/BoardCard.tsx` — prayed_actions, saved prayers
+- `src/components/breath/BreathPrayerCard.tsx` — likes, saved prayers
+- `src/components/Comments.tsx` — comments
+- `src/pages/Testify.tsx` — testimony_praises, saved testimonies
+- `src/pages/FamilyRoomDetail.tsx` — family_homework
+- `src/pages/CircleDetail.tsx` — circle_homework
+
+### Access points
+- `src/components/bible/BibleSleeveSheet.tsx` — Add Trash2 button that opens `TrashBinSheet` with `context="bible"`
+- `src/components/board/SiteSettingsSheet.tsx` — Add "Trash Bin" section that opens `TrashBinSheet` with `context="board"`
+
+## Restore Logic (by item_type)
+
+Each item type maps back to its source table. The `restoreToTable` function switches on `item_type` and inserts the `item_snapshot` back. For compound-key items (likes, prayed_actions), the snapshot contains all columns needed to reconstruct the row.
+
+For verse bunches: snapshot includes both the bunch row and its items array, so restore re-creates both.
+
+## Auto-Purge
+
+Items older than 30 days are filtered out client-side via the `expires_at` column. A simple scheduled edge function can periodically clean expired rows, but that's optional — the client query already filters by `expires_at > now()`.
 
