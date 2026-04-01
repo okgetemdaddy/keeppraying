@@ -113,7 +113,8 @@ export function BibleSleeveSheet({
   onNavigateToVerse,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
-
+  const [contextBunchId, setContextBunchId] = useState<string | null>(null);
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   // Group highlights by color
   const highlightsByColor = React.useMemo(() => {
     const map: Record<string, UserHighlight[]> = {};
