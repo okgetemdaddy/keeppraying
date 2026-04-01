@@ -108,6 +108,8 @@ export function BibleSleeveSheet({
   currentChapter,
   bunches,
   onNavigateToBunch,
+  onSetActiveBunch,
+  onDeleteBunch,
   onNavigateToVerse,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
