@@ -63,10 +63,27 @@ export function KeepReadingHead() {
       "@type": "WebApplication",
       name: "KeepRead.ing",
       url: "https://keepread.ing",
-      description: "A free, beautiful Bible reader with highlights, bookmarks, notes, verse bunches, and cross-translation study tools.",
+      description: "A free, beautiful Bible reader with Apple Pencil handwriting, highlights, bookmarks, notes, verse bunches, and cross-translation study tools.",
       applicationCategory: "ReligiousApplication",
       operatingSystem: "Web",
+      browserRequirements: "Requires a modern browser with JavaScript enabled",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      featureList: [
+        "Apple Pencil handwriting on verses",
+        "Verse highlights with 6 colors",
+        "Bookmarks with color coding",
+        "Inline verse notes",
+        "Verse bunches for thematic grouping",
+        "Cross-translation comparison",
+        "Dark mode and OLED mode",
+        "Voice annotations",
+        "Circle-to-select gesture",
+      ],
+      author: {
+        "@type": "Organization",
+        name: "KeepPray.ing",
+        url: "https://keeppraying.lovable.app",
+      },
     });
     document.head.appendChild(jsonLd);
 
