@@ -70,11 +70,13 @@ interface MobileStudyToolbarProps {
 }
 
 function closestPreset(size: number): string {
-  let best = SIZE_PRESETS[0];
+  let bestLabel = SIZE_PRESETS[0].label as string;
+  let bestDist = Math.abs(SIZE_PRESETS[0].size - size);
   for (const p of SIZE_PRESETS) {
-    if (Math.abs(p.size - size) < Math.abs(best.size - size)) best = p;
+    const d = Math.abs(p.size - size);
+    if (d < bestDist) { bestLabel = p.label; bestDist = d; }
   }
-  return best.label;
+  return bestLabel;
 }
 
 export function MobileStudyToolbar({
