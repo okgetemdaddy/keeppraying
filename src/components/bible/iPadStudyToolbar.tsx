@@ -3,11 +3,11 @@ import { Undo2, Eraser, ZoomIn, Space } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
 const PEN_COLORS = [
-  { value: "#1a1a1a", label: "Black" },
-  { value: "#9c0f0f", label: "Red" },
-  { value: "#0f4d9c", label: "Blue" },
-  { value: "#0f9c4d", label: "Green" },
-  { value: "#9c6f0f", label: "Brown" },
+  { value: "#1A1A1A", label: "Iron Gall Black" },
+  { value: "#4A0E0E", label: "Oxblood Red" },
+  { value: "#0f4d9c", label: "Royal Blue" },
+  { value: "#0f9c4d", label: "Forest Green" },
+  { value: "#D4C4A8", label: "Sepia Highlighter" },
 ];
 
 interface IPadStudyToolbarProps {
