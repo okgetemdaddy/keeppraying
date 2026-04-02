@@ -349,7 +349,14 @@ export function InkOverlay({
         if (!pathData) return null;
         const isSelected = selectedStrokeId === s.id;
         const isSepia = s.color === SEPIA_COLOR;
+        const isNeon = !!s.glow;
+        const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
+        const appliedFilter = isSelected
+          ? undefined
+          : isNeon
+            ? `url(#${neonFilterId})`
+            : bleedFilter;
         return (
           <path
             key={s.id}
@@ -357,14 +364,14 @@ export function InkOverlay({
             fill={s.color}
             stroke="none"
             opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
-            filter={isSelected ? undefined : bleedFilter}
+            filter={appliedFilter}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedStrokeId(isSelected ? null : s.id);
             }}
             className="cursor-pointer"
             style={{
-              mixBlendMode: isSepia ? (isDark ? "screen" : "multiply") : undefined,
+              mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
               filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
             }}
           />
