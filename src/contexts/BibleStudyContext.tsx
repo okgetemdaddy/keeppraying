@@ -24,6 +24,8 @@ interface BibleStudyState {
   setPenColor: (color: string) => void;
   penSize: number;
   setPenSize: (size: number) => void;
+  penGlow: string | null;
+  setPenGlow: (glow: string | null) => void;
   fingerDrawing: boolean;
   setFingerDrawing: (enabled: boolean) => void;
 
