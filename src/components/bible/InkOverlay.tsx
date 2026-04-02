@@ -137,6 +137,15 @@ export function InkOverlay({
       if (pathData) {
         livePathRef.current.setAttribute("d", pathData);
         livePathRef.current.setAttribute("fill", penColorRef.current);
+        const glow = penGlowRef.current;
+        if (glow) {
+          const filterId = `neon-${glow.replace("#", "")}`;
+          livePathRef.current.setAttribute("filter", `url(#${filterId})`);
+          livePathRef.current.style.mixBlendMode = "screen";
+        } else {
+          livePathRef.current.removeAttribute("filter");
+          livePathRef.current.style.mixBlendMode = "";
+        }
         livePathRef.current.style.display = "";
       }
     }
