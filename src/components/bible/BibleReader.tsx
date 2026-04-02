@@ -656,9 +656,72 @@ export function BibleReader() {
   // ── Chapter annotations (handwriting) ──
   const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
   const { data: journalAnnotations } = useJournalAnnotations(bookUsfm, currentChapter?.id);
+  const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
-  // Build a map: verseNumber → annotation
+  // ── Load ink strokes from DB on chapter change ──
+  const inkAnnotationId = inkAnnotation?.id;
+  useEffect(() => {
+    if (inkAnnotation) {
+      setInkStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
+    } else {
+      setInkStrokes([]);
+    }
+  }, [inkAnnotation]);
+
+  // ── Debounced ink auto-save ──
+  const inkSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleInkStrokeComplete = useCallback(
+    (stroke: InkStroke) => {
+      setInkStrokes((prev) => {
+        const updated = [...prev, stroke];
+        // Schedule debounced save
+        if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
+        inkSaveTimer.current = setTimeout(() => {
+          if (!bookUsfm || !currentChapter) return;
+          const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
+          saveAnnotationMut.mutate({
+            verseIds: [inkKey],
+            strokes: updated as unknown as StrokeData[],
+            existingId: inkAnnotationId,
+          });
+        }, 500);
+        return updated;
+      });
+    },
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
+  );
+
+  const handleInkUndo = useCallback(() => {
+    setInkStrokes((prev) => {
+      const updated = prev.slice(0, -1);
+      // Schedule debounced save
+      if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
+      inkSaveTimer.current = setTimeout(() => {
+        if (!bookUsfm || !currentChapter) return;
+        const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
+        saveAnnotationMut.mutate({
+          verseIds: [inkKey],
+          strokes: updated as unknown as StrokeData[],
+          existingId: inkAnnotationId,
+        });
+      }, 500);
+      return updated;
+    });
+  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+
+  const handleInkClear = useCallback(() => {
+    setInkStrokes([]);
+    if (!bookUsfm || !currentChapter) return;
+    const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
+    saveAnnotationMut.mutate({
+      verseIds: [inkKey],
+      strokes: [] as unknown as StrokeData[],
+      existingId: inkAnnotationId,
+    });
+  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+
+  // Build a map: verseNumber → annotation (for legacy per-verse preview)
   const annotationMap = useMemo(() => {
     const map = new Map<number, { id: string; strokes: StrokeData[] }>();
     if (!chapterAnnotations || !bookUsfm || !currentChapter) return map;
