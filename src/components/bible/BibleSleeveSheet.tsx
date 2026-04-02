@@ -292,6 +292,66 @@ export function BibleSleeveSheet({
 
             <div className="h-px bg-border" />
 
+            {/* ── iPad Study Mode ── */}
+            {onToggleStudyMode && (
+              <>
+                <Collapsible open={isOpen(SECTION_IDS.studyMode)}>
+                  <SectionHeader icon={PenTool} label="iPad Study Mode" isOpen={isOpen(SECTION_IDS.studyMode)} onToggle={() => toggleSection(SECTION_IDS.studyMode)} />
+                  <CollapsibleContent className="mt-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm text-foreground font-medium">Handwritten Annotations</span>
+                        <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                          Write anywhere on the page with Apple Pencil. Full-page vector ink with palm rejection, zoom, and auto-save.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={!!studyMode}
+                        onCheckedChange={onToggleStudyMode}
+                        className="shrink-0 mt-0.5"
+                      />
+                    </div>
+
+                    {/* Mode picker */}
+                    {studyMode && onStudyModeVariantChange && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Annotation Mode</span>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {([
+                            { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write anywhere on page" },
+                            { key: "canvas" as const, icon: Layers, label: "Canvas", desc: "Full-page manuscript" },
+                            { key: "journal" as const, icon: BookOpen, label: "Journal", desc: "Slide-out notebook" },
+                          ]).map(({ key, icon: Icon, label, desc }) => (
+                            <button
+                              key={key}
+                              onClick={() => onStudyModeVariantChange(key)}
+                              className={`flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center transition-all border ${
+                                studyModeVariant === key
+                                  ? "border-primary bg-primary/10 text-foreground"
+                                  : "border-border bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              }`}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span className="text-[0.65rem] font-semibold leading-tight">{label}</span>
+                              <span className="text-[0.55rem] leading-tight opacity-70">{desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {pencilDetected && (
+                      <div className="flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg">
+                        <span>🍎</span>
+                        <span>Apple Pencil connected</span>
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+                <div className="h-px bg-border" />
+              </>
+            )}
+
             {/* ── Reading Mode ── */}
             <Collapsible open={isOpen(SECTION_IDS.readingMode)}>
               <SectionHeader icon={List} label="Reading Mode" isOpen={isOpen(SECTION_IDS.readingMode)} onToggle={() => toggleSection(SECTION_IDS.readingMode)} />
