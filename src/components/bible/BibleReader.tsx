@@ -1078,33 +1078,12 @@ export function BibleReader() {
     [versionId, bookUsfm, currentChapter, currentBook, selectedVerses, crossSelections.length],
   );
 
-  // ── Tour-intercepting wrapper ──
   const handleTapSelect = useCallback(
     (verseNumber: number, e: React.MouseEvent) => {
-      // First-click tour intercept
-      if (!tourSeen.current()) {
-        pendingTourVerse.current = { verseNumber, event: e };
-        setShowTour(true);
-        return;
-      }
       handleTapSelectInner(verseNumber, e);
     },
     [handleTapSelectInner],
   );
-
-  // ── Tour acknowledge handler ──
-  const handleTourAcknowledge = useCallback(() => {
-    setShowTour(false);
-    try { localStorage.setItem("bible_features_seen", "true"); } catch {}
-    // Update the ref so it won't show again
-    tourSeen.current = () => true;
-    // Now fire the original tap-select for the verse the user clicked
-    if (pendingTourVerse.current) {
-      const { verseNumber, event } = pendingTourVerse.current;
-      pendingTourVerse.current = null;
-      handleTapSelectInner(verseNumber, event);
-    }
-  }, [handleTapSelectInner]);
 
 
   useEffect(() => {
