@@ -361,7 +361,7 @@ export default function Support() {
           </div>
         </motion.section>
 
-        {/* ── Our Stance on AI ── */}
+        {/* ── Our Heart Behind the Tools ── */}
         <motion.section
           id="ai-stance"
           initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -372,19 +372,19 @@ export default function Support() {
             <CardContent className="p-6 md:p-10">
               <div className="flex items-start gap-3 mb-5">
                 <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                <h2 className="text-xl md:text-2xl font-bold text-foreground">Our Stance on AI</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground">Our Heart Behind the Tools</h2>
               </div>
               <div className="text-foreground/85 text-sm md:text-base leading-relaxed space-y-4 border-l-4 border-primary/30 pl-5">
                 <p>
                   At KeepPray.ing, we see Artificial Intelligence as a neutral tool — neither inherently good nor evil. Its value depends entirely on how it is used.
                 </p>
                 <p>
-                  We have chosen to incorporate carefully selected premium AI models as helpful companions in your prayer journey. Our strict boundaries ensure that:
+                  We have chosen to incorporate carefully selected premium tools as helpful companions in your prayer journey. Our strict boundaries ensure that:
                 </p>
                 <ul className="space-y-2 list-none">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span>AI only helps craft or refine a prayer after first listening to and understanding your personal intent, feelings, and the true issue on your heart. You are in control. AI helps you find the words.</span>
+                    <span>PrayerAssist only helps craft or refine a prayer after first listening to and understanding your personal intent, feelings, and the true issue on your heart. You are in control. PrayerAssist helps you find the words.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -396,7 +396,7 @@ export default function Support() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span>AI is used only to serve, never to replace, the intimate relationship between you and God.</span>
+                    <span>Technology is used only to serve, never to replace, the intimate relationship between you and God.</span>
                   </li>
                 </ul>
                 <p>

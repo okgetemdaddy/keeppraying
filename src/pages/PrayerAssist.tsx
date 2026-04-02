@@ -220,9 +220,9 @@ export default function PrayerAssist() {
               </div>
               <div>
                 <h1 className="font-display text-3xl font-bold text-foreground mb-2">PrayerAssist.ing</h1>
-              <p className="text-muted-foreground max-w-md mx-auto">Your compassionate AI prayer companion — ready to help you pray, craft prayers, seek Scripture, and grow in faith.</p>
+              <p className="text-muted-foreground max-w-md mx-auto">Your compassionate PrayerAssist-powered prayer companion — ready to help you pray, craft prayers, seek Scripture, and grow in faith.</p>
               <Link to="/support#ai-stance" className="inline-block text-xs text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors">
-                Our Stance on AI
+                Our Heart Behind the Tools
               </Link>
               </div>
 
@@ -319,7 +319,7 @@ export default function PrayerAssist() {
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-center text-xs text-muted-foreground mt-2">AI guides your prayer journey. Always verify with Scripture.</p>
+              <p className="text-center text-xs text-muted-foreground mt-2">PrayerAssist guides your prayer journey. Always verify with Scripture.</p>
             </>
           )}
         </div>

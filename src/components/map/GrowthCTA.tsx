@@ -27,7 +27,7 @@ const BENEFITS = [
   },
   {
     icon: <Sparkles className="w-5 h-5" />,
-    title: "AI-guided prayer life",
+    title: "PrayerAssist-powered prayer life",
     description: "PrayerAssist helps you learn to pray — without writing prayers for you.",
   },
 ];

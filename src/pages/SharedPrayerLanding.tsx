@@ -379,7 +379,7 @@ export default function SharedPrayerLanding() {
       },
       {
         icon: <Sparkles className="w-5 h-5" style={{ color: "hsl(42 75% 50%)" }} />,
-        title: "AI Enrichment",
+        title: "Auto Verses & Labels",
         desc: "Receive Scripture-rooted encouragement woven into your prayers",
       },
       {

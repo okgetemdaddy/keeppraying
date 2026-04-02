@@ -614,7 +614,7 @@ export function BoardCard({
                   {card.status === "ai_generated" && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                       style={{ background: `${accentColor}20`, color: accentColor }}>
-                      <Sparkles className="w-2.5 h-2.5" />AI
+                      <Sparkles className="w-2.5 h-2.5" />✦ PrayerAssist
                     </span>
                   )}
                   {card.status === "pending" && isOwner && (
@@ -918,7 +918,7 @@ export function BoardCard({
         </div>
       </div>
 
-      {/* AI Enrich Panel */}
+      {/* Auto Verses & Labels Panel */}
       {isOwner && (
         <AIEnrichPanel
           open={enrichOpen}
@@ -1229,7 +1229,7 @@ function ActionButtons({
 
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-xs gap-2" onClick={onEnrich}>
-                <Sparkles className="w-3.5 h-3.5" /> AI Enrich
+                <Sparkles className="w-3.5 h-3.5" /> Enrich with Scripture
               </DropdownMenuItem>
             </>
           )}

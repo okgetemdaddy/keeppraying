@@ -103,7 +103,7 @@ function TriviaTab() {
     <div className="text-center py-16 space-y-5">
       <span className="text-6xl">✝️</span>
       <h2 className="font-display text-2xl font-bold">Bible Trivia</h2>
-      <p className="text-muted-foreground max-w-sm mx-auto">Test your knowledge of prayer and Scripture with 10 AI-generated questions.</p>
+      <p className="text-muted-foreground max-w-sm mx-auto">Test your knowledge of prayer and Scripture with 10 questions.</p>
       <Button onClick={startQuiz} className="btn-gold rounded-xl px-8 gap-2">Start Quiz</Button>
     </div>
   );

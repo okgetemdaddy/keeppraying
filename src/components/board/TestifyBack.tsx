@@ -468,7 +468,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, accentColor 
         </button>
       </div>
 
-      {/* AI Enrichment Modal */}
+      {/* Enrichment Modal */}
       <TestimonyEnrichModal
         open={enrichModalOpen}
         onOpenChange={setEnrichModalOpen}
