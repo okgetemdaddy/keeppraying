@@ -24,6 +24,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile, useIsTouch } from "@/hooks/use-mobile";
+import { useDeviceDetect } from "@/hooks/useDeviceDetect";
 import { useBibleTextSize } from "@/hooks/useBibleTextSize";
 import {
   Select,
