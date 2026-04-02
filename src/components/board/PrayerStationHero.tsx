@@ -165,6 +165,16 @@ export function PrayerStationHero({
             {firstName}'s Prayer Station
           </motion.h1>
 
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mt-1 text-[10px] font-semibold tracking-[0.35em] uppercase"
+            style={{ color: "hsl(42 85% 56% / 0.7)" }}
+          >
+            Kingdom Prayers
+          </motion.p>
+
           {/* Standby toggle with label */}
           <motion.div
             initial={{ opacity: 0 }}
