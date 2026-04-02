@@ -11,6 +11,7 @@ interface ZoomWrapperProps {
   textAlign?: TextAlign;
   marginWidth?: number;
   canvasBackground?: CanvasBackground;
+  overlay?: React.ReactNode;
 }
 
 /* ── SVG pattern backgrounds for the writing margin space ── */
@@ -57,6 +58,7 @@ export function ZoomWrapper({
   textAlign = "left",
   marginWidth = 0,
   canvasBackground = "none",
+  overlay,
 }: ZoomWrapperProps) {
   const hasMargin = marginWidth > 0;
 
@@ -106,6 +108,13 @@ export function ZoomWrapper({
           background={canvasBackground}
           className="relative min-h-full"
         />
+      )}
+
+      {/* Full-span overlay (e.g. InkOverlay) — covers text + margins */}
+      {overlay && (
+        <div className="absolute inset-0" style={{ gridColumn: "1 / -1", gridRow: "1 / -1" }}>
+          {overlay}
+        </div>
       )}
     </div>
   );
