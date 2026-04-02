@@ -38,6 +38,7 @@ interface InkOverlayProps {
   onUndo: () => void;
   penColor?: string;
   penSize?: number;
+  penGlow?: string | null;
   fingerDrawing?: boolean;
   isDark?: boolean;
   /** Callback when a circle-to-select gesture encloses verses */
