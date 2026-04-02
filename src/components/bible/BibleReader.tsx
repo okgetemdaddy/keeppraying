@@ -24,6 +24,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile, useIsTouch } from "@/hooks/use-mobile";
+import { useDeviceDetect } from "@/hooks/useDeviceDetect";
 import { useBibleTextSize } from "@/hooks/useBibleTextSize";
 import {
   Select,
@@ -485,6 +486,7 @@ function getCrossBunchTranslation(): boolean {
 export function BibleReader() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { isIPad, isIPhone } = useDeviceDetect();
   const { size: textSize, setTextSize, MIN_SIZE, MAX_SIZE } = useBibleTextSize();
   const { prefs: boardPrefs, savePrefs: saveBoardPrefs } = useBoardPreferences();
   const { isSupported: immersiveSupported, isStandalone: immersiveStandalone, isIOSLimited: immersiveIOSLimited, isActive: immersiveActive, toggleImmersive } = useImmersiveMode(boardPrefs, saveBoardPrefs);
@@ -692,8 +694,9 @@ export function BibleReader() {
     else { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyMode]);
 
-  // Auto-detect Apple Pencil
+  // Auto-detect Apple Pencil — only on iPads
   useEffect(() => {
+    if (!isIPad) return;
     const handler = (e: PointerEvent) => {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
@@ -707,7 +710,7 @@ export function BibleReader() {
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [pencilDetected, studyMode, handleToggleStudyMode]);
+  }, [isIPad, pencilDetected, studyMode, handleToggleStudyMode]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
@@ -2058,8 +2061,9 @@ export function BibleReader() {
         studyMode={studyMode}
         studyModeVariant={studyModeVariant}
         pencilDetected={pencilDetected}
-        onToggleStudyMode={handleToggleStudyMode}
-        onStudyModeVariantChange={handleStudyModeVariantChange}
+        onToggleStudyMode={isIPad ? handleToggleStudyMode : undefined}
+        onStudyModeVariantChange={isIPad ? handleStudyModeVariantChange : undefined}
+        isIPad={isIPad}
         highlightStyle={highlightStyle}
         onHighlightStyleChange={handleHighlightStyleChange}
       />
@@ -2090,69 +2094,68 @@ export function BibleReader() {
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
-      {/* ── Ink Toolbar (Mode 1: Marginalia) ── */}
-      {studyMode && studyModeVariant === "margin" && (
-        isMobile ? (
-          <MobileStudyToolbar
-            penColor={inkPenColor}
-            onPenColorChange={setInkPenColor}
-            penSize={inkPenSize}
-            onPenSizeChange={setInkPenSize}
-            penGlow={inkPenGlow}
-            onPenGlowChange={handleInkPenGlowChange}
-            zoom={inkZoom}
-            onZoomChange={handleInkZoomChange}
-            textSpacing={inkTextSpacing}
-            onTextSpacingChange={handleInkTextSpacingChange}
-            onUndo={handleInkUndo}
-            onRedo={handleInkRedo}
-            onClear={handleInkClearRequest}
-            canUndo={inkHistory.canUndo}
-            canRedo={inkHistory.canRedo}
-            fingerDrawing={inkFingerDrawing}
-            onFingerDrawingChange={setInkFingerDrawing}
-            isDark={premiumDark || document.documentElement.classList.contains("dark")}
-            onOpenTrash={() => setInkTrashOpen(true)}
-            onOpenVoice={() => setVoiceOverlayActive(true)}
-            hasTrashItems={inkHistory.trashBin.length > 0}
-            textAlign={wsTextAlign}
-            onTextAlignChange={handleWsTextAlign}
-            marginWidth={wsMarginWidth}
-            onMarginWidthChange={handleWsMarginWidth}
-            canvasBackground={wsCanvasBackground}
-            onCanvasBackgroundChange={handleWsCanvasBackground}
-          />
-        ) : (
-          <IPadStudyToolbar
-            penColor={inkPenColor}
-            onPenColorChange={setInkPenColor}
-            penSize={inkPenSize}
-            onPenSizeChange={setInkPenSize}
-            penGlow={inkPenGlow}
-            onPenGlowChange={handleInkPenGlowChange}
-            zoom={inkZoom}
-            onZoomChange={handleInkZoomChange}
-            textSpacing={inkTextSpacing}
-            onTextSpacingChange={handleInkTextSpacingChange}
-            onUndo={handleInkUndo}
-            onRedo={handleInkRedo}
-            onClear={handleInkClearRequest}
-            canUndo={inkHistory.canUndo}
-            canRedo={inkHistory.canRedo}
-            fingerDrawing={inkFingerDrawing}
-            onFingerDrawingChange={setInkFingerDrawing}
-            isDark={premiumDark || document.documentElement.classList.contains("dark")}
-            onOpenTrash={() => setInkTrashOpen(true)}
-            onOpenVoice={() => setVoiceOverlayActive(true)}
-            hasTrashItems={inkHistory.trashBin.length > 0}
-            textAlign={wsTextAlign}
-            onTextAlignChange={handleWsTextAlign}
-            marginWidth={wsMarginWidth}
-            onMarginWidthChange={handleWsMarginWidth}
-            canvasBackground={wsCanvasBackground}
-            onCanvasBackgroundChange={handleWsCanvasBackground}
-          />
-        )
+      {/* ── Ink Toolbar (Mode 1: Marginalia) — hardware-gated ── */}
+      {studyMode && studyModeVariant === "margin" && isIPhone && (
+        <MobileStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          penGlow={inkPenGlow}
+          onPenGlowChange={handleInkPenGlowChange}
+          zoom={inkZoom}
+          onZoomChange={handleInkZoomChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
+          onUndo={handleInkUndo}
+          onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
+          canUndo={inkHistory.canUndo}
+          canRedo={inkHistory.canRedo}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+          isDark={premiumDark || document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
+          textAlign={wsTextAlign}
+          onTextAlignChange={handleWsTextAlign}
+          marginWidth={wsMarginWidth}
+          onMarginWidthChange={handleWsMarginWidth}
+          canvasBackground={wsCanvasBackground}
+          onCanvasBackgroundChange={handleWsCanvasBackground}
+        />
+      )}
+      {studyMode && studyModeVariant === "margin" && isIPad && (
+        <IPadStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          penGlow={inkPenGlow}
+          onPenGlowChange={handleInkPenGlowChange}
+          zoom={inkZoom}
+          onZoomChange={handleInkZoomChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
+          onUndo={handleInkUndo}
+          onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
+          canUndo={inkHistory.canUndo}
+          canRedo={inkHistory.canRedo}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+          isDark={premiumDark || document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
+          textAlign={wsTextAlign}
+          onTextAlignChange={handleWsTextAlign}
+          marginWidth={wsMarginWidth}
+          onMarginWidthChange={handleWsMarginWidth}
+          canvasBackground={wsCanvasBackground}
+          onCanvasBackgroundChange={handleWsCanvasBackground}
+        />
       )}
 
       {/* ── Eraser Confirmation Dialog ── */}

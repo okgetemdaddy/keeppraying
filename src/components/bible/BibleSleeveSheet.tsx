@@ -171,6 +171,9 @@ interface BibleSleeveSheetProps {
   onToggleStudyMode?: (v: boolean) => void;
   onStudyModeVariantChange?: (v: "margin" | "canvas" | "journal") => void;
 
+  /** Hardware-detected iPad flag — gates study mode UI */
+  isIPad?: boolean;
+
   /* highlight style */
   highlightStyle?: "invert" | "neon";
   onHighlightStyleChange?: (v: "invert" | "neon") => void;
@@ -218,6 +221,7 @@ export function BibleSleeveSheet({
   pencilDetected,
   onToggleStudyMode,
   onStudyModeVariantChange,
+  isIPad = false,
   highlightStyle = "invert",
   onHighlightStyleChange,
 }: BibleSleeveSheetProps) {
@@ -298,8 +302,8 @@ export function BibleSleeveSheet({
 
             <div className="h-px bg-border" />
 
-            {/* ── iPad Study Mode ── */}
-            {onToggleStudyMode && (
+            {/* ── iPad Study Mode (hardware-gated) ── */}
+            {isIPad && onToggleStudyMode && (
               <>
                 <Collapsible open={isOpen(SECTION_IDS.studyMode)}>
                   <SectionHeader icon={PenTool} label="iPad Study Mode" isOpen={isOpen(SECTION_IDS.studyMode)} onToggle={() => toggleSection(SECTION_IDS.studyMode)} />
