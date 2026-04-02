@@ -24,6 +24,7 @@ interface IPadStudyToolbarProps {
   canUndo: boolean;
   fingerDrawing: boolean;
   onFingerDrawingChange: (v: boolean) => void;
+  isPencilActive?: boolean;
 }
 
 export function IPadStudyToolbar({
