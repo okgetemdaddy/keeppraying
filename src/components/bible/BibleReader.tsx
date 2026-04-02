@@ -1738,6 +1738,22 @@ export function BibleReader() {
                     penSize={inkPenSize}
                     fingerDrawing={inkFingerDrawing}
                     isDark={premiumDark || document.documentElement.classList.contains("dark")}
+                    onCircleSelect={(verseNumbers) => {
+                      if (verseNumbers.length > 0) {
+                        setSelectedVerses(verseNumbers.map((v) => ({
+                          verseNumber: v,
+                          text: verses.find((vv) => vv.verse_number === v)?.text ?? "",
+                        })));
+                        toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
+                      }
+                    }}
+                    onPencilFirstContact={() => {
+                      const onboarded = localStorage.getItem("pencil-onboarded");
+                      if (!onboarded) {
+                        setPocketOpen(true);
+                        localStorage.setItem("pencil-onboarded", "true");
+                      }
+                    }}
                   />
                 )}
               </ZoomWrapper>
