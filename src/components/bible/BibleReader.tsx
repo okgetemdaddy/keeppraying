@@ -1825,7 +1825,7 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
-              drag={studyMode ? false : "x"}
+              drag={studyMode || tapNavMode ? false : "x"}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.15}
               onDragEnd={(_e, info) => {
