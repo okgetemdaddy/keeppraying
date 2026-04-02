@@ -78,7 +78,10 @@ import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
 import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
 import { JournalPanel } from "@/components/bible/JournalPanel";
-import { useChapterAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
+import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
+import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
