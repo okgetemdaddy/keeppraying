@@ -1665,8 +1665,22 @@ export function BibleReader() {
                         </AnimatePresence>
                     </React.Fragment>
                   );
-                })}
-              </section>
+                  })}
+                </section>
+
+                {/* ── Ink SVG Overlay (full-page, pen-only) ── */}
+                {studyMode && studyModeVariant === "margin" && (
+                  <InkOverlay
+                    zoom={inkZoom}
+                    strokes={inkStrokes}
+                    onStrokeComplete={handleInkStrokeComplete}
+                    onUndo={handleInkUndo}
+                    penColor={inkPenColor}
+                    penSize={inkPenSize}
+                    fingerDrawing={inkFingerDrawing}
+                  />
+                )}
+              </ZoomWrapper>
             </motion.div>
           ) : !versionId ? (
             <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
