@@ -68,6 +68,7 @@ export function InkOverlay({
   onUndo,
   penColor = "#1a1a1a",
   penSize = 8,
+  penGlow,
   fingerDrawing = false,
   isDark = false,
   onCircleSelect,
