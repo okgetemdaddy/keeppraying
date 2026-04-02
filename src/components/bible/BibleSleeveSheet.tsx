@@ -221,6 +221,7 @@ export function BibleSleeveSheet({
   pencilDetected,
   onToggleStudyMode,
   onStudyModeVariantChange,
+  isIPad = false,
   highlightStyle = "invert",
   onHighlightStyleChange,
 }: BibleSleeveSheetProps) {
