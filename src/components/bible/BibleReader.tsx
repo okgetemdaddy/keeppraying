@@ -535,6 +535,13 @@ export function BibleReader() {
   });
   const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
   const [inkPenSize, setInkPenSize] = useState(8);
+  const [inkPenGlow, setInkPenGlow] = useState<string | null>(() => {
+    try { return localStorage.getItem("bible_pen_glow") || null; } catch { return null; }
+  });
+  const handleInkPenGlowChange = useCallback((v: string | null) => {
+    setInkPenGlow(v);
+    try { if (v) localStorage.setItem("bible_pen_glow", v); else localStorage.removeItem("bible_pen_glow"); } catch {}
+  }, []);
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
   const inkHistory = useInkHistory();
 
