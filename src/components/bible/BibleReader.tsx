@@ -2094,9 +2094,8 @@ export function BibleReader() {
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
-      {/* ── Ink Toolbar (Mode 1: Marginalia) ── */}
-      {studyMode && studyModeVariant === "margin" && (
-        isMobile ? (
+      {/* ── Ink Toolbar (Mode 1: Marginalia) — hardware-gated ── */}
+      {studyMode && studyModeVariant === "margin" && isIPhone && (
           <MobileStudyToolbar
             penColor={inkPenColor}
             onPenColorChange={setInkPenColor}
