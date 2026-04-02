@@ -629,13 +629,6 @@ export function BibleReader() {
     return () => { window.dispatchEvent(new Event("tabbar:show")); };
   }, []);
 
-  // ── First-click feature tour ──
-  const [showTour, setShowTour] = useState(false);
-  const tourSeen = useRef(() => {
-    try { return localStorage.getItem("bible_features_seen") === "true"; } catch { return true; }
-  });
-  const pendingTourVerse = useRef<{ verseNumber: number; event: React.MouseEvent } | null>(null);
-
   const readingAreaRef = useRef<HTMLDivElement>(null);
   // Data hooks
   const { data: versions, isLoading: versionsLoading } = useBibleVersions();
