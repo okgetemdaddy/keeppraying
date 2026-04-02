@@ -1738,6 +1738,31 @@ export function BibleReader() {
                     penSize={inkPenSize}
                     fingerDrawing={inkFingerDrawing}
                     isDark={premiumDark || document.documentElement.classList.contains("dark")}
+                    onCircleSelect={(verseNumbers) => {
+                      if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                        setCrossSelections((prev) => {
+                          const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
+                          const newSelections = verseNumbers
+                            .filter((v) => !existing.has(`${bookUsfm}.${currentChapter.id}.${v}`))
+                            .map((v) => ({
+                              versionId,
+                              bookUsfm,
+                              bookTitle: currentBook.title,
+                              chapterNumber: currentChapter.id,
+                              verseNumber: v,
+                            }));
+                          return [...prev, ...newSelections];
+                        });
+                        toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
+                      }
+                    }}
+                    onPencilFirstContact={() => {
+                      const onboarded = localStorage.getItem("pencil-onboarded");
+                      if (!onboarded) {
+                        setPocketOpen(true);
+                        localStorage.setItem("pencil-onboarded", "true");
+                      }
+                    }}
                   />
                 )}
               </ZoomWrapper>
@@ -2002,6 +2027,7 @@ export function BibleReader() {
         chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
         chapterAnnotations={chapterAnnotations ?? []}
         inkStrokes={inkHistory.strokes}
+        journalAnnotations={journalAnnotations ?? []}
         onTryAction={(actionId) => {
           setPocketOpen(false);
           switch (actionId) {

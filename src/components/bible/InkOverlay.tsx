@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { getStroke } from "perfect-freehand";
 import type { Point } from "./HandwritingEngine";
+import { isClosedLoop, findVersesInsideStroke } from "@/lib/convexHull";
 
 /* ── SVG path helper ── */
 function getSvgPathFromStroke(stroke: number[][], closed = true): string {
@@ -38,6 +39,10 @@ interface InkOverlayProps {
   penSize?: number;
   fingerDrawing?: boolean;
   isDark?: boolean;
+  /** Callback when a circle-to-select gesture encloses verses */
+  onCircleSelect?: (verseNumbers: number[]) => void;
+  /** Callback for first-run Apple Pencil onboarding */
+  onPencilFirstContact?: () => void;
 }
 
 const STROKE_OPTIONS = {
@@ -63,17 +68,32 @@ export function InkOverlay({
   penSize = 8,
   fingerDrawing = false,
   isDark = false,
+  onCircleSelect,
+  onPencilFirstContact,
 }: InkOverlayProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
-  const [isPencilActive, setIsPencilActive] = useState(false);
+  const livePathRef = useRef<SVGPathElement>(null);
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
+
+  // ── RAF point buffer (NOT React state — avoids re-renders per pointer event) ──
+  const pointsBufferRef = useRef<Point[]>([]);
+  const isDrawingRef = useRef(false);
+  const rafIdRef = useRef<number>(0);
 
   // Hover preview state (Apple Pencil hover)
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
 
   // Palm rejection: timestamp of last pen-down
   const lastPenDownRef = useRef<number>(0);
+
+  // First-contact tracking
+  const firstContactFiredRef = useRef(false);
+
+  // Stable refs for current pen settings (avoid stale closures in RAF loop)
+  const penColorRef = useRef(penColor);
+  const penSizeRef = useRef(penSize);
+  penColorRef.current = penColor;
+  penSizeRef.current = penSize;
 
   /* ── DOMMatrix-based coordinate normalization ── */
   const getTransformedPoint = useCallback(
@@ -98,6 +118,27 @@ export function InkOverlay({
     [zoom],
   );
 
+  /* ── RAF render loop: reads point buffer, writes to SVG path directly ── */
+  const renderLoop = useCallback(() => {
+    if (!isDrawingRef.current) return;
+
+    const points = pointsBufferRef.current;
+    if (points.length >= 3 && livePathRef.current) {
+      const outline = getStroke(
+        points.map((p) => [p.x, p.y, p.pressure]),
+        { ...STROKE_OPTIONS, size: penSizeRef.current },
+      );
+      const pathData = getSvgPathFromStroke(outline);
+      if (pathData) {
+        livePathRef.current.setAttribute("d", pathData);
+        livePathRef.current.setAttribute("fill", penColorRef.current);
+        livePathRef.current.style.display = "";
+      }
+    }
+
+    rafIdRef.current = requestAnimationFrame(renderLoop);
+  }, []);
+
   /* ── Pointer handlers with enhanced palm rejection ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
@@ -105,6 +146,12 @@ export function InkOverlay({
         // Palm filter: contact-size + pressure floor
         if (e.pressure < 0.01 || e.width > 20 || e.height > 20) return;
         lastPenDownRef.current = Date.now();
+
+        // First-run Apple Pencil onboarding
+        if (!firstContactFiredRef.current && onPencilFirstContact) {
+          firstContactFiredRef.current = true;
+          onPencilFirstContact();
+        }
       } else if (e.pointerType === "touch") {
         // 500ms touch-lockout after pen contact
         if (Date.now() - lastPenDownRef.current < TOUCH_LOCKOUT_MS) return;
@@ -115,44 +162,76 @@ export function InkOverlay({
 
       if (e.button !== 0) return;
       e.currentTarget.setPointerCapture(e.pointerId);
-      setIsPencilActive(true);
+      isDrawingRef.current = true;
       setSelectedStrokeId(null);
       setHoverPos(null);
 
       const [x, y] = getTransformedPoint(e.clientX, e.clientY);
-      setCurrentPoints([{ x, y, pressure: e.pressure ?? 0.5, tiltX: e.tiltX, tiltY: e.tiltY }]);
+      pointsBufferRef.current = [{ x, y, pressure: e.pressure ?? 0.5, tiltX: e.tiltX, tiltY: e.tiltY }];
+
+      // Hide live path initially
+      if (livePathRef.current) {
+        livePathRef.current.style.display = "none";
+        livePathRef.current.removeAttribute("d");
+      }
+
+      // Start the RAF render loop
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(renderLoop);
     },
-    [getTransformedPoint, fingerDrawing],
+    [getTransformedPoint, fingerDrawing, renderLoop, onPencilFirstContact],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       // Apple Pencil hover detection (pressure === 0, pointerType === "pen")
-      if (e.pointerType === "pen" && e.pressure === 0 && !isPencilActive) {
+      if (e.pointerType === "pen" && e.pressure === 0 && !isDrawingRef.current) {
         const [x, y] = getTransformedPoint(e.clientX, e.clientY);
         setHoverPos({ x, y });
         return;
       }
 
-      if (!isPencilActive) return;
+      if (!isDrawingRef.current) return;
       if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
 
       setHoverPos(null);
       const [x, y] = getTransformedPoint(e.clientX, e.clientY);
-      setCurrentPoints((prev) => [
-        ...prev,
-        { x, y, pressure: e.pressure ?? 0.5, tiltX: e.tiltX, tiltY: e.tiltY },
-      ]);
+      // Push directly to ref buffer — NO React state update, no re-render
+      pointsBufferRef.current.push({
+        x, y,
+        pressure: e.pressure ?? 0.5,
+        tiltX: e.tiltX,
+        tiltY: e.tiltY,
+      });
     },
-    [isPencilActive, getTransformedPoint, fingerDrawing],
+    [getTransformedPoint, fingerDrawing],
   );
 
   const handlePointerUp = useCallback(() => {
-    setIsPencilActive(false);
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    cancelAnimationFrame(rafIdRef.current);
 
+    // Hide live preview path
+    if (livePathRef.current) {
+      livePathRef.current.style.display = "none";
+      livePathRef.current.removeAttribute("d");
+    }
+
+    const currentPoints = pointsBufferRef.current;
     if (currentPoints.length < 3) {
-      setCurrentPoints([]);
+      pointsBufferRef.current = [];
       return;
+    }
+
+    /* ── Circle-to-Select detection ── */
+    if (onCircleSelect && svgRef.current) {
+      const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
+      if (matched.length > 0) {
+        onCircleSelect(matched);
+        pointsBufferRef.current = [];
+        return; // Don't create a stroke for selection gestures
+      }
     }
 
     /* ── Dynamic verse linking ── */
@@ -193,35 +272,43 @@ export function InkOverlay({
     };
 
     onStrokeComplete(newStroke);
-    setCurrentPoints([]);
-  }, [currentPoints, penColor, penSize, zoom, onStrokeComplete]);
+    pointsBufferRef.current = [];
+  }, [penColor, penSize, zoom, onStrokeComplete, onCircleSelect]);
 
   const handlePointerCancel = useCallback(() => {
-    setIsPencilActive(false);
-    setCurrentPoints([]);
+    isDrawingRef.current = false;
+    cancelAnimationFrame(rafIdRef.current);
+    pointsBufferRef.current = [];
+    if (livePathRef.current) {
+      livePathRef.current.style.display = "none";
+      livePathRef.current.removeAttribute("d");
+    }
   }, []);
 
   const handlePointerLeave = useCallback(() => {
     setHoverPos(null);
-    if (isPencilActive) {
+    if (isDrawingRef.current) {
       handlePointerUp();
     }
-  }, [isPencilActive, handlePointerUp]);
+  }, [handlePointerUp]);
+
+  /* ── Cleanup RAF on unmount ── */
+  useEffect(() => {
+    return () => cancelAnimationFrame(rafIdRef.current);
+  }, []);
 
   /* ── Global touch suppression while Pencil is active ── */
   useEffect(() => {
     const suppress = (ev: TouchEvent) => {
-      if (isPencilActive) ev.preventDefault();
+      if (isDrawingRef.current) ev.preventDefault();
     };
-    if (isPencilActive) {
-      document.addEventListener("touchstart", suppress, { passive: false });
-      document.addEventListener("touchmove", suppress, { passive: false });
-    }
+    document.addEventListener("touchstart", suppress, { passive: false });
+    document.addEventListener("touchmove", suppress, { passive: false });
     return () => {
       document.removeEventListener("touchstart", suppress);
       document.removeEventListener("touchmove", suppress);
     };
-  }, [isPencilActive]);
+  }, []);
 
   /* ── Keyboard undo ── */
   useEffect(() => {
@@ -271,26 +358,6 @@ export function InkOverlay({
     [strokes, selectedStrokeId, isDark],
   );
 
-  /* ── Live preview path ── */
-  const livePreview = useMemo(() => {
-    if (currentPoints.length < 3) return null;
-    const outline = getStroke(
-      currentPoints.map((p) => [p.x, p.y, p.pressure]),
-      { ...STROKE_OPTIONS, size: penSize },
-    );
-    const pathData = getSvgPathFromStroke(outline);
-    if (!pathData) return null;
-    return (
-      <path
-        d={pathData}
-        fill={penColor}
-        stroke="none"
-        opacity={0.7}
-        style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
-      />
-    );
-  }, [currentPoints, penColor, penSize]);
-
   return (
     <svg
       ref={svgRef}
@@ -299,7 +366,7 @@ export function InkOverlay({
       height="100%"
       style={{
         touchAction: "none",
-        cursor: isPencilActive ? "none" : "crosshair",
+        cursor: isDrawingRef.current ? "none" : "crosshair",
         pointerEvents: "auto",
       }}
       onPointerDown={handlePointerDown}
@@ -323,10 +390,18 @@ export function InkOverlay({
         </filter>
       </defs>
       {renderedStrokes}
-      {livePreview}
+
+      {/* ── Live preview path: mutated directly by RAF, no React state ── */}
+      <path
+        ref={livePathRef}
+        fill={penColor}
+        stroke="none"
+        opacity={0.7}
+        style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
+      />
 
       {/* Apple Pencil hover ghost cursor */}
-      {hoverPos && !isPencilActive && (
+      {hoverPos && !isDrawingRef.current && (
         <circle
           cx={hoverPos.x}
           cy={hoverPos.y}

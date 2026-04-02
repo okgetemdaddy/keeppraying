@@ -19,6 +19,7 @@ export function ZoomWrapper({ zoom, textSpacing, children, className = "" }: Zoo
         transform: zoom !== 1 ? `scale(${zoom})` : undefined,
         transformOrigin: "top left",
         width: zoom !== 1 ? `${100 / zoom}%` : undefined,
+        willChange: zoom !== 1 ? "transform" : undefined,
         touchAction: "pan-y",
         // CSS variable consumed by verse elements for extra writing room
         ["--verse-spacing" as string]: textSpacing,
