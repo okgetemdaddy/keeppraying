@@ -283,11 +283,12 @@ export function InkOverlay({
       color: penColor,
       size: penSize,
       linkedVerse: closestVerse,
+      glow: penGlow ?? null,
     };
 
     onStrokeComplete(newStroke);
     pointsBufferRef.current = [];
-  }, [penColor, penSize, zoom, onStrokeComplete, onCircleSelect]);
+  }, [penColor, penSize, penGlow, zoom, onStrokeComplete, onCircleSelect]);
 
   const handlePointerCancel = useCallback(() => {
     isDrawingRef.current = false;
