@@ -724,18 +724,25 @@ export function BibleReader() {
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
     const root = document.documentElement;
+    const hadDarkBefore = root.classList.contains("dark");
+
     if (premiumDark) {
       root.classList.add("dark", "bible-dark");
       if (oledMode) root.classList.add("bible-oled");
       else root.classList.remove("bible-oled");
     } else {
       root.classList.remove("bible-dark", "bible-oled");
-      // Only remove "dark" if no other system set it
-      if (!window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      if (!hadDarkBefore) {
         root.classList.remove("dark");
       }
     }
-    return () => { root.classList.remove("bible-dark", "bible-oled"); };
+
+    return () => {
+      root.classList.remove("bible-dark", "bible-oled");
+      if (!hadDarkBefore) {
+        root.classList.remove("dark");
+      }
+    };
   }, [premiumDark, oledMode]);
 
   // ── Active Bunch (session-only, resets on reload) ──
