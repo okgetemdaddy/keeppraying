@@ -68,6 +68,13 @@ export default function KeepReadingLanding() {
 
           <motion.p
             variants={FADE_UP}
+            className="text-[10px] font-semibold tracking-[0.35em] uppercase text-emerald-500/60"
+          >
+            Kingdom Prayers
+          </motion.p>
+
+          <motion.p
+            variants={FADE_UP}
             className="text-lg md:text-xl text-zinc-400 font-light leading-relaxed max-w-2xl mx-auto"
           >
             The only Bible study app that combines native Apple Pencil
