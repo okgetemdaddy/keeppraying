@@ -372,7 +372,7 @@ export default function Support() {
             <CardContent className="p-6 md:p-10">
               <div className="flex items-start gap-3 mb-5">
                 <Sparkles className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-                <h2 className="text-xl md:text-2xl font-bold text-foreground">Our Stance on AI</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground">Our Heart Behind the Tools</h2>
               </div>
               <div className="text-foreground/85 text-sm md:text-base leading-relaxed space-y-4 border-l-4 border-primary/30 pl-5">
                 <p>
