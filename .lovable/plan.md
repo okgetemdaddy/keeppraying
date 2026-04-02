@@ -1,40 +1,50 @@
 
 
-# Add Edge-Swipe Gestures for Bible Sleeve & Bible Pocket
+# Mobile Pen Bar for Bible Study Mode
 
-## Summary
+## Problem
+The `IPadStudyToolbar` was designed for iPad-width screens (10+ color swatches, neon inks, size slider, zoom/spacing row). On a phone (430px wide), everything crams together and overflows, as shown in the screenshot.
 
-Add two touch-based edge-swipe gestures to `BibleReader.tsx`:
-- **Left edge → right swipe**: opens the Bible Sleeve (`setSleeveOpen(true)`)
-- **Right edge → left swipe**: opens the Bible Pocket (`setPocketOpen(true)`)
+## Solution
+Create a new `MobileStudyToolbar` component optimized for phone screens, and conditionally render it instead of `IPadStudyToolbar` when `useIsMobile()` is true.
 
-## Changes — Single file: `src/components/bible/BibleReader.tsx`
+## Changes
 
-### Add a `useEffect` with touch event listeners
+### 1. New file: `src/components/bible/MobileStudyToolbar.tsx`
 
-- **Edge zones**: leftmost 24px for Sleeve, rightmost 24px for Pocket
-- **Threshold**: horizontal drag > 60px triggers open
-- **Guards**: disabled when `studyMode` is active or `canvasOpen` / `journalOpen` (avoids conflict with ink/drawing gestures)
-- **Gated to mobile/touch** via `useIsTouch()` (imported from `use-mobile.tsx`)
-- **Passive listeners** to avoid scroll jank
+A compact, phone-optimized ink toolbar with the same props interface as `IPadStudyToolbar`. Design:
 
-### Gesture logic (pseudocode)
+- **Single fixed row** at the bottom (above the tab bar, ~bottom-28), full-width pill
+- **5 color dots** (standard palette only, no neon row — keep it simple for phone)
+- **Pen size**: small/medium/large toggle (3 preset sizes) instead of a slider
+- **Undo/Redo**: two icon buttons
+- **Eraser (clear)**: one icon button
+- **Overflow menu** (three-dot or chevron): opens a bottom sheet with:
+  - Neon glow ink selection
+  - Finger drawing toggle
+  - Zoom slider
+  - Spacing slider
+  - Trash bin & voice note buttons
+- **Collapse/expand** via a minimal "✏️" pill (same pattern as iPad version)
+- No secondary row — everything fits in one compact strip + overflow sheet
 
+Layout sketch:
 ```text
-touchstart:
-  if clientX < 24        → record as "sleeve-swipe"
-  if clientX > width-24  → record as "pocket-swipe"
-
-touchmove:
-  track latest clientX
-
-touchend:
-  if sleeve-swipe && deltaX > 60  → setSleeveOpen(true)
-  if pocket-swipe && deltaX < -60 → setPocketOpen(true)
-  reset tracking
+┌─────────────────────────────────────────┐
+│ ● ● ● ● ●  │ S M L │ ↩ ↪ ◌ │ ⋯ │ ▾ │
+└─────────────────────────────────────────┘
+         ~44px tall, full-width pill
 ```
 
-### No other files changed
+### 2. Edit: `src/components/bible/BibleReader.tsx`
 
-Both `BibleSleeveSheet` and `BiblePocketSheet` already accept `open`/`onOpenChange` — we just set `open` to `true` from the gesture. The `useIsTouch` hook already exists in `use-mobile.tsx`.
+At the existing `IPadStudyToolbar` render site (~line 2009-2034):
+- Import `MobileStudyToolbar`
+- Use `useIsMobile()` (already imported) to conditionally render:
+  - Phone: `<MobileStudyToolbar ...props />`
+  - Tablet/Desktop: `<IPadStudyToolbar ...props />` (unchanged)
+
+### 3. No other files changed
+
+Same props, same state, same callbacks — just a different visual shell for phones.
 
