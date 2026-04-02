@@ -7,6 +7,45 @@
  * 3. Return the matched verse numbers
  */
 
+/**
+ * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
+ * ─────────────────────────────────────────────────────────
+ *
+ * CIRCLE-TO-LEXICON UPGRADE
+ *
+ * The current convex hull detects enclosed verse DOM nodes. To enable
+ * instant Strong's Concordance lookups, upgrade the intersection logic
+ * to target individual word <span> elements tagged with Strong's numbers:
+ *
+ *   <span data-strongs="G2424">Jesus</span>
+ *
+ * SPATIAL EXTRACTION PATTERN:
+ *
+ *   const handleCircleSelection = (polygon: Point2D[]) => {
+ *     const wordSpans = document.querySelectorAll('span[data-strongs]');
+ *     const selectedStrongs = new Set<string>();
+ *
+ *     wordSpans.forEach(span => {
+ *       const rect = span.getBoundingClientRect();
+ *       const center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+ *
+ *       if (pointInPolygon(center, polygon)) {
+ *         selectedStrongs.add(span.getAttribute('data-strongs'));
+ *         span.classList.add('lexicon-highlight');
+ *       }
+ *     });
+ *
+ *     if (selectedStrongs.size > 0) {
+ *       fetchLexiconData(Array.from(selectedStrongs));
+ *     }
+ *   };
+ *
+ * The CSS class `lexicon-highlight` triggers a brief glow animation on
+ * matched words. The `fetchLexiconData` call queries an edge function
+ * backed by a Strong's/Lexicon dataset, returning Greek/Hebrew roots,
+ * definitions, and cross-references in a floating popover.
+ */
+
 export interface Point2D {
   x: number;
   y: number;

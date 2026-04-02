@@ -13,6 +13,49 @@ import {
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
+/**
+ * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
+ * ─────────────────────────────────────────────────────────
+ *
+ * APPLE PENCIL HARDWARE INTERACTIONS (Double-Tap & Squeeze)
+ *
+ * WKWebView does not surface UIPencilInteraction events. To capture
+ * barrel double-tap and Pencil Pro squeeze (iOS 17.4+), intercept in
+ * Swift and pipe across the Capacitor bridge:
+ *
+ *   class PencilInteractionHandler: NSObject, UIPencilInteractionDelegate {
+ *       var webView: WKWebView
+ *
+ *       init(webView: WKWebView) {
+ *           self.webView = webView
+ *           super.init()
+ *           let interaction = UIPencilInteraction()
+ *           interaction.delegate = self
+ *           webView.addInteraction(interaction)
+ *       }
+ *
+ *       func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+ *           let jsCommand = "window.dispatchEvent(new CustomEvent('pencilDoubleTap'));"
+ *           webView.evaluateJavaScript(jsCommand, completionHandler: nil)
+ *       }
+ *   }
+ *
+ * REACT LISTENER PATTERN:
+ *
+ *   useEffect(() => {
+ *     const handleBarrelTap = () => {
+ *       setCurrentTool(prev => prev === 'pen' ? 'eraser' : 'pen');
+ *       Capacitor.Plugins.PencilKitBridge.setTool({ type: 'eraser' });
+ *     };
+ *     window.addEventListener('pencilDoubleTap', handleBarrelTap);
+ *     return () => window.removeEventListener('pencilDoubleTap', handleBarrelTap);
+ *   }, []);
+ *
+ * This bridges native hardware gestures to the existing React toolbar
+ * state without any runtime impact on the current web-only build.
+ */
+
+
 const PEN_COLORS_LIGHT = [
   { value: "#1A1A1A", label: "Iron Gall Black" },
   { value: "#4A0E0E", label: "Oxblood Red" },
