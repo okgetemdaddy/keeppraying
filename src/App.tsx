@@ -90,7 +90,7 @@ function AppShell() {
             features={[
               { icon: LayoutGrid, title: "Organize Your Prayers", description: "Pin, resize, and arrange prayer cards in a layout that's uniquely yours." },
               { icon: Heart, title: "Track God's Faithfulness", description: "Mark prayers as answered, add personal notes, and build a living testimony." },
-              { icon: Sparkles, title: "AI-Crafted Prayers", description: "Let PrayerAssist help you put your heart into words, then save them here." },
+              { icon: Sparkles, title: "Assisted Prayers", description: "Let PrayerAssist help you put your heart into words, then save them here." },
               { icon: BookOpen, title: "Private & Personal", description: "Your board is your prayer closet — visible only to you and God." },
             ]}
             verse="But when you pray, go into your room, close the door and pray to your Father, who is unseen."
