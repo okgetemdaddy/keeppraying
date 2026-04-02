@@ -191,9 +191,11 @@ function groupByVerse<T extends { verse_number: number }>(items: T[]): Map<numbe
 function HighlightedText({
   text,
   highlights,
+  highlightStyle = "invert",
 }: {
   text: string;
   highlights: UserHighlight[];
+  highlightStyle?: HighlightStyleMode;
 }) {
   if (!highlights.length) return <>{text}</>;
 
@@ -218,7 +220,7 @@ function HighlightedText({
     }
 
     if (end > start) {
-      const colorClass = HIGHLIGHT_COLORS[span.color] ?? HIGHLIGHT_COLORS.yellow;
+      const colorClass = getHighlightClass(span.color, highlightStyle);
       parts.push(
         <mark key={`hl-${i}`} className={`${colorClass} rounded-sm px-0.5 transition-colors`}>
           {text.slice(start, end)}
