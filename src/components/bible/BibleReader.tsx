@@ -1875,6 +1875,7 @@ export function BibleReader() {
                           verseAnnotation={annotationMap.get(v.number) ?? null}
                           onAnnotationSave={handleAnnotationSave}
                           verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                          highlightStyle={highlightStyle}
                         />
                         <AnimatePresence>
                           {noteInputVerse === v.number && (
