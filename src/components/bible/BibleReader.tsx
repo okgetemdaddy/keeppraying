@@ -525,6 +525,28 @@ export function BibleReader() {
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+
+  // ── Ink overlay state (iPad SVG full-page drawing) ──
+  const [inkZoom, setInkZoom] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ink_zoom") ?? "1"); } catch { return 1; }
+  });
+  const [inkTextSpacing, setInkTextSpacing] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ink_spacing") ?? "2.8"); } catch { return 2.8; }
+  });
+  const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
+  const [inkPenSize, setInkPenSize] = useState(8);
+  const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
+  const [inkStrokes, setInkStrokes] = useState<InkStroke[]>([]);
+
+  const handleInkZoomChange = useCallback((v: number) => {
+    setInkZoom(v);
+    try { localStorage.setItem("bible_ink_zoom", String(v)); } catch {}
+  }, []);
+  const handleInkTextSpacingChange = useCallback((v: number) => {
+    setInkTextSpacing(v);
+    try { localStorage.setItem("bible_ink_spacing", String(v)); } catch {}
+  }, []);
+
   const handleToggleStudyMode = useCallback((v: boolean) => {
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
