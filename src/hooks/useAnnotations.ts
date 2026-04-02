@@ -3,6 +3,44 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import type { StrokeData } from "@/components/bible/HandwritingEngine";
 
+/**
+ * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
+ * ─────────────────────────────────────────────────────────
+ *
+ * NATIVE INK SERIALIZATION & BIDIRECTIONAL SYNC
+ *
+ * When the Capacitor PencilKitBridge is active, native strokes are
+ * serialized via PKDrawing.dataRepresentation() → base64 and stored
+ * alongside the existing web stroke JSON in the `strokes` column.
+ *
+ * Schema consideration: add an optional `native_drawing_base64` text
+ * column to the annotations table for the raw PKDrawing data.
+ *
+ * BIDIRECTIONAL RENDERING:
+ *   - Web platforms: render from `strokes` JSON → SVG <path> elements
+ *   - Native iPadOS: render from `native_drawing_base64` → PKCanvasView
+ *   - Edits on either platform serialize back to both formats
+ *
+ * CAPACITOR LISTENER PATTERN:
+ *
+ *   import { Plugins } from '@capacitor/core';
+ *   const { PencilKitBridge } = Plugins;
+ *
+ *   PencilKitBridge.addListener('onNativeInkUpdated', (event) => {
+ *     const { drawingBase64 } = event;
+ *     saveAnnotation.mutate({
+ *       verseIds,
+ *       strokes: currentWebStrokes,
+ *       nativeDrawingBase64: drawingBase64,
+ *       existingId: annotationId,
+ *     });
+ *   });
+ *
+ * The exportForPencilKit() method already captures pressure, tilt, and
+ * azimuth — these map 1:1 to PKStrokePoint properties for lossless
+ * round-tripping between web and native ink engines.
+ */
+
 export interface Annotation {
   id: string;
   user_id: string;

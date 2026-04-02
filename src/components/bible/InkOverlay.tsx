@@ -3,6 +3,70 @@ import { getStroke } from "perfect-freehand";
 import type { Point } from "./HandwritingEngine";
 import { isClosedLoop, findVersesInsideStroke } from "@/lib/convexHull";
 
+/**
+ * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
+ * ─────────────────────────────────────────────────────────
+ *
+ * THE "TRANSPARENT GLASS" PATTERN
+ *
+ * The current RAF + SVG approach achieves ~4ms per frame via direct DOM
+ * mutation (bypassing React state), but this hits a theoretical ceiling
+ * in WKWebView. Native PKCanvasView on iPadOS achieves 9ms latency with
+ * Metal-backed rendering. To reach parity, the architecture must become
+ * a composite: DOM handles typography/layout, a native PKCanvasView sits
+ * directly above it for ink physics.
+ *
+ * SWIFT CAPACITOR PLUGIN SCAFFOLD:
+ *
+ *   import UIKit
+ *   import PencilKit
+ *   import Capacitor
+ *
+ *   @objc(PencilKitBridge)
+ *   public class PencilKitBridge: CAPPlugin, PKCanvasViewDelegate {
+ *       var canvasView: PKCanvasView!
+ *
+ *       public override func load() {
+ *           canvasView = PKCanvasView(frame: webView!.bounds)
+ *           canvasView.isOpaque = false          // Let DOM text show through
+ *           canvasView.backgroundColor = .clear
+ *           canvasView.delegate = self
+ *           canvasView.drawingPolicy = .pencilOnly  // Palm rejection
+ *           webView!.scrollView.addSubview(canvasView)
+ *           canvasView.tool = PKInkingTool(.pen, color: .black, width: 2.0)
+ *       }
+ *
+ *       public func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
+ *           let drawingData = canvasView.drawing.dataRepresentation()
+ *           let base64String = drawingData.base64EncodedString()
+ *           self.notifyListeners("onNativeInkUpdated", data: [
+ *               "drawingBase64": base64String
+ *           ])
+ *       }
+ *   }
+ *
+ * 120Hz COALESCED & PREDICTED TOUCHES:
+ *
+ * Apple Pencil samples at 240Hz; iPad Pro renders at 120Hz. Standard
+ * PointerEvents only fire at display refresh, losing 50% of curvature
+ * data. In the native layer, extract sub-frame telemetry:
+ *
+ *   override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+ *       guard let touch = touches.first, let event = event else { return }
+ *       let coalesced = event.coalescedTouches(for: touch) ?? []
+ *       for cTouch in coalesced {
+ *           // Append force, azimuth, altitude to point buffer
+ *       }
+ *       let predicted = event.predictedTouches(for: touch) ?? []
+ *       for pTouch in predicted {
+ *           // Draw to temporary prediction layer, flush on next frame
+ *       }
+ *   }
+ *
+ * When PKCanvasView is active, this file's SVG rendering becomes a
+ * fallback for non-iPadOS platforms only.
+ */
+
 /* ── SVG path helper ── */
 function getSvgPathFromStroke(stroke: number[][], closed = true): string {
   const len = stroke.length;
