@@ -29,11 +29,19 @@ const PEN_COLORS_DARK = [
   { value: "#D4C4A8", label: "Sepia Highlighter" },
 ];
 
+const NEON_COLORS = [
+  { core: "#E0FFFF", bloom: "#00FFFF", label: "Electric Cyan", bg: "#0a1a1a" },
+  { core: "#FFD8FF", bloom: "#FF00FF", label: "Neon Fuchsia", bg: "#1a0a1a" },
+  { core: "#EAFFEA", bloom: "#39FF14", label: "Radiant Lime", bg: "#0a1a0a" },
+];
+
 interface IPadStudyToolbarProps {
   penColor: string;
   onPenColorChange: (color: string) => void;
   penSize: number;
   onPenSizeChange: (size: number) => void;
+  penGlow?: string | null;
+  onPenGlowChange?: (glow: string | null) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
   textSpacing: number;
