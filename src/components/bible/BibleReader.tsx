@@ -80,7 +80,7 @@ import { AddToBunchDrawer, VerseAddedToast } from "@/components/bible/AddToBunch
 import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
-import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
+
 import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
 import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
@@ -629,13 +629,6 @@ export function BibleReader() {
     return () => { window.dispatchEvent(new Event("tabbar:show")); };
   }, []);
 
-  // ── First-click feature tour ──
-  const [showTour, setShowTour] = useState(false);
-  const tourSeen = useRef(() => {
-    try { return localStorage.getItem("bible_features_seen") === "true"; } catch { return true; }
-  });
-  const pendingTourVerse = useRef<{ verseNumber: number; event: React.MouseEvent } | null>(null);
-
   const readingAreaRef = useRef<HTMLDivElement>(null);
   // Data hooks
   const { data: versions, isLoading: versionsLoading } = useBibleVersions();
@@ -1085,33 +1078,12 @@ export function BibleReader() {
     [versionId, bookUsfm, currentChapter, currentBook, selectedVerses, crossSelections.length],
   );
 
-  // ── Tour-intercepting wrapper ──
   const handleTapSelect = useCallback(
     (verseNumber: number, e: React.MouseEvent) => {
-      // First-click tour intercept
-      if (!tourSeen.current()) {
-        pendingTourVerse.current = { verseNumber, event: e };
-        setShowTour(true);
-        return;
-      }
       handleTapSelectInner(verseNumber, e);
     },
     [handleTapSelectInner],
   );
-
-  // ── Tour acknowledge handler ──
-  const handleTourAcknowledge = useCallback(() => {
-    setShowTour(false);
-    try { localStorage.setItem("bible_features_seen", "true"); } catch {}
-    // Update the ref so it won't show again
-    tourSeen.current = () => true;
-    // Now fire the original tap-select for the verse the user clicked
-    if (pendingTourVerse.current) {
-      const { verseNumber, event } = pendingTourVerse.current;
-      pendingTourVerse.current = null;
-      handleTapSelectInner(verseNumber, event);
-    }
-  }, [handleTapSelectInner]);
 
 
   useEffect(() => {
@@ -2067,12 +2039,6 @@ export function BibleReader() {
 
       {/* ── Verse Added Toast ── */}
       <VerseAddedToast bunchName={verseAddedToast.name} visible={verseAddedToast.visible} />
-
-      {/* ── First-Click Feature Tour ── */}
-      <BibleFeaturesTour
-        open={showTour}
-        onAcknowledge={handleTourAcknowledge}
-      />
 
       {/* ── Bible Search ── */}
       <BibleSearchDialog
