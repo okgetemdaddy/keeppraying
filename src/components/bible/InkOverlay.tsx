@@ -37,6 +37,7 @@ interface InkOverlayProps {
   penColor?: string;
   penSize?: number;
   fingerDrawing?: boolean;
+  isDark?: boolean;
 }
 
 const STROKE_OPTIONS = {
