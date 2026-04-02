@@ -27,6 +27,10 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hide FAB on the Bible reader
+  if (location.pathname === "/bible") return null;
 
   const authGuard = (fn: () => void) => () => {
     if (!user) { navigate("/auth"); return; }
