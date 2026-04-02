@@ -486,6 +486,7 @@ function getCrossBunchTranslation(): boolean {
 export function BibleReader() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { isIPad, isIPhone } = useDeviceDetect();
   const { size: textSize, setTextSize, MIN_SIZE, MAX_SIZE } = useBibleTextSize();
   const { prefs: boardPrefs, savePrefs: saveBoardPrefs } = useBoardPreferences();
   const { isSupported: immersiveSupported, isStandalone: immersiveStandalone, isIOSLimited: immersiveIOSLimited, isActive: immersiveActive, toggleImmersive } = useImmersiveMode(boardPrefs, saveBoardPrefs);
