@@ -259,6 +259,14 @@ export function InkOverlay({
       onPointerLeave={handlePointerUp}
       onPointerCancel={handlePointerCancel}
     >
+      <defs>
+        <filter id="ink-bleed">
+          <feGaussianBlur stdDeviation="0.3" />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0.95" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
       {renderedStrokes}
       {livePreview}
     </svg>
