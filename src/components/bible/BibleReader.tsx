@@ -337,12 +337,13 @@ function EnrichedVerse({
     <div
       id={`verse-${verse.number}`}
       data-verse={verse.number}
-      className={`group relative ${studyMode ? 'leading-[2.8]' : 'leading-relaxed'} text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
+      className={`verse group relative ${studyMode ? '' : 'leading-relaxed'} text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
+      style={studyMode ? { lineHeight: `var(--verse-spacing, 2.8)`, paddingBlock: `calc((var(--verse-spacing, 2.8) - 1) * 0.25em)` } : undefined}
       onClick={(e) => onTapSelect(verse.number, e)}
     >
       <p>
         <BookmarkRibbon bookmark={bookmark} />
-        {/* Annotation indicator */}
+        {/* Annotation indicator (legacy per-verse) */}
         {verseAnnotation && !studyMode && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowAnnotation(!showAnnotation); }}
@@ -369,23 +370,6 @@ function EnrichedVerse({
             initialStrokes={verseAnnotation.strokes}
             showToolbar={false}
             className="pointer-events-none opacity-80"
-          />
-        </div>
-      )}
-
-      {/* Study mode: inline annotation canvas */}
-      {studyMode && (
-        <div className="mt-1" style={{ height: 60 }}>
-          <HandwritingEngine
-            height={60}
-            variant="margin"
-            initialStrokes={verseAnnotation?.strokes ?? []}
-            showToolbar={false}
-            onSave={(strokes) => {
-              if (verseIdString && onAnnotationSave) {
-                onAnnotationSave(verseIdString, strokes, verseAnnotation?.id);
-              }
-            }}
           />
         </div>
       )}
