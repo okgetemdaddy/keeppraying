@@ -229,6 +229,9 @@ export function BibleSleeveSheet({
   onToggleStudyMode,
   onStudyModeVariantChange,
   isIPad = false,
+  isIPhone = false,
+  tapNavMode = false,
+  onToggleTapNav,
   highlightStyle = "invert",
   onHighlightStyleChange,
 }: BibleSleeveSheetProps) {
