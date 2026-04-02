@@ -90,7 +90,7 @@ import { HandwritingEngine, type StrokeData } from "@/components/bible/Handwriti
 import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
 import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
-import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
+import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
