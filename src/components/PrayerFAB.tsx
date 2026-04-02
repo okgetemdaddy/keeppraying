@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Heart, HandHeart, X, Plus, Globe, Sparkles, Users, Home,
   Swords, Radio, BookOpen, HeartHandshake, LayoutDashboard, Wind,
@@ -27,6 +27,10 @@ export function PrayerFAB({ onAskCommunity, onAskTeam, extraItems = [] }: Prayer
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hide FAB on the Bible reader
+  if (location.pathname === "/bible") return null;
 
   const authGuard = (fn: () => void) => () => {
     if (!user) { navigate("/auth"); return; }
