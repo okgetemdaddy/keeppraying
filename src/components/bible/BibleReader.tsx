@@ -591,11 +591,15 @@ export function BibleReader() {
   useEffect(() => {
     const root = document.documentElement;
     if (premiumDark) {
-      root.classList.add("bible-dark");
+      root.classList.add("dark", "bible-dark");
       if (oledMode) root.classList.add("bible-oled");
       else root.classList.remove("bible-oled");
     } else {
       root.classList.remove("bible-dark", "bible-oled");
+      // Only remove "dark" if no other system set it
+      if (!window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        root.classList.remove("dark");
+      }
     }
     return () => { root.classList.remove("bible-dark", "bible-oled"); };
   }, [premiumDark, oledMode]);

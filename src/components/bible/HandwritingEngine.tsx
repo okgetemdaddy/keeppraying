@@ -282,7 +282,7 @@ export const HandwritingEngine = forwardRef<HandwritingEngineHandle, Handwriting
         </svg>
 
         {showToolbar && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-md shadow-xl border border-amber-200 rounded-3xl px-4 py-2 z-10">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-background/90 backdrop-blur-md shadow-xl border border-amber-200 rounded-3xl px-4 py-2 z-10">
             {['#1a1a1a', '#9c0f0f', '#0f4d9c', '#0f9c4d', '#9c6f0f'].map((color) => (
               <button
                 key={color}
