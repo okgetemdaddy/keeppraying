@@ -95,8 +95,10 @@ export function InkOverlay({
   // Stable refs for current pen settings (avoid stale closures in RAF loop)
   const penColorRef = useRef(penColor);
   const penSizeRef = useRef(penSize);
+  const penGlowRef = useRef(penGlow);
   penColorRef.current = penColor;
   penSizeRef.current = penSize;
+  penGlowRef.current = penGlow ?? null;
 
   /* ── DOMMatrix-based coordinate normalization ── */
   const getTransformedPoint = useCallback(
