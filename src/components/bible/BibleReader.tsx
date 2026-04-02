@@ -1892,7 +1892,7 @@ export function BibleReader() {
           fingerDrawing={inkFingerDrawing}
           onFingerDrawingChange={setInkFingerDrawing}
         />
-      )
+      )}
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
