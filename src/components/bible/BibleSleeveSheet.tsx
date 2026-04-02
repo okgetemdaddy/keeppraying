@@ -170,6 +170,10 @@ interface BibleSleeveSheetProps {
   pencilDetected?: boolean;
   onToggleStudyMode?: (v: boolean) => void;
   onStudyModeVariantChange?: (v: "margin" | "canvas" | "journal") => void;
+
+  /* highlight style */
+  highlightStyle?: "invert" | "neon";
+  onHighlightStyleChange?: (v: "invert" | "neon") => void;
 }
 
 export function BibleSleeveSheet({

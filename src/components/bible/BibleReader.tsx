@@ -2060,6 +2060,8 @@ export function BibleReader() {
         pencilDetected={pencilDetected}
         onToggleStudyMode={handleToggleStudyMode}
         onStudyModeVariantChange={handleStudyModeVariantChange}
+        highlightStyle={highlightStyle}
+        onHighlightStyleChange={handleHighlightStyleChange}
       />
 
       {/* ── Manuscript Canvas (Mode 2) ── */}
