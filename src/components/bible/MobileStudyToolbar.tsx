@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Undo2,
   Redo2,
@@ -8,6 +7,11 @@ import {
   Mic,
   Trash2,
   MoreHorizontal,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Grid3X3,
+  Minus,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -15,6 +19,7 @@ import {
   DrawerContent,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import type { TextAlign, CanvasBackground } from "@/components/bible/ZoomWrapper";
 
 const PEN_COLORS_LIGHT = [
   { value: "#1A1A1A", label: "Iron Gall Black" },
@@ -67,6 +72,12 @@ interface MobileStudyToolbarProps {
   onOpenTrash?: () => void;
   onOpenVoice?: () => void;
   hasTrashItems?: boolean;
+  textAlign?: TextAlign;
+  onTextAlignChange?: (v: TextAlign) => void;
+  marginWidth?: number;
+  onMarginWidthChange?: (v: number) => void;
+  canvasBackground?: CanvasBackground;
+  onCanvasBackgroundChange?: (v: CanvasBackground) => void;
 }
 
 function closestPreset(size: number): string {
@@ -102,6 +113,12 @@ export function MobileStudyToolbar({
   onOpenTrash,
   onOpenVoice,
   hasTrashItems = false,
+  textAlign = "left",
+  onTextAlignChange,
+  marginWidth = 30,
+  onMarginWidthChange,
+  canvasBackground = "none",
+  onCanvasBackgroundChange,
 }: MobileStudyToolbarProps) {
   const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
@@ -278,6 +295,77 @@ export function MobileStudyToolbar({
                     className="flex-1"
                   />
                   <span className="text-xs font-mono text-muted-foreground w-8 text-right">{textSpacing.toFixed(1)}×</span>
+                </div>
+              </div>
+
+              {/* ─── Workspace Settings ─── */}
+              <div className="flex flex-col gap-3 pt-2 border-t border-border">
+                <span className="text-xs font-semibold text-foreground">Workspace</span>
+
+                {/* Text alignment */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Text Alignment</span>
+                  <div className="flex items-center gap-1">
+                    {([
+                      { val: "left" as TextAlign, icon: AlignLeft, label: "Left" },
+                      { val: "center" as TextAlign, icon: AlignCenter, label: "Center" },
+                      { val: "right" as TextAlign, icon: AlignRight, label: "Right" },
+                    ]).map(({ val, icon: Icon, label }) => (
+                      <button
+                        key={val}
+                        onClick={() => onTextAlignChange?.(val)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-colors ${
+                          textAlign === val
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Writing space slider */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Writing Space</span>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      value={[marginWidth]}
+                      min={0}
+                      max={70}
+                      step={5}
+                      onValueChange={([v]) => onMarginWidthChange?.(v)}
+                      className="flex-1"
+                    />
+                    <span className="text-xs font-mono text-muted-foreground w-8 text-right">{marginWidth}%</span>
+                  </div>
+                </div>
+
+                {/* Canvas background */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">Canvas Style</span>
+                  <div className="flex items-center gap-1">
+                    {([
+                      { val: "none" as CanvasBackground, icon: Minus, label: "Blank" },
+                      { val: "dots" as CanvasBackground, icon: Grid3X3, label: "Dots" },
+                      { val: "lines" as CanvasBackground, label: "Lines", iconText: "≡" },
+                    ]).map(({ val, icon: Icon, label, iconText }) => (
+                      <button
+                        key={val}
+                        onClick={() => onCanvasBackgroundChange?.(val)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-colors ${
+                          canvasBackground === val
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {Icon ? <Icon className="h-4 w-4" /> : <span className="text-base font-bold">{iconText}</span>}
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

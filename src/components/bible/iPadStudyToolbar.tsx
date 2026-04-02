@@ -8,53 +8,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Mic,
-  MousePointer2,
   Trash2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Grid3X3,
+  Minus,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-
-/**
- * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
- * ─────────────────────────────────────────────────────────
- *
- * APPLE PENCIL HARDWARE INTERACTIONS (Double-Tap & Squeeze)
- *
- * WKWebView does not surface UIPencilInteraction events. To capture
- * barrel double-tap and Pencil Pro squeeze (iOS 17.4+), intercept in
- * Swift and pipe across the Capacitor bridge:
- *
- *   class PencilInteractionHandler: NSObject, UIPencilInteractionDelegate {
- *       var webView: WKWebView
- *
- *       init(webView: WKWebView) {
- *           self.webView = webView
- *           super.init()
- *           let interaction = UIPencilInteraction()
- *           interaction.delegate = self
- *           webView.addInteraction(interaction)
- *       }
- *
- *       func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
- *           let jsCommand = "window.dispatchEvent(new CustomEvent('pencilDoubleTap'));"
- *           webView.evaluateJavaScript(jsCommand, completionHandler: nil)
- *       }
- *   }
- *
- * REACT LISTENER PATTERN:
- *
- *   useEffect(() => {
- *     const handleBarrelTap = () => {
- *       setCurrentTool(prev => prev === 'pen' ? 'eraser' : 'pen');
- *       Capacitor.Plugins.PencilKitBridge.setTool({ type: 'eraser' });
- *     };
- *     window.addEventListener('pencilDoubleTap', handleBarrelTap);
- *     return () => window.removeEventListener('pencilDoubleTap', handleBarrelTap);
- *   }, []);
- *
- * This bridges native hardware gestures to the existing React toolbar
- * state without any runtime impact on the current web-only build.
- */
-
+import type { TextAlign, CanvasBackground } from "@/components/bible/ZoomWrapper";
 
 const PEN_COLORS_LIGHT = [
   { value: "#1A1A1A", label: "Iron Gall Black" },
@@ -101,6 +63,12 @@ interface IPadStudyToolbarProps {
   onOpenTrash?: () => void;
   onOpenVoice?: () => void;
   hasTrashItems?: boolean;
+  textAlign?: TextAlign;
+  onTextAlignChange?: (v: TextAlign) => void;
+  marginWidth?: number;
+  onMarginWidthChange?: (v: number) => void;
+  canvasBackground?: CanvasBackground;
+  onCanvasBackgroundChange?: (v: CanvasBackground) => void;
 }
 
 export function IPadStudyToolbar({
@@ -126,6 +94,12 @@ export function IPadStudyToolbar({
   onOpenTrash,
   onOpenVoice,
   hasTrashItems = false,
+  textAlign = "left",
+  onTextAlignChange,
+  marginWidth = 30,
+  onMarginWidthChange,
+  canvasBackground = "none",
+  onCanvasBackgroundChange,
 }: IPadStudyToolbarProps) {
   const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
@@ -339,7 +313,7 @@ export function IPadStudyToolbar({
         </button>
       </div>
 
-      {/* Secondary row: zoom + spacing */}
+      {/* Secondary row: zoom + spacing + workspace */}
       <div className="flex items-center gap-3 bg-card/90 backdrop-blur-md shadow-lg border border-border rounded-2xl px-3 py-1.5 text-xs">
         <div className="flex items-center gap-1.5">
           <ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
@@ -367,6 +341,70 @@ export function IPadStudyToolbar({
             className="w-20"
           />
           <span className="text-[0.6rem] font-mono text-muted-foreground w-6">{textSpacing.toFixed(1)}×</span>
+        </div>
+
+        <div className="w-px h-5 bg-border" />
+
+        {/* ─── Workspace: Text Align ─── */}
+        <div className="flex items-center gap-0.5">
+          {([
+            { val: "left" as TextAlign, icon: AlignLeft, label: "Align Left" },
+            { val: "center" as TextAlign, icon: AlignCenter, label: "Center" },
+            { val: "right" as TextAlign, icon: AlignRight, label: "Align Right" },
+          ]).map(({ val, icon: Icon, label }) => (
+            <button
+              key={val}
+              onClick={() => onTextAlignChange?.(val)}
+              className={`flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
+                textAlign === val
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+              title={label}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          ))}
+        </div>
+
+        <div className="w-px h-5 bg-border" />
+
+        {/* ─── Workspace: Writing Space slider ─── */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[0.6rem] text-muted-foreground font-medium">Margin</span>
+          <Slider
+            value={[marginWidth]}
+            min={0}
+            max={70}
+            step={5}
+            onValueChange={([v]) => onMarginWidthChange?.(v)}
+            className="w-16"
+          />
+          <span className="text-[0.6rem] font-mono text-muted-foreground w-6">{marginWidth}%</span>
+        </div>
+
+        <div className="w-px h-5 bg-border" />
+
+        {/* ─── Workspace: Canvas Background ─── */}
+        <div className="flex items-center gap-0.5">
+          {([
+            { val: "none" as CanvasBackground, icon: Minus, label: "Blank" },
+            { val: "dots" as CanvasBackground, icon: Grid3X3, label: "Dot Grid" },
+            { val: "lines" as CanvasBackground, label: "Lines", iconText: "≡" },
+          ]).map(({ val, icon: Icon, label, iconText }) => (
+            <button
+              key={val}
+              onClick={() => onCanvasBackgroundChange?.(val)}
+              className={`flex items-center justify-center w-7 h-7 rounded-lg transition-colors ${
+                canvasBackground === val
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+              title={label}
+            >
+              {Icon ? <Icon className="h-3.5 w-3.5" /> : <span className="text-sm font-bold">{iconText}</span>}
+            </button>
+          ))}
         </div>
       </div>
     </div>
