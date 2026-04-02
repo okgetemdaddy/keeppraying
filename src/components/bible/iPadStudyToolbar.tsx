@@ -33,6 +33,7 @@ interface IPadStudyToolbarProps {
   fingerDrawing: boolean;
   onFingerDrawingChange: (v: boolean) => void;
   isPencilActive?: boolean;
+  isDark?: boolean;
 }
 
 export function IPadStudyToolbar({
