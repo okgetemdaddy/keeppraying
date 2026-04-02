@@ -1875,6 +1875,25 @@ export function BibleReader() {
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
+      {/* ── iPad Ink Toolbar (Mode 1: Marginalia) ── */}
+      {studyMode && studyModeVariant === "margin" && (
+        <IPadStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          zoom={inkZoom}
+          onZoomChange={handleInkZoomChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
+          onUndo={handleInkUndo}
+          onClear={handleInkClear}
+          canUndo={inkStrokes.length > 0}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+        />
+      )
+
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
         open={addToBunchOpen}
