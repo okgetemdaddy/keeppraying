@@ -2096,66 +2096,66 @@ export function BibleReader() {
 
       {/* ── Ink Toolbar (Mode 1: Marginalia) — hardware-gated ── */}
       {studyMode && studyModeVariant === "margin" && isIPhone && (
-          <MobileStudyToolbar
-            penColor={inkPenColor}
-            onPenColorChange={setInkPenColor}
-            penSize={inkPenSize}
-            onPenSizeChange={setInkPenSize}
-            penGlow={inkPenGlow}
-            onPenGlowChange={handleInkPenGlowChange}
-            zoom={inkZoom}
-            onZoomChange={handleInkZoomChange}
-            textSpacing={inkTextSpacing}
-            onTextSpacingChange={handleInkTextSpacingChange}
-            onUndo={handleInkUndo}
-            onRedo={handleInkRedo}
-            onClear={handleInkClearRequest}
-            canUndo={inkHistory.canUndo}
-            canRedo={inkHistory.canRedo}
-            fingerDrawing={inkFingerDrawing}
-            onFingerDrawingChange={setInkFingerDrawing}
-            isDark={premiumDark || document.documentElement.classList.contains("dark")}
-            onOpenTrash={() => setInkTrashOpen(true)}
-            onOpenVoice={() => setVoiceOverlayActive(true)}
-            hasTrashItems={inkHistory.trashBin.length > 0}
-            textAlign={wsTextAlign}
-            onTextAlignChange={handleWsTextAlign}
-            marginWidth={wsMarginWidth}
-            onMarginWidthChange={handleWsMarginWidth}
-            canvasBackground={wsCanvasBackground}
-            onCanvasBackgroundChange={handleWsCanvasBackground}
-          />
-        ) : (
-          <IPadStudyToolbar
-            penColor={inkPenColor}
-            onPenColorChange={setInkPenColor}
-            penSize={inkPenSize}
-            onPenSizeChange={setInkPenSize}
-            penGlow={inkPenGlow}
-            onPenGlowChange={handleInkPenGlowChange}
-            zoom={inkZoom}
-            onZoomChange={handleInkZoomChange}
-            textSpacing={inkTextSpacing}
-            onTextSpacingChange={handleInkTextSpacingChange}
-            onUndo={handleInkUndo}
-            onRedo={handleInkRedo}
-            onClear={handleInkClearRequest}
-            canUndo={inkHistory.canUndo}
-            canRedo={inkHistory.canRedo}
-            fingerDrawing={inkFingerDrawing}
-            onFingerDrawingChange={setInkFingerDrawing}
-            isDark={premiumDark || document.documentElement.classList.contains("dark")}
-            onOpenTrash={() => setInkTrashOpen(true)}
-            onOpenVoice={() => setVoiceOverlayActive(true)}
-            hasTrashItems={inkHistory.trashBin.length > 0}
-            textAlign={wsTextAlign}
-            onTextAlignChange={handleWsTextAlign}
-            marginWidth={wsMarginWidth}
-            onMarginWidthChange={handleWsMarginWidth}
-            canvasBackground={wsCanvasBackground}
-            onCanvasBackgroundChange={handleWsCanvasBackground}
-          />
-        )
+        <MobileStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          penGlow={inkPenGlow}
+          onPenGlowChange={handleInkPenGlowChange}
+          zoom={inkZoom}
+          onZoomChange={handleInkZoomChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
+          onUndo={handleInkUndo}
+          onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
+          canUndo={inkHistory.canUndo}
+          canRedo={inkHistory.canRedo}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+          isDark={premiumDark || document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
+          textAlign={wsTextAlign}
+          onTextAlignChange={handleWsTextAlign}
+          marginWidth={wsMarginWidth}
+          onMarginWidthChange={handleWsMarginWidth}
+          canvasBackground={wsCanvasBackground}
+          onCanvasBackgroundChange={handleWsCanvasBackground}
+        />
+      )}
+      {studyMode && studyModeVariant === "margin" && isIPad && (
+        <IPadStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          penGlow={inkPenGlow}
+          onPenGlowChange={handleInkPenGlowChange}
+          zoom={inkZoom}
+          onZoomChange={handleInkZoomChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
+          onUndo={handleInkUndo}
+          onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
+          canUndo={inkHistory.canUndo}
+          canRedo={inkHistory.canRedo}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+          isDark={premiumDark || document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
+          textAlign={wsTextAlign}
+          onTextAlignChange={handleWsTextAlign}
+          marginWidth={wsMarginWidth}
+          onMarginWidthChange={handleWsMarginWidth}
+          canvasBackground={wsCanvasBackground}
+          onCanvasBackgroundChange={handleWsCanvasBackground}
+        />
       )}
 
       {/* ── Eraser Confirmation Dialog ── */}
