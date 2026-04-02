@@ -670,63 +670,80 @@ export function BibleReader() {
   const inkAnnotationId = inkAnnotation?.id;
   useEffect(() => {
     if (inkAnnotation) {
-      setInkStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
+      inkHistory.replaceStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
     } else {
-      setInkStrokes([]);
+      inkHistory.replaceStrokes([]);
     }
   }, [inkAnnotation]);
 
   // ── Debounced ink auto-save ──
   const inkSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleInkStrokeComplete = useCallback(
-    (stroke: InkStroke) => {
-      setInkStrokes((prev) => {
-        const updated = [...prev, stroke];
-        // Schedule debounced save
-        if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
-        inkSaveTimer.current = setTimeout(() => {
-          if (!bookUsfm || !currentChapter) return;
-          const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
-          saveAnnotationMut.mutate({
-            verseIds: [inkKey],
-            strokes: updated as unknown as StrokeData[],
-            existingId: inkAnnotationId,
-          });
-        }, 500);
-        return updated;
-      });
-    },
-    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
-  );
-
-  const handleInkUndo = useCallback(() => {
-    setInkStrokes((prev) => {
-      const updated = prev.slice(0, -1);
-      // Schedule debounced save
+  const scheduleInkSave = useCallback(
+    (strokesToSave: InkStroke[]) => {
       if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
       inkSaveTimer.current = setTimeout(() => {
         if (!bookUsfm || !currentChapter) return;
         const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
         saveAnnotationMut.mutate({
           verseIds: [inkKey],
-          strokes: updated as unknown as StrokeData[],
+          strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
         });
       }, 500);
-      return updated;
-    });
-  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+    },
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
+  );
 
-  const handleInkClear = useCallback(() => {
-    setInkStrokes([]);
-    if (!bookUsfm || !currentChapter) return;
-    const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
-    saveAnnotationMut.mutate({
-      verseIds: [inkKey],
-      strokes: [] as unknown as StrokeData[],
-      existingId: inkAnnotationId,
-    });
-  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+  const handleInkStrokeComplete = useCallback(
+    (stroke: InkStroke) => {
+      inkHistory.addStroke(stroke);
+      scheduleInkSave([...inkHistory.strokes, stroke]);
+    },
+    [inkHistory, scheduleInkSave],
+  );
+
+  const handleInkUndo = useCallback(() => {
+    inkHistory.undo();
+    // Save after undo — use the state that will exist after undo
+    scheduleInkSave(inkHistory.strokes.slice(0, -1));
+  }, [inkHistory, scheduleInkSave]);
+
+  const handleInkRedo = useCallback(() => {
+    inkHistory.redo();
+  }, [inkHistory]);
+
+  const handleInkClearRequest = useCallback(() => {
+    if (inkHistory.strokes.length === 0) return;
+    setEraserConfirmOpen(true);
+  }, [inkHistory.strokes.length]);
+
+  const handleInkClearConfirm = useCallback(() => {
+    setEraserConfirmOpen(false);
+    inkHistory.clearAll();
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+    scheduleInkSave([]);
+  }, [inkHistory, scheduleInkSave]);
+
+  // ── Voice annotation handler ──
+  const handleVoiceTranscript = useCallback(
+    (transcript: string, linkedVerse: number | null) => {
+      if (!bookUsfm || !currentChapter || !user?.id) return;
+      const verseKey = linkedVerse
+        ? `${bookUsfm}.${currentChapter.id}.${linkedVerse}`
+        : `${bookUsfm}.${currentChapter.id}.voice`;
+      saveAnnotationMut.mutate({
+        verseIds: [verseKey],
+        strokes: [],
+        typedText: `🎙️ ${transcript}`,
+      });
+      toast.success("Voice note saved", {
+        description: linkedVerse ? `Linked to verse ${linkedVerse}` : "Saved to chapter",
+      });
+    },
+    [bookUsfm, currentChapter, user?.id, saveAnnotationMut],
+  );
 
   // Build a map: verseNumber → annotation (for legacy per-verse preview)
   const annotationMap = useMemo(() => {
