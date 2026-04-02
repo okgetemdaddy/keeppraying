@@ -2002,6 +2002,7 @@ export function BibleReader() {
         chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
         chapterAnnotations={chapterAnnotations ?? []}
         inkStrokes={inkHistory.strokes}
+        journalAnnotations={journalAnnotations ?? []}
         onTryAction={(actionId) => {
           setPocketOpen(false);
           switch (actionId) {
