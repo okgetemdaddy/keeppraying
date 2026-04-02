@@ -1,69 +1,33 @@
 
 
-# Fix: Ink Overlay Must Span Full Grid (Text + Margins)
+# iPad-Only Changes: Disable Chapter Swipe in Study Mode + Move Study Mode Section Up
 
-## Problem
+## Changes
 
-In `ZoomWrapper.tsx`, all `children` (including `InkOverlay`) are rendered inside the text column cell:
+### 1. Disable chapter swipe when study mode is active (`BibleReader.tsx`)
 
-```text
-┌─────────────────────────────────────────┐
-│ [Text + InkOverlay]  │  [Margin Space]  │  ← InkOverlay trapped in text cell
-└─────────────────────────────────────────┘
-```
+The `motion.div` at ~line 1740 has `drag="x"` which enables horizontal swipe to change chapters. When `studyMode` is active, this conflicts with drawing gestures.
 
-The user can only draw on the text column, not the margin writing space. This defeats the purpose of the spatial canvas.
+**Fix**: Conditionally disable the drag prop:
+- `drag={studyMode ? false : "x"}`
+- Also guard the `onDragEnd` handler similarly
 
-## Solution
+This only affects the behavior when study mode is on (which is iPad/pencil-only), so mobile reading swipe remains untouched.
 
-Add an `overlay` prop to `ZoomWrapper` that renders **inside the grid container** but spans all columns via `position: absolute; inset: 0`. This way the SVG ink surface covers the entire width (text + margins).
+### 2. Move "iPad Study Mode" section near the top of Bible Sleeve (`BibleSleeveSheet.tsx`)
 
-### Change 1: `ZoomWrapper.tsx`
+Currently the iPad Study Mode section is at line 641, near the bottom of the Sleeve. Move it to right after "Text Size" (line 291), before "Reading Mode".
 
-- Add `overlay?: React.ReactNode` prop
-- Render `overlay` as a sibling to the grid cells, positioned `absolute inset-0` with `pointer-events: auto` and spanning the full container
-- The existing `children` stay inside the text column cell (verses only)
-
-```text
-┌──────────────────────────────────────────┐
-│ ┌─────────────┐  ┌───────────────────┐   │
-│ │ Text column  │  │  Margin (dots/    │   │
-│ │ (verses)     │  │  lines/blank)     │   │
-│ └─────────────┘  └───────────────────┘   │
-│ ┌────────────────────────────────────┐   │
-│ │     InkOverlay (absolute, full)    │   │  ← spans everything
-│ └────────────────────────────────────┘   │
-└──────────────────────────────────────────┘
-```
-
-### Change 2: `BibleReader.tsx`
-
-- Move `<InkOverlay>` from being a child of `<ZoomWrapper>` to the new `overlay` prop:
-
-```tsx
-<ZoomWrapper
-  zoom={...}
-  textAlign={...}
-  marginWidth={...}
-  canvasBackground={...}
-  overlay={
-    studyMode && studyModeVariant === "margin" && (
-      <InkOverlay ... />
-    )
-  }
->
-  <section>
-    {verses.map(...)}
-  </section>
-</ZoomWrapper>
-```
+New section order:
+1. Text Size
+2. **iPad Study Mode** (moved up)
+3. Reading Mode
+4. ...everything else
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `ZoomWrapper.tsx` | Add `overlay` prop, render it absolute over the full grid |
-| `BibleReader.tsx` | Move `InkOverlay` from children to `overlay` prop |
-
-No other changes needed — the SVG coordinate system (`getScreenCTM().inverse()`) will automatically map to the full container width since the SVG now spans the entire grid.
+| `BibleReader.tsx` | Set `drag={studyMode ? false : "x"}` on the chapter motion container |
+| `BibleSleeveSheet.tsx` | Move the iPad Study Mode collapsible block from line 639-699 to after line 293 |
 
