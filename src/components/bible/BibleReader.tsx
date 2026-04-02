@@ -1678,6 +1678,7 @@ export function BibleReader() {
                     penColor={inkPenColor}
                     penSize={inkPenSize}
                     fingerDrawing={inkFingerDrawing}
+                    isDark={document.documentElement.classList.contains("dark")}
                   />
                 )}
               </ZoomWrapper>
@@ -1891,6 +1892,7 @@ export function BibleReader() {
           canUndo={inkStrokes.length > 0}
           fingerDrawing={inkFingerDrawing}
           onFingerDrawingChange={setInkFingerDrawing}
+          isDark={document.documentElement.classList.contains("dark")}
         />
       )}
 

@@ -2,11 +2,19 @@ import React, { useState } from "react";
 import { Undo2, Eraser, ZoomIn, Space } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 
-const PEN_COLORS = [
+const PEN_COLORS_LIGHT = [
   { value: "#1A1A1A", label: "Iron Gall Black" },
   { value: "#4A0E0E", label: "Oxblood Red" },
   { value: "#0f4d9c", label: "Royal Blue" },
   { value: "#0f9c4d", label: "Forest Green" },
+  { value: "#D4C4A8", label: "Sepia Highlighter" },
+];
+
+const PEN_COLORS_DARK = [
+  { value: "#E8E4DF", label: "Parchment White" },
+  { value: "#C44040", label: "Bright Red" },
+  { value: "#5B9BD5", label: "Sky Blue" },
+  { value: "#5BC48A", label: "Mint Green" },
   { value: "#D4C4A8", label: "Sepia Highlighter" },
 ];
 
@@ -25,6 +33,7 @@ interface IPadStudyToolbarProps {
   fingerDrawing: boolean;
   onFingerDrawingChange: (v: boolean) => void;
   isPencilActive?: boolean;
+  isDark?: boolean;
 }
 
 export function IPadStudyToolbar({
@@ -42,7 +51,9 @@ export function IPadStudyToolbar({
   fingerDrawing,
   onFingerDrawingChange,
   isPencilActive = false,
+  isDark = false,
 }: IPadStudyToolbarProps) {
+  const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
 
   if (!expanded) {
@@ -70,7 +81,7 @@ export function IPadStudyToolbar({
             onClick={() => onPenColorChange(c.value)}
             className={`w-7 h-7 rounded-full transition-all hover:scale-110 shrink-0 ${
               penColor === c.value ? "ring-2 ring-offset-2 ring-primary" : ""
-            }`}
+            } ${isDark ? "border border-white/20" : ""}`}
             style={{ backgroundColor: c.value }}
             title={c.label}
           />

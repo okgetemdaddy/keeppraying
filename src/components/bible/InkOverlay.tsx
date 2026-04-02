@@ -37,6 +37,7 @@ interface InkOverlayProps {
   penColor?: string;
   penSize?: number;
   fingerDrawing?: boolean;
+  isDark?: boolean;
 }
 
 const STROKE_OPTIONS = {
@@ -58,6 +59,7 @@ export function InkOverlay({
   penColor = "#1a1a1a",
   penSize = 8,
   fingerDrawing = false,
+  isDark = false,
 }: InkOverlayProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
@@ -204,6 +206,7 @@ export function InkOverlay({
         if (!pathData) return null;
         const isSelected = selectedStrokeId === s.id;
         const isSepia = s.color === SEPIA_COLOR;
+        const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
         return (
           <path
             key={s.id}
@@ -211,14 +214,14 @@ export function InkOverlay({
             fill={s.color}
             stroke="none"
             opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
-            filter={isSelected ? undefined : "url(#ink-bleed)"}
+            filter={isSelected ? undefined : bleedFilter}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedStrokeId(isSelected ? null : s.id);
             }}
             className="cursor-pointer"
             style={{
-              mixBlendMode: isSepia ? "multiply" : undefined,
+              mixBlendMode: isSepia ? (isDark ? "screen" : "multiply") : undefined,
               filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
             }}
           />
@@ -269,6 +272,12 @@ export function InkOverlay({
           <feGaussianBlur stdDeviation="0.3" />
           <feComponentTransfer>
             <feFuncA type="linear" slope="0.95" />
+          </feComponentTransfer>
+        </filter>
+        <filter id="ink-bleed-dark">
+          <feGaussianBlur stdDeviation="0.25" />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="1.0" />
           </feComponentTransfer>
         </filter>
       </defs>
