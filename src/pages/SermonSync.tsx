@@ -140,7 +140,7 @@ export default function SermonSync() {
     "Extracting audio…",
     "Transcribing sermon…",
     "Still transcribing — hang tight…",
-    "Analyzing with AI…",
+    "Analyzing sermon…",
     "Preparing results…",
   ];
 
