@@ -19,6 +19,7 @@ import {
   Minimize2,
   Search,
   PenTool,
+  BookMarked,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +36,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   useBibleVersions,
   useBibleIndex,
@@ -81,6 +92,11 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
+import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
+import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
+import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
+import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
