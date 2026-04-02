@@ -171,6 +171,9 @@ interface BibleSleeveSheetProps {
   onToggleStudyMode?: (v: boolean) => void;
   onStudyModeVariantChange?: (v: "margin" | "canvas" | "journal") => void;
 
+  /** Hardware-detected iPad flag — gates study mode UI */
+  isIPad?: boolean;
+
   /* highlight style */
   highlightStyle?: "invert" | "neon";
   onHighlightStyleChange?: (v: "invert" | "neon") => void;
