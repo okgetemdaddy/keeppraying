@@ -396,7 +396,7 @@ export default function Support() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                    <span>AI is used only to serve, never to replace, the intimate relationship between you and God.</span>
+                    <span>Technology is used only to serve, never to replace, the intimate relationship between you and God.</span>
                   </li>
                 </ul>
                 <p>
