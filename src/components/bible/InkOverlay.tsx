@@ -59,6 +59,7 @@ export function InkOverlay({
   penColor = "#1a1a1a",
   penSize = 8,
   fingerDrawing = false,
+  isDark = false,
 }: InkOverlayProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [currentPoints, setCurrentPoints] = useState<Point[]>([]);
