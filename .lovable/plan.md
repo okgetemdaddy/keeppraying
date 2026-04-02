@@ -1,54 +1,38 @@
 
 
-# "Living Ink" Visual Polish Pass
+# Fix iPad Study Mode Dark Mode Support
 
-## What This Is
-
-A visual refinement of our existing `perfect-freehand` SVG engine — NOT an architecture change. The core engine already implements everything the audit describes. This adds the premium aesthetic layer.
+## Problem
+The iPad study mode components have hardcoded light-theme values that don't respect dark mode:
+1. **ZoomWrapper**: Has `bg-[#FDFBF7]` (parchment) but `dark:bg-transparent` loses the paper feel
+2. **InkOverlay**: Default pen color `#1A1A1A` (near-black) is invisible on dark backgrounds; ink-bleed filter not tuned for dark
+3. **iPadStudyToolbar**: Color swatches (Iron Gall Black `#1A1A1A`) are invisible against dark toolbar backgrounds; Sepia highlighter won't show on dark backgrounds
 
 ## Changes
 
-### 1. Ink-Bleed Filter (`InkOverlay.tsx`)
-Add an SVG `<filter>` definition for committed strokes:
-```xml
-<filter id="ink-bleed">
-  <feGaussianBlur stdDeviation="0.3" />
-  <feComponentTransfer>
-    <feFuncA type="linear" slope="0.95" />
-  </feComponentTransfer>
-</filter>
-```
-Apply `filter="url(#ink-bleed)"` to committed stroke paths (not live preview).
+### 1. `src/components/bible/ZoomWrapper.tsx`
+- Change `dark:bg-transparent` → `dark:bg-[#1a1a1e]` (a warm dark tone that pairs with the parchment light theme)
 
-### 2. Premium Color Palette (`iPadStudyToolbar.tsx`)
-Replace current 5-color palette with curated ink tones:
-- Iron Gall Black: `#1A1A1A` (already default)
-- Oxblood Red: `#4A0E0E`
-- Royal Blue: `#0f4d9c` (keep)
-- Faded Sepia: `#D4C4A8` with `mix-blend-mode: multiply` + `opacity: 0.6` (highlighter mode)
-- Forest Green: `#0f9c4d` (keep)
+### 2. `src/components/bible/InkOverlay.tsx`
+- Update default `penColor` from `#1a1a1a` to use a theme-aware fallback
+- Add a second SVG filter `ink-bleed-dark` with slightly boosted opacity for dark backgrounds
+- For committed strokes, apply the correct filter based on a `isDark` prop
+- Sepia highlighter: in dark mode use `screen` blend mode instead of `multiply` (multiply darkens — invisible on dark bg)
 
-### 3. Calligraphic Taper (`InkOverlay.tsx`)
-Update `STROKE_OPTIONS` to add subtle start/end tapers:
-```ts
-start: { taper: 12, easing: (t) => t * t },
-end:   { taper: 8,  easing: (t) => t },
-```
-This gives strokes a natural entry/exit like a fountain pen lifting off paper.
+### 3. `src/components/bible/iPadStudyToolbar.tsx`
+- Make the `PEN_COLORS` array dark-mode-aware: swap Iron Gall Black for a light ink (`#E8E4DF`) in dark mode, swap Oxblood Red for a brighter red (`#C44040`)
+- Accept an `isDark` boolean prop to toggle the palette
+- Add a visible border/ring on dark color swatches so they're distinguishable against the dark toolbar card
 
-### 4. Paper Tone (Theme-Aware)
-In the Bible reader's study mode, apply `bg-[#FDFBF7]` for light theme only (dark themes keep current background). Add via a CSS class on the `ZoomWrapper` container.
-
-### 5. Auto-Hide Toolbar During Strokes (`iPadStudyToolbar.tsx`)
-When `isPencilActive` is true (passed as prop), fade the toolbar to 0 opacity with a 150ms transition. Reappear on stroke end. Clean, distraction-free writing.
+### 4. `src/components/bible/BibleReader.tsx`
+- Detect dark mode (check `document.documentElement.classList.contains('dark')` or use a hook) and pass `isDark` prop down to `InkOverlay` and `iPadStudyToolbar`
+- When saving strokes, store the original color — on load, the overlay renders with the theme-appropriate filter but the stored data stays theme-neutral
 
 ## Files Modified
-
 | File | Change |
 |------|--------|
-| `src/components/bible/InkOverlay.tsx` | Add ink-bleed SVG filter, update taper values, add sepia blend mode for highlighter color |
-| `src/components/bible/iPadStudyToolbar.tsx` | Update color palette, add auto-hide during active drawing |
-| `src/components/bible/ZoomWrapper.tsx` | Add paper-tone background class in light theme |
-
-No database changes. No new dependencies. Pure visual refinement.
+| `ZoomWrapper.tsx` | Dark paper tone background |
+| `InkOverlay.tsx` | Dark-aware ink filter, blend mode swap for sepia, isDark prop |
+| `iPadStudyToolbar.tsx` | Dark-adapted color palette, isDark prop |
+| `BibleReader.tsx` | Detect dark mode, pass isDark to children |
 
