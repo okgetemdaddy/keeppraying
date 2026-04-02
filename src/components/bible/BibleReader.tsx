@@ -1712,7 +1712,7 @@ export function BibleReader() {
                 {studyMode && studyModeVariant === "margin" && (
                   <InkOverlay
                     zoom={inkZoom}
-                    strokes={inkStrokes}
+                    strokes={inkHistory.strokes}
                     onStrokeComplete={handleInkStrokeComplete}
                     onUndo={handleInkUndo}
                     penColor={inkPenColor}
