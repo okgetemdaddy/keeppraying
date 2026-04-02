@@ -648,7 +648,7 @@ export function BibleSleeveSheet({
                       <div className="flex-1 min-w-0">
                         <span className="text-sm text-foreground font-medium">Handwritten Annotations</span>
                         <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
-                          Write directly on the page with Apple Pencil or finger. Strokes are saved per verse.
+                          Write anywhere on the page with Apple Pencil. Full-page vector ink with palm rejection, zoom, and auto-save.
                         </p>
                       </div>
                       <Switch
@@ -664,7 +664,7 @@ export function BibleSleeveSheet({
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Annotation Mode</span>
                         <div className="grid grid-cols-3 gap-1.5">
                           {([
-                            { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write beside verses" },
+                            { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write anywhere on page" },
                             { key: "canvas" as const, icon: Layers, label: "Canvas", desc: "Full-page manuscript" },
                             { key: "journal" as const, icon: BookOpen, label: "Journal", desc: "Slide-out notebook" },
                           ]).map(({ key, icon: Icon, label, desc }) => (

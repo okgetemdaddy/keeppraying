@@ -78,7 +78,10 @@ import { ImmersiveExitPill } from "@/components/board/ImmersiveExitPill";
 import { HandwritingEngine, type StrokeData } from "@/components/bible/HandwritingEngine";
 import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
 import { JournalPanel } from "@/components/bible/JournalPanel";
-import { useChapterAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
+import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
+import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
 type ReadingMode = "verse" | "paragraph";
@@ -334,12 +337,13 @@ function EnrichedVerse({
     <div
       id={`verse-${verse.number}`}
       data-verse={verse.number}
-      className={`group relative ${studyMode ? 'leading-[2.8]' : 'leading-relaxed'} text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
+      className={`verse group relative ${studyMode ? '' : 'leading-relaxed'} text-foreground ${bunchBorderClass} ${selectedClass} cursor-pointer px-1 -mx-1`}
+      style={studyMode ? { lineHeight: `var(--verse-spacing, 2.8)`, paddingBlock: `calc((var(--verse-spacing, 2.8) - 1) * 0.25em)` } : undefined}
       onClick={(e) => onTapSelect(verse.number, e)}
     >
       <p>
         <BookmarkRibbon bookmark={bookmark} />
-        {/* Annotation indicator */}
+        {/* Annotation indicator (legacy per-verse) */}
         {verseAnnotation && !studyMode && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowAnnotation(!showAnnotation); }}
@@ -366,23 +370,6 @@ function EnrichedVerse({
             initialStrokes={verseAnnotation.strokes}
             showToolbar={false}
             className="pointer-events-none opacity-80"
-          />
-        </div>
-      )}
-
-      {/* Study mode: inline annotation canvas */}
-      {studyMode && (
-        <div className="mt-1" style={{ height: 60 }}>
-          <HandwritingEngine
-            height={60}
-            variant="margin"
-            initialStrokes={verseAnnotation?.strokes ?? []}
-            showToolbar={false}
-            onSave={(strokes) => {
-              if (verseIdString && onAnnotationSave) {
-                onAnnotationSave(verseIdString, strokes, verseAnnotation?.id);
-              }
-            }}
           />
         </div>
       )}
@@ -522,6 +509,28 @@ export function BibleReader() {
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+
+  // ── Ink overlay state (iPad SVG full-page drawing) ──
+  const [inkZoom, setInkZoom] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ink_zoom") ?? "1"); } catch { return 1; }
+  });
+  const [inkTextSpacing, setInkTextSpacing] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ink_spacing") ?? "2.8"); } catch { return 2.8; }
+  });
+  const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
+  const [inkPenSize, setInkPenSize] = useState(8);
+  const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
+  const [inkStrokes, setInkStrokes] = useState<InkStroke[]>([]);
+
+  const handleInkZoomChange = useCallback((v: number) => {
+    setInkZoom(v);
+    try { localStorage.setItem("bible_ink_zoom", String(v)); } catch {}
+  }, []);
+  const handleInkTextSpacingChange = useCallback((v: number) => {
+    setInkTextSpacing(v);
+    try { localStorage.setItem("bible_ink_spacing", String(v)); } catch {}
+  }, []);
+
   const handleToggleStudyMode = useCallback((v: boolean) => {
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
@@ -631,9 +640,72 @@ export function BibleReader() {
   // ── Chapter annotations (handwriting) ──
   const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
   const { data: journalAnnotations } = useJournalAnnotations(bookUsfm, currentChapter?.id);
+  const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
-  // Build a map: verseNumber → annotation
+  // ── Load ink strokes from DB on chapter change ──
+  const inkAnnotationId = inkAnnotation?.id;
+  useEffect(() => {
+    if (inkAnnotation) {
+      setInkStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
+    } else {
+      setInkStrokes([]);
+    }
+  }, [inkAnnotation]);
+
+  // ── Debounced ink auto-save ──
+  const inkSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleInkStrokeComplete = useCallback(
+    (stroke: InkStroke) => {
+      setInkStrokes((prev) => {
+        const updated = [...prev, stroke];
+        // Schedule debounced save
+        if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
+        inkSaveTimer.current = setTimeout(() => {
+          if (!bookUsfm || !currentChapter) return;
+          const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
+          saveAnnotationMut.mutate({
+            verseIds: [inkKey],
+            strokes: updated as unknown as StrokeData[],
+            existingId: inkAnnotationId,
+          });
+        }, 500);
+        return updated;
+      });
+    },
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
+  );
+
+  const handleInkUndo = useCallback(() => {
+    setInkStrokes((prev) => {
+      const updated = prev.slice(0, -1);
+      // Schedule debounced save
+      if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
+      inkSaveTimer.current = setTimeout(() => {
+        if (!bookUsfm || !currentChapter) return;
+        const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
+        saveAnnotationMut.mutate({
+          verseIds: [inkKey],
+          strokes: updated as unknown as StrokeData[],
+          existingId: inkAnnotationId,
+        });
+      }, 500);
+      return updated;
+    });
+  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+
+  const handleInkClear = useCallback(() => {
+    setInkStrokes([]);
+    if (!bookUsfm || !currentChapter) return;
+    const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
+    saveAnnotationMut.mutate({
+      verseIds: [inkKey],
+      strokes: [] as unknown as StrokeData[],
+      existingId: inkAnnotationId,
+    });
+  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+
+  // Build a map: verseNumber → annotation (for legacy per-verse preview)
   const annotationMap = useMemo(() => {
     const map = new Map<number, { id: string; strokes: StrokeData[] }>();
     if (!chapterAnnotations || !bookUsfm || !currentChapter) return map;
@@ -1553,43 +1625,62 @@ export function BibleReader() {
               style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
-              <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                {verses.map((v) => {
-                  const vNotes = noteMap.get(v.number) ?? [];
-                  return (
-                    <React.Fragment key={v.number}>
-                      <EnrichedVerse
-                        verse={v}
-                        highlights={highlightMap.get(v.number) ?? []}
-                        notes={vNotes}
-                        bookmark={bookmarkMap.get(v.number)}
-                        bunchItems={bunchMap.get(v.number) ?? []}
-                        bunchColorMap={bunchColorMap}
-                        bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                        mode={mode}
-                        isSelected={selectedVerses.has(v.number)}
-                        hideBunches={hideBunchRefs}
-                        onTapSelect={handleTapSelect}
-                        studyMode={studyMode}
-                        verseAnnotation={annotationMap.get(v.number) ?? null}
-                        onAnnotationSave={handleAnnotationSave}
-                        verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                      />
-                      <AnimatePresence>
-                        {noteInputVerse === v.number && (
-                          <NoteInputPanel
-                            verseNumber={v.number}
-                            existingContent={vNotes[0]?.note_content}
-                            existingId={vNotes[0]?.id}
-                            onSave={handleSaveNote}
-                            onCancel={() => setNoteInputVerse(null)}
-                          />
-                        )}
-                      </AnimatePresence>
+              <ZoomWrapper
+                zoom={studyMode && studyModeVariant === "margin" ? inkZoom : 1}
+                textSpacing={studyMode && studyModeVariant === "margin" ? inkTextSpacing : 1.6}
+                className="relative"
+              >
+                <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                  {verses.map((v) => {
+                    const vNotes = noteMap.get(v.number) ?? [];
+                    return (
+                      <React.Fragment key={v.number}>
+                        <EnrichedVerse
+                          verse={v}
+                          highlights={highlightMap.get(v.number) ?? []}
+                          notes={vNotes}
+                          bookmark={bookmarkMap.get(v.number)}
+                          bunchItems={bunchMap.get(v.number) ?? []}
+                          bunchColorMap={bunchColorMap}
+                          bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                          mode={mode}
+                          isSelected={selectedVerses.has(v.number)}
+                          hideBunches={hideBunchRefs}
+                          onTapSelect={handleTapSelect}
+                          studyMode={studyMode && studyModeVariant === "margin"}
+                          verseAnnotation={annotationMap.get(v.number) ?? null}
+                          onAnnotationSave={handleAnnotationSave}
+                          verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                        />
+                        <AnimatePresence>
+                          {noteInputVerse === v.number && (
+                            <NoteInputPanel
+                              verseNumber={v.number}
+                              existingContent={vNotes[0]?.note_content}
+                              existingId={vNotes[0]?.id}
+                              onSave={handleSaveNote}
+                              onCancel={() => setNoteInputVerse(null)}
+                            />
+                          )}
+                        </AnimatePresence>
                     </React.Fragment>
                   );
-                })}
-              </section>
+                  })}
+                </section>
+
+                {/* ── Ink SVG Overlay (full-page, pen-only) ── */}
+                {studyMode && studyModeVariant === "margin" && (
+                  <InkOverlay
+                    zoom={inkZoom}
+                    strokes={inkStrokes}
+                    onStrokeComplete={handleInkStrokeComplete}
+                    onUndo={handleInkUndo}
+                    penColor={inkPenColor}
+                    penSize={inkPenSize}
+                    fingerDrawing={inkFingerDrawing}
+                  />
+                )}
+              </ZoomWrapper>
             </motion.div>
           ) : !versionId ? (
             <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -1783,6 +1874,25 @@ export function BibleReader() {
       />
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
+
+      {/* ── iPad Ink Toolbar (Mode 1: Marginalia) ── */}
+      {studyMode && studyModeVariant === "margin" && (
+        <IPadStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          zoom={inkZoom}
+          onZoomChange={handleInkZoomChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
+          onUndo={handleInkUndo}
+          onClear={handleInkClear}
+          canUndo={inkStrokes.length > 0}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+        />
+      )}
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
