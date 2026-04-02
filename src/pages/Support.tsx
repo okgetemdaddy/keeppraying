@@ -379,7 +379,7 @@ export default function Support() {
                   At KeepPray.ing, we see Artificial Intelligence as a neutral tool — neither inherently good nor evil. Its value depends entirely on how it is used.
                 </p>
                 <p>
-                  We have chosen to incorporate carefully selected premium AI models as helpful companions in your prayer journey. Our strict boundaries ensure that:
+                  We have chosen to incorporate carefully selected premium tools as helpful companions in your prayer journey. Our strict boundaries ensure that:
                 </p>
                 <ul className="space-y-2 list-none">
                   <li className="flex items-start gap-2">
