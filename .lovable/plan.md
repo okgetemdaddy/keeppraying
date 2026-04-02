@@ -1,69 +1,62 @@
 
 
-# Adaptive Architecture: Hardware-Based Device Detection
-
-## Problem
-
-The current `useIsMobile` and `useIsTouch` hooks rely purely on CSS breakpoints (768px / 1024px). A desktop user resizing their browser to 800px triggers tablet UI. iPad Study Mode features (ink overlay, pencil toolbars, spatial canvas) can leak onto desktop or phone if the window happens to be the right width.
+# iPhone Swipe-Free Navigation Mode
 
 ## What Gets Built
 
-### 1. New hook: `useDeviceDetect` (`src/hooks/useDeviceDetect.ts`)
+A toggle in the mobile Bible Sleeve that lets iPhone users disable swipe-to-change-chapters. When disabled, two arrow buttons (◀ ▶) appear flanking the chapter title in the reading header, providing tap-based chapter navigation instead. This clears the gesture space for the planned long-press + drag quick-highlight feature.
 
-A hardware interrogation hook that returns:
+## User Experience
 
-```ts
-interface DeviceInfo {
-  isIPad: boolean;    // true only on actual iPads
-  isIPhone: boolean;  // true only on iPhones/iPods
-  isDesktop: boolean; // true on Mac/PC/Linux without touch
-}
+1. Open Bible Sleeve on iPhone → new toggle: **"Tap to change chapters"** (off by default)
+2. When enabled: horizontal swipe on the reading area no longer changes chapters; two compact arrow buttons appear beside "Genesis 1" in the sticky header
+3. Preference persisted to `localStorage` so it survives sessions
+
+## Technical Details
+
+### 1. State + persistence in `BibleReader.tsx`
+
+- New state: `tapNavMode` with `localStorage` key `bible_tap_nav` (default `false`)
+- When `tapNavMode` is true, the `motion.div` wrapping verses gets `drag={false}` instead of `drag="x"`
+- The chapter header renders `ChevronLeft` / `ChevronRight` buttons flanking the title when `tapNavMode` is true
+
+### 2. Header arrows (`BibleReader.tsx`)
+
+Replace the static `<h1>` with a flex row when `tapNavMode` is active:
+
+```tsx
+<div className="flex items-center justify-center gap-3">
+  {tapNavMode && (
+    <button disabled={!canPrev} onClick={() => setChapterIdx(i => i - 1)}>
+      <ChevronLeft />
+    </button>
+  )}
+  <h1>Genesis 1</h1>
+  {tapNavMode && (
+    <button disabled={!canNext} onClick={() => setChapterIdx(i => i + 1)}>
+      <ChevronRight />
+    </button>
+  )}
+</div>
 ```
 
-Detection logic handles the iPadOS 13+ quirk where iPads report as "Macintosh":
+### 3. Bible Sleeve toggle (`BibleSleeveSheet.tsx`)
 
-```ts
-const isIPad =
-  /iPad/.test(navigator.userAgent) ||
-  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+- New props: `tapNavMode: boolean`, `onToggleTapNav: (v: boolean) => void`
+- Add a Switch toggle in the Navigation/Reading section (only visible when `isIPhone`): **"Tap to change chapters"** with description "Use arrow buttons instead of swiping"
 
-const isIPhone =
-  /iPhone|iPod/.test(navigator.userAgent) ||
-  (/Android/.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
+### 4. Swipe disable logic (`BibleReader.tsx`)
 
-const isDesktop = !isIPad && !isIPhone;
+The existing `drag={studyMode ? false : "x"}` becomes:
+
+```tsx
+drag={studyMode || tapNavMode ? false : "x"}
 ```
-
-- Uses `useState` with immediate sync computation (no flash of wrong UI)
-- No media queries — pure JS hardware detection
-- Exported as named constants for conditional rendering
-
-### 2. Gate iPad features in `BibleReader.tsx`
-
-Replace `isMobile` checks with `useDeviceDetect`:
-
-- **Study Mode toggle / auto-enable**: Only allow `studyMode` to activate when `isIPad` is true
-- **Pencil auto-detect toast + auto-enable**: Already pen-gated, but wrap the `studyMode` activation in `isIPad` check
-- **`IPadStudyToolbar`**: Render only when `isIPad` (currently uses `!isMobile` which matches desktop too)
-- **`MobileStudyToolbar`**: Render only when `isIPhone`
-- **Desktop**: Neither toolbar renders; study mode unavailable
-- **InkOverlay**: Only mounts when `isIPad` (or `isIPhone` with the mobile toolbar)
-- **Chapter swipe disable**: Only applies when `isIPad && studyMode`
-
-### 3. Gate iPad section in `BibleSleeveSheet.tsx`
-
-- The "iPad Study Mode" collapsible section: wrap in `isIPad` check so it never appears on desktop or phone
-- Pass `isIPad` as a prop from BibleReader
-
-### 4. Keep existing `useIsMobile` / `useIsTouch` for non-iPad concerns
-
-These hooks remain for general responsive layout (bottom tab bar, drawer vs dialog, etc.). Only iPad-specific features migrate to hardware detection.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/hooks/useDeviceDetect.ts` | New hook — hardware-based iPad/iPhone/Desktop detection |
-| `src/components/bible/BibleReader.tsx` | Import `useDeviceDetect`; gate study mode, ink overlay, toolbars, and pencil auto-detect behind `isIPad` |
-| `src/components/bible/BibleSleeveSheet.tsx` | Accept `isIPad` prop; conditionally render "iPad Study Mode" section only on iPads |
+| `src/components/bible/BibleReader.tsx` | Add `tapNavMode` state, disable drag when active, render arrow buttons in header, pass props to Sleeve |
+| `src/components/bible/BibleSleeveSheet.tsx` | Accept `tapNavMode` + `onToggleTapNav` props, render toggle (iPhone-only) |
 
