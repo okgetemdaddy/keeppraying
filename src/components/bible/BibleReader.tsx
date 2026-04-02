@@ -325,6 +325,7 @@ interface EnrichedVerseProps {
   verseAnnotation?: { id: string; strokes: StrokeData[] } | null;
   onAnnotationSave?: (verseId: string, strokes: StrokeData[], existingId?: string) => void;
   verseIdString?: string;
+  highlightStyle?: HighlightStyleMode;
 }
 
 function EnrichedVerse({
