@@ -496,6 +496,15 @@ export function BibleReader() {
   const [mode, setMode] = useState<ReadingMode>("verse");
   const [positionLoaded, setPositionLoaded] = useState(false);
 
+  // ── Tap-to-navigate mode (iPhone swipe-free) ──
+  const [tapNavMode, setTapNavMode] = useState<boolean>(() => {
+    try { return localStorage.getItem("bible_tap_nav") === "true"; } catch { return false; }
+  });
+  const handleToggleTapNav = useCallback((v: boolean) => {
+    setTapNavMode(v);
+    try { localStorage.setItem("bible_tap_nav", v ? "true" : "false"); } catch {}
+  }, []);
+
   // ── Position persistence ──
   const { loadPosition, savePosition } = useBiblePosition(user?.id);
 
