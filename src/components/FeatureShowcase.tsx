@@ -318,8 +318,8 @@ const FEATURES = [
   {
     id: "assist",
     title: "PrayerAssist",
-    headline: "Your AI Prayer Companion",
-    body: "Need help crafting a prayer? Exploring a passage? PrayerAssist walks with you — powered by AI, guided by Scripture, always pointing you to Jesus.",
+    headline: "Your PrayerAssist-Powered Companion",
+    body: "Need help crafting a prayer? Exploring a passage? PrayerAssist walks with you — guided by Scripture, always pointing you to Jesus.",
     href: "/assistant",
     Svg: AssistSvg,
     accent: "hsl(42 75% 46%)",
