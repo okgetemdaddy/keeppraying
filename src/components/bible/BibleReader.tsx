@@ -1761,7 +1761,7 @@ export function BibleReader() {
                     penColor={inkPenColor}
                     penSize={inkPenSize}
                     fingerDrawing={inkFingerDrawing}
-                    isDark={document.documentElement.classList.contains("dark")}
+                    isDark={premiumDark || document.documentElement.classList.contains("dark")}
                   />
                 )}
               </ZoomWrapper>
@@ -1977,7 +1977,7 @@ export function BibleReader() {
           canRedo={inkHistory.canRedo}
           fingerDrawing={inkFingerDrawing}
           onFingerDrawingChange={setInkFingerDrawing}
-          isDark={document.documentElement.classList.contains("dark")}
+          isDark={premiumDark || document.documentElement.classList.contains("dark")}
           onOpenTrash={() => setInkTrashOpen(true)}
           onOpenVoice={() => setVoiceOverlayActive(true)}
           hasTrashItems={inkHistory.trashBin.length > 0}
