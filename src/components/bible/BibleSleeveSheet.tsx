@@ -520,69 +520,6 @@ export function BibleSleeveSheet({
               </CollapsibleContent>
             </Collapsible>
 
-            <div className="h-px bg-border" />
-
-            {/* ── Appearance ── */}
-            <Collapsible open={isOpen(SECTION_IDS.appearance)}>
-              <SectionHeader icon={Sun} label="Appearance" isOpen={isOpen(SECTION_IDS.appearance)} onToggle={() => toggleSection(SECTION_IDS.appearance)} />
-              <CollapsibleContent className="mt-3 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Moon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-sm text-foreground font-medium">Premium Dark Mode</span>
-                    </div>
-                    <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
-                      Elegant charcoal dark theme optimized for long Bible study and eye comfort
-                    </p>
-                  </div>
-                  <Switch
-                    checked={premiumDark}
-                    onCheckedChange={onTogglePremiumDark}
-                    className="shrink-0 mt-0.5"
-                  />
-                </div>
-
-                {/* ── Ease the Eyes ── */}
-                <div className={`transition-opacity duration-200 ${!premiumDark ? 'opacity-40 pointer-events-none' : ''}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Eclipse className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-sm text-foreground font-medium flex-1">Ease the Eyes</span>
-                    <span className="text-[0.65rem] text-muted-foreground tabular-nums">{dimPercent}%</span>
-                  </div>
-                  <p className="text-[0.65rem] text-muted-foreground mb-2 leading-relaxed">
-                    Dim text and UI elements for comfortable night reading
-                  </p>
-                  <Slider
-                    value={[easeEyesDim]}
-                    min={0.4}
-                    max={1}
-                    step={0.05}
-                    onValueChange={([v]) => onEaseEyesDimChange(v)}
-                    disabled={!premiumDark}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className={`flex items-start justify-between gap-3 transition-opacity duration-200 ${!premiumDark ? 'opacity-40 pointer-events-none' : ''}`}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-sm text-foreground font-medium">True Black OLED</span>
-                    </div>
-                    <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
-                      Extra battery life on OLED screens
-                    </p>
-                  </div>
-                  <Switch
-                    checked={oledMode}
-                    onCheckedChange={onToggleOled}
-                    disabled={!premiumDark}
-                    className="shrink-0 mt-0.5"
-                  />
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
 
             {/* ── Immersive Mode ── */}
             {immersiveSupported && onToggleImmersive && (
