@@ -58,6 +58,7 @@ export function ZoomWrapper({
   textAlign = "left",
   marginWidth = 0,
   canvasBackground = "none",
+  overlay,
 }: ZoomWrapperProps) {
   const hasMargin = marginWidth > 0;
 
