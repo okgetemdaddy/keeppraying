@@ -81,7 +81,7 @@ export function IPadStudyToolbar({
             onClick={() => onPenColorChange(c.value)}
             className={`w-7 h-7 rounded-full transition-all hover:scale-110 shrink-0 ${
               penColor === c.value ? "ring-2 ring-offset-2 ring-primary" : ""
-            }`}
+            } ${isDark ? "border border-white/20" : ""}`}
             style={{ backgroundColor: c.value }}
             title={c.label}
           />

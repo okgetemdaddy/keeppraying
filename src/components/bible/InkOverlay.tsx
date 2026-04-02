@@ -274,6 +274,12 @@ export function InkOverlay({
             <feFuncA type="linear" slope="0.95" />
           </feComponentTransfer>
         </filter>
+        <filter id="ink-bleed-dark">
+          <feGaussianBlur stdDeviation="0.25" />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="1.0" />
+          </feComponentTransfer>
+        </filter>
       </defs>
       {renderedStrokes}
       {livePreview}

@@ -1892,6 +1892,7 @@ export function BibleReader() {
           canUndo={inkStrokes.length > 0}
           fingerDrawing={inkFingerDrawing}
           onFingerDrawingChange={setInkFingerDrawing}
+          isDark={document.documentElement.classList.contains("dark")}
         />
       )}
 
