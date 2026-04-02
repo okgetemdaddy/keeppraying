@@ -1692,6 +1692,19 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_e, info) => {
+                // Only respond to touch-based swipes, not pen
+                if (Math.abs(info.offset.x) > 100) {
+                  if (info.offset.x < -100 && canNext) {
+                    setChapterIdx((i) => i + 1);
+                  } else if (info.offset.x > 100 && canPrev) {
+                    setChapterIdx((i) => i - 1);
+                  }
+                }
+              }}
               style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
