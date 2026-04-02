@@ -40,13 +40,15 @@ interface InkOverlayProps {
 }
 
 const STROKE_OPTIONS = {
-  thinning: 0.6,
+  thinning: 0.5,
   smoothing: 0.5,
   streamline: 0.5,
   simulatePressure: false,
-  start: { taper: 0, easing: (t: number) => t },
-  end: { taper: 0, easing: (t: number) => t },
+  start: { taper: 12, easing: (t: number) => t * t },
+  end: { taper: 8, easing: (t: number) => t },
 };
+
+const SEPIA_COLOR = "#D4C4A8";
 
 export function InkOverlay({
   zoom,
