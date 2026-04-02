@@ -1776,8 +1776,31 @@ export function BibleReader() {
               }
             }}
           >
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              {currentBook.title} {currentChapter.title}
+            <div className="flex items-center justify-center gap-3">
+              {tapNavMode && (
+                <button
+                  disabled={!canPrev}
+                  onClick={() => setChapterIdx((i) => i - 1)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  aria-label="Previous chapter"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                {currentBook.title} {currentChapter.title}
+              </h1>
+              {tapNavMode && (
+                <button
+                  disabled={!canNext}
+                  onClick={() => setChapterIdx((i) => i + 1)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  aria-label="Next chapter"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
