@@ -2096,6 +2096,9 @@ export function BibleReader() {
         onToggleStudyMode={isIPad ? handleToggleStudyMode : undefined}
         onStudyModeVariantChange={isIPad ? handleStudyModeVariantChange : undefined}
         isIPad={isIPad}
+        isIPhone={isIPhone}
+        tapNavMode={tapNavMode}
+        onToggleTapNav={handleToggleTapNav}
         highlightStyle={highlightStyle}
         onHighlightStyleChange={handleHighlightStyleChange}
       />
