@@ -111,15 +111,55 @@ const fadeIn = {
   transition: { duration: 0.25 },
 };
 
-/* ── Highlight colour map ── */
-const HIGHLIGHT_COLORS: Record<string, string> = {
-  yellow: "bg-yellow-200/50 dark:bg-yellow-400/20",
-  green: "bg-emerald-200/50 dark:bg-emerald-400/20",
-  blue: "bg-sky-200/50 dark:bg-sky-400/20",
-  pink: "bg-pink-200/50 dark:bg-pink-400/20",
-  purple: "bg-violet-200/50 dark:bg-violet-400/20",
-  orange: "bg-orange-200/50 dark:bg-orange-400/20",
+/* ── Dual-mode highlight styles ── */
+export type HighlightStyleMode = "invert" | "neon";
+
+const HIGHLIGHT_STYLES: Record<string, {
+  light: string;
+  darkInvert: string;
+  darkNeon: { bg: string; border: string };
+}> = {
+  yellow: {
+    light: "bg-yellow-200/70",
+    darkInvert: "bg-[#FFD700] text-[#121212]",
+    darkNeon: { bg: "bg-[#2A2A1A]", border: "border-b-2 border-[#FFD700]" },
+  },
+  green: {
+    light: "bg-emerald-200/70",
+    darkInvert: "bg-[#34D399] text-[#121212]",
+    darkNeon: { bg: "bg-[#1A2A1F]", border: "border-b-2 border-[#34D399]" },
+  },
+  blue: {
+    light: "bg-sky-200/70",
+    darkInvert: "bg-[#38BDF8] text-[#121212]",
+    darkNeon: { bg: "bg-[#1A222A]", border: "border-b-2 border-[#38BDF8]" },
+  },
+  pink: {
+    light: "bg-pink-200/70",
+    darkInvert: "bg-[#F472B6] text-[#121212]",
+    darkNeon: { bg: "bg-[#2A1A22]", border: "border-b-2 border-[#F472B6]" },
+  },
+  purple: {
+    light: "bg-violet-200/70",
+    darkInvert: "bg-[#A78BFA] text-[#121212]",
+    darkNeon: { bg: "bg-[#221A2A]", border: "border-b-2 border-[#A78BFA]" },
+  },
+  orange: {
+    light: "bg-orange-200/70",
+    darkInvert: "bg-[#FB923C] text-[#121212]",
+    darkNeon: { bg: "bg-[#2A221A]", border: "border-b-2 border-[#FB923C]" },
+  },
 };
+
+function getHighlightClass(color: string, mode: HighlightStyleMode): string {
+  const style = HIGHLIGHT_STYLES[color] ?? HIGHLIGHT_STYLES.yellow;
+  const isDark = document.documentElement.classList.contains("dark") ||
+    document.documentElement.classList.contains("bible-dark");
+
+  if (!isDark) return style.light;
+  if (mode === "neon") return `${style.darkNeon.bg} ${style.darkNeon.border}`;
+  return style.darkInvert;
+}
 
 /* ── Loading skeleton ── */
 function ReadingSkeleton() {
@@ -151,9 +191,11 @@ function groupByVerse<T extends { verse_number: number }>(items: T[]): Map<numbe
 function HighlightedText({
   text,
   highlights,
+  highlightStyle = "invert",
 }: {
   text: string;
   highlights: UserHighlight[];
+  highlightStyle?: HighlightStyleMode;
 }) {
   if (!highlights.length) return <>{text}</>;
 
@@ -178,7 +220,7 @@ function HighlightedText({
     }
 
     if (end > start) {
-      const colorClass = HIGHLIGHT_COLORS[span.color] ?? HIGHLIGHT_COLORS.yellow;
+      const colorClass = getHighlightClass(span.color, highlightStyle);
       parts.push(
         <mark key={`hl-${i}`} className={`${colorClass} rounded-sm px-0.5 transition-colors`}>
           {text.slice(start, end)}
@@ -283,6 +325,7 @@ interface EnrichedVerseProps {
   verseAnnotation?: { id: string; strokes: StrokeData[] } | null;
   onAnnotationSave?: (verseId: string, strokes: StrokeData[], existingId?: string) => void;
   verseIdString?: string;
+  highlightStyle?: HighlightStyleMode;
 }
 
 function EnrichedVerse({
@@ -301,6 +344,7 @@ function EnrichedVerse({
   verseAnnotation,
   onAnnotationSave,
   verseIdString,
+  highlightStyle = "invert",
 }: EnrichedVerseProps) {
   const [showAnnotation, setShowAnnotation] = useState(false);
   const bunchBorderClass = useMemo(() => {
@@ -343,7 +387,7 @@ function EnrichedVerse({
           <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}{" "}
       </span>
@@ -373,7 +417,7 @@ function EnrichedVerse({
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
@@ -514,6 +558,15 @@ export function BibleReader() {
   const handleEaseEyesDimChange = useCallback((v: number) => {
     setEaseEyesDim(v);
     try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
+  }, []);
+
+  // ── Highlight style (invert vs neon) ──
+  const [highlightStyle, setHighlightStyleRaw] = useState<HighlightStyleMode>(() => {
+    try { return (localStorage.getItem("bible_highlight_style") as HighlightStyleMode) || "invert"; } catch { return "invert"; }
+  });
+  const handleHighlightStyleChange = useCallback((v: HighlightStyleMode) => {
+    setHighlightStyleRaw(v);
+    try { localStorage.setItem("bible_highlight_style", v); } catch {}
   }, []);
 
   // ── iPad Study Mode (handwritten annotations) ──
@@ -1822,6 +1875,7 @@ export function BibleReader() {
                           verseAnnotation={annotationMap.get(v.number) ?? null}
                           onAnnotationSave={handleAnnotationSave}
                           verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                          highlightStyle={highlightStyle}
                         />
                         <AnimatePresence>
                           {noteInputVerse === v.number && (
@@ -2006,6 +2060,8 @@ export function BibleReader() {
         pencilDetected={pencilDetected}
         onToggleStudyMode={handleToggleStudyMode}
         onStudyModeVariantChange={handleStudyModeVariantChange}
+        highlightStyle={highlightStyle}
+        onHighlightStyleChange={handleHighlightStyleChange}
       />
 
       {/* ── Manuscript Canvas (Mode 2) ── */}

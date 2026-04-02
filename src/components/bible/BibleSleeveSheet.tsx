@@ -170,6 +170,10 @@ interface BibleSleeveSheetProps {
   pencilDetected?: boolean;
   onToggleStudyMode?: (v: boolean) => void;
   onStudyModeVariantChange?: (v: "margin" | "canvas" | "journal") => void;
+
+  /* highlight style */
+  highlightStyle?: "invert" | "neon";
+  onHighlightStyleChange?: (v: "invert" | "neon") => void;
 }
 
 export function BibleSleeveSheet({
@@ -214,6 +218,8 @@ export function BibleSleeveSheet({
   pencilDetected,
   onToggleStudyMode,
   onStudyModeVariantChange,
+  highlightStyle = "invert",
+  onHighlightStyleChange,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -533,7 +539,35 @@ export function BibleSleeveSheet({
             {/* ── Your Highlights ── */}
             <Collapsible open={isOpen(SECTION_IDS.highlights)}>
               <SectionHeader icon={Highlighter} label="Your Highlights" badge={highlights.length} isOpen={isOpen(SECTION_IDS.highlights)} onToggle={() => toggleSection(SECTION_IDS.highlights)} />
-              <CollapsibleContent className="mt-3">
+              <CollapsibleContent className="mt-3 space-y-3">
+                {/* Bold / Subtle toggle — dark mode only */}
+                {premiumDark && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Style:</span>
+                    <div className="flex rounded-lg border border-border overflow-hidden">
+                      <button
+                        onClick={() => onHighlightStyleChange?.("invert")}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                          highlightStyle === "invert"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Bold
+                      </button>
+                      <button
+                        onClick={() => onHighlightStyleChange?.("neon")}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                          highlightStyle === "neon"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Subtle
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {highlights.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">No highlights in this chapter yet.</p>
                 ) : (
