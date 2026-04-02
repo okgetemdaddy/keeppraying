@@ -349,12 +349,12 @@ export function HowToGuide({ onTryAction }: HowToGuideProps) {
       {/* Search */}
       <div className="px-4 pt-4 pb-2">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
           <Input
             placeholder="Search features…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-muted/50 border-border/40 rounded-xl h-9 text-sm"
+            className="pl-9 bg-neutral-800/60 border-neutral-700 rounded-xl h-9 text-sm"
           />
         </div>
       </div>
@@ -368,8 +368,8 @@ export function HowToGuide({ onTryAction }: HowToGuideProps) {
             className={cn(
               "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors",
               activeCategory === cat
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted",
+                ? "bg-amber-400 text-neutral-900"
+                : "bg-neutral-800/60 text-neutral-400 hover:bg-neutral-700/60",
             )}
           >
             {cat}
@@ -382,8 +382,8 @@ export function HowToGuide({ onTryAction }: HowToGuideProps) {
         <div className="px-4 pb-6 space-y-2">
           {filtered.length === 0 ? (
             <div className="text-center py-12">
-              <Search className="h-8 w-8 mx-auto text-muted-foreground/25 mb-2" />
-              <p className="text-sm text-muted-foreground">No matching features found</p>
+              <Search className="h-8 w-8 mx-auto text-neutral-600 mb-2" />
+              <p className="text-sm text-neutral-400">No matching features found</p>
             </div>
           ) : (
             filtered.map((card) => {
@@ -394,10 +394,10 @@ export function HowToGuide({ onTryAction }: HowToGuideProps) {
                   key={card.id}
                   onClick={() => setExpandedCard(isExpanded ? null : card.id)}
                   className={cn(
-                    "w-full text-left rounded-2xl border border-border/40 p-3.5 transition-all",
+                    "w-full text-left rounded-2xl border p-3.5 transition-all",
                     isExpanded
-                      ? "bg-primary/5 border-primary/20"
-                      : "bg-background/60 hover:bg-muted/30",
+                      ? "bg-amber-400/5 border-amber-400/20"
+                      : "bg-neutral-800/50 border-neutral-700 hover:bg-neutral-800/70",
                   )}
                 >
                   {/* Header row */}
@@ -406,23 +406,23 @@ export function HowToGuide({ onTryAction }: HowToGuideProps) {
                       className={cn(
                         "shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-colors",
                         isExpanded
-                          ? "bg-primary/15 text-primary"
-                          : "bg-muted/50 text-muted-foreground",
+                          ? "bg-amber-400/15 text-amber-400"
+                          : "bg-neutral-700/60 text-neutral-400",
                       )}
                     >
                       {card.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground leading-tight">
+                      <p className="text-sm font-semibold text-neutral-100 leading-tight">
                         {card.title}
                       </p>
-                      <p className="text-[0.7rem] text-muted-foreground leading-snug mt-0.5 line-clamp-1">
+                      <p className="text-[0.7rem] text-neutral-400 leading-snug mt-0.5 line-clamp-1">
                         {card.summary}
                       </p>
                     </div>
                     <ChevronRight
                       className={cn(
-                        "h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform duration-200",
+                        "h-4 w-4 shrink-0 text-neutral-600 transition-transform duration-200",
                         isExpanded && "rotate-90",
                       )}
                     />
@@ -431,13 +431,13 @@ export function HowToGuide({ onTryAction }: HowToGuideProps) {
                   {/* Expanded content */}
                   {isExpanded && (
                     <div className="mt-3 pl-12 space-y-2" onClick={(e) => e.stopPropagation()}>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-xs text-neutral-400 leading-relaxed">
                         {card.summary}
                       </p>
                       <ol className="space-y-1.5">
                         {card.steps.map((step, i) => (
-                          <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
-                            <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary text-[0.6rem] font-bold flex items-center justify-center mt-0.5">
+                          <li key={i} className="flex gap-2 text-xs text-neutral-200 leading-relaxed">
+                            <span className="shrink-0 w-5 h-5 rounded-full bg-amber-400/10 text-amber-400 text-[0.6rem] font-bold flex items-center justify-center mt-0.5">
                               {i + 1}
                             </span>
                             <span>{step}</span>
