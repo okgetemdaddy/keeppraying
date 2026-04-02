@@ -1,39 +1,55 @@
 
 
-# Remove "AI" Branding — Rename to Warm, Ministry-Focused Language
+# Fix Dark Mode on Bible Reading Canvas
 
-## Summary
-Replace every user-facing "AI" mention across the app with your chosen alternatives. Admin-only pages stay as-is (only you see them).
+## Root Cause
 
-## Change Map
+Tailwind's `dark:` variant only activates when the `dark` class is on `<html>`. The Bible reader uses a custom `bible-dark` class instead — so `dark:bg-[#1a1a1e]` on `ZoomWrapper` (and any other `dark:` classes in Bible components) never triggers. The text turns white via CSS custom properties (`--foreground`), but the background stays cream (`#FDFBF7`), creating the "flashbang" white-on-white effect.
 
-| Current Text | New Text | File(s) |
-|---|---|---|
-| "AI-Crafted Prayers" | **"Assisted Prayers"** | `App.tsx` (Board AuthGate features) |
-| "AI-guided prayer crafting" | **"PrayerAssist-powered prayer crafting"** | `SiteNav.tsx` |
-| "AI-guided prayer life" | **"PrayerAssist-powered prayer life"** | `map/GrowthCTA.tsx` |
-| "✦AI" / "AI Generated" badge on prayer cards | **"✦ PrayerAssist"** | `Prayer.tsx`, `Prayers.tsx`, `BoardCard.tsx`, `PrayerViewerModal.tsx` |
-| "AI-generated" label text | **"PrayerAssist-generated"** | `Prayers.tsx` |
-| "AI Enrichment" panel title | **"Auto Verses & Labels"** | `AIEnrichPanel.tsx` |
-| "AI reads your prayer deeply…" description | **"Your prayer is read deeply…"** | `AIEnrichPanel.tsx` |
-| "AI will read your prayer's substance…" | **"Your prayer's substance will be read…"** | `AIEnrichPanel.tsx` |
-| "AI Enrich" dropdown item | **"Enrich with Scripture"** | `BoardCard.tsx` |
-| "AI Enrichment" on SharedPrayerLanding | **"Auto Verses & Labels"** | `SharedPrayerLanding.tsx` |
-| "AI Encouragement" | **"Spiritual Encouragement"** | `App.tsx` (Circles AuthGate), `InviteLanding.tsx` |
-| "Our Stance on AI" links + section | **"Our Heart Behind the Tools"** | `Support.tsx`, `Board.tsx`, `SermonSync.tsx`, `PrayerAssist.tsx` |
-| "AI prayer companion" | **"PrayerAssist-powered prayer companion"** | `PrayerAssist.tsx` |
-| "Analyzing with AI…" loading text | **"Analyzing sermon…"** | `SermonSync.tsx` |
-| "AI credits exhausted" toast | **"Credits exhausted"** | `TestimonyEnrichModal.tsx` |
-| "AI enrichment failed" toast | **"Enrichment failed"** | `TestimonyEnrichModal.tsx` |
-| "Getting AI summary…" loading | **"Getting summary…"** | `VerseLink.tsx` |
-| "AI summary" hover tooltip | **"Verse summary"** | `Index.tsx` |
-| "AI Suggestions" Bible search heading | **"Suggested Verses"** | `BibleSearchDialog.tsx` |
-| "Review AI enrichment" comment | Just a code comment — update for clarity | `AddBreathPrayerModal.tsx` |
-| "Auto-enrich with AI" comment | Code comment — update | `AddBreathPrayerModal.tsx` |
-| `labels: ["voice-prayer", "ai-refined"]` | `labels: ["voice-prayer", "assisted"]` | `VoiceRecorder.tsx` |
+## Fix Strategy
 
-### Files NOT changed (admin-only, internal)
-- `Admin.tsx`, `AIInsightsTab.tsx`, `AIInsightButton.tsx`, `SuggestionPanel.tsx`, `UserDetailPanel.tsx`, `PrayerRequestsInbox.tsx` — these are your admin dashboard, only you see them.
+Two-pronged approach — ensure the standard `dark` class is added alongside `bible-dark`, AND replace hardcoded colors with theme-aware CSS variables.
 
-## Total: ~20 files modified, zero database or logic changes — purely string replacements.
+### 1. Add `dark` class to `<html>` when Premium Dark is active (`BibleReader.tsx`)
+
+In the existing `useEffect` that manages `bible-dark` / `bible-oled` classes (around line 591-601), also toggle the standard `dark` class:
+
+```ts
+if (premiumDark) {
+  root.classList.add("dark", "bible-dark");
+  // ...
+} else {
+  root.classList.remove("dark", "bible-dark", "bible-oled");
+}
+```
+
+This makes all `dark:` Tailwind variants work throughout Bible components.
+
+**Guard**: Check if the app already has a separate dark mode system that adds/removes `dark` — if so, only add it, never remove it when `premiumDark` is false (to avoid clobbering a global dark preference). We'll check the cleanup return to only remove `bible-dark` and `bible-oled`, leaving `dark` management to whoever owns it globally.
+
+### 2. Fix `ZoomWrapper.tsx` background
+
+Replace the hardcoded cream with theme-aware classes:
+
+```
+bg-[#FDFBF7] dark:bg-[#1a1a1e]
+```
+becomes:
+```
+bg-background
+```
+
+Since `.bible-dark` already sets `--background: 0 0% 7%` and the default light theme has a white/cream background via the CSS variable, `bg-background` handles both states automatically through the custom property system that's already in place.
+
+### 3. Audit other Bible components for orphaned `dark:` classes
+
+Scan `HandwritingEngine.tsx` and `InkOverlay.tsx` for any `bg-white` without `dark:` pairs — fix with `bg-background` or explicit `dark:bg-zinc-900` pairings.
+
+## Files
+
+| File | Change |
+|------|--------|
+| `BibleReader.tsx` | Add `dark` class to `<html>` when `premiumDark` is true |
+| `ZoomWrapper.tsx` | Replace `bg-[#FDFBF7] dark:bg-[#1a1a1e]` with `bg-background` |
+| `HandwritingEngine.tsx` | Fix toolbar `bg-white/90` → `bg-background/90` |
 
