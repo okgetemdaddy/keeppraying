@@ -558,6 +558,15 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
   }, []);
 
+  // ── Highlight style (invert vs neon) ──
+  const [highlightStyle, setHighlightStyleRaw] = useState<HighlightStyleMode>(() => {
+    try { return (localStorage.getItem("bible_highlight_style") as HighlightStyleMode) || "invert"; } catch { return "invert"; }
+  });
+  const handleHighlightStyleChange = useCallback((v: HighlightStyleMode) => {
+    setHighlightStyleRaw(v);
+    try { localStorage.setItem("bible_highlight_style", v); } catch {}
+  }, []);
+
   // ── iPad Study Mode (handwritten annotations) ──
   const [studyMode, setStudyMode] = useState(() => {
     try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
