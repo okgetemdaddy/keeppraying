@@ -111,15 +111,55 @@ const fadeIn = {
   transition: { duration: 0.25 },
 };
 
-/* ── Highlight colour map ── */
-const HIGHLIGHT_COLORS: Record<string, string> = {
-  yellow: "bg-yellow-200/50 dark:bg-yellow-400/20",
-  green: "bg-emerald-200/50 dark:bg-emerald-400/20",
-  blue: "bg-sky-200/50 dark:bg-sky-400/20",
-  pink: "bg-pink-200/50 dark:bg-pink-400/20",
-  purple: "bg-violet-200/50 dark:bg-violet-400/20",
-  orange: "bg-orange-200/50 dark:bg-orange-400/20",
+/* ── Dual-mode highlight styles ── */
+export type HighlightStyleMode = "invert" | "neon";
+
+const HIGHLIGHT_STYLES: Record<string, {
+  light: string;
+  darkInvert: string;
+  darkNeon: { bg: string; border: string };
+}> = {
+  yellow: {
+    light: "bg-yellow-200/70",
+    darkInvert: "bg-[#FFD700] text-[#121212]",
+    darkNeon: { bg: "bg-[#2A2A1A]", border: "border-b-2 border-[#FFD700]" },
+  },
+  green: {
+    light: "bg-emerald-200/70",
+    darkInvert: "bg-[#34D399] text-[#121212]",
+    darkNeon: { bg: "bg-[#1A2A1F]", border: "border-b-2 border-[#34D399]" },
+  },
+  blue: {
+    light: "bg-sky-200/70",
+    darkInvert: "bg-[#38BDF8] text-[#121212]",
+    darkNeon: { bg: "bg-[#1A222A]", border: "border-b-2 border-[#38BDF8]" },
+  },
+  pink: {
+    light: "bg-pink-200/70",
+    darkInvert: "bg-[#F472B6] text-[#121212]",
+    darkNeon: { bg: "bg-[#2A1A22]", border: "border-b-2 border-[#F472B6]" },
+  },
+  purple: {
+    light: "bg-violet-200/70",
+    darkInvert: "bg-[#A78BFA] text-[#121212]",
+    darkNeon: { bg: "bg-[#221A2A]", border: "border-b-2 border-[#A78BFA]" },
+  },
+  orange: {
+    light: "bg-orange-200/70",
+    darkInvert: "bg-[#FB923C] text-[#121212]",
+    darkNeon: { bg: "bg-[#2A221A]", border: "border-b-2 border-[#FB923C]" },
+  },
 };
+
+function getHighlightClass(color: string, mode: HighlightStyleMode): string {
+  const style = HIGHLIGHT_STYLES[color] ?? HIGHLIGHT_STYLES.yellow;
+  const isDark = document.documentElement.classList.contains("dark") ||
+    document.documentElement.classList.contains("bible-dark");
+
+  if (!isDark) return style.light;
+  if (mode === "neon") return `${style.darkNeon.bg} ${style.darkNeon.border}`;
+  return style.darkInvert;
+}
 
 /* ── Loading skeleton ── */
 function ReadingSkeleton() {
