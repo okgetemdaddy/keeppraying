@@ -552,6 +552,44 @@ export function BibleReader() {
   const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
   const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
 
+  // ── Edge-swipe gestures: open Sleeve (left) & Pocket (right) ──
+  const isTouch = useIsTouch();
+  useEffect(() => {
+    if (!isTouch) return;
+    const EDGE = 24;
+    const THRESHOLD = 60;
+    let startX = 0;
+    let latestX = 0;
+    let zone: "sleeve" | "pocket" | null = null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (studyMode || canvasOpen || journalOpen) return;
+      const x = e.touches[0].clientX;
+      if (x < EDGE) { zone = "sleeve"; startX = x; latestX = x; }
+      else if (x > window.innerWidth - EDGE) { zone = "pocket"; startX = x; latestX = x; }
+      else { zone = null; }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (zone) latestX = e.touches[0].clientX;
+    };
+    const onTouchEnd = () => {
+      if (!zone) return;
+      const delta = latestX - startX;
+      if (zone === "sleeve" && delta > THRESHOLD) setSleeveOpen(true);
+      if (zone === "pocket" && delta < -THRESHOLD) setPocketOpen(true);
+      zone = null;
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [isTouch, studyMode, canvasOpen, journalOpen]);
+
   const handleInkZoomChange = useCallback((v: number) => {
     setInkZoom(v);
     try { localStorage.setItem("bible_ink_zoom", String(v)); } catch {}
