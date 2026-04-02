@@ -1743,6 +1743,7 @@ export function BibleReader() {
                     onUndo={handleInkUndo}
                     penColor={inkPenColor}
                     penSize={inkPenSize}
+                    penGlow={inkPenGlow}
                     fingerDrawing={inkFingerDrawing}
                     isDark={premiumDark || document.documentElement.classList.contains("dark")}
                     onCircleSelect={(verseNumbers) => {
