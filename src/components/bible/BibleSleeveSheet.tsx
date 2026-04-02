@@ -648,7 +648,7 @@ export function BibleSleeveSheet({
                       <div className="flex-1 min-w-0">
                         <span className="text-sm text-foreground font-medium">Handwritten Annotations</span>
                         <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
-                          Write directly on the page with Apple Pencil or finger. Strokes are saved per verse.
+                          Write anywhere on the page with Apple Pencil. Full-page vector ink with palm rejection, zoom, and auto-save.
                         </p>
                       </div>
                       <Switch
