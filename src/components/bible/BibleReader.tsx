@@ -2088,6 +2088,12 @@ export function BibleReader() {
             onOpenTrash={() => setInkTrashOpen(true)}
             onOpenVoice={() => setVoiceOverlayActive(true)}
             hasTrashItems={inkHistory.trashBin.length > 0}
+            textAlign={wsTextAlign}
+            onTextAlignChange={handleWsTextAlign}
+            marginWidth={wsMarginWidth}
+            onMarginWidthChange={handleWsMarginWidth}
+            canvasBackground={wsCanvasBackground}
+            onCanvasBackgroundChange={handleWsCanvasBackground}
           />
         )
       )}
