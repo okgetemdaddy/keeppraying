@@ -80,7 +80,7 @@ import { AddToBunchDrawer, VerseAddedToast } from "@/components/bible/AddToBunch
 import { SelectedVersesStrip, type SelectedVerse } from "@/components/bible/SelectedVersesStrip";
 import { getBunchColor, BUNCH_COLOR_CLASSES } from "@/components/bible/bunchColors";
 import { BibleSleeveSheet } from "@/components/bible/BibleSleeveSheet";
-import { BibleFeaturesTour } from "@/components/bible/BibleFeaturesTour";
+
 import { BibleSearchDialog } from "@/components/bible/BibleSearchDialog";
 import { getBookmarkColorDef } from "@/components/bible/bookmarkColors";
 import { useBoardPreferences } from "@/hooks/useBoardPreferences";
