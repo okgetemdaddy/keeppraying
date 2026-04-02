@@ -2061,8 +2061,9 @@ export function BibleReader() {
         studyMode={studyMode}
         studyModeVariant={studyModeVariant}
         pencilDetected={pencilDetected}
-        onToggleStudyMode={handleToggleStudyMode}
-        onStudyModeVariantChange={handleStudyModeVariantChange}
+        onToggleStudyMode={isIPad ? handleToggleStudyMode : undefined}
+        onStudyModeVariantChange={isIPad ? handleStudyModeVariantChange : undefined}
+        isIPad={isIPad}
         highlightStyle={highlightStyle}
         onHighlightStyleChange={handleHighlightStyleChange}
       />
