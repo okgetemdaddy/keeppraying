@@ -1625,39 +1625,44 @@ export function BibleReader() {
               style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
-              <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                {verses.map((v) => {
-                  const vNotes = noteMap.get(v.number) ?? [];
-                  return (
-                    <React.Fragment key={v.number}>
-                      <EnrichedVerse
-                        verse={v}
-                        highlights={highlightMap.get(v.number) ?? []}
-                        notes={vNotes}
-                        bookmark={bookmarkMap.get(v.number)}
-                        bunchItems={bunchMap.get(v.number) ?? []}
-                        bunchColorMap={bunchColorMap}
-                        bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                        mode={mode}
-                        isSelected={selectedVerses.has(v.number)}
-                        hideBunches={hideBunchRefs}
-                        onTapSelect={handleTapSelect}
-                        studyMode={studyMode}
-                        verseAnnotation={annotationMap.get(v.number) ?? null}
-                        onAnnotationSave={handleAnnotationSave}
-                        verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                      />
-                      <AnimatePresence>
-                        {noteInputVerse === v.number && (
-                          <NoteInputPanel
-                            verseNumber={v.number}
-                            existingContent={vNotes[0]?.note_content}
-                            existingId={vNotes[0]?.id}
-                            onSave={handleSaveNote}
-                            onCancel={() => setNoteInputVerse(null)}
-                          />
-                        )}
-                      </AnimatePresence>
+              <ZoomWrapper
+                zoom={studyMode && studyModeVariant === "margin" ? inkZoom : 1}
+                textSpacing={studyMode && studyModeVariant === "margin" ? inkTextSpacing : 1.6}
+                className="relative"
+              >
+                <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                  {verses.map((v) => {
+                    const vNotes = noteMap.get(v.number) ?? [];
+                    return (
+                      <React.Fragment key={v.number}>
+                        <EnrichedVerse
+                          verse={v}
+                          highlights={highlightMap.get(v.number) ?? []}
+                          notes={vNotes}
+                          bookmark={bookmarkMap.get(v.number)}
+                          bunchItems={bunchMap.get(v.number) ?? []}
+                          bunchColorMap={bunchColorMap}
+                          bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                          mode={mode}
+                          isSelected={selectedVerses.has(v.number)}
+                          hideBunches={hideBunchRefs}
+                          onTapSelect={handleTapSelect}
+                          studyMode={studyMode && studyModeVariant === "margin"}
+                          verseAnnotation={annotationMap.get(v.number) ?? null}
+                          onAnnotationSave={handleAnnotationSave}
+                          verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                        />
+                        <AnimatePresence>
+                          {noteInputVerse === v.number && (
+                            <NoteInputPanel
+                              verseNumber={v.number}
+                              existingContent={vNotes[0]?.note_content}
+                              existingId={vNotes[0]?.id}
+                              onSave={handleSaveNote}
+                              onCancel={() => setNoteInputVerse(null)}
+                            />
+                          )}
+                        </AnimatePresence>
                     </React.Fragment>
                   );
                 })}
