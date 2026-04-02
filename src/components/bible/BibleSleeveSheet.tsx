@@ -302,8 +302,8 @@ export function BibleSleeveSheet({
 
             <div className="h-px bg-border" />
 
-            {/* ── iPad Study Mode ── */}
-            {onToggleStudyMode && (
+            {/* ── iPad Study Mode (hardware-gated) ── */}
+            {isIPad && onToggleStudyMode && (
               <>
                 <Collapsible open={isOpen(SECTION_IDS.studyMode)}>
                   <SectionHeader icon={PenTool} label="iPad Study Mode" isOpen={isOpen(SECTION_IDS.studyMode)} onToggle={() => toggleSection(SECTION_IDS.studyMode)} />
