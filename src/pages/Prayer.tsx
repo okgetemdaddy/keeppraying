@@ -60,7 +60,7 @@ function SourceBadge({ source, status }: { source?: string | null; status: strin
     return (
       <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border font-medium"
         style={{ background: "hsl(42 80% 92%)", borderColor: "hsl(42 75% 78%)", color: "hsl(38 75% 32%)" }}>
-        <Sparkles className="w-2.5 h-2.5" />AI
+        <Sparkles className="w-2.5 h-2.5" />✦ PrayerAssist
       </span>
     );
   }

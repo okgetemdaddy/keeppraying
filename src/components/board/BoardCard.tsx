@@ -1229,7 +1229,7 @@ function ActionButtons({
 
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-xs gap-2" onClick={onEnrich}>
-                <Sparkles className="w-3.5 h-3.5" /> AI Enrich
+                <Sparkles className="w-3.5 h-3.5" /> Enrich with Scripture
               </DropdownMenuItem>
             </>
           )}

@@ -175,7 +175,7 @@ export default function AIEnrichPanel({
               </div>
             )}
             <p className="text-sm text-muted-foreground">
-              AI will read your prayer's substance and suggest supporting scripture — including any verses you've already cited.
+              Your prayer's substance will be read and supporting scripture suggested — including any verses you've already cited.
             </p>
             <Button onClick={fetchSuggestions} className="btn-gold rounded-xl gap-2">
               <Sparkles className="w-4 h-4" /> Get Suggestions

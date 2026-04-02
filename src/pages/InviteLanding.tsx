@@ -280,7 +280,7 @@ export default function InviteLanding() {
               { icon: Heart, title: "Pray Together", desc: "Share prayers and lift each other up before God." },
               { icon: BookOpen, title: "Grow in Faith", desc: "Scripture-based homework, devotionals, and growth." },
               { icon: Shield, title: "Safe & Private", desc: "A trusted space for your most personal prayers." },
-              { icon: Sparkles, title: "AI Encouragement", desc: "Receive uplifting words rooted in Scripture." },
+              { icon: Sparkles, title: "Spiritual Encouragement", desc: "Receive uplifting words rooted in Scripture." },
             ].map((feature, i) => (
               <div key={i} className="prayer-card rounded-xl p-4 text-center space-y-2">
                 <feature.icon className="w-5 h-5 mx-auto text-primary" />

@@ -319,7 +319,7 @@ export default function PrayerAssist() {
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-center text-xs text-muted-foreground mt-2">AI guides your prayer journey. Always verify with Scripture.</p>
+              <p className="text-center text-xs text-muted-foreground mt-2">PrayerAssist guides your prayer journey. Always verify with Scripture.</p>
             </>
           )}
         </div>

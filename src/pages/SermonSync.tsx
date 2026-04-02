@@ -433,7 +433,7 @@ export default function SermonSync() {
             Paste your church's sermon link and let PrayerAssist extract prayer prompts and sermon notes — so the Word keeps working in your prayer life all week.
           </p>
           <Link to="/support#ai-stance" className="inline-block text-xs text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors">
-            Our Stance on AI
+            Our Heart Behind the Tools
           </Link>
         </motion.div>
 

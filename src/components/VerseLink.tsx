@@ -178,7 +178,7 @@ export default function VerseLink({ reference, text, className = "" }: VerseLink
             {loading ? (
               <div className="flex items-center gap-2 py-3">
                 <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Getting AI summary…</span>
+                <span className="text-sm text-muted-foreground">Getting summary…</span>
               </div>
             ) : (
               <p className="text-sm text-foreground/80 leading-relaxed">{summary}</p>

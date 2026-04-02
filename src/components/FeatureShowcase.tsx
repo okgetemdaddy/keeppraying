@@ -364,7 +364,7 @@ const FEATURES = [
     id: "circles",
     title: "Accountability Circles",
     headline: "Grow Together in Faith",
-    body: "Form small accountability groups, share prayers, assign homework, and encourage one another with weekly check-ins and AI-generated encouragements.",
+    body: "Form small accountability groups, share prayers, assign homework, and encourage one another with weekly check-ins and spiritual encouragements.",
     href: "/circles",
     Svg: CirclesSvg,
     accent: "hsl(42 75% 46%)",

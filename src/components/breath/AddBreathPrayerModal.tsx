@@ -241,7 +241,7 @@ export default function AddBreathPrayerModal({ open, onOpenChange, onSuccess }: 
           </div>
         )}
 
-        {/* Step 2: Review AI enrichment */}
+        {/* Step 2: Review enrichment */}
         {enrichResult && (
           <div className="space-y-4 pt-2">
             {/* Preview the prayer */}

@@ -229,7 +229,7 @@ export function BibleSearchDialog({
           {aiResults.length > 0 && (
             <>
               <CommandSeparator />
-              <CommandGroup heading="AI Suggestions">
+              <CommandGroup heading="Suggested Verses">
                 {aiResults.map((r, i) => (
                   <CommandItem
                     key={`ai-${i}-${r.bookUsfm}-${r.chapter}`}

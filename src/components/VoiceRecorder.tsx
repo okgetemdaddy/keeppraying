@@ -327,7 +327,7 @@ export function VoiceRecorder({ variant = "fab", dark = false, autoStart = false
         title: refined.title || null,
         prayer_text: refined.prayer_text,
         extended_prayer: refined.verses || null,
-        labels: ["voice-prayer", "ai-refined"],
+        labels: ["voice-prayer", "assisted"],
         status: "private",
         created_by: user.id,
       } as any).select("id").single();

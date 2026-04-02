@@ -328,7 +328,7 @@ function VerseLinkIntro() {
           transition={{ delay: 2.9, duration: 0.5 }}
           className="text-xs text-muted-foreground font-body italic"
         >
-          Hover any scripture badge for an instant AI summary ✨
+          Hover any scripture badge for an instant verse summary ✨
         </motion.p>
       </motion.div>
     </div>

@@ -64,9 +64,9 @@ export function TestimonyEnrichModal({
         if (resp.status === 429) {
           toast({ title: "Rate limited", description: "Please wait a moment and try again.", variant: "destructive" });
         } else if (resp.status === 402) {
-          toast({ title: "AI credits exhausted", description: "Please add funds to continue.", variant: "destructive" });
+          toast({ title: "Credits exhausted", description: "Please add funds to continue.", variant: "destructive" });
         } else {
-          toast({ title: "AI enrichment failed", description: err.error || "Please try again.", variant: "destructive" });
+          toast({ title: "Enrichment failed", description: err.error || "Please try again.", variant: "destructive" });
         }
         return;
       }
