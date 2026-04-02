@@ -1757,6 +1757,9 @@ export function BibleReader() {
                 zoom={studyMode && studyModeVariant === "margin" ? inkZoom : 1}
                 textSpacing={studyMode && studyModeVariant === "margin" ? inkTextSpacing : 1.6}
                 className="relative"
+                textAlign={studyMode && studyModeVariant === "margin" ? wsTextAlign : "left"}
+                marginWidth={studyMode && studyModeVariant === "margin" ? wsMarginWidth : 0}
+                canvasBackground={studyMode && studyModeVariant === "margin" ? wsCanvasBackground : "none"}
               >
                 <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                   {verses.map((v) => {
