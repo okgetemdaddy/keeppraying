@@ -174,6 +174,13 @@ interface BibleSleeveSheetProps {
   /** Hardware-detected iPad flag — gates study mode UI */
   isIPad?: boolean;
 
+  /** Hardware-detected iPhone flag — gates tap-nav toggle */
+  isIPhone?: boolean;
+
+  /** Tap-to-navigate mode (disables swipe chapters) */
+  tapNavMode?: boolean;
+  onToggleTapNav?: (v: boolean) => void;
+
   /* highlight style */
   highlightStyle?: "invert" | "neon";
   onHighlightStyleChange?: (v: "invert" | "neon") => void;
