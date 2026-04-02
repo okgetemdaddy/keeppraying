@@ -41,6 +41,7 @@ export function IPadStudyToolbar({
   canUndo,
   fingerDrawing,
   onFingerDrawingChange,
+  isPencilActive = false,
 }: IPadStudyToolbarProps) {
   const [expanded, setExpanded] = useState(true);
 
