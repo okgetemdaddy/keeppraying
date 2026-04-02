@@ -150,7 +150,7 @@ export default function AIEnrichPanel({
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader className="mb-5">
           <SheetTitle className="font-display flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-primary" /> AI Enrichment
+            <Sparkles className="w-4 h-4 text-primary" /> Auto Verses & Labels
           </SheetTitle>
           <SheetDescription>
             AI reads your prayer deeply — surfacing scripture you cited and verses that match what you're praying about.
