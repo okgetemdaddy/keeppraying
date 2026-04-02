@@ -17,6 +17,15 @@ export function MobileTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [hidden, setHidden] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setIsDark(document.documentElement.classList.contains("bible-dark"));
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const show = () => setHidden(false);
@@ -37,11 +46,13 @@ export function MobileTabBar() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]"
       style={{
-        background: "linear-gradient(180deg, hsl(38 60% 97% / 0.92) 0%, hsl(38 60% 97% / 0.98) 100%)",
+        background: isDark
+          ? "linear-gradient(180deg, hsl(0 0% 7% / 0.92) 0%, hsl(0 0% 5% / 0.98) 100%)"
+          : "linear-gradient(180deg, hsl(38 60% 97% / 0.92) 0%, hsl(38 60% 97% / 0.98) 100%)",
         backdropFilter: "blur(20px) saturate(1.6)",
         WebkitBackdropFilter: "blur(20px) saturate(1.6)",
-        borderTop: "1px solid hsl(38 22% 88% / 0.7)",
-        boxShadow: "0 -2px 20px -4px hsl(25 35% 14% / 0.08)",
+        borderTop: isDark ? "1px solid hsl(0 0% 18% / 0.5)" : "1px solid hsl(38 22% 88% / 0.7)",
+        boxShadow: isDark ? "0 -2px 20px -4px hsl(0 0% 0% / 0.3)" : "0 -2px 20px -4px hsl(25 35% 14% / 0.08)",
       }}
     >
       <div className="flex items-center justify-around h-16 max-w-md mx-auto px-6">
