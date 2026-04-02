@@ -448,6 +448,14 @@ export default function Index() {
             </span>
           </motion.h1>
 
+          <motion.p
+            variants={fadeUp}
+            className="mt-1 text-[10px] font-semibold tracking-[0.35em] uppercase"
+            style={{ color: "hsl(42 85% 56% / 0.7)" }}
+          >
+            Kingdom Prayers
+          </motion.p>
+
           <motion.p variants={fadeUp} className="font-display italic text-white/80 text-base sm:text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed px-2">
             "Do not be anxious about anything, but in every situation,<br className="hidden sm:block" /> by prayer and petition, with thanksgiving, present your requests to God."
           </motion.p>
