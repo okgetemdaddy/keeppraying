@@ -10,6 +10,22 @@ export default function Bible() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const kr = isKeepReading();
 
+  // Disable browser swipe-to-go-back while on /bible
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    html.style.overscrollBehaviorX = "none";
+    body.style.overscrollBehaviorX = "none";
+    html.style.touchAction = "pan-y pinch-zoom";
+    body.style.touchAction = "pan-y pinch-zoom";
+    return () => {
+      html.style.overscrollBehaviorX = "";
+      body.style.overscrollBehaviorX = "";
+      html.style.touchAction = "";
+      body.style.touchAction = "";
+    };
+  }, []);
+
   useEffect(() => {
     const hide = () => setFocusMode(true);
     const show = () => setFocusMode(false);
