@@ -1,38 +1,39 @@
 
 
-# Fix iPad Study Mode Dark Mode Support
+# Remove "AI" Branding — Rename to Warm, Ministry-Focused Language
 
-## Problem
-The iPad study mode components have hardcoded light-theme values that don't respect dark mode:
-1. **ZoomWrapper**: Has `bg-[#FDFBF7]` (parchment) but `dark:bg-transparent` loses the paper feel
-2. **InkOverlay**: Default pen color `#1A1A1A` (near-black) is invisible on dark backgrounds; ink-bleed filter not tuned for dark
-3. **iPadStudyToolbar**: Color swatches (Iron Gall Black `#1A1A1A`) are invisible against dark toolbar backgrounds; Sepia highlighter won't show on dark backgrounds
+## Summary
+Replace every user-facing "AI" mention across the app with your chosen alternatives. Admin-only pages stay as-is (only you see them).
 
-## Changes
+## Change Map
 
-### 1. `src/components/bible/ZoomWrapper.tsx`
-- Change `dark:bg-transparent` → `dark:bg-[#1a1a1e]` (a warm dark tone that pairs with the parchment light theme)
+| Current Text | New Text | File(s) |
+|---|---|---|
+| "AI-Crafted Prayers" | **"Assisted Prayers"** | `App.tsx` (Board AuthGate features) |
+| "AI-guided prayer crafting" | **"PrayerAssist-powered prayer crafting"** | `SiteNav.tsx` |
+| "AI-guided prayer life" | **"PrayerAssist-powered prayer life"** | `map/GrowthCTA.tsx` |
+| "✦AI" / "AI Generated" badge on prayer cards | **"✦ PrayerAssist"** | `Prayer.tsx`, `Prayers.tsx`, `BoardCard.tsx`, `PrayerViewerModal.tsx` |
+| "AI-generated" label text | **"PrayerAssist-generated"** | `Prayers.tsx` |
+| "AI Enrichment" panel title | **"Auto Verses & Labels"** | `AIEnrichPanel.tsx` |
+| "AI reads your prayer deeply…" description | **"Your prayer is read deeply…"** | `AIEnrichPanel.tsx` |
+| "AI will read your prayer's substance…" | **"Your prayer's substance will be read…"** | `AIEnrichPanel.tsx` |
+| "AI Enrich" dropdown item | **"Enrich with Scripture"** | `BoardCard.tsx` |
+| "AI Enrichment" on SharedPrayerLanding | **"Auto Verses & Labels"** | `SharedPrayerLanding.tsx` |
+| "AI Encouragement" | **"Spiritual Encouragement"** | `App.tsx` (Circles AuthGate), `InviteLanding.tsx` |
+| "Our Stance on AI" links + section | **"Our Heart Behind the Tools"** | `Support.tsx`, `Board.tsx`, `SermonSync.tsx`, `PrayerAssist.tsx` |
+| "AI prayer companion" | **"PrayerAssist-powered prayer companion"** | `PrayerAssist.tsx` |
+| "Analyzing with AI…" loading text | **"Analyzing sermon…"** | `SermonSync.tsx` |
+| "AI credits exhausted" toast | **"Credits exhausted"** | `TestimonyEnrichModal.tsx` |
+| "AI enrichment failed" toast | **"Enrichment failed"** | `TestimonyEnrichModal.tsx` |
+| "Getting AI summary…" loading | **"Getting summary…"** | `VerseLink.tsx` |
+| "AI summary" hover tooltip | **"Verse summary"** | `Index.tsx` |
+| "AI Suggestions" Bible search heading | **"Suggested Verses"** | `BibleSearchDialog.tsx` |
+| "Review AI enrichment" comment | Just a code comment — update for clarity | `AddBreathPrayerModal.tsx` |
+| "Auto-enrich with AI" comment | Code comment — update | `AddBreathPrayerModal.tsx` |
+| `labels: ["voice-prayer", "ai-refined"]` | `labels: ["voice-prayer", "assisted"]` | `VoiceRecorder.tsx` |
 
-### 2. `src/components/bible/InkOverlay.tsx`
-- Update default `penColor` from `#1a1a1a` to use a theme-aware fallback
-- Add a second SVG filter `ink-bleed-dark` with slightly boosted opacity for dark backgrounds
-- For committed strokes, apply the correct filter based on a `isDark` prop
-- Sepia highlighter: in dark mode use `screen` blend mode instead of `multiply` (multiply darkens — invisible on dark bg)
+### Files NOT changed (admin-only, internal)
+- `Admin.tsx`, `AIInsightsTab.tsx`, `AIInsightButton.tsx`, `SuggestionPanel.tsx`, `UserDetailPanel.tsx`, `PrayerRequestsInbox.tsx` — these are your admin dashboard, only you see them.
 
-### 3. `src/components/bible/iPadStudyToolbar.tsx`
-- Make the `PEN_COLORS` array dark-mode-aware: swap Iron Gall Black for a light ink (`#E8E4DF`) in dark mode, swap Oxblood Red for a brighter red (`#C44040`)
-- Accept an `isDark` boolean prop to toggle the palette
-- Add a visible border/ring on dark color swatches so they're distinguishable against the dark toolbar card
-
-### 4. `src/components/bible/BibleReader.tsx`
-- Detect dark mode (check `document.documentElement.classList.contains('dark')` or use a hook) and pass `isDark` prop down to `InkOverlay` and `iPadStudyToolbar`
-- When saving strokes, store the original color — on load, the overlay renders with the theme-appropriate filter but the stored data stays theme-neutral
-
-## Files Modified
-| File | Change |
-|------|--------|
-| `ZoomWrapper.tsx` | Dark paper tone background |
-| `InkOverlay.tsx` | Dark-aware ink filter, blend mode swap for sepia, isDark prop |
-| `iPadStudyToolbar.tsx` | Dark-adapted color palette, isDark prop |
-| `BibleReader.tsx` | Detect dark mode, pass isDark to children |
+## Total: ~20 files modified, zero database or logic changes — purely string replacements.
 
