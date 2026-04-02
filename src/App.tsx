@@ -224,9 +224,9 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <BrowserRouter>
+        <PlatformAwareRouter>
           {isKeepReading() ? <KeepReadingShell /> : <AppShell />}
-        </BrowserRouter>
+        </PlatformAwareRouter>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
