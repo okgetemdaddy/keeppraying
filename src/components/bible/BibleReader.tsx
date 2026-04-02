@@ -496,6 +496,15 @@ export function BibleReader() {
   const [mode, setMode] = useState<ReadingMode>("verse");
   const [positionLoaded, setPositionLoaded] = useState(false);
 
+  // ── Tap-to-navigate mode (iPhone swipe-free) ──
+  const [tapNavMode, setTapNavMode] = useState<boolean>(() => {
+    try { return localStorage.getItem("bible_tap_nav") === "true"; } catch { return false; }
+  });
+  const handleToggleTapNav = useCallback((v: boolean) => {
+    setTapNavMode(v);
+    try { localStorage.setItem("bible_tap_nav", v ? "true" : "false"); } catch {}
+  }, []);
+
   // ── Position persistence ──
   const { loadPosition, savePosition } = useBiblePosition(user?.id);
 
@@ -1767,9 +1776,31 @@ export function BibleReader() {
               }
             }}
           >
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-              {currentBook.title} {currentChapter.title}
-            </h1>
+            <div className="flex items-center justify-center gap-3">
+              {tapNavMode && (
+                <button
+                  disabled={!canPrev}
+                  onClick={() => setChapterIdx((i) => i - 1)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  aria-label="Previous chapter"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                {currentBook.title} {currentChapter.title}
+              </h1>
+              {tapNavMode && (
+                <button
+                  disabled={!canNext}
+                  onClick={() => setChapterIdx((i) => i + 1)}
+                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                  aria-label="Next chapter"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
             </p>
@@ -1793,7 +1824,7 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
-              drag={studyMode ? false : "x"}
+              drag={studyMode || tapNavMode ? false : "x"}
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.15}
               onDragEnd={(_e, info) => {
@@ -2064,6 +2095,9 @@ export function BibleReader() {
         onToggleStudyMode={isIPad ? handleToggleStudyMode : undefined}
         onStudyModeVariantChange={isIPad ? handleStudyModeVariantChange : undefined}
         isIPad={isIPad}
+        isIPhone={isIPhone}
+        tapNavMode={tapNavMode}
+        onToggleTapNav={handleToggleTapNav}
         highlightStyle={highlightStyle}
         onHighlightStyleChange={handleHighlightStyleChange}
       />
