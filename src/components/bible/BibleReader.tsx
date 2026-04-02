@@ -1656,13 +1656,30 @@ export function BibleReader() {
       {/* ── Reading Area ── */}
       <div ref={readingAreaRef} className="mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
         {currentBook && currentChapter && (
-          <motion.header {...fadeIn} className="mb-8 text-center">
+          <motion.header
+            {...fadeIn}
+            className={`mb-8 text-center ${studyMode ? 'pointer-events-none backdrop-blur-md bg-background/80 dark:bg-background/70 -mx-5 sm:-mx-8 px-5 sm:px-8 py-4 rounded-b-2xl sticky top-[88px] z-20' : ''}`}
+            onContextMenu={(e) => {
+              if (studyMode) {
+                e.preventDefault();
+                setThumbnailStripOpen(true);
+              }
+            }}
+          >
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
               {currentBook.title} {currentChapter.title}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
             </p>
+            {studyMode && (
+              <button
+                onClick={() => setThumbnailStripOpen(true)}
+                className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
+              >
+                ▼ Browse chapters
+              </button>
+            )}
           </motion.header>
         )}
 
