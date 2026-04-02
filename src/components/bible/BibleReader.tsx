@@ -1553,6 +1553,19 @@ export function BibleReader() {
               <PenTool className="h-4 w-4" />
             </Button>
 
+            {/* Bible Pocket (annotations drawer) */}
+            {studyMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPocketOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Bible Pocket"
+              >
+                <BookMarked className="h-4 w-4" />
+              </Button>
+            )}
+
             {/* Focus mode — hide bottom nav */}
 
             {/* Search button */}
