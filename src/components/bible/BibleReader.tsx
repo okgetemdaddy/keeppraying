@@ -536,7 +536,14 @@ export function BibleReader() {
   const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
   const [inkPenSize, setInkPenSize] = useState(8);
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
-  const [inkStrokes, setInkStrokes] = useState<InkStroke[]>([]);
+  const inkHistory = useInkHistory();
+
+  // New iPad feature states
+  const [inkTrashOpen, setInkTrashOpen] = useState(false);
+  const [voiceOverlayActive, setVoiceOverlayActive] = useState(false);
+  const [pocketOpen, setPocketOpen] = useState(false);
+  const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
+  const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
 
   const handleInkZoomChange = useCallback((v: number) => {
     setInkZoom(v);
