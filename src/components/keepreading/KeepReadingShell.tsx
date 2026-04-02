@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { useAuth } from "@/contexts/AuthContext";
 import { KeepReadingHead } from "./KeepReadingHead";
-import { SacredSpinner } from "@/components/SacredSpinner";
+import SacredSpinner from "@/components/SacredSpinner";
 import Bible from "@/pages/Bible";
 import KeepReadingAuth from "./KeepReadingAuth";
 import ResetPassword from "@/pages/ResetPassword";
