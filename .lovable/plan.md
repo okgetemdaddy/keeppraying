@@ -1,62 +1,48 @@
 
 
-# Neon Glow Ink Brushes for Bible Reader
+# Insert Native Port Technical Notes
 
 ## Summary
 
-Add 3 luminescent "neon glow" pen options to the iPad study toolbar that produce a true optical bloom effect — bright inner core with a soft saturated halo — using layered SVG filters. This creates the "digital illuminated manuscript" aesthetic that no competitor offers.
+Embed detailed developer-only comments across 4 key files documenting the native iPadOS migration blueprints. These are block comments with a `@native-port` tag — invisible to end users, only meaningful to engineers during a future Capacitor/Swift transition.
 
-## The Neon Effect — How It Works
+## Files & Placement
 
-Each neon stroke renders with two visual layers via SVG filters:
-- **Inner core**: Near-white, low-saturation fill for the "hot filament"
-- **Outer bloom**: A `feGaussianBlur` glow halo in the saturated neon color, composited with `screen` blend mode so overlapping strokes intensify light
+### 1. `src/components/bible/InkOverlay.tsx` — Top of file (after imports)
+Insert a block comment documenting:
+- The "Transparent Glass" pattern: overlay a native `PKCanvasView` over `WKWebView`, keeping DOM for typography and native layer for ink
+- The full Swift `PencilKitBridge` Capacitor plugin scaffold (class, delegate, base64 serialization back to React)
+- 120Hz coalesced/predicted touch extraction via `UIEvent.coalescedTouches` and `predictedTouches`
+- Note that the current RAF+SVG approach hits a theoretical ceiling vs native 9ms latency
 
-## Color Profiles
+### 2. `src/components/bible/iPadStudyToolbar.tsx` — Top of file (after imports)
+Insert a block comment documenting:
+- `UIPencilInteraction` delegate for barrel double-tap and Pencil Pro squeeze (iOS 17.4+)
+- The Swift→JS event pipeline via `evaluateJavaScript` dispatching `CustomEvent('pencilDoubleTap')`
+- React listener pattern for toggling pen/eraser and notifying the native plugin
 
-| Name | Core (fill) | Bloom (glow) | Dark mode icon bg |
-|------|------------|--------------|-------------------|
-| Electric Cyan | `#E0FFFF` | `#00FFFF` | `#0a1a1a` |
-| Neon Fuchsia | `#FFD8FF` | `#FF00FF` | `#1a0a1a` |
-| Radiant Lime | `#EAFFEA` | `#39FF14` | `#0a1a0a` |
+### 3. `src/lib/convexHull.ts` — Top of file (after existing JSDoc)
+Insert a block comment documenting:
+- Circle-to-Lexicon upgrade: intersect `<span data-strongs>` elements inside the hull polygon
+- Strong's number extraction and lexicon API query pattern
+- CSS `lexicon-highlight` animation trigger on matched word spans
 
-## Files Changed
+### 4. `src/hooks/useAnnotations.ts` — Top of file (after imports)
+Insert a block comment documenting:
+- Native ink serialization: `PKDrawing.dataRepresentation()` → base64 → stored alongside web stroke JSON
+- Bidirectional sync: web strokes render in SVG, native strokes render in `PKCanvasView`
+- The `onNativeInkUpdated` Capacitor listener pattern for real-time persistence
 
-### 1. `src/components/bible/iPadStudyToolbar.tsx`
-- Add a "Neon" section after the existing color swatches (separated by a divider)
-- 3 new neon color buttons with dark circular backgrounds and a CSS `box-shadow` glow on each swatch so users see the luminescent affordance before selecting
-- Neon colors stored as objects with `{ core, bloom }` — selecting one sets `penColor` to the core value and passes the bloom color via a new `penGlow` prop
-- When a neon color is active, show a subtle `✦` sparkle badge on the selected swatch
+## Format
 
-### 2. `src/components/bible/InkOverlay.tsx`
-- Accept new `penGlow?: string` prop (the bloom color, `undefined` for normal ink)
-- Add 3 new SVG `<filter>` definitions in `<defs>` — one per neon color — each containing:
-  - `feGaussianBlur stdDeviation="3"` on the stroke alpha
-  - `feFlood` with the bloom color
-  - `feComposite` to mask the flood to the blur shape
-  - `feMerge` layering: bloom halo behind, original stroke on top
-- On `InkStroke`, add optional `glow?: string` field
-- When creating a new stroke in `handlePointerUp`, attach the current `penGlow` value
-- In `renderedStrokes`, neon strokes get:
-  - Their matching neon filter applied
-  - `mixBlendMode: "screen"` so overlapping neon strokes intensify
-- Live preview path: when `penGlow` is set, apply the matching filter + `screen` blend mode for instant visual feedback during drawing
+All comments use this pattern:
+```typescript
+/**
+ * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
+ * ─────────────────────────────────────────────────────────
+ * [content]
+ */
+```
 
-### 3. `src/contexts/BibleStudyContext.tsx`
-- Add `penGlow: string | null` and `setPenGlow` to the context state (persisted to localStorage)
-- Expose alongside existing `penColor`/`setPenColor`
-
-### 4. `src/components/bible/BibleReader.tsx` (wiring only)
-- Pass `penGlow` from context through to `InkOverlay`
-
-## Performance
-
-- SVG filters are GPU-composited on modern WebKit — no JS overhead during stroke rendering
-- The blur radius (`stdDeviation: 3`) is intentionally small to avoid expensive pixel fills
-- Live preview uses the same RAF loop — filter is applied via CSS attribute, not recalculated per frame
-- No impact on the existing `perfect-freehand` stroke computation path
-
-## What stays the same
-- All existing pen colors, ink bleed filters, circle-to-select, palm rejection, undo/redo — untouched
-- Normal ink strokes continue rendering exactly as before
+No runtime code changes. No UI changes. No behavioral changes.
 
