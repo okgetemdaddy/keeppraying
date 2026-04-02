@@ -2040,12 +2040,6 @@ export function BibleReader() {
       {/* ── Verse Added Toast ── */}
       <VerseAddedToast bunchName={verseAddedToast.name} visible={verseAddedToast.visible} />
 
-      {/* ── First-Click Feature Tour ── */}
-      <BibleFeaturesTour
-        open={showTour}
-        onAcknowledge={handleTourAcknowledge}
-      />
-
       {/* ── Bible Search ── */}
       <BibleSearchDialog
         open={searchOpen}
