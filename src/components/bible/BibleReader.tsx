@@ -19,6 +19,7 @@ import {
   Minimize2,
   Search,
   PenTool,
+  BookMarked,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +36,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toggle } from "@/components/ui/toggle";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   useBibleVersions,
   useBibleIndex,
@@ -81,6 +92,11 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
+import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
+import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
+import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
+import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
 
@@ -520,7 +536,14 @@ export function BibleReader() {
   const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
   const [inkPenSize, setInkPenSize] = useState(8);
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
-  const [inkStrokes, setInkStrokes] = useState<InkStroke[]>([]);
+  const inkHistory = useInkHistory();
+
+  // New iPad feature states
+  const [inkTrashOpen, setInkTrashOpen] = useState(false);
+  const [voiceOverlayActive, setVoiceOverlayActive] = useState(false);
+  const [pocketOpen, setPocketOpen] = useState(false);
+  const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
+  const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
 
   const handleInkZoomChange = useCallback((v: number) => {
     setInkZoom(v);
@@ -647,63 +670,80 @@ export function BibleReader() {
   const inkAnnotationId = inkAnnotation?.id;
   useEffect(() => {
     if (inkAnnotation) {
-      setInkStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
+      inkHistory.replaceStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
     } else {
-      setInkStrokes([]);
+      inkHistory.replaceStrokes([]);
     }
   }, [inkAnnotation]);
 
   // ── Debounced ink auto-save ──
   const inkSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleInkStrokeComplete = useCallback(
-    (stroke: InkStroke) => {
-      setInkStrokes((prev) => {
-        const updated = [...prev, stroke];
-        // Schedule debounced save
-        if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
-        inkSaveTimer.current = setTimeout(() => {
-          if (!bookUsfm || !currentChapter) return;
-          const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
-          saveAnnotationMut.mutate({
-            verseIds: [inkKey],
-            strokes: updated as unknown as StrokeData[],
-            existingId: inkAnnotationId,
-          });
-        }, 500);
-        return updated;
-      });
-    },
-    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
-  );
-
-  const handleInkUndo = useCallback(() => {
-    setInkStrokes((prev) => {
-      const updated = prev.slice(0, -1);
-      // Schedule debounced save
+  const scheduleInkSave = useCallback(
+    (strokesToSave: InkStroke[]) => {
       if (inkSaveTimer.current) clearTimeout(inkSaveTimer.current);
       inkSaveTimer.current = setTimeout(() => {
         if (!bookUsfm || !currentChapter) return;
         const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
         saveAnnotationMut.mutate({
           verseIds: [inkKey],
-          strokes: updated as unknown as StrokeData[],
+          strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
         });
       }, 500);
-      return updated;
-    });
-  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+    },
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
+  );
 
-  const handleInkClear = useCallback(() => {
-    setInkStrokes([]);
-    if (!bookUsfm || !currentChapter) return;
-    const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
-    saveAnnotationMut.mutate({
-      verseIds: [inkKey],
-      strokes: [] as unknown as StrokeData[],
-      existingId: inkAnnotationId,
-    });
-  }, [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId]);
+  const handleInkStrokeComplete = useCallback(
+    (stroke: InkStroke) => {
+      inkHistory.addStroke(stroke);
+      scheduleInkSave([...inkHistory.strokes, stroke]);
+    },
+    [inkHistory, scheduleInkSave],
+  );
+
+  const handleInkUndo = useCallback(() => {
+    inkHistory.undo();
+    // Save after undo — use the state that will exist after undo
+    scheduleInkSave(inkHistory.strokes.slice(0, -1));
+  }, [inkHistory, scheduleInkSave]);
+
+  const handleInkRedo = useCallback(() => {
+    inkHistory.redo();
+  }, [inkHistory]);
+
+  const handleInkClearRequest = useCallback(() => {
+    if (inkHistory.strokes.length === 0) return;
+    setEraserConfirmOpen(true);
+  }, [inkHistory.strokes.length]);
+
+  const handleInkClearConfirm = useCallback(() => {
+    setEraserConfirmOpen(false);
+    inkHistory.clearAll();
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+    scheduleInkSave([]);
+  }, [inkHistory, scheduleInkSave]);
+
+  // ── Voice annotation handler ──
+  const handleVoiceTranscript = useCallback(
+    (transcript: string, linkedVerse: number | null) => {
+      if (!bookUsfm || !currentChapter || !user?.id) return;
+      const verseKey = linkedVerse
+        ? `${bookUsfm}.${currentChapter.id}.${linkedVerse}`
+        : `${bookUsfm}.${currentChapter.id}.voice`;
+      saveAnnotationMut.mutate({
+        verseIds: [verseKey],
+        strokes: [],
+        typedText: `🎙️ ${transcript}`,
+      });
+      toast.success("Voice note saved", {
+        description: linkedVerse ? `Linked to verse ${linkedVerse}` : "Saved to chapter",
+      });
+    },
+    [bookUsfm, currentChapter, user?.id, saveAnnotationMut],
+  );
 
   // Build a map: verseNumber → annotation (for legacy per-verse preview)
   const annotationMap = useMemo(() => {
@@ -1513,6 +1553,19 @@ export function BibleReader() {
               <PenTool className="h-4 w-4" />
             </Button>
 
+            {/* Bible Pocket (annotations drawer) */}
+            {studyMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPocketOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Bible Pocket"
+              >
+                <BookMarked className="h-4 w-4" />
+              </Button>
+            )}
+
             {/* Focus mode — hide bottom nav */}
 
             {/* Search button */}
@@ -1603,13 +1656,30 @@ export function BibleReader() {
       {/* ── Reading Area ── */}
       <div ref={readingAreaRef} className="mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
         {currentBook && currentChapter && (
-          <motion.header {...fadeIn} className="mb-8 text-center">
+          <motion.header
+            {...fadeIn}
+            className={`mb-8 text-center ${studyMode ? 'pointer-events-none backdrop-blur-md bg-background/80 dark:bg-background/70 -mx-5 sm:-mx-8 px-5 sm:px-8 py-4 rounded-b-2xl sticky top-[88px] z-20' : ''}`}
+            onContextMenu={(e) => {
+              if (studyMode) {
+                e.preventDefault();
+                setThumbnailStripOpen(true);
+              }
+            }}
+          >
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
               {currentBook.title} {currentChapter.title}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
             </p>
+            {studyMode && (
+              <button
+                onClick={() => setThumbnailStripOpen(true)}
+                className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
+              >
+                ▼ Browse chapters
+              </button>
+            )}
           </motion.header>
         )}
 
@@ -1622,6 +1692,19 @@ export function BibleReader() {
             <motion.div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
               {...fadeIn}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_e, info) => {
+                // Only respond to touch-based swipes, not pen
+                if (Math.abs(info.offset.x) > 100) {
+                  if (info.offset.x < -100 && canNext) {
+                    setChapterIdx((i) => i + 1);
+                  } else if (info.offset.x > 100 && canPrev) {
+                    setChapterIdx((i) => i - 1);
+                  }
+                }
+              }}
               style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
               className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
@@ -1672,7 +1755,7 @@ export function BibleReader() {
                 {studyMode && studyModeVariant === "margin" && (
                   <InkOverlay
                     zoom={inkZoom}
-                    strokes={inkStrokes}
+                    strokes={inkHistory.strokes}
                     onStrokeComplete={handleInkStrokeComplete}
                     onUndo={handleInkUndo}
                     penColor={inkPenColor}
@@ -1888,13 +1971,73 @@ export function BibleReader() {
           textSpacing={inkTextSpacing}
           onTextSpacingChange={handleInkTextSpacingChange}
           onUndo={handleInkUndo}
-          onClear={handleInkClear}
-          canUndo={inkStrokes.length > 0}
+          onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
+          canUndo={inkHistory.canUndo}
+          canRedo={inkHistory.canRedo}
           fingerDrawing={inkFingerDrawing}
           onFingerDrawingChange={setInkFingerDrawing}
           isDark={document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
         />
       )}
+
+      {/* ── Eraser Confirmation Dialog ── */}
+      <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all ink?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all strokes on this page. You can restore them from the trash bin or undo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleInkClearConfirm}>Clear Board</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Ink Trash Bin Sheet ── */}
+      <InkTrashSheet
+        open={inkTrashOpen}
+        onClose={() => setInkTrashOpen(false)}
+        trashBin={inkHistory.trashBin}
+        onRestore={(id) => {
+          inkHistory.restoreFromTrash(id);
+          setInkTrashOpen(false);
+          toast.success("Ink restored ✨");
+        }}
+      />
+
+      {/* ── Voice Annotation Overlay ── */}
+      <VoiceAnnotationOverlay
+        active={voiceOverlayActive}
+        onClose={() => setVoiceOverlayActive(false)}
+        onTranscriptComplete={handleVoiceTranscript}
+      />
+
+      {/* ── Bible Pocket Sheet ── */}
+      <BiblePocketSheet
+        open={pocketOpen}
+        onOpenChange={setPocketOpen}
+        chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+        chapterAnnotations={chapterAnnotations ?? []}
+        inkStrokes={inkHistory.strokes}
+      />
+
+      {/* ── Chapter Thumbnail Strip ── */}
+      <ChapterThumbnailStrip
+        open={thumbnailStripOpen}
+        onClose={() => setThumbnailStripOpen(false)}
+        currentChapterIdx={chapterIdx}
+        totalChapters={totalChapters}
+        bookTitle={currentBook?.title}
+        chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
+        onNavigate={(idx) => setChapterIdx(idx)}
+      />
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer

@@ -1,8 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { getStroke } from "perfect-freehand";
-import type { StrokeData, Point } from "./HandwritingEngine";
+import type { Point } from "./HandwritingEngine";
 
-/* ── SVG path helper (same as HandwritingEngine) ── */
+/* ── SVG path helper ── */
 function getSvgPathFromStroke(stroke: number[][], closed = true): string {
   const len = stroke.length;
   if (len < 4) return "";
@@ -51,6 +51,9 @@ const STROKE_OPTIONS = {
 
 const SEPIA_COLOR = "#D4C4A8";
 
+/* ── Palm rejection: touch-lockout window after pen down ── */
+const TOUCH_LOCKOUT_MS = 500;
+
 export function InkOverlay({
   zoom,
   strokes,
@@ -66,51 +69,82 @@ export function InkOverlay({
   const [isPencilActive, setIsPencilActive] = useState(false);
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
 
-  /* ── Coordinate normalization: divide by zoom for storage ── */
-  const normalizeCoords = useCallback(
+  // Hover preview state (Apple Pencil hover)
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Palm rejection: timestamp of last pen-down
+  const lastPenDownRef = useRef<number>(0);
+
+  /* ── DOMMatrix-based coordinate normalization ── */
+  const getTransformedPoint = useCallback(
     (clientX: number, clientY: number): [number, number] => {
-      const rect = svgRef.current!.getBoundingClientRect();
+      const svg = svgRef.current;
+      if (!svg) return [0, 0];
+
+      // Use SVG's native coordinate transform (handles zoom, scroll, transform-origin)
+      const screenCTM = svg.getScreenCTM();
+      if (screenCTM) {
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const transformed = pt.matrixTransform(screenCTM.inverse());
+        return [transformed.x, transformed.y];
+      }
+
+      // Fallback to manual calculation
+      const rect = svg.getBoundingClientRect();
       return [(clientX - rect.left) / zoom, (clientY - rect.top) / zoom];
     },
     [zoom],
   );
 
-  /* ── Pointer handlers with palm rejection ── */
+  /* ── Pointer handlers with enhanced palm rejection ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      // Only accept pen, or finger if explicitly enabled
       if (e.pointerType === "pen") {
         // Palm filter: contact-size + pressure floor
         if (e.pressure < 0.01 || e.width > 20 || e.height > 20) return;
-      } else if (e.pointerType === "touch" && fingerDrawing) {
-        // Allow finger drawing if enabled
+        lastPenDownRef.current = Date.now();
+      } else if (e.pointerType === "touch") {
+        // 500ms touch-lockout after pen contact
+        if (Date.now() - lastPenDownRef.current < TOUCH_LOCKOUT_MS) return;
+        if (!fingerDrawing) return;
       } else {
-        return; // Reject mouse on iPad / unrecognized
+        return; // Reject mouse on iPad
       }
 
       if (e.button !== 0) return;
       e.currentTarget.setPointerCapture(e.pointerId);
       setIsPencilActive(true);
       setSelectedStrokeId(null);
+      setHoverPos(null);
 
-      const [x, y] = normalizeCoords(e.clientX, e.clientY);
+      const [x, y] = getTransformedPoint(e.clientX, e.clientY);
       setCurrentPoints([{ x, y, pressure: e.pressure ?? 0.5, tiltX: e.tiltX, tiltY: e.tiltY }]);
     },
-    [normalizeCoords, fingerDrawing],
+    [getTransformedPoint, fingerDrawing],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
+      // Apple Pencil hover detection (pressure === 0, pointerType === "pen")
+      if (e.pointerType === "pen" && e.pressure === 0 && !isPencilActive) {
+        const [x, y] = getTransformedPoint(e.clientX, e.clientY);
+        setHoverPos({ x, y });
+        return;
+      }
+
       if (!isPencilActive) return;
       if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
 
-      const [x, y] = normalizeCoords(e.clientX, e.clientY);
+      setHoverPos(null);
+      const [x, y] = getTransformedPoint(e.clientX, e.clientY);
       setCurrentPoints((prev) => [
         ...prev,
         { x, y, pressure: e.pressure ?? 0.5, tiltX: e.tiltX, tiltY: e.tiltY },
       ]);
     },
-    [isPencilActive, normalizeCoords, fingerDrawing],
+    [isPencilActive, getTransformedPoint, fingerDrawing],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -121,7 +155,7 @@ export function InkOverlay({
       return;
     }
 
-    /* ── Dynamic verse linking: find nearest .verse[data-verse] ── */
+    /* ── Dynamic verse linking ── */
     const bbox = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
     currentPoints.forEach((p) => {
       bbox.minX = Math.min(bbox.minX, p.x);
@@ -166,6 +200,13 @@ export function InkOverlay({
     setIsPencilActive(false);
     setCurrentPoints([]);
   }, []);
+
+  const handlePointerLeave = useCallback(() => {
+    setHoverPos(null);
+    if (isPencilActive) {
+      handlePointerUp();
+    }
+  }, [isPencilActive, handlePointerUp]);
 
   /* ── Global touch suppression while Pencil is active ── */
   useEffect(() => {
@@ -227,7 +268,7 @@ export function InkOverlay({
           />
         );
       }),
-    [strokes, selectedStrokeId],
+    [strokes, selectedStrokeId, isDark],
   );
 
   /* ── Live preview path ── */
@@ -264,7 +305,7 @@ export function InkOverlay({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
+      onPointerLeave={handlePointerLeave}
       onPointerCancel={handlePointerCancel}
     >
       <defs>
@@ -283,6 +324,18 @@ export function InkOverlay({
       </defs>
       {renderedStrokes}
       {livePreview}
+
+      {/* Apple Pencil hover ghost cursor */}
+      {hoverPos && !isPencilActive && (
+        <circle
+          cx={hoverPos.x}
+          cy={hoverPos.y}
+          r={penSize / 2}
+          fill={penColor}
+          opacity={0.25}
+          style={{ pointerEvents: "none" }}
+        />
+      )}
     </svg>
   );
 }
