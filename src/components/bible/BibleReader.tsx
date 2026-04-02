@@ -694,8 +694,9 @@ export function BibleReader() {
     else { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyMode]);
 
-  // Auto-detect Apple Pencil
+  // Auto-detect Apple Pencil — only on iPads
   useEffect(() => {
+    if (!isIPad) return;
     const handler = (e: PointerEvent) => {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
@@ -709,7 +710,7 @@ export function BibleReader() {
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [pencilDetected, studyMode, handleToggleStudyMode]);
+  }, [isIPad, pencilDetected, studyMode, handleToggleStudyMode]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
