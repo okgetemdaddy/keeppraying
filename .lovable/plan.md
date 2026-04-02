@@ -1,75 +1,69 @@
 
 
-# Dual-Mode Bible Highlighting: Dynamic Inversion + Neon Accent
+# Adaptive Architecture: Hardware-Based Device Detection
 
 ## Problem
 
-Current highlights use low-opacity background tints (`bg-yellow-400/20` in dark mode) which muddy into the dark background, making highlighted text harder to read rather than easier — the "dimmer" effect.
+The current `useIsMobile` and `useIsTouch` hooks rely purely on CSS breakpoints (768px / 1024px). A desktop user resizing their browser to 800px triggers tablet UI. iPad Study Mode features (ink overlay, pencil toolbars, spatial canvas) can leak onto desktop or phone if the window happens to be the right width.
 
 ## What Gets Built
 
-Replace the single highlight style map with a **dual-mode system** offering two distinct highlight rendering strategies. The user's active theme (light/dark) determines which mode is used automatically.
+### 1. New hook: `useDeviceDetect` (`src/hooks/useDeviceDetect.ts`)
 
-### Mode 1: Dynamic Text Inversion (Light Mode + Dark Mode default)
-
-- **Background**: High-opacity legible color block (e.g., `#FFD700` yellow, `#34D399` green)
-- **Text color**: Forced near-black (`#121212`) inside the `<mark>` element
-- **Result**: Text pops forward with maximum contrast and readability
-
-### Mode 2: Neon Accent (Dark Mode alternative — user toggle)
-
-- **Background**: Highly desaturated, low-light tint (e.g., `#2A2A1A` for yellow)
-- **Accent**: Vibrant `border-bottom: 2px solid <color>` underline
-- **Text color**: Unchanged (inherits reading canvas color)
-- **Result**: Passage is clearly marked without disrupting dark-mode eye comfort
-
-## Technical Details
-
-### 1. New highlight color map (`BibleReader.tsx`)
-
-Replace `HIGHLIGHT_COLORS` with a structured map:
+A hardware interrogation hook that returns:
 
 ```ts
-const HIGHLIGHT_STYLES: Record<string, {
-  light: string;       // light-mode classes
-  darkInvert: string;  // dark-mode inversion (bg + forced text color)
-  darkNeon: { bg: string; border: string }; // dark-mode neon accent
-}> = {
-  yellow: {
-    light: "bg-yellow-200/70",
-    darkInvert: "bg-[#FFD700] text-[#121212]",
-    darkNeon: { bg: "bg-[#2A2A1A]", border: "border-b-2 border-[#FFD700]" },
-  },
-  green: { ... },
-  blue: { ... },
-  pink: { ... },
-  purple: { ... },
-  orange: { ... },
-};
+interface DeviceInfo {
+  isIPad: boolean;    // true only on actual iPads
+  isIPhone: boolean;  // true only on iPhones/iPods
+  isDesktop: boolean; // true on Mac/PC/Linux without touch
+}
 ```
 
-### 2. Update `HighlightedText` component
+Detection logic handles the iPadOS 13+ quirk where iPads report as "Macintosh":
 
-- Accept a new `highlightStyle` prop: `"invert" | "neon"`
-- Compute the correct class string per `<mark>` based on the current theme (detect via `document.documentElement.classList.contains("dark")` or a context value) and the chosen style mode
-- For **invert**: apply bg color + forced text color override
-- For **neon**: apply desaturated bg + bottom border accent, no text color change
+```ts
+const isIPad =
+  /iPad/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-### 3. State & persistence
+const isIPhone =
+  /iPhone|iPod/.test(navigator.userAgent) ||
+  (/Android/.test(navigator.userAgent) && navigator.maxTouchPoints > 0);
 
-- Add `highlightStyle` state to `BibleReader.tsx` with localStorage key `bible_highlight_style`, default `"invert"`
-- Pass to `HighlightedText` and expose in the Bible Sleeve settings
+const isDesktop = !isIPad && !isIPhone;
+```
 
-### 4. Bible Sleeve UI (`BibleSleeveSheet.tsx`)
+- Uses `useState` with immediate sync computation (no flash of wrong UI)
+- No media queries — pure JS hardware detection
+- Exported as named constants for conditional rendering
 
-Add a small toggle in the existing highlight/annotation section:
-- Two-option segmented control: **"Bold"** (invert) / **"Subtle"** (neon)
-- Only visible when dark mode is active (in light mode, inversion is always used)
+### 2. Gate iPad features in `BibleReader.tsx`
 
-### 5. Files Changed
+Replace `isMobile` checks with `useDeviceDetect`:
+
+- **Study Mode toggle / auto-enable**: Only allow `studyMode` to activate when `isIPad` is true
+- **Pencil auto-detect toast + auto-enable**: Already pen-gated, but wrap the `studyMode` activation in `isIPad` check
+- **`IPadStudyToolbar`**: Render only when `isIPad` (currently uses `!isMobile` which matches desktop too)
+- **`MobileStudyToolbar`**: Render only when `isIPhone`
+- **Desktop**: Neither toolbar renders; study mode unavailable
+- **InkOverlay**: Only mounts when `isIPad` (or `isIPhone` with the mobile toolbar)
+- **Chapter swipe disable**: Only applies when `isIPad && studyMode`
+
+### 3. Gate iPad section in `BibleSleeveSheet.tsx`
+
+- The "iPad Study Mode" collapsible section: wrap in `isIPad` check so it never appears on desktop or phone
+- Pass `isIPad` as a prop from BibleReader
+
+### 4. Keep existing `useIsMobile` / `useIsTouch` for non-iPad concerns
+
+These hooks remain for general responsive layout (bottom tab bar, drawer vs dialog, etc.). Only iPad-specific features migrate to hardware detection.
+
+## Files Changed
 
 | File | Change |
 |------|--------|
-| `BibleReader.tsx` | New `HIGHLIGHT_STYLES` map, `highlightStyle` state, updated `HighlightedText` component |
-| `BibleSleeveSheet.tsx` | Add highlight style toggle (dark mode only) |
+| `src/hooks/useDeviceDetect.ts` | New hook — hardware-based iPad/iPhone/Desktop detection |
+| `src/components/bible/BibleReader.tsx` | Import `useDeviceDetect`; gate study mode, ink overlay, toolbars, and pencil auto-detect behind `isIPad` |
+| `src/components/bible/BibleSleeveSheet.tsx` | Accept `isIPad` prop; conditionally render "iPad Study Mode" section only on iPads |
 
