@@ -51,7 +51,9 @@ export function IPadStudyToolbar({
   fingerDrawing,
   onFingerDrawingChange,
   isPencilActive = false,
+  isDark = false,
 }: IPadStudyToolbarProps) {
+  const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
 
   if (!expanded) {
