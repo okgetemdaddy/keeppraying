@@ -434,6 +434,25 @@ export function BibleSleeveSheet({
                     className="shrink-0 mt-0.5"
                   />
                 </div>
+                {/* ── Tap to change chapters (iPhone only) ── */}
+                {isIPhone && onToggleTapNav && (
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-foreground font-medium">Tap to change chapters</span>
+                      </div>
+                      <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                        Use arrow buttons instead of swiping
+                      </p>
+                    </div>
+                    <Switch
+                      checked={tapNavMode}
+                      onCheckedChange={onToggleTapNav}
+                      className="shrink-0 mt-0.5"
+                    />
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
 
