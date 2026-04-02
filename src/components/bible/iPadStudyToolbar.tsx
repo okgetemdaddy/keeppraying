@@ -65,6 +65,8 @@ export function IPadStudyToolbar({
   onPenColorChange,
   penSize,
   onPenSizeChange,
+  penGlow,
+  onPenGlowChange,
   zoom,
   onZoomChange,
   textSpacing,
