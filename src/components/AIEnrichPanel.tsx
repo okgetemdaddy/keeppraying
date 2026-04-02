@@ -153,7 +153,7 @@ export default function AIEnrichPanel({
             <Sparkles className="w-4 h-4 text-primary" /> Auto Verses & Labels
           </SheetTitle>
           <SheetDescription>
-            AI reads your prayer deeply — surfacing scripture you cited and verses that match what you're praying about.
+            Your prayer is read deeply — surfacing scripture you cited and verses that match what you're praying about.
           </SheetDescription>
         </SheetHeader>
 
