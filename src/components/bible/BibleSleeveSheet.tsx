@@ -218,6 +218,8 @@ export function BibleSleeveSheet({
   pencilDetected,
   onToggleStudyMode,
   onStudyModeVariantChange,
+  highlightStyle = "invert",
+  onHighlightStyleChange,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
