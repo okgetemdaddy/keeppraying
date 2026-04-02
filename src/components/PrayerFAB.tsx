@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Heart, HandHeart, X, Plus, Globe, Sparkles, Users, Home,
   Swords, Radio, BookOpen, HeartHandshake, LayoutDashboard, Wind,
