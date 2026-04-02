@@ -415,7 +415,7 @@ function EnrichedVerse({
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
