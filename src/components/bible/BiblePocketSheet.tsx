@@ -63,22 +63,22 @@ export function BiblePocketSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-[85vw] sm:w-[420px] p-0 flex flex-col bg-card/98 backdrop-blur-xl"
+        className="w-[85vw] sm:w-[420px] p-0 flex flex-col bg-[#1C1C1E] border-l border-neutral-800"
       >
         {/* Header */}
-        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border/50">
-          <SheetTitle className="text-left text-base font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="h-4.5 w-4.5 text-primary" />
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-neutral-800">
+          <SheetTitle className="text-left text-base font-bold text-neutral-100 flex items-center gap-2">
+            <BookOpen className="h-4.5 w-4.5 text-amber-400" />
             Bible Pocket
           </SheetTitle>
           {chapterTitle && (
-            <p className="text-[0.65rem] text-muted-foreground mt-0.5">{chapterTitle}</p>
+            <p className="text-[0.65rem] text-neutral-400 mt-0.5">{chapterTitle}</p>
           )}
         </SheetHeader>
 
         {/* Segmented Control — 3 tabs */}
         <div className="px-4 pt-3 pb-2">
-          <div className="flex gap-1 bg-muted/50 p-1 rounded-xl">
+          <div className="flex gap-1 bg-neutral-800/60 p-1 rounded-xl">
             {([
               { id: "notes" as const, icon: BookOpen, label: "Notes", badge: totalAnnotations },
               { id: "journal" as const, icon: BookMarked, label: "Journal", badge: journalCount },
@@ -90,14 +90,14 @@ export function BiblePocketSheet({
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium transition-all relative",
                   activeTab === id
-                    ? "bg-background shadow-sm text-foreground"
-                    : "text-muted-foreground hover:text-foreground/70",
+                    ? "bg-neutral-700 shadow-sm text-white"
+                    : "text-neutral-400 hover:text-neutral-300",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
                 {label}
                 {badge > 0 && (
-                  <span className="absolute -top-1 -right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[0.55rem] font-bold px-1">
+                  <span className="absolute -top-1 -right-0.5 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-amber-400 text-neutral-900 text-[0.55rem] font-bold px-1">
                     {badge}
                   </span>
                 )}
@@ -110,16 +110,16 @@ export function BiblePocketSheet({
         {activeTab === "notes" ? (
           <>
             {/* Stats strip */}
-            <div className="flex items-center gap-4 px-5 py-2.5 border-b border-border/30 bg-muted/20">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 px-5 py-2.5 border-b border-neutral-800 bg-neutral-800/30">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-400">
                 <PenTool className="h-3.5 w-3.5" />
                 <span>{inkCount} strokes</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-400">
                 <StickyNote className="h-3.5 w-3.5" />
                 <span>{noteCount} notes</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-400">
                 <BookOpen className="h-3.5 w-3.5" />
                 <span>{totalAnnotations} total</span>
               </div>
@@ -129,11 +129,11 @@ export function BiblePocketSheet({
               <div className="p-4 space-y-3">
                 {sortedAnnotations.length === 0 && inkCount === 0 ? (
                   <div className="text-center py-12">
-                    <BookOpen className="h-10 w-10 mx-auto text-muted-foreground/25 mb-3" />
-                    <p className="text-sm text-muted-foreground font-medium">
+                    <BookOpen className="h-10 w-10 mx-auto text-neutral-600 mb-3" />
+                    <p className="text-sm text-neutral-100 font-medium">
                       Your pocket is empty
                     </p>
-                    <p className="text-[0.65rem] text-muted-foreground/60 mt-1">
+                    <p className="text-[0.65rem] text-neutral-500 mt-1">
                       Start writing on the page or add voice notes
                     </p>
                   </div>
@@ -141,12 +141,12 @@ export function BiblePocketSheet({
                   <>
                     {/* Ink summary */}
                     {inkCount > 0 && (
-                      <div className="rounded-2xl border border-border/50 bg-muted/20 p-3">
+                      <div className="rounded-2xl border border-neutral-700 bg-neutral-800/40 p-3">
                         <div className="flex items-center gap-2 mb-1">
-                          <PenTool className="h-3.5 w-3.5 text-primary" />
-                          <span className="text-xs font-semibold text-foreground">Page Ink</span>
+                          <PenTool className="h-3.5 w-3.5 text-amber-400" />
+                          <span className="text-xs font-semibold text-neutral-100">Page Ink</span>
                         </div>
-                        <p className="text-[0.65rem] text-muted-foreground">
+                        <p className="text-[0.65rem] text-neutral-400">
                           {inkCount} stroke{inkCount !== 1 ? "s" : ""} on this chapter
                         </p>
                       </div>
@@ -156,15 +156,15 @@ export function BiblePocketSheet({
                     {sortedAnnotations.map((ann) => (
                       <div
                         key={ann.id}
-                        className="rounded-2xl border border-border/40 bg-background/60 p-3 space-y-1.5"
+                        className="rounded-2xl border border-neutral-700 bg-neutral-800/50 p-3 space-y-1.5"
                       >
                         <div className="flex items-center gap-2">
                           {(ann as any).typed_text ? (
-                            <StickyNote className="h-3.5 w-3.5 text-amber-500" />
+                            <StickyNote className="h-3.5 w-3.5 text-amber-400" />
                           ) : (
-                            <PenTool className="h-3.5 w-3.5 text-primary/60" />
+                            <PenTool className="h-3.5 w-3.5 text-amber-400/60" />
                           )}
-                          <span className="text-[0.6rem] text-muted-foreground flex items-center gap-1">
+                          <span className="text-[0.6rem] text-neutral-500 flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {new Date(ann.updated_at).toLocaleDateString(undefined, {
                               month: "short",
@@ -175,7 +175,7 @@ export function BiblePocketSheet({
                           </span>
                         </div>
                         {(ann as any).typed_text && (
-                          <p className="text-xs text-foreground/80 line-clamp-3 leading-relaxed">
+                          <p className="text-xs text-neutral-200 line-clamp-3 leading-relaxed">
                             {(ann as any).typed_text}
                           </p>
                         )}
@@ -183,7 +183,7 @@ export function BiblePocketSheet({
                           {ann.verse_ids.map((vid) => (
                             <span
                               key={vid}
-                              className="text-[0.55rem] bg-primary/10 text-primary rounded-md px-1.5 py-0.5 font-medium"
+                              className="text-[0.55rem] bg-amber-400/10 text-amber-400 rounded-md px-1.5 py-0.5 font-medium"
                             >
                               {vid}
                             </span>
@@ -201,11 +201,11 @@ export function BiblePocketSheet({
             <div className="p-4 space-y-3">
               {sortedJournalAnnotations.length === 0 ? (
                 <div className="text-center py-12">
-                  <BookMarked className="h-10 w-10 mx-auto text-muted-foreground/25 mb-3" />
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <BookMarked className="h-10 w-10 mx-auto text-neutral-600 mb-3" />
+                  <p className="text-sm text-neutral-100 font-medium">
                     No journal entries yet
                   </p>
-                  <p className="text-[0.65rem] text-muted-foreground/60 mt-1">
+                  <p className="text-[0.65rem] text-neutral-500 mt-1">
                     Open the Journal tool to write reflections for this chapter
                   </p>
                 </div>
@@ -213,11 +213,11 @@ export function BiblePocketSheet({
                 sortedJournalAnnotations.map((ann) => (
                   <div
                     key={ann.id}
-                    className="rounded-2xl border border-border/40 bg-background/60 p-3 space-y-1.5"
+                    className="rounded-2xl border border-neutral-700 bg-neutral-800/50 p-3 space-y-1.5"
                   >
                     <div className="flex items-center gap-2">
-                      <BookMarked className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-[0.6rem] text-muted-foreground flex items-center gap-1">
+                      <BookMarked className="h-3.5 w-3.5 text-amber-400" />
+                      <span className="text-[0.6rem] text-neutral-500 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {new Date(ann.updated_at).toLocaleDateString(undefined, {
                           month: "short",
@@ -228,7 +228,7 @@ export function BiblePocketSheet({
                       </span>
                     </div>
                     {(ann as any).typed_text && (
-                      <p className="text-xs text-foreground/80 line-clamp-4 leading-relaxed">
+                      <p className="text-xs text-neutral-200 line-clamp-4 leading-relaxed">
                         {(ann as any).typed_text}
                       </p>
                     )}
@@ -236,7 +236,7 @@ export function BiblePocketSheet({
                       {ann.verse_ids.map((vid) => (
                         <span
                           key={vid}
-                          className="text-[0.55rem] bg-primary/10 text-primary rounded-md px-1.5 py-0.5 font-medium"
+                          className="text-[0.55rem] bg-amber-400/10 text-amber-400 rounded-md px-1.5 py-0.5 font-medium"
                         >
                           {vid}
                         </span>
