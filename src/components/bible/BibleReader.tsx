@@ -546,6 +546,29 @@ export function BibleReader() {
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
   const inkHistory = useInkHistory();
 
+  // ── Workspace spatial settings ──
+  const [wsTextAlign, setWsTextAlign] = useState<TextAlign>(() => {
+    try { return (localStorage.getItem("bible_ws_align") as TextAlign) || "left"; } catch { return "left"; }
+  });
+  const [wsMarginWidth, setWsMarginWidth] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ws_margin") ?? "30"); } catch { return 30; }
+  });
+  const [wsCanvasBackground, setWsCanvasBackground] = useState<CanvasBackground>(() => {
+    try { return (localStorage.getItem("bible_ws_bg") as CanvasBackground) || "none"; } catch { return "none"; }
+  });
+  const handleWsTextAlign = useCallback((v: TextAlign) => {
+    setWsTextAlign(v);
+    try { localStorage.setItem("bible_ws_align", v); } catch {}
+  }, []);
+  const handleWsMarginWidth = useCallback((v: number) => {
+    setWsMarginWidth(v);
+    try { localStorage.setItem("bible_ws_margin", String(v)); } catch {}
+  }, []);
+  const handleWsCanvasBackground = useCallback((v: CanvasBackground) => {
+    setWsCanvasBackground(v);
+    try { localStorage.setItem("bible_ws_bg", v); } catch {}
+  }, []);
+
   // New iPad feature states
   const [inkTrashOpen, setInkTrashOpen] = useState(false);
   const [voiceOverlayActive, setVoiceOverlayActive] = useState(false);
