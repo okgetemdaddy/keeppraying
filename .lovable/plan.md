@@ -1,65 +1,96 @@
 
 
-# Mode 3: Linked Slide-Out Rich Journal
+# iPad Study Mode — Full SVG Overlay Upgrade
 
-## Overview
+## Summary
 
-A slide-out journal panel that opens from the right side of the Bible reader. Users can handwrite freeform notes using the `HandwritingEngine` (variant="journal") linked to the current chapter/verse. The journal feels like a leather-bound notebook page — rich paper texture, generous writing space, and automatic verse linking.
+Replace the current per-verse 60px `HandwritingEngine` canvases with a single full-page SVG overlay (`InkOverlay`) that turns the entire Bible reading area into a pressure-sensitive, vector-based writable surface. iPad-only features: Apple Pencil with palm rejection, custom zoom (1x–5x), text-spacing slider, dynamic verse linking, and debounced auto-save.
 
-## New Component: `src/components/bible/JournalPanel.tsx`
+## Architecture
 
-A slide-out drawer (Sheet from right, 85% width on mobile, 480px on desktop) containing:
+```text
+BibleReader
+└── ZoomWrapper (CSS transform: scale(zoom))
+    ├── Verses (.verse[data-verse="N"])  ← existing
+    └── InkOverlay (absolute <svg>, pen-only pointer events)
+iPadStudyToolbar (floating bottom bar — pen color/size, eraser, undo, zoom, spacing)
+```
 
-- **Header**: Chapter title + close button + save indicator
-- **Verse context strip**: Shows the current verse or selected verses as a subtle reference at the top
-- **HandwritingEngine**: `variant="journal"`, full height, `showToolbar=true`, with the journal's deeper shadow styling
-- **Typed notes area**: A `textarea` below the drawing canvas for users who want to type alongside their handwriting (stored as a `typed_text` field — we'll add this column)
-- **Entry list**: When the journal opens, show a scrollable list of previous journal entries for this chapter (pulled from annotations where `verse_ids` contains `{book}.{chapter}.journal`), each showing a small SVG preview thumbnail + timestamp. Tapping an entry loads it into the engine for editing.
-- **New entry button**: Creates a fresh canvas
+## Implementation Steps
 
-### Data keying
-- Journal entries use `verse_ids: ["{book}.{chapter}.journal"]` to distinguish from margin/canvas annotations
-- If a verse is selected when the journal opens, also include that verse ID so entries can be filtered per-verse later
+### 1. Install `perfect-freehand` (already a dependency — confirmed in HandwritingEngine)
 
-## Database Migration
+### 2. Create `src/components/bible/InkOverlay.tsx`
+- Full-size absolute `<svg>` overlay over the verse container
+- Pointer Events filtered: `pointerType === 'pen'` only (optional finger toggle)
+- Enhanced palm rejection: `isPencilActive` state, contact-size filter (`e.width > 20`), pressure floor (`e.pressure < 0.01`), global touch suppression while pencil is down, `onPointerCancel` cleanup
+- Uses `perfect-freehand` `getStroke()` with `simulatePressure: false` for real Apple Pencil pressure
+- Coordinates normalized by `1/zoom` for storage — strokes stay sharp at any scale
+- Dynamic verse linking on `pointerup`: compute stroke bounding box → find nearest `.verse[data-verse]` via `getBoundingClientRect()` overlap
+- Tap-to-select stroke → highlight + unlink option
+- Renders committed strokes + live preview path
 
-Add a `typed_text` column to the existing `annotations` table:
+### 3. Create `src/components/bible/ZoomWrapper.tsx`
+- Wraps verse container + InkOverlay
+- CSS `transform: scale(zoom)` with `transform-origin: top left`
+- `touch-action: pan-y` to prevent browser pinch-zoom while allowing scroll
+- Accepts `zoom` prop from parent
 
+### 4. Create `src/components/bible/iPadStudyToolbar.tsx`
+- Floating bottom toolbar (iPad only, above tab bar)
+- Controls: pen color picker (5 colors), pen size slider, eraser toggle, undo button
+- Zoom slider (1x–5x) with label
+- Text spacing slider: sets CSS variable `--verse-spacing` controlling `line-height` and `padding-block` on verses
+- Compact pill design, semi-transparent backdrop
+
+### 5. Modify `src/components/bible/BibleReader.tsx`
+- Add state: `inkZoom` (1–5), `textSpacing` (1–3), `inkStrokes` (chapter-level)
+- When `studyMode && studyModeVariant === "margin"` (rename to "ink" or keep "margin"):
+  - Remove per-verse 60px `HandwritingEngine` canvases
+  - Render `ZoomWrapper` around verse container with `InkOverlay` inside
+  - Render `iPadStudyToolbar`
+- Wire auto-save: on stroke complete → debounced 500ms upsert to annotations table with verse_ids `["{book}.{chapter}.ink"]`
+- Load chapter ink on mount via new `useChapterInkAnnotations` query
+- Keep read-only preview of old per-verse annotations for backward compat (small SVG thumbnail)
+
+### 6. Modify `src/hooks/useAnnotations.ts`
+- Add `useChapterInkAnnotations(bookUsfm, chapterNumber)` — fetches annotation where `verse_ids` contains `{book}.{chapter}.ink`
+- Add `useInkAutoSave()` hook: debounced 500ms mutation that upserts the single chapter-level ink annotation record
+- Existing per-verse annotation queries remain unchanged (backward compat)
+
+### 7. Modify `src/components/bible/BibleSleeveSheet.tsx`
+- In the study mode section, add text spacing slider (iPad only)
+- Update "Marginalia" description to reflect full-page overlay ("Write anywhere on the page")
+- Keep Canvas and Journal modes as-is
+
+### 8. Database Migration
+- Add `typed_text` column to annotations table (already in plan.md, needed for Journal):
 ```sql
 ALTER TABLE public.annotations ADD COLUMN IF NOT EXISTS typed_text text;
 ```
+- No other schema changes — existing `strokes` JSONB + `verse_ids` text array handles chapter-level ink via the `.ink` suffix convention
 
-This allows journal entries to have both handwritten strokes AND typed text.
+### 9. Update Project Memory
+- Record new iPad SVG overlay architecture, palm rejection approach, zoom/spacing features, `.ink` key convention
 
-## `useAnnotations.ts` Updates
+## Key Technical Decisions
+- **SVG overlay** not per-verse canvases — vectors crisp at any zoom, strokes span verses
+- **Pen-only + palm rejection** — `pointerType === 'pen'` guard + contact-size filter + global touch suppression while pencil active + `onPointerCancel` cleanup
+- **Coordinate normalization** — divide by zoom on capture, multiply on render
+- **Single annotation per chapter** — keyed as `{BOOK}.{CHAPTER}.ink` in `verse_ids`
+- **No viewport meta lock** — use CSS `touch-action` instead (preserves accessibility)
+- **iPad-only gating** — `navigator.maxTouchPoints >= 2 && /iPad|Macintosh/.test(navigator.userAgent)`
 
-- Add `useJournalAnnotations(bookUsfm, chapterNumber)` — fetches annotations where any `verse_ids` entry ends with `.journal`
-- Update `saveAnnotation` mutation to accept optional `typedText` parameter
+## Files
 
-## `BibleReader.tsx` Updates
-
-- Add `journalOpen` state (boolean)
-- When `studyModeVariant === "journal"` and study mode is on, the PenTool toolbar button opens the journal panel
-- Handle variant change: `if (v === "journal" && studyMode) setJournalOpen(true)`
-- Pass journal props to the new `JournalPanel`
-
-## `BibleSleeveSheet.tsx` Updates
-
-- Remove `disabled` and "Coming soon" from the Journal mode button
-- Enable clicking it to set variant to `"journal"`
-
-## Files Changed
-
-1. **New**: `src/components/bible/JournalPanel.tsx` — slide-out journal with HandwritingEngine + typed notes + entry list
-2. **Migration**: Add `typed_text` column to `annotations`
-3. **Edit**: `src/hooks/useAnnotations.ts` — add `useJournalAnnotations`, update save mutation for `typedText`
-4. **Edit**: `src/components/bible/BibleReader.tsx` — `journalOpen` state, variant handling, render `JournalPanel`
-5. **Edit**: `src/components/bible/BibleSleeveSheet.tsx` — enable Journal mode button
-
-## Technical Notes
-
-- Journal uses the same `annotations` table — differentiated by the `.journal` suffix in `verse_ids`
-- The `HandwritingEngine` already supports `variant="journal"` with deeper shadow styling
-- Sheet component from `@/components/ui/sheet` used for the slide-out panel (opens from right)
-- SVG thumbnail previews rendered by dangerouslySetInnerHTML from the stored `svg` field
+| File | Action |
+|------|--------|
+| `src/components/bible/InkOverlay.tsx` | **Create** |
+| `src/components/bible/ZoomWrapper.tsx` | **Create** |
+| `src/components/bible/iPadStudyToolbar.tsx` | **Create** |
+| `src/components/bible/BibleReader.tsx` | **Modify** — integrate overlay, remove per-verse canvases in study mode |
+| `src/hooks/useAnnotations.ts` | **Modify** — add chapter ink queries + auto-save |
+| `src/components/bible/BibleSleeveSheet.tsx` | **Modify** — add text spacing slider |
+| Migration | Add `typed_text` column to `annotations` |
+| Project memory | Update handwritten-annotations entry |
 
