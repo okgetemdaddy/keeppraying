@@ -126,6 +126,7 @@ export function BibleStudyProvider({ children }: BibleStudyProviderProps) {
     pocketTab, setPocketTab,
     penColor, setPenColor,
     penSize, setPenSize,
+    penGlow, setPenGlow,
     fingerDrawing, setFingerDrawing,
     studyMode, setStudyMode,
     pencilDetected, setPencilDetected,
