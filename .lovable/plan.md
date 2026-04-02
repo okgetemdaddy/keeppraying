@@ -1,48 +1,35 @@
 
 
-# Insert Native Port Technical Notes
+# Platform-Aware Routing for Native iPadOS Port
 
 ## Summary
 
-Embed detailed developer-only comments across 4 key files documenting the native iPadOS migration blueprints. These are block comments with a `@native-port` tag — invisible to end users, only meaningful to engineers during a future Capacitor/Swift transition.
+Replace the hardcoded `<BrowserRouter>` in `src/App.tsx` with a `PlatformAwareRouter` wrapper that selects `HashRouter` on native Capacitor platforms and `BrowserRouter` on web. This prevents routing crashes when the app runs inside WKWebView's `capacitor://` protocol.
 
-## Files & Placement
+## Changes
 
-### 1. `src/components/bible/InkOverlay.tsx` — Top of file (after imports)
-Insert a block comment documenting:
-- The "Transparent Glass" pattern: overlay a native `PKCanvasView` over `WKWebView`, keeping DOM for typography and native layer for ink
-- The full Swift `PencilKitBridge` Capacitor plugin scaffold (class, delegate, base64 serialization back to React)
-- 120Hz coalesced/predicted touch extraction via `UIEvent.coalescedTouches` and `predictedTouches`
-- Note that the current RAF+SVG approach hits a theoretical ceiling vs native 9ms latency
+### 1. Install `@capacitor/core`
 
-### 2. `src/components/bible/iPadStudyToolbar.tsx` — Top of file (after imports)
-Insert a block comment documenting:
-- `UIPencilInteraction` delegate for barrel double-tap and Pencil Pro squeeze (iOS 17.4+)
-- The Swift→JS event pipeline via `evaluateJavaScript` dispatching `CustomEvent('pencilDoubleTap')`
-- React listener pattern for toggling pen/eraser and notifying the native plugin
+Add `@capacitor/core` as a dependency. This provides the `Capacitor.isNativePlatform()` detection API. On web, it simply returns `false` — zero runtime cost.
 
-### 3. `src/lib/convexHull.ts` — Top of file (after existing JSDoc)
-Insert a block comment documenting:
-- Circle-to-Lexicon upgrade: intersect `<span data-strongs>` elements inside the hull polygon
-- Strong's number extraction and lexicon API query pattern
-- CSS `lexicon-highlight` animation trigger on matched word spans
+### 2. `src/App.tsx` — Add PlatformAwareRouter
 
-### 4. `src/hooks/useAnnotations.ts` — Top of file (after imports)
-Insert a block comment documenting:
-- Native ink serialization: `PKDrawing.dataRepresentation()` → base64 → stored alongside web stroke JSON
-- Bidirectional sync: web strokes render in SVG, native strokes render in `PKCanvasView`
-- The `onNativeInkUpdated` Capacitor listener pattern for real-time persistence
+- Update imports: add `HashRouter` from `react-router-dom` and `Capacitor` from `@capacitor/core`
+- Create a `PlatformAwareRouter` component:
 
-## Format
-
-All comments use this pattern:
-```typescript
-/**
- * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
- * ─────────────────────────────────────────────────────────
- * [content]
- */
+```tsx
+function PlatformAwareRouter({ children }: { children: React.ReactNode }) {
+  return Capacitor.isNativePlatform()
+    ? <HashRouter>{children}</HashRouter>
+    : <BrowserRouter>{children}</BrowserRouter>;
+}
 ```
 
-No runtime code changes. No UI changes. No behavioral changes.
+- Replace `<BrowserRouter>` in the `App` component with `<PlatformAwareRouter>`
+
+### What stays the same
+
+- All route definitions, `AppShell`, `KeepReadingShell`, `isKeepReading()` logic — completely untouched
+- Lovable SPA fallback continues working for web (BrowserRouter path unchanged)
+- No UI or behavioral changes for current web users
 
