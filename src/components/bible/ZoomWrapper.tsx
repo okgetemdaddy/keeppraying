@@ -11,6 +11,7 @@ interface ZoomWrapperProps {
   textAlign?: TextAlign;
   marginWidth?: number;
   canvasBackground?: CanvasBackground;
+  overlay?: React.ReactNode;
 }
 
 /* ── SVG pattern backgrounds for the writing margin space ── */
