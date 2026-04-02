@@ -1,26 +1,21 @@
 
 
-# Add "KINGDOM PRAYERS" subtitle to KeepPray.ing hero on `/`
+# Dim Bottom Nav on /Bible in Dark Mode
 
-## Change
+## What
+When the Bible reader's dark mode (`bible-dark`) is active, the MobileTabBar should use a dark, dimmed style instead of its hardcoded warm-cream background.
 
-**File: `src/pages/Index.tsx`** — After the closing `</motion.h1>` tag (line 449), insert a new `motion.p` element before the verse quote:
+## How
 
-```tsx
-<motion.p
-  variants={fadeUp}
-  className="mt-1 text-[10px] font-semibold tracking-[0.35em] uppercase"
-  style={{ color: "hsl(42 85% 56% / 0.7)" }}
->
-  Kingdom Prayers
-</motion.p>
-```
+**Single file change**: `src/components/MobileTabBar.tsx`
 
-This places the wide-tracked, gold-tinted subtitle directly below "KeepPray.ing" and above the Philippians 4:6 verse, matching the established brand pattern from the Prayer Station hero.
+1. Detect dark mode by checking if `document.documentElement` has the `bible-dark` class, using a state variable synced via a `MutationObserver` on the `<html>` element's class list (since bible dark mode is toggled dynamically by BibleReader).
 
-## Files
+2. Swap the inline `style` values when dark mode is active:
+   - **Background**: `hsl(0 0% 7% / 0.92)` → near-black glass
+   - **Border top**: `hsl(0 0% 18% / 0.5)` → subtle dark border
+   - **Box shadow**: `0 -2px 20px -4px hsl(0 0% 0% / 0.3)` → dark shadow
+   - Keep the same blur/saturate backdrop filter
 
-| File | Action |
-|------|--------|
-| `src/pages/Index.tsx` | Insert 1 element at line 450 |
+3. Also conditionally adjust icon/label colors — the existing `text-primary` and `text-muted-foreground` CSS vars already remap correctly under `.bible-dark`, so no class changes needed for those.
 
