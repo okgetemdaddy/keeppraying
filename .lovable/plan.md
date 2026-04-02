@@ -1,35 +1,40 @@
 
 
-# Platform-Aware Routing for Native iPadOS Port
+# Add Edge-Swipe Gestures for Bible Sleeve & Bible Pocket
 
 ## Summary
 
-Replace the hardcoded `<BrowserRouter>` in `src/App.tsx` with a `PlatformAwareRouter` wrapper that selects `HashRouter` on native Capacitor platforms and `BrowserRouter` on web. This prevents routing crashes when the app runs inside WKWebView's `capacitor://` protocol.
+Add two touch-based edge-swipe gestures to `BibleReader.tsx`:
+- **Left edge → right swipe**: opens the Bible Sleeve (`setSleeveOpen(true)`)
+- **Right edge → left swipe**: opens the Bible Pocket (`setPocketOpen(true)`)
 
-## Changes
+## Changes — Single file: `src/components/bible/BibleReader.tsx`
 
-### 1. Install `@capacitor/core`
+### Add a `useEffect` with touch event listeners
 
-Add `@capacitor/core` as a dependency. This provides the `Capacitor.isNativePlatform()` detection API. On web, it simply returns `false` — zero runtime cost.
+- **Edge zones**: leftmost 24px for Sleeve, rightmost 24px for Pocket
+- **Threshold**: horizontal drag > 60px triggers open
+- **Guards**: disabled when `studyMode` is active or `canvasOpen` / `journalOpen` (avoids conflict with ink/drawing gestures)
+- **Gated to mobile/touch** via `useIsTouch()` (imported from `use-mobile.tsx`)
+- **Passive listeners** to avoid scroll jank
 
-### 2. `src/App.tsx` — Add PlatformAwareRouter
+### Gesture logic (pseudocode)
 
-- Update imports: add `HashRouter` from `react-router-dom` and `Capacitor` from `@capacitor/core`
-- Create a `PlatformAwareRouter` component:
+```text
+touchstart:
+  if clientX < 24        → record as "sleeve-swipe"
+  if clientX > width-24  → record as "pocket-swipe"
 
-```tsx
-function PlatformAwareRouter({ children }: { children: React.ReactNode }) {
-  return Capacitor.isNativePlatform()
-    ? <HashRouter>{children}</HashRouter>
-    : <BrowserRouter>{children}</BrowserRouter>;
-}
+touchmove:
+  track latest clientX
+
+touchend:
+  if sleeve-swipe && deltaX > 60  → setSleeveOpen(true)
+  if pocket-swipe && deltaX < -60 → setPocketOpen(true)
+  reset tracking
 ```
 
-- Replace `<BrowserRouter>` in the `App` component with `<PlatformAwareRouter>`
+### No other files changed
 
-### What stays the same
-
-- All route definitions, `AppShell`, `KeepReadingShell`, `isKeepReading()` logic — completely untouched
-- Lovable SPA fallback continues working for web (BrowserRouter path unchanged)
-- No UI or behavioral changes for current web users
+Both `BibleSleeveSheet` and `BiblePocketSheet` already accept `open`/`onOpenChange` — we just set `open` to `true` from the gesture. The `useIsTouch` hook already exists in `use-mobile.tsx`.
 
