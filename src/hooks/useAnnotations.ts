@@ -163,6 +163,7 @@ export function useAnnotationMutations() {
       queryClient.invalidateQueries({ queryKey: ["annotations"] });
       queryClient.invalidateQueries({ queryKey: ["annotations-chapter"] });
       queryClient.invalidateQueries({ queryKey: ["annotations-journal"] });
+      queryClient.invalidateQueries({ queryKey: ["annotations-ink"] });
     },
   });
 

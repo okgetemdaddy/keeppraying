@@ -664,7 +664,7 @@ export function BibleSleeveSheet({
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Annotation Mode</span>
                         <div className="grid grid-cols-3 gap-1.5">
                           {([
-                            { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write beside verses" },
+                            { key: "margin" as const, icon: PenTool, label: "Marginalia", desc: "Write anywhere on page" },
                             { key: "canvas" as const, icon: Layers, label: "Canvas", desc: "Full-page manuscript" },
                             { key: "journal" as const, icon: BookOpen, label: "Journal", desc: "Slide-out notebook" },
                           ]).map(({ key, icon: Icon, label, desc }) => (
