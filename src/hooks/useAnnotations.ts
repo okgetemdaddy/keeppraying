@@ -81,6 +81,26 @@ export function useJournalAnnotations(bookUsfm?: string, chapterNumber?: string)
   });
 }
 
+export function useChapterInkAnnotations(bookUsfm?: string, chapterNumber?: string) {
+  const { user } = useAuth();
+  const inkKey = bookUsfm && chapterNumber ? `${bookUsfm}.${chapterNumber}.ink` : null;
+
+  return useQuery({
+    queryKey: ["annotations-ink", inkKey, user?.id],
+    enabled: !!inkKey && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("annotations")
+        .select("*")
+        .eq("user_id", user!.id);
+
+      if (error) throw error;
+      const all = (data ?? []) as Annotation[];
+      return all.find((a) => a.verse_ids.includes(inkKey!)) ?? null;
+    },
+  });
+}
+
 export function useAnnotationMutations() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
