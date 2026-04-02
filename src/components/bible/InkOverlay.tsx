@@ -410,6 +410,23 @@ export function InkOverlay({
             <feFuncA type="linear" slope="1.0" />
           </feComponentTransfer>
         </filter>
+        {/* ── Neon glow filters ── */}
+        {[
+          { id: "neon-00FFFF", bloom: "#00FFFF" },
+          { id: "neon-FF00FF", bloom: "#FF00FF" },
+          { id: "neon-39FF14", bloom: "#39FF14" },
+        ].map(({ id, bloom }) => (
+          <filter key={id} id={id} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+            <feFlood floodColor={bloom} floodOpacity="0.8" result="glowColor" />
+            <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
+            <feMerge>
+              <feMergeNode in="softGlow" />
+              <feMergeNode in="softGlow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        ))}
       </defs>
       {renderedStrokes}
 
