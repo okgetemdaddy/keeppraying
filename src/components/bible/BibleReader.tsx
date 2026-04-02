@@ -15,6 +15,7 @@ import {
   AArrowUp,
   Globe,
   PanelLeft,
+  PanelRight,
   Maximize2,
   Minimize2,
   Search,
