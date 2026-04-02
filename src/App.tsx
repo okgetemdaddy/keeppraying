@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, HashRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { isKeepReading } from "@/lib/hostDetect";
+import { Capacitor } from "@capacitor/core";
 import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -48,6 +49,11 @@ import {
 } from "lucide-react";
 
 const queryClient = new QueryClient();
+function PlatformAwareRouter({ children }: { children: React.ReactNode }) {
+  return Capacitor.isNativePlatform()
+    ? <HashRouter>{children}</HashRouter>
+    : <BrowserRouter>{children}</BrowserRouter>;
+}
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, loading } = useAuth();
@@ -218,9 +224,9 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <BrowserRouter>
+        <PlatformAwareRouter>
           {isKeepReading() ? <KeepReadingShell /> : <AppShell />}
-        </BrowserRouter>
+        </PlatformAwareRouter>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
