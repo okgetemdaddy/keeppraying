@@ -85,7 +85,7 @@ export default function AddBreathPrayerModal({ open, onOpenChange, onSuccess }: 
         });
       }
 
-      // Step 3: Auto-enrich with AI
+      // Step 3: Auto-enrich
       setSubmitting(false);
       setEnriching(true);
       try {
