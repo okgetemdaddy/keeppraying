@@ -109,6 +109,13 @@ export function ZoomWrapper({
           className="relative min-h-full"
         />
       )}
+
+      {/* Full-span overlay (e.g. InkOverlay) — covers text + margins */}
+      {overlay && (
+        <div className="absolute inset-0" style={{ gridColumn: "1 / -1", gridRow: "1 / -1" }}>
+          {overlay}
+        </div>
+      )}
     </div>
   );
 }

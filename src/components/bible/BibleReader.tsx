@@ -1799,45 +1799,6 @@ export function BibleReader() {
                   })}
                 </section>
 
-                {/* ── Ink SVG Overlay (full-page, pen-only) ── */}
-                {studyMode && studyModeVariant === "margin" && (
-                  <InkOverlay
-                    zoom={inkZoom}
-                    strokes={inkHistory.strokes}
-                    onStrokeComplete={handleInkStrokeComplete}
-                    onUndo={handleInkUndo}
-                    penColor={inkPenColor}
-                    penSize={inkPenSize}
-                    penGlow={inkPenGlow}
-                    fingerDrawing={inkFingerDrawing}
-                    isDark={premiumDark || document.documentElement.classList.contains("dark")}
-                    onCircleSelect={(verseNumbers) => {
-                      if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
-                        setCrossSelections((prev) => {
-                          const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
-                          const newSelections = verseNumbers
-                            .filter((v) => !existing.has(`${bookUsfm}.${currentChapter.id}.${v}`))
-                            .map((v) => ({
-                              versionId,
-                              bookUsfm,
-                              bookTitle: currentBook.title,
-                              chapterNumber: currentChapter.id,
-                              verseNumber: v,
-                            }));
-                          return [...prev, ...newSelections];
-                        });
-                        toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
-                      }
-                    }}
-                    onPencilFirstContact={() => {
-                      const onboarded = localStorage.getItem("pencil-onboarded");
-                      if (!onboarded) {
-                        setPocketOpen(true);
-                        localStorage.setItem("pencil-onboarded", "true");
-                      }
-                    }}
-                  />
-                )}
               </ZoomWrapper>
             </motion.div>
           ) : !versionId ? (
