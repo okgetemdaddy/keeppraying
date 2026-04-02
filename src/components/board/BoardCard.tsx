@@ -918,7 +918,7 @@ export function BoardCard({
         </div>
       </div>
 
-      {/* AI Enrich Panel */}
+      {/* Auto Verses & Labels Panel */}
       {isOwner && (
         <AIEnrichPanel
           open={enrichOpen}
