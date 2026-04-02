@@ -57,7 +57,10 @@ export function IPadStudyToolbar({
   }
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2 max-w-[95vw]">
+    <div
+      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-2 max-w-[95vw] transition-opacity duration-150"
+      style={{ opacity: isPencilActive ? 0 : 1, pointerEvents: isPencilActive ? "none" : "auto" }}
+    >
       {/* Main toolbar pill */}
       <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-md shadow-xl border border-border rounded-3xl px-3 py-2">
         {/* Color picker */}

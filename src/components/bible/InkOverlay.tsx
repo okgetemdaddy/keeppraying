@@ -203,19 +203,24 @@ export function InkOverlay({
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
         const isSelected = selectedStrokeId === s.id;
+        const isSepia = s.color === SEPIA_COLOR;
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSelected ? 0.5 : 0.98}
+            opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
+            filter={isSelected ? undefined : "url(#ink-bleed)"}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedStrokeId(isSelected ? null : s.id);
             }}
             className="cursor-pointer"
-            style={{ filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined }}
+            style={{
+              mixBlendMode: isSepia ? "multiply" : undefined,
+              filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
+            }}
           />
         );
       }),
