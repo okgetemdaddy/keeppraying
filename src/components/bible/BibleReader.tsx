@@ -1928,13 +1928,73 @@ export function BibleReader() {
           textSpacing={inkTextSpacing}
           onTextSpacingChange={handleInkTextSpacingChange}
           onUndo={handleInkUndo}
-          onClear={handleInkClear}
-          canUndo={inkStrokes.length > 0}
+          onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
+          canUndo={inkHistory.canUndo}
+          canRedo={inkHistory.canRedo}
           fingerDrawing={inkFingerDrawing}
           onFingerDrawingChange={setInkFingerDrawing}
           isDark={document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
         />
       )}
+
+      {/* ── Eraser Confirmation Dialog ── */}
+      <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all ink?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all strokes on this page. You can restore them from the trash bin or undo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleInkClearConfirm}>Clear Board</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Ink Trash Bin Sheet ── */}
+      <InkTrashSheet
+        open={inkTrashOpen}
+        onClose={() => setInkTrashOpen(false)}
+        trashBin={inkHistory.trashBin}
+        onRestore={(id) => {
+          inkHistory.restoreFromTrash(id);
+          setInkTrashOpen(false);
+          toast.success("Ink restored ✨");
+        }}
+      />
+
+      {/* ── Voice Annotation Overlay ── */}
+      <VoiceAnnotationOverlay
+        active={voiceOverlayActive}
+        onClose={() => setVoiceOverlayActive(false)}
+        onTranscriptComplete={handleVoiceTranscript}
+      />
+
+      {/* ── Bible Pocket Sheet ── */}
+      <BiblePocketSheet
+        open={pocketOpen}
+        onOpenChange={setPocketOpen}
+        chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+        chapterAnnotations={chapterAnnotations ?? []}
+        inkStrokes={inkHistory.strokes}
+      />
+
+      {/* ── Chapter Thumbnail Strip ── */}
+      <ChapterThumbnailStrip
+        open={thumbnailStripOpen}
+        onClose={() => setThumbnailStripOpen(false)}
+        currentChapterIdx={chapterIdx}
+        totalChapters={totalChapters}
+        bookTitle={currentBook?.title}
+        chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
+        onNavigate={(idx) => setChapterIdx(idx)}
+      />
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
