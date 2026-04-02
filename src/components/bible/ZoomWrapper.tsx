@@ -14,7 +14,7 @@ interface ZoomWrapperProps {
 export function ZoomWrapper({ zoom, textSpacing, children, className = "" }: ZoomWrapperProps) {
   return (
     <div
-      className={`relative origin-top-left ${className}`}
+      className={`relative origin-top-left bg-[#FDFBF7] dark:bg-transparent ${className}`}
       style={{
         transform: zoom !== 1 ? `scale(${zoom})` : undefined,
         transformOrigin: "top left",

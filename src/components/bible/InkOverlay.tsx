@@ -40,13 +40,15 @@ interface InkOverlayProps {
 }
 
 const STROKE_OPTIONS = {
-  thinning: 0.6,
+  thinning: 0.5,
   smoothing: 0.5,
   streamline: 0.5,
   simulatePressure: false,
-  start: { taper: 0, easing: (t: number) => t },
-  end: { taper: 0, easing: (t: number) => t },
+  start: { taper: 12, easing: (t: number) => t * t },
+  end: { taper: 8, easing: (t: number) => t },
 };
+
+const SEPIA_COLOR = "#D4C4A8";
 
 export function InkOverlay({
   zoom,
@@ -201,19 +203,24 @@ export function InkOverlay({
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
         const isSelected = selectedStrokeId === s.id;
+        const isSepia = s.color === SEPIA_COLOR;
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSelected ? 0.5 : 0.98}
+            opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
+            filter={isSelected ? undefined : "url(#ink-bleed)"}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedStrokeId(isSelected ? null : s.id);
             }}
             className="cursor-pointer"
-            style={{ filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined }}
+            style={{
+              mixBlendMode: isSepia ? "multiply" : undefined,
+              filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
+            }}
           />
         );
       }),
@@ -257,6 +264,14 @@ export function InkOverlay({
       onPointerLeave={handlePointerUp}
       onPointerCancel={handlePointerCancel}
     >
+      <defs>
+        <filter id="ink-bleed">
+          <feGaussianBlur stdDeviation="0.3" />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="0.95" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
       {renderedStrokes}
       {livePreview}
     </svg>
