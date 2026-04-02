@@ -2026,6 +2026,20 @@ export function BibleReader() {
         chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
         chapterAnnotations={chapterAnnotations ?? []}
         inkStrokes={inkHistory.strokes}
+        onTryAction={(actionId) => {
+          setPocketOpen(false);
+          switch (actionId) {
+            case "openVoice":
+              setVoiceOverlayActive(true);
+              break;
+            case "openTrash":
+              setInkTrashOpen(true);
+              break;
+            case "openThumbnails":
+              setThumbnailStripOpen(true);
+              break;
+          }
+        }}
       />
 
       {/* ── Chapter Thumbnail Strip ── */}
