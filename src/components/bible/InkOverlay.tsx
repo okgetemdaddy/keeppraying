@@ -28,6 +28,7 @@ export interface InkStroke {
   color: string;
   size: number;
   linkedVerse: number | null;
+  glow?: string | null;
 }
 
 interface InkOverlayProps {
