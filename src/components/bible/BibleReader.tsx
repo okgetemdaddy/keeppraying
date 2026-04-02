@@ -92,6 +92,7 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
 import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
