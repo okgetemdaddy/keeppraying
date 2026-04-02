@@ -17,6 +17,15 @@ export function MobileTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [hidden, setHidden] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const sync = () => setIsDark(document.documentElement.classList.contains("bible-dark"));
+    sync();
+    const obs = new MutationObserver(sync);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const show = () => setHidden(false);
