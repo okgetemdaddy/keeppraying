@@ -1975,6 +1975,8 @@ export function BibleReader() {
           onPenColorChange={setInkPenColor}
           penSize={inkPenSize}
           onPenSizeChange={setInkPenSize}
+          penGlow={inkPenGlow}
+          onPenGlowChange={handleInkPenGlowChange}
           zoom={inkZoom}
           onZoomChange={handleInkZoomChange}
           textSpacing={inkTextSpacing}
