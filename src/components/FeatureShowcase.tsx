@@ -355,7 +355,7 @@ const FEATURES = [
     id: "sermon",
     title: "SermonSync",
     headline: "From Sermon to Prayer in Seconds",
-    body: "Paste a YouTube sermon link and get AI-generated prayer points, application steps, and a 7-day prayer plan you can share with your group.",
+    body: "Paste a YouTube sermon link and get prayer points, application steps, and a 7-day prayer plan you can share with your group.",
     href: "/sermon-sync",
     Svg: SermonSyncSvg,
     accent: "hsl(150 32% 36%)",
