@@ -28,6 +28,7 @@ export interface InkStroke {
   color: string;
   size: number;
   linkedVerse: number | null;
+  glow?: string | null;
 }
 
 interface InkOverlayProps {
@@ -37,6 +38,7 @@ interface InkOverlayProps {
   onUndo: () => void;
   penColor?: string;
   penSize?: number;
+  penGlow?: string | null;
   fingerDrawing?: boolean;
   isDark?: boolean;
   /** Callback when a circle-to-select gesture encloses verses */
@@ -66,6 +68,7 @@ export function InkOverlay({
   onUndo,
   penColor = "#1a1a1a",
   penSize = 8,
+  penGlow,
   fingerDrawing = false,
   isDark = false,
   onCircleSelect,
@@ -92,8 +95,10 @@ export function InkOverlay({
   // Stable refs for current pen settings (avoid stale closures in RAF loop)
   const penColorRef = useRef(penColor);
   const penSizeRef = useRef(penSize);
+  const penGlowRef = useRef(penGlow);
   penColorRef.current = penColor;
   penSizeRef.current = penSize;
+  penGlowRef.current = penGlow ?? null;
 
   /* ── DOMMatrix-based coordinate normalization ── */
   const getTransformedPoint = useCallback(
@@ -132,6 +137,15 @@ export function InkOverlay({
       if (pathData) {
         livePathRef.current.setAttribute("d", pathData);
         livePathRef.current.setAttribute("fill", penColorRef.current);
+        const glow = penGlowRef.current;
+        if (glow) {
+          const filterId = `neon-${glow.replace("#", "")}`;
+          livePathRef.current.setAttribute("filter", `url(#${filterId})`);
+          livePathRef.current.style.mixBlendMode = "screen";
+        } else {
+          livePathRef.current.removeAttribute("filter");
+          livePathRef.current.style.mixBlendMode = "";
+        }
         livePathRef.current.style.display = "";
       }
     }
@@ -269,11 +283,12 @@ export function InkOverlay({
       color: penColor,
       size: penSize,
       linkedVerse: closestVerse,
+      glow: penGlow ?? null,
     };
 
     onStrokeComplete(newStroke);
     pointsBufferRef.current = [];
-  }, [penColor, penSize, zoom, onStrokeComplete, onCircleSelect]);
+  }, [penColor, penSize, penGlow, zoom, onStrokeComplete, onCircleSelect]);
 
   const handlePointerCancel = useCallback(() => {
     isDrawingRef.current = false;
@@ -334,7 +349,14 @@ export function InkOverlay({
         if (!pathData) return null;
         const isSelected = selectedStrokeId === s.id;
         const isSepia = s.color === SEPIA_COLOR;
+        const isNeon = !!s.glow;
+        const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
+        const appliedFilter = isSelected
+          ? undefined
+          : isNeon
+            ? `url(#${neonFilterId})`
+            : bleedFilter;
         return (
           <path
             key={s.id}
@@ -342,14 +364,14 @@ export function InkOverlay({
             fill={s.color}
             stroke="none"
             opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
-            filter={isSelected ? undefined : bleedFilter}
+            filter={appliedFilter}
             onClick={(e) => {
               e.stopPropagation();
               setSelectedStrokeId(isSelected ? null : s.id);
             }}
             className="cursor-pointer"
             style={{
-              mixBlendMode: isSepia ? (isDark ? "screen" : "multiply") : undefined,
+              mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
               filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
             }}
           />
@@ -388,6 +410,23 @@ export function InkOverlay({
             <feFuncA type="linear" slope="1.0" />
           </feComponentTransfer>
         </filter>
+        {/* ── Neon glow filters ── */}
+        {[
+          { id: "neon-00FFFF", bloom: "#00FFFF" },
+          { id: "neon-FF00FF", bloom: "#FF00FF" },
+          { id: "neon-39FF14", bloom: "#39FF14" },
+        ].map(({ id, bloom }) => (
+          <filter key={id} id={id} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+            <feFlood floodColor={bloom} floodOpacity="0.8" result="glowColor" />
+            <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
+            <feMerge>
+              <feMergeNode in="softGlow" />
+              <feMergeNode in="softGlow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        ))}
       </defs>
       {renderedStrokes}
 

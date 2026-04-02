@@ -29,11 +29,19 @@ const PEN_COLORS_DARK = [
   { value: "#D4C4A8", label: "Sepia Highlighter" },
 ];
 
+const NEON_COLORS = [
+  { core: "#E0FFFF", bloom: "#00FFFF", label: "Electric Cyan", bg: "#0a1a1a" },
+  { core: "#FFD8FF", bloom: "#FF00FF", label: "Neon Fuchsia", bg: "#1a0a1a" },
+  { core: "#EAFFEA", bloom: "#39FF14", label: "Radiant Lime", bg: "#0a1a0a" },
+];
+
 interface IPadStudyToolbarProps {
   penColor: string;
   onPenColorChange: (color: string) => void;
   penSize: number;
   onPenSizeChange: (size: number) => void;
+  penGlow?: string | null;
+  onPenGlowChange?: (glow: string | null) => void;
   zoom: number;
   onZoomChange: (zoom: number) => void;
   textSpacing: number;
@@ -57,6 +65,8 @@ export function IPadStudyToolbar({
   onPenColorChange,
   penSize,
   onPenSizeChange,
+  penGlow,
+  onPenGlowChange,
   zoom,
   onZoomChange,
   textSpacing,
@@ -141,13 +151,39 @@ export function IPadStudyToolbar({
           {PEN_COLORS.map((c) => (
             <button
               key={c.value}
-              onClick={() => onPenColorChange(c.value)}
+              onClick={() => { onPenColorChange(c.value); onPenGlowChange?.(null); }}
               className={`w-7 h-7 rounded-full transition-all hover:scale-110 shrink-0 ${
-                penColor === c.value ? "ring-2 ring-offset-2 ring-primary" : ""
+                penColor === c.value && !penGlow ? "ring-2 ring-offset-2 ring-primary" : ""
               } ${isDark ? "border border-white/20" : ""}`}
               style={{ backgroundColor: c.value }}
               title={c.label}
             />
+          ))}
+
+          <div className="w-px h-6 bg-border mx-0.5" />
+
+          {/* Neon glow inks */}
+          {NEON_COLORS.map((n) => (
+            <button
+              key={n.bloom}
+              onClick={() => { onPenColorChange(n.core); onPenGlowChange?.(n.bloom); }}
+              className={`relative w-7 h-7 rounded-full transition-all hover:scale-110 shrink-0 ${
+                penGlow === n.bloom ? "ring-2 ring-offset-1 ring-white/60" : ""
+              }`}
+              style={{
+                backgroundColor: n.bg,
+                boxShadow: `0 0 8px 2px ${n.bloom}80, inset 0 0 6px 1px ${n.bloom}60`,
+              }}
+              title={n.label}
+            >
+              <span
+                className="absolute inset-1.5 rounded-full"
+                style={{ backgroundColor: n.core, boxShadow: `0 0 4px 1px ${n.bloom}` }}
+              />
+              {penGlow === n.bloom && (
+                <span className="absolute -top-0.5 -right-0.5 text-[0.5rem] leading-none" style={{ color: n.bloom }}>✦</span>
+              )}
+            </button>
           ))}
 
           <div className="w-px h-6 bg-border mx-0.5" />
