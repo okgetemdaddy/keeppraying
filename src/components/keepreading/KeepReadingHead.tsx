@@ -26,19 +26,24 @@ export function KeepReadingHead() {
     const metas: HTMLMetaElement[] = [];
 
     // Standard meta
-    metas.push(setMeta("name", "description", "KeepRead.ing — a free, beautiful Bible reader with highlights, bookmarks, notes, verse bunches, and cross-translation study tools. Keep Reading. Go Deeper."));
+    metas.push(setMeta("name", "description", "KeepRead.ing — a free, beautiful Bible reader with highlights, bookmarks, notes, verse bunches, Apple Pencil handwriting, and cross-translation study tools. Keep Reading. Go Deeper."));
+    metas.push(setMeta("name", "keywords", "Bible reader, Bible study, Apple Pencil, highlights, bookmarks, notes, verse bunches, free Bible app, scripture study"));
+    metas.push(setMeta("name", "author", "KeepPray.ing"));
+    metas.push(setMeta("name", "theme-color", "#1a1a2e"));
 
     // Open Graph
     metas.push(setMeta("property", "og:title", "KeepRead.ing — Keep Reading. Go Deeper."));
-    metas.push(setMeta("property", "og:description", "A free, beautiful Bible reader with highlights, bookmarks, notes, and study tools. No ads, no distractions."));
+    metas.push(setMeta("property", "og:description", "A free, beautiful Bible reader with highlights, bookmarks, notes, Apple Pencil handwriting, and study tools. No ads, no distractions."));
     metas.push(setMeta("property", "og:url", "https://keepread.ing/"));
     metas.push(setMeta("property", "og:type", "website"));
     metas.push(setMeta("property", "og:site_name", "KeepRead.ing"));
+    metas.push(setMeta("property", "og:locale", "en_US"));
 
     // Twitter
     metas.push(setMeta("name", "twitter:card", "summary_large_image"));
     metas.push(setMeta("name", "twitter:title", "KeepRead.ing — Keep Reading. Go Deeper."));
-    metas.push(setMeta("name", "twitter:description", "Free Bible reader with highlights, bookmarks, notes, and study tools."));
+    metas.push(setMeta("name", "twitter:description", "Free Bible reader with Apple Pencil handwriting, highlights, bookmarks, notes, and study tools."));
+    metas.push(setMeta("name", "twitter:site", "@keeppraying"));
 
     // Canonical
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
