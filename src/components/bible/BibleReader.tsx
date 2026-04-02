@@ -2007,31 +2007,57 @@ export function BibleReader() {
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
 
-      {/* ── iPad Ink Toolbar (Mode 1: Marginalia) ── */}
+      {/* ── Ink Toolbar (Mode 1: Marginalia) ── */}
       {studyMode && studyModeVariant === "margin" && (
-        <IPadStudyToolbar
-          penColor={inkPenColor}
-          onPenColorChange={setInkPenColor}
-          penSize={inkPenSize}
-          onPenSizeChange={setInkPenSize}
-          penGlow={inkPenGlow}
-          onPenGlowChange={handleInkPenGlowChange}
-          zoom={inkZoom}
-          onZoomChange={handleInkZoomChange}
-          textSpacing={inkTextSpacing}
-          onTextSpacingChange={handleInkTextSpacingChange}
-          onUndo={handleInkUndo}
-          onRedo={handleInkRedo}
-          onClear={handleInkClearRequest}
-          canUndo={inkHistory.canUndo}
-          canRedo={inkHistory.canRedo}
-          fingerDrawing={inkFingerDrawing}
-          onFingerDrawingChange={setInkFingerDrawing}
-          isDark={premiumDark || document.documentElement.classList.contains("dark")}
-          onOpenTrash={() => setInkTrashOpen(true)}
-          onOpenVoice={() => setVoiceOverlayActive(true)}
-          hasTrashItems={inkHistory.trashBin.length > 0}
-        />
+        isMobile ? (
+          <MobileStudyToolbar
+            penColor={inkPenColor}
+            onPenColorChange={setInkPenColor}
+            penSize={inkPenSize}
+            onPenSizeChange={setInkPenSize}
+            penGlow={inkPenGlow}
+            onPenGlowChange={handleInkPenGlowChange}
+            zoom={inkZoom}
+            onZoomChange={handleInkZoomChange}
+            textSpacing={inkTextSpacing}
+            onTextSpacingChange={handleInkTextSpacingChange}
+            onUndo={handleInkUndo}
+            onRedo={handleInkRedo}
+            onClear={handleInkClearRequest}
+            canUndo={inkHistory.canUndo}
+            canRedo={inkHistory.canRedo}
+            fingerDrawing={inkFingerDrawing}
+            onFingerDrawingChange={setInkFingerDrawing}
+            isDark={premiumDark || document.documentElement.classList.contains("dark")}
+            onOpenTrash={() => setInkTrashOpen(true)}
+            onOpenVoice={() => setVoiceOverlayActive(true)}
+            hasTrashItems={inkHistory.trashBin.length > 0}
+          />
+        ) : (
+          <IPadStudyToolbar
+            penColor={inkPenColor}
+            onPenColorChange={setInkPenColor}
+            penSize={inkPenSize}
+            onPenSizeChange={setInkPenSize}
+            penGlow={inkPenGlow}
+            onPenGlowChange={handleInkPenGlowChange}
+            zoom={inkZoom}
+            onZoomChange={handleInkZoomChange}
+            textSpacing={inkTextSpacing}
+            onTextSpacingChange={handleInkTextSpacingChange}
+            onUndo={handleInkUndo}
+            onRedo={handleInkRedo}
+            onClear={handleInkClearRequest}
+            canUndo={inkHistory.canUndo}
+            canRedo={inkHistory.canRedo}
+            fingerDrawing={inkFingerDrawing}
+            onFingerDrawingChange={setInkFingerDrawing}
+            isDark={premiumDark || document.documentElement.classList.contains("dark")}
+            onOpenTrash={() => setInkTrashOpen(true)}
+            onOpenVoice={() => setVoiceOverlayActive(true)}
+            hasTrashItems={inkHistory.trashBin.length > 0}
+          />
+        )
       )}
 
       {/* ── Eraser Confirmation Dialog ── */}
