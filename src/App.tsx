@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { isKeepReading } from "@/lib/hostDetect";
+import { Capacitor } from "@capacitor/core";
 import AuthGate from "@/components/AuthGate";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
