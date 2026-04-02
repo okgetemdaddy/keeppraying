@@ -90,7 +90,7 @@ import { HandwritingEngine, type StrokeData } from "@/components/bible/Handwriti
 import { ManuscriptCanvas } from "@/components/bible/ManuscriptCanvas";
 import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
-import { ZoomWrapper } from "@/components/bible/ZoomWrapper";
+import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
@@ -545,6 +545,29 @@ export function BibleReader() {
   }, []);
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
   const inkHistory = useInkHistory();
+
+  // ── Workspace spatial settings ──
+  const [wsTextAlign, setWsTextAlign] = useState<TextAlign>(() => {
+    try { return (localStorage.getItem("bible_ws_align") as TextAlign) || "left"; } catch { return "left"; }
+  });
+  const [wsMarginWidth, setWsMarginWidth] = useState(() => {
+    try { return parseFloat(localStorage.getItem("bible_ws_margin") ?? "30"); } catch { return 30; }
+  });
+  const [wsCanvasBackground, setWsCanvasBackground] = useState<CanvasBackground>(() => {
+    try { return (localStorage.getItem("bible_ws_bg") as CanvasBackground) || "none"; } catch { return "none"; }
+  });
+  const handleWsTextAlign = useCallback((v: TextAlign) => {
+    setWsTextAlign(v);
+    try { localStorage.setItem("bible_ws_align", v); } catch {}
+  }, []);
+  const handleWsMarginWidth = useCallback((v: number) => {
+    setWsMarginWidth(v);
+    try { localStorage.setItem("bible_ws_margin", String(v)); } catch {}
+  }, []);
+  const handleWsCanvasBackground = useCallback((v: CanvasBackground) => {
+    setWsCanvasBackground(v);
+    try { localStorage.setItem("bible_ws_bg", v); } catch {}
+  }, []);
 
   // New iPad feature states
   const [inkTrashOpen, setInkTrashOpen] = useState(false);
@@ -1734,6 +1757,9 @@ export function BibleReader() {
                 zoom={studyMode && studyModeVariant === "margin" ? inkZoom : 1}
                 textSpacing={studyMode && studyModeVariant === "margin" ? inkTextSpacing : 1.6}
                 className="relative"
+                textAlign={studyMode && studyModeVariant === "margin" ? wsTextAlign : "left"}
+                marginWidth={studyMode && studyModeVariant === "margin" ? wsMarginWidth : 0}
+                canvasBackground={studyMode && studyModeVariant === "margin" ? wsCanvasBackground : "none"}
               >
                 <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                   {verses.map((v) => {
@@ -2032,6 +2058,12 @@ export function BibleReader() {
             onOpenTrash={() => setInkTrashOpen(true)}
             onOpenVoice={() => setVoiceOverlayActive(true)}
             hasTrashItems={inkHistory.trashBin.length > 0}
+            textAlign={wsTextAlign}
+            onTextAlignChange={handleWsTextAlign}
+            marginWidth={wsMarginWidth}
+            onMarginWidthChange={handleWsMarginWidth}
+            canvasBackground={wsCanvasBackground}
+            onCanvasBackgroundChange={handleWsCanvasBackground}
           />
         ) : (
           <IPadStudyToolbar
@@ -2056,6 +2088,12 @@ export function BibleReader() {
             onOpenTrash={() => setInkTrashOpen(true)}
             onOpenVoice={() => setVoiceOverlayActive(true)}
             hasTrashItems={inkHistory.trashBin.length > 0}
+            textAlign={wsTextAlign}
+            onTextAlignChange={handleWsTextAlign}
+            marginWidth={wsMarginWidth}
+            onMarginWidthChange={handleWsMarginWidth}
+            canvasBackground={wsCanvasBackground}
+            onCanvasBackgroundChange={handleWsCanvasBackground}
           />
         )
       )}
