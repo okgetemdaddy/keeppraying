@@ -72,6 +72,8 @@ export default function KeepReadingLanding() {
           >
             The only Bible study app that combines native Apple Pencil
             journaling with a spatially-aware scripture database.
+            <br className="hidden sm:block" />
+            The text is not the canvas any longer. Interact with God's word.
           </motion.p>
 
           <motion.div
