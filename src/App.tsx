@@ -49,8 +49,13 @@ import {
 } from "lucide-react";
 
 const queryClient = new QueryClient();
+function PlatformAwareRouter({ children }: { children: React.ReactNode }) {
+  return Capacitor.isNativePlatform()
+    ? <HashRouter>{children}</HashRouter>
+    : <BrowserRouter>{children}</BrowserRouter>;
+}
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
+
   const { user, isAdmin, loading } = useAuth();
   if (loading) return null;
   if (!user || !isAdmin) return <Navigate to="/" replace />;
