@@ -133,7 +133,7 @@ export function BibleStudyProvider({ children }: BibleStudyProviderProps) {
     pencilOnboarded, markPencilOnboarded,
   }), [
     activeTool, zoomLevel, setZoomLevel, textSpacing, setTextSpacing,
-    isPocketOpen, pocketTab, penColor, penSize, fingerDrawing,
+    isPocketOpen, pocketTab, penColor, penSize, penGlow, setPenGlow, fingerDrawing,
     studyMode, setStudyMode, pencilDetected, pencilOnboarded, markPencilOnboarded,
   ]);
 
