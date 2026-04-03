@@ -330,6 +330,16 @@
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+  /* ═══ Ease the Eyes — solid color-mix dimmer ═══ */
+  :root { --ease-eyes-dim: 1; }
+
+  .bible-dark .bible-reading-canvas p,
+  .bible-dark .bible-reading-canvas span,
+  .bible-dark .bible-reading-canvas sup {
+    color: color-mix(in srgb, #f4f4f5 calc(var(--ease-eyes-dim) * 100%), #09090b);
+    transition: color 0.1s linear;
+  }
+
   /* Bible serif reading font */
   .bible-serif-reading {
     font-family: 'EB Garamond', 'Playfair Display', Georgia, serif;
