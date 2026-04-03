@@ -47,6 +47,19 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
     config: SPRING_CONFIG,
   }));
 
+  // Suppress Safari's proprietary gesture events so @use-gesture receives pinch
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const prevent = (e: Event) => e.preventDefault();
+    el.addEventListener('gesturestart', prevent, { passive: false });
+    el.addEventListener('gesturechange', prevent, { passive: false });
+    return () => {
+      el.removeEventListener('gesturestart', prevent);
+      el.removeEventListener('gesturechange', prevent);
+    };
+  }, []);
+
   useGesture(
     {
       onDrag: ({ delta: [dx, dy], touches, event, cancel }) => {
