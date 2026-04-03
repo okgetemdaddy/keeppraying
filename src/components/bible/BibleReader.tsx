@@ -421,7 +421,7 @@ function EnrichedVerse({
           <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}{" "}
       </span>
