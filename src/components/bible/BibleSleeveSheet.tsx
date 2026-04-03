@@ -317,7 +317,7 @@ export function BibleSleeveSheet({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0 pb-8">
+          <div className="space-y-5 pb-8">
             {/* ── LEFT COLUMN: Settings ── */}
             <div className="space-y-5">
 
