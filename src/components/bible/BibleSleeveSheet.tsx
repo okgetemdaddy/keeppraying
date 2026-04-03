@@ -65,6 +65,7 @@ const SECTION_IDS = {
   bookmarks: "bookmarks",
   notes: "notes",
   bunches: "bunches",
+  studies: "studies",
 } as const;
 
 function loadCollapsed(): Set<string> {
