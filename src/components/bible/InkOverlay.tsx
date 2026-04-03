@@ -395,6 +395,23 @@ export function InkOverlay({
       }
     }
 
+    /* ── X-gesture detection (delete highlights & ink) ── */
+    if (onXGesture && !isClosedLoop(currentPoints)) {
+      const xResult = isXGesture(currentPoints);
+      if (xResult.detected) {
+        const centerX = (xResult.bbox.minX + xResult.bbox.maxX) / 2;
+        const centerY = (xResult.bbox.minY + xResult.bbox.maxY) / 2;
+        // Flash red × at center
+        setXFlash({ x: centerX, y: centerY });
+        setTimeout(() => setXFlash(null), 400);
+        // Haptic double-tap
+        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+        onXGesture(xResult.bbox);
+        pointsBufferRef.current = [];
+        return;
+      }
+    }
+
     /* ── Underline gesture detection ── */
     if (onUnderlineGesture && isUnderlineGesture(currentPoints) && svgRef.current) {
       const svgRect = svgRef.current.getBoundingClientRect();
