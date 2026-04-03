@@ -331,7 +331,7 @@
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
   /* ═══ Ease the Eyes — solid color-mix dimmer ═══ */
-  :root { --ease-eyes-dim: 1; }
+  :root { --ease-eyes-dim: 1; --ease-eyes-tint: #f4f4f5; }
 
   .bible-dark p,
   .bible-dark span,
@@ -350,8 +350,8 @@
   .bible-dark td,
   .bible-dark th,
   .bible-dark div {
-    color: color-mix(in srgb, #f4f4f5 calc(var(--ease-eyes-dim) * 100%), #09090b);
-    transition: color 0.1s linear;
+    color: color-mix(in srgb, var(--ease-eyes-tint) calc(var(--ease-eyes-dim) * 100%), #09090b) !important;
+    transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Protect SVG ink layers and highlighters from dimming */

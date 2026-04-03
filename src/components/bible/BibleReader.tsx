@@ -2099,6 +2099,8 @@ export function BibleReader() {
         onToggleOled={handleToggleOled}
         easeEyesDim={easeEyesDim}
         onEaseEyesDimChange={handleEaseEyesDimChange}
+        easeEyesTint={easeEyesTint}
+        onEaseEyesTintChange={handleEaseEyesTintChange}
         highlights={chapterData?.highlights ?? []}
         bookmarks={chapterData?.bookmarks ?? []}
         notes={chapterData?.notes ?? []}

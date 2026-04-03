@@ -140,6 +140,8 @@ interface BibleSleeveSheetProps {
   /* ease the eyes */
   easeEyesDim: number;
   onEaseEyesDimChange: (v: number) => void;
+  easeEyesTint: string;
+  onEaseEyesTintChange: (hex: string) => void;
 
   /* annotations for current chapter */
   highlights: UserHighlight[];
