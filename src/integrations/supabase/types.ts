@@ -1970,6 +1970,45 @@ export type Database = {
         }
         Relationships: []
       }
+      study_artifacts: {
+        Row: {
+          book_usfm: string
+          card_count: number
+          chapter_number: number
+          created_at: string
+          id: string
+          image_url: string
+          stroke_count: number
+          title: string
+          user_id: string
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          card_count?: number
+          chapter_number: number
+          created_at?: string
+          id?: string
+          image_url: string
+          stroke_count?: number
+          title: string
+          user_id: string
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          card_count?: number
+          chapter_number?: number
+          created_at?: string
+          id?: string
+          image_url?: string
+          stroke_count?: number
+          title?: string
+          user_id?: string
+          version_id?: number
+        }
+        Relationships: []
+      }
       testimonies: {
         Row: {
           answered_date: string | null
