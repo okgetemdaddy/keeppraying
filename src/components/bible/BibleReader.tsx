@@ -1694,18 +1694,7 @@ export function BibleReader() {
 
 
 
-            {/* Focus mode — hide bottom nav */}
-
-            {/* Search button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSearchOpen(true)}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              title="Search (⌘K)"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
+            {/* Focus mode toggle */}
             <Button
               variant="ghost"
               size="sm"
@@ -1715,6 +1704,17 @@ export function BibleReader() {
             >
               {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
             </Button>
+
+            {/* Inline search input */}
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search…"
+                className="h-8 w-[120px] focus:w-48 transition-all duration-200 pl-7 text-xs rounded-md bg-muted/50 border-transparent focus:border-input"
+                onFocus={() => setSearchOpen(true)}
+                readOnly
+              />
+            </div>
 
             <div className="flex-1" />
 
