@@ -128,7 +128,7 @@ export function BibleSearchDialog({
           </kbd>
         </div>
 
-        <CommandList className="max-h-[60vh] overflow-y-auto">
+        <CommandList className="max-h-[60vh] overflow-y-auto" aria-live="polite">
           {/* ── Empty state ── */}
           {hasQuery && !hasAnyResults && !isSearching && query.trim().length >= 2 && (
             <CommandEmpty className="py-12 text-center">

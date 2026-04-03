@@ -368,6 +368,14 @@
     z-index: 1;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .animate-verse-glow {
+      animation: none;
+      background-color: hsl(var(--primary) / 0.1);
+      transition: background-color 0.3s ease;
+    }
+  }
+
   /* Bible serif reading font */
   .bible-serif-reading {
     font-family: 'EB Garamond', 'Playfair Display', Georgia, serif;
