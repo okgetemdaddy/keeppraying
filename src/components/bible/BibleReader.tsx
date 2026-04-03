@@ -2041,8 +2041,26 @@ export function BibleReader() {
                       penGlow={inkPenGlow}
                       fingerDrawing={inkFingerDrawing}
                       isDark={premiumDark || document.documentElement.classList.contains("dark")}
-                      onCircleSelect={(verseNumbers) => {
+                      onCircleSelect={(verseNumbers, hullCenter) => {
                         if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                          // Word-level bloom: single verse + try to extract word from circle center
+                          if (verseNumbers.length === 1 && hullCenter) {
+                            const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
+                            if (range) {
+                              range.expand?.("word");
+                              const word = range.toString().trim();
+                              if (word && word.split(/\s+/).length <= 3 && word.length < 40) {
+                                setReferenceBloom({
+                                  x: hullCenter.x,
+                                  y: hullCenter.y,
+                                  word,
+                                  verseNumber: verseNumbers[0],
+                                });
+                                return;
+                              }
+                            }
+                          }
+                          // Default: verse selection
                           setCrossSelections((prev) => {
                             const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
                             const newSelections = verseNumbers
