@@ -346,9 +346,29 @@ export function InkOverlay({
       });
     }
 
+    /* ── Stroke Finalizer: Ramer-Douglas-Peucker compression ──
+     * Coalesced events capture 2-4× more points per frame. Before saving
+     * to the database, simplify the path to reduce point count ~50-70%
+     * while preserving the handwritten character of curves. */
+    const simplified = simplify(
+      currentPoints.map(p => ({ x: p.x, y: p.y })),
+      0.5,
+      true,
+    );
+    // Re-attach pressure/tilt from nearest original point
+    const compressedPoints: Point[] = simplified.map(sp => {
+      let best = currentPoints[0];
+      let bestDist = Infinity;
+      for (const op of currentPoints) {
+        const d = (op.x - sp.x) ** 2 + (op.y - sp.y) ** 2;
+        if (d < bestDist) { bestDist = d; best = op; }
+      }
+      return { x: sp.x, y: sp.y, pressure: best.pressure, tiltX: best.tiltX, tiltY: best.tiltY };
+    });
+
     const newStroke: InkStroke = {
       id: `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      points: currentPoints,
+      points: compressedPoints,
       color: penColor,
       size: penSize,
       linkedVerse: closestVerse,
