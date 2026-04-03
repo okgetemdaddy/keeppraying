@@ -900,7 +900,8 @@ export default function Admin() {
                             </FormItem>
                           )} />
                           <div className="flex gap-2">
-                            <GoldButton type="submit">Save Post</GoldButton>
+                            <GoldButton type="submit" disabled={formattingBlog}>
+                              {formattingBlog ? <><Loader2 className="w-4 h-4 animate-spin" />Formatting with AI…</> : "Save Post"}</GoldButton>
                             <DarkOutlineButton type="button" onClick={() => setShowBlogForm(false)}>Cancel</DarkOutlineButton>
                           </div>
                         </form>
