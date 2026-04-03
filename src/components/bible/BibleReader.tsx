@@ -1847,7 +1847,18 @@ export function BibleReader() {
               <PenTool className="h-4 w-4" />
             </Button>
 
-
+            {/* Export Canvas (visible in study mode) */}
+            {studyMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setExportSheetOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Export Canvas"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
 
 
             {/* Focus mode toggle */}
