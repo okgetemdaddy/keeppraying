@@ -1,67 +1,72 @@
 
 
-# Finger-Count Gesture Separation + Loading State
+# Pan Physics Refinement — ZoomPanWrapper.tsx
 
-## Overview
+## What changes
 
-Replace the current mixed gesture system with strict finger-count routing: 2 fingers = zoom only, 3 fingers = pan only, 1 finger = ink or nothing. Remove `onDrag` from `useGesture` entirely — keep only `onWheel` for desktop. Add a calm loading state to CanvasBibleReader.
+Four improvements to 3-finger pan behavior: hard velocity cap, finger-lift grace period, boundary rubber-banding, and micro-movement dead zone.
 
-## Changes
+## Implementation details
 
-### 1. `src/components/bible/canvas/ZoomPanWrapper.tsx` — Full gesture rewrite
+All changes are in `src/components/bible/canvas/ZoomPanWrapper.tsx`.
 
-**Remove from `useGesture`:** `onDrag` handler and `drag` config block. Keep only `onWheel`.
-
-**Replace raw touch handlers** in the `useEffect` with finger-count logic:
-
-- **Tracking state:** `gestureType: 'none' | 'zoom' | 'pan'`, `lastDist`, `lastMidpoint`, velocity history buffer (last 3-4 frames with timestamps)
-- **touchstart:**
-  - 2 fingers → set `gestureType = 'zoom'`, record initial distance
-  - 3 fingers → set `gestureType = 'pan'`, record midpoint of all 3, call `api.stop()` to halt any active momentum
-- **touchmove:**
-  - `gestureType === 'zoom'` AND `touches.length === 2` → compute distance delta, map to fontSize (`fontSizeRef.current + delta * 0.15`), clamp 14–72, call `onFontSizeChange`. No translation.
-  - `gestureType === 'pan'` AND `touches.length === 3` → compute new midpoint of all 3 fingers, apply delta to `spring.x`/`spring.y` via `api.set()` (immediate, no animation). Push frame to velocity buffer with timestamp.
-  - All other counts → ignore
-- **touchend / touchcancel:**
-  - If `gestureType === 'pan'` → calculate velocity from last 3-4 frames, call `api.start({ x: ..., y: ... })` with the momentum config (tension: 170, friction: 26) to fling
-  - Reset all tracking: `gestureType = 'none'`, `lastDist = null`, `lastMidpoint = null`, clear velocity buffer
-
-**Velocity calculation:** Store `{ x, y, t }` for last 4 touchmove frames. On release, compute `vx = (last.x - earlier.x) / (last.t - earlier.t)` and scale by a momentum factor (~150) to project the fling destination.
-
-**Keep:** Safari gesture suppression (`gesturestart`/`gesturechange` preventDefault), `touchAction: "none"`, `onWheel` for desktop (ctrl+scroll = zoom, plain scroll = pan).
-
-### 2. `src/components/bible/canvas/CanvasBibleReader.tsx` — Loading state
-
-- Add `const [ready, setReady] = useState(false)`
-- Add `useEffect(() => { const t = setTimeout(() => setReady(true), 300); return () => clearTimeout(t); }, [])`
-- Wrap the canvas + HUD + hint in a container with `opacity: ready ? 1 : 0` and `transition: opacity 400ms ease-in`
-- Add a loading message visible when `!ready`: centered on parchment background, EB Garamond, 16px, color `#8b7355`, text "Full power canvas initializing...", with its own fade-in (CSS animation, `@keyframes fadeIn` from opacity 0→1 over 600ms)
-- HUD and hint share the same opacity gate as the canvas
-
-### 3. Update hint text
-
-Change top-right hint to reflect new gestures:
-```
-pinch to zoom text · three fingers to pan
-ctrl+scroll for semantic zoom
-```
-
-## Gesture map summary
+### Constants to add/change
 
 ```text
-Input                          → Action
-─────────────────────────────────────────
-Apple Pencil / Pen tip         → Ink stroke (InkCanvas pointer events)
-1 finger (draw mode on)        → Ink stroke (InkCanvas pointer events)
-1 finger (normal)              → Nothing
-2 fingers                      → Semantic zoom ONLY
-3 fingers                      → Pan with momentum ONLY
-Ctrl/Cmd + scroll (desktop)    → Semantic zoom
-Scroll wheel (desktop)         → Vertical pan
+MAX_VELOCITY:  1500 → 400  (px/s)
+MOMENTUM_FACTOR: 150 → 100  (reduce projection distance to match lower cap)
++ GRACE_MS = 180
++ DEAD_ZONE_PX = 8
++ MIN_VELOCITY = 50  (below this, zero momentum)
++ BOUNDARY_FRACTION = 0.6  (content can be at most 60% off-screen)
++ OVERSCROLL_RESISTANCE = 0.3
++ SNAPBACK_CONFIG = { tension: 120, friction: 20 }
 ```
+
+### 1. Hard velocity cap — trivial
+
+Change `MAX_VELOCITY` from 1500 to 400. The existing `clampVelocity` helper already enforces it.
+
+### 2. Grace period on finger lift
+
+Add tracking state: `graceTimer: ReturnType<typeof setTimeout> | null`, `graceVx/graceVy` for stored clean velocity, `inGracePeriod: boolean`.
+
+**On `touchend`/`touchcancel` when `gestureType === "pan"`:**
+- Freeze canvas at current position (`api.set()`, no animation)
+- Calculate smoothed velocity from buffer, store as `graceVx`/`graceVy`
+- Set `inGracePeriod = true`, start 180ms timer
+- After 180ms: if no new 3-finger gesture started, apply momentum (if velocity > 50px/s and < 400px/s cap), then clear grace state
+
+**During grace period:**
+- `onTouchStart`: if 3 fingers arrive, cancel grace timer, resume pan normally
+- `onTouchMove` / `onTouchStart` with < 3 fingers: ignore entirely (sloppy lift contacts)
+
+### 3. Boundary rubber-banding
+
+Add a `clampToBounds` helper that takes `(x, y)` and the viewport dimensions (`window.innerWidth`, `window.innerHeight`):
+- Compute content bounds: the animated div is at least `100vw × 100vh`. Max allowed offset = `±viewport * BOUNDARY_FRACTION` in each direction.
+- Returns `{ x, y, clamped: boolean }` — if past bounds, returns the edge position.
+
+**During active pan (`api.set` in touchmove):**
+- After computing new `x/y`, check if past boundary. If so, apply resistance: `edge + (overshoot * OVERSCROLL_RESISTANCE)`.
+
+**During momentum (`api.start` in grace callback):**
+- Compute projected target. If past boundary, redirect target to edge position using `SNAPBACK_CONFIG` instead of `SPRING_CONFIG`.
+
+**Desktop wheel pan** also gets the same boundary check — clamp the `api.start` target for `y`.
+
+### 4. Dead zone for micro-movements
+
+Track `totalMovement` (cumulative absolute px moved during a 3-finger gesture). Accumulate `Math.abs(dx) + Math.abs(dy)` on each touchmove frame.
+
+On gesture end: if `totalMovement < DEAD_ZONE_PX` (8px), skip momentum entirely and reset position to where the gesture started (undo any micro-drift).
+
+### Cleanup
+
+- Clear `graceTimer` in the effect's cleanup function to prevent leaks.
+- Reset `totalMovement` on touchstart alongside other state.
 
 ## Files modified
 
 - `src/components/bible/canvas/ZoomPanWrapper.tsx`
-- `src/components/bible/canvas/CanvasBibleReader.tsx`
 
