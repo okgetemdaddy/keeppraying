@@ -59,7 +59,6 @@ const SECTION_IDS = {
   readingMode: "reading-mode",
   toggles: "toggles",
   appearance: "appearance",
-  immersive: "immersive",
   studyMode: "study-mode",
   highlights: "highlights",
   bookmarks: "bookmarks",
