@@ -64,10 +64,9 @@ export default {
         "slide-right": { from: { opacity: "0", transform: "translateX(-20px)" }, to: { opacity: "1", transform: "translateX(0)" } },
         pulse_soft: { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
         "verse-glow": {
-          "0%": { boxShadow: "0 0 0 0 hsl(42 85% 46% / 0)", background: "transparent" },
-          "20%": { boxShadow: "0 0 18px 4px hsl(42 85% 46% / 0.35)", background: "hsl(42 85% 46% / 0.08)" },
-          "60%": { boxShadow: "0 0 12px 2px hsl(42 85% 46% / 0.2)", background: "hsl(42 85% 46% / 0.05)" },
-          "100%": { boxShadow: "0 0 0 0 hsl(42 85% 46% / 0)", background: "transparent" },
+          "0%":   { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)" },
+          "40%":  { transform: "scale(1.02)", boxShadow: "0 0 0 5px rgba(59, 130, 246, 0.12)" },
+          "100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)" },
         },
       },
       animation: {
