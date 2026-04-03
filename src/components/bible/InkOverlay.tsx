@@ -169,9 +169,13 @@ export function InkOverlay({
   const penColorRef = useRef(penColor);
   const penSizeRef = useRef(penSize);
   const penGlowRef = useRef(penGlow);
+  const activeBrushRef = useRef(activeBrush);
+  const activeOpacityRef = useRef(activeOpacity);
   penColorRef.current = penColor;
   penSizeRef.current = penSize;
   penGlowRef.current = penGlow ?? null;
+  activeBrushRef.current = activeBrush;
+  activeOpacityRef.current = activeOpacity;
 
   /* ── DOMMatrix-based coordinate normalization ── */
   const getTransformedPoint = useCallback(
