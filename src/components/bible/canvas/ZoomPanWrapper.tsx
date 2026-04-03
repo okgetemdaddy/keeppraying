@@ -141,10 +141,6 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
         preventDefault: true,
         // Use touch: true so we get touch count info
       },
-      pinch: {
-        scaleBounds: { min: 0.5, max: 3 },
-        preventDefault: true,
-      },
       wheel: {
         preventDefault: false, // we handle it per-event above
       },
