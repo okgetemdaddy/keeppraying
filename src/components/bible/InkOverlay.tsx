@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { getStroke } from "perfect-freehand";
+import simplify from "simplify-js";
 import type { Point } from "./HandwritingEngine";
 import { isClosedLoop, findVersesInsideStroke } from "@/lib/convexHull";
 
