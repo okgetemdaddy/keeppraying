@@ -418,6 +418,47 @@ export function BibleSleeveSheet({
                     className="shrink-0 mt-0.5"
                   />
                 </div>
+
+                {/* ── Immersive Mode (inside Appearance) ── */}
+                {immersiveSupported && onToggleImmersive && (
+                  <>
+                    <div className="h-px bg-border" />
+                    {immersiveIOSLimited ? (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Maximize className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium text-foreground">Full-Screen Reading</span>
+                        </div>
+                        <p className="text-[0.65rem] text-muted-foreground leading-relaxed">
+                          iOS doesn't support hiding browser bars directly. Add <span className="font-semibold text-primary">KeepRead.ing</span> to your Home Screen for a permanent full-screen, app-like experience with no browser UI.
+                        </p>
+                        <p className="text-[0.6rem] text-muted-foreground/70 mt-1.5 italic">
+                          Tap the share button (↑) → "Add to Home Screen"
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Maximize className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-sm text-foreground font-medium">Immersive Mode</span>
+                          </div>
+                          <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
+                            {immersiveStandalone
+                              ? "You're running in app mode — browser bars are already hidden"
+                              : "Hide browser bars for distraction-free reading"}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={!!immersiveActive}
+                          onCheckedChange={onToggleImmersive}
+                          disabled={immersiveStandalone}
+                          className="shrink-0 mt-0.5"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </CollapsibleContent>
             </Collapsible>
 
