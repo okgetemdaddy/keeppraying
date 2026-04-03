@@ -110,6 +110,8 @@ import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations,
 import { toast } from "sonner";
 import { IPadWaitlistBanner } from "@/components/bible/iPadWaitlistBanner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
+import { SuggestionBanner } from "@/components/bible/SuggestionBanner";
+import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
@@ -861,6 +863,7 @@ export function BibleReader() {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [waitlistDrawerOpen, setWaitlistDrawerOpen] = useState(false);
+  const [suggestionDrawerOpen, setSuggestionDrawerOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
@@ -1765,6 +1768,8 @@ export function BibleReader() {
 
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
+        {/* Suggestion Banner — hangs from toolbar break bar */}
+        <SuggestionBanner onClick={() => setSuggestionDrawerOpen(true)} />
         {/* iPad Waitlist Banner — hangs from toolbar break bar */}
         {!isIPhone && (
           <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
@@ -2604,6 +2609,7 @@ export function BibleReader() {
 
       {/* ── iPad Waitlist Drawer ── */}
       <IPadWaitlistDrawer open={waitlistDrawerOpen} onOpenChange={setWaitlistDrawerOpen} />
+      <BibleSuggestionSheet open={suggestionDrawerOpen} onClose={() => setSuggestionDrawerOpen(false)} />
     </article>
   );
 }
