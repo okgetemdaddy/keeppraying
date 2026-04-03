@@ -19,7 +19,6 @@ import {
   Maximize2,
   Minimize2,
   Search,
-  PenTool,
   BookMarked,
   Download,
 } from "lucide-react";
