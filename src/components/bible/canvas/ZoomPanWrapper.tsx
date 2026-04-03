@@ -47,18 +47,59 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
     config: SPRING_CONFIG,
   }));
 
-  // Suppress Safari's proprietary gesture events so @use-gesture receives pinch
+  // Suppress Safari gestures + raw touch-based pinch detection
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+
     const prevent = (e: Event) => e.preventDefault();
     el.addEventListener('gesturestart', prevent, { passive: false });
     el.addEventListener('gesturechange', prevent, { passive: false });
+
+    // Raw pinch detection — bypasses @use-gesture entirely for iPad reliability
+    let lastDist: number | null = null;
+
+    const getTouchDist = (touches: TouchList) => {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        lastDist = getTouchDist(e.touches);
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && lastDist !== null) {
+        e.preventDefault();
+        const dist = getTouchDist(e.touches);
+        const delta = dist - lastDist;
+        const next = Math.round(
+          Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + delta * 0.15))
+        );
+        if (next !== fontSizeRef.current) onFontSizeChange(next);
+        lastDist = dist;
+      }
+    };
+
+    const onTouchEnd = () => { lastDist = null; };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: false });
+    el.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
     return () => {
       el.removeEventListener('gesturestart', prevent);
       el.removeEventListener('gesturechange', prevent);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, []);
+  }, [onFontSizeChange]);
 
   useGesture(
     {
