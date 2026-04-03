@@ -140,6 +140,8 @@ export function InkOverlay({
   penColor = "#1a1a1a",
   penSize = 8,
   penGlow,
+  activeBrush,
+  activeOpacity,
   fingerDrawing = false,
   isDark = false,
   onCircleSelect,
