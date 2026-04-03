@@ -1,40 +1,76 @@
 
 
-# Bible Sleeve: Revert to Single Column + Reorganize
+# Native iPadOS App Waitlist Signup
 
 ## What this does
-Reverts the Bible Sleeve from the 2-column grid layout back to a single scrollable column. Appearance section starts expanded, all other sections start collapsed. Immersive Mode moves inside the Appearance section (no longer its own collapsible).
+Adds a vertical waitlist banner to the left of the Bible reading column and a matching email input at the bottom of the Bible Sleeve. Clicking the banner opens a drawer with feature highlights, an email input, and a thank-you blessing on submission.
 
 ## Technical changes
 
-### `src/components/bible/BibleSleeveSheet.tsx`
+### 1. Database migration: `waitlist_signups` table
 
-1. **Revert sheet width**: Change `w-[85vw] sm:w-[480px] lg:w-[560px]` back to `w-[80vw] sm:w-[360px]`
+```sql
+CREATE TABLE public.waitlist_signups (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text NOT NULL,
+  platform text NOT NULL DEFAULT 'ipados',
+  user_id uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (email, platform)
+);
+ALTER TABLE public.waitlist_signups ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can insert waitlist" ON public.waitlist_signups FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Users see own signups" ON public.waitlist_signups FOR SELECT TO authenticated USING (auth.uid() = user_id);
+```
 
-2. **Remove 2-column grid**: Replace the `grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0` container and the two inner `<div className="space-y-5">` wrappers with a single `<div className="space-y-5 pb-8">` containing all sections in order
+### 2. New component: `src/components/bible/iPadWaitlistBanner.tsx`
 
-3. **Move Immersive Mode into Appearance section**: Remove the standalone Immersive Mode collapsible (lines 587-632) and place its content inside the Appearance `CollapsibleContent` — after the OLED toggle, with a small divider. No separate section header; just render the immersive switch/tip inline
+- A vertically-oriented pill/tab fixed to the left edge of the `max-w-3xl` reading column
+- Text reads "iPad App" rotated 90° with a small Apple icon or tablet icon
+- Subtle warm gold accent border, gentle pulse animation
+- `onClick` opens the waitlist drawer
+- Dismissible: once user signs up or clicks X, store `ipad_waitlist_dismissed` in localStorage and hide
 
-4. **Remove `SECTION_IDS.immersive`** since it's no longer a standalone section
+### 3. New component: `src/components/bible/iPadWaitlistDrawer.tsx`
 
-5. **Default collapsed state**: Update `loadCollapsed()` — on first load (no localStorage key), return a set containing ALL section IDs *except* `appearance`. This means Appearance starts expanded, everything else starts collapsed. Existing users with saved preferences keep their choices
+- Uses `ResponsiveSheet` (Drawer on touch, Sheet on desktop)
+- **Content sections:**
+  - Header: "The Native iPadOS Experience is Coming" with tablet illustration/icon
+  - Feature bullets (4-5): Apple Pencil pressure sensitivity, offline chapters, Split View support, Siri shortcuts for prayer, native haptics
+  - Each bullet has an icon + short description
+- **Email signup form:**
+  - `Input` component for email with validation
+  - Arrow submit button (amber-500 accent)
+  - On submit: insert into `waitlist_signups`, show thank-you state
+- **Thank you state:**
+  - Replaces form with a blessing message: "God bless your study journey. We'll notify you when the iPad app is ready. 🕊️"
+  - Auto-closes after 3 seconds or tap to dismiss
+- **X close button** in top-right corner
+- Premium styling: cream/paper background, warm gold accents, EB Garamond headings
 
-### Section order (single column)
-1. Appearance (expanded by default, now includes Immersive Mode at bottom)
-2. Text Size
-3. iPad Study Mode (if applicable)
-4. Reading Mode
-5. Display Toggles
-6. Highlights
-7. Bookmarks
-8. Notes
-9. Verse Bunches
-10. My Studies
-11. Trash Bin
+### 4. Wire into `BibleReader.tsx`
+
+- Add `waitlistDrawerOpen` state
+- Render `iPadWaitlistBanner` positioned to the left of the reading area (using `relative` wrapper on the `max-w-3xl` container + `absolute -left-14` positioning for the banner)
+- Only show on desktop/iPad viewports (not phone — use `useDeviceDetect`)
+- Render `iPadWaitlistDrawer`
+
+### 5. Add email input to `BibleSleeveSheet.tsx`
+
+- After the Trash Bin section (bottom of the sleeve), add a compact waitlist signup section
+- Small label: "Native iPad App — Coming Soon"
+- Same email `Input` + arrow button pattern
+- Same `waitlist_signups` insert logic
+- Same thank-you/blessing state
+- No collapsible wrapper — always visible at the bottom
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleSleeveSheet.tsx` | Revert to single column, move Immersive into Appearance, default collapsed state |
+| `src/components/bible/iPadWaitlistBanner.tsx` | New — vertical left-edge pill trigger |
+| `src/components/bible/iPadWaitlistDrawer.tsx` | New — feature highlights + email signup drawer |
+| `src/components/bible/BibleReader.tsx` | Add waitlist state, render banner + drawer |
+| `src/components/bible/BibleSleeveSheet.tsx` | Add waitlist email input at bottom |
+| Migration | `waitlist_signups` table |
 
