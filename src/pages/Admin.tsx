@@ -215,15 +215,54 @@ export default function Admin() {
     }
   };
 
+  const [formattingBlog, setFormattingBlog] = useState(false);
+  const [reformattingId, setReformattingId] = useState<string | null>(null);
+
+  const formatBlogContent = async (content: string, title: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("format-blog", {
+        body: { content, title },
+      });
+      if (error) throw error;
+      return data?.formatted ?? content;
+    } catch (e) {
+      console.error("AI format failed, using raw content:", e);
+      toast({ title: "AI formatting skipped", description: "Saved with original formatting.", variant: "destructive" });
+      return content;
+    }
+  };
+
   const onBlogSubmit = async (values: BlogFormValues) => {
-    const { error } = await supabase.from("blog_posts").insert({
-      title: values.title, slug: values.slug, excerpt: values.excerpt || null,
-      content: values.content, cover_image_url: values.cover_image_url || null,
-      published: values.published, author_id: user?.id || null,
-    });
-    if (error) { toast({ title: "Failed to save post", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Blog post saved! 📝" });
-    blogForm.reset(); setShowBlogForm(false); load();
+    setFormattingBlog(true);
+    try {
+      const formatted = values.content ? await formatBlogContent(values.content, values.title) : values.content;
+      const { error } = await supabase.from("blog_posts").insert({
+        title: values.title, slug: values.slug, excerpt: values.excerpt || null,
+        content: formatted, cover_image_url: values.cover_image_url || null,
+        published: values.published, author_id: user?.id || null,
+      });
+      if (error) { toast({ title: "Failed to save post", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Blog post saved & formatted! 📝✨" });
+      blogForm.reset(); setShowBlogForm(false); load();
+    } finally {
+      setFormattingBlog(false);
+    }
+  };
+
+  const reformatPost = async (post: { id: string; title: string; content?: string | null }) => {
+    if (!post.content) return;
+    setReformattingId(post.id);
+    try {
+      const formatted = await formatBlogContent(post.content, post.title);
+      const { error } = await supabase.from("blog_posts").update({ content: formatted }).eq("id", post.id);
+      if (error) throw error;
+      toast({ title: "Post re-formatted! ✨", description: `"${post.title}" has been beautified.` });
+      load();
+    } catch (e) {
+      toast({ title: "Re-format failed", description: e instanceof Error ? e.message : "Try again", variant: "destructive" });
+    } finally {
+      setReformattingId(null);
+    }
   };
 
   const togglePublish = async (id: string, current: boolean | null) => {
@@ -861,7 +900,8 @@ export default function Admin() {
                             </FormItem>
                           )} />
                           <div className="flex gap-2">
-                            <GoldButton type="submit">Save Post</GoldButton>
+                            <GoldButton type="submit" disabled={formattingBlog}>
+                              {formattingBlog ? <><Loader2 className="w-4 h-4 animate-spin" />Formatting with AI…</> : "Save Post"}</GoldButton>
                             <DarkOutlineButton type="button" onClick={() => setShowBlogForm(false)}>Cancel</DarkOutlineButton>
                           </div>
                         </form>
@@ -891,6 +931,15 @@ export default function Admin() {
                             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
                             {post.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            onClick={() => reformatPost(post)}
+                            disabled={reformattingId === post.id}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+                            style={{ background: "hsl(38 40% 22%)", color: "hsl(38 60% 65%)" }}
+                            title="Re-format with AI"
+                          >
+                            {reformattingId === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                           </button>
                         </GuardianCard>
                       ))}
