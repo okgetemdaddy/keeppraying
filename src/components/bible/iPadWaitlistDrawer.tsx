@@ -380,7 +380,7 @@ export function SleeveWaitlistInput() {
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
         <Tablet className="h-3.5 w-3.5 text-amber-500" />
-        <span className="text-xs font-medium text-foreground">Native iPad App — Coming Soon</span>
+        <span className="text-[0.65rem] font-medium text-foreground leading-tight">Native iPad App — Coming Soon</span>
       </div>
       <div className="flex gap-1.5">
         <Input
