@@ -445,9 +445,12 @@ export function InkOverlay({
   const renderedStrokes = useMemo(
     () =>
       strokes.map((s) => {
+        // Resolve brush config for this stroke (backward compat: default to ballpoint)
+        const brushConfig = resolveBrush(s.brushType);
+        const strokeOpts = getBrushStrokeOptions(brushConfig, s.size);
         const outline = getStroke(
           s.points.map((p) => [p.x, p.y, p.pressure]),
-          { ...STROKE_OPTIONS, size: s.size },
+          strokeOpts,
         );
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
@@ -456,18 +459,28 @@ export function InkOverlay({
         const isNeon = !!s.glow;
         const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
+
+        // Determine filter: brush texture > neon > ink-bleed
+        const textureFilter = brushConfig.textureId ? `url(#${brushConfig.textureId})` : null;
         const appliedFilter = isSelected
           ? undefined
           : isNeon
             ? `url(#${neonFilterId})`
-            : bleedFilter;
+            : textureFilter ?? bleedFilter;
+
+        // Opacity: use stroke-level opacity if set, else brush default
+        const strokeOpacity = isSelected ? 0.5 : isSepia ? 0.6 : (s.opacity ?? brushConfig.opacity);
+
+        // Blend mode from brush config
+        const blendMode = isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : brushConfig.blendMode !== "normal" ? brushConfig.blendMode : undefined;
+
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
+            opacity={strokeOpacity}
             filter={appliedFilter}
             onClick={(e) => {
               e.stopPropagation();
@@ -475,7 +488,7 @@ export function InkOverlay({
             }}
             className="cursor-pointer"
             style={{
-              mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
+              mixBlendMode: blendMode,
               filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
             }}
           />
