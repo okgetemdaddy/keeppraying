@@ -1558,6 +1558,7 @@ export function BibleReader() {
       setChapterIdx(Math.max(chIdx, 0));
       if (verse) {
         pendingScrollVerseRef.current = verse;
+        searchNavCounter.current += 1;
       }
     },
     [index],

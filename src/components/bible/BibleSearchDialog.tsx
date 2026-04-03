@@ -65,22 +65,25 @@ export function BibleSearchDialog({
       addRecentSearch(query);
       onOpenChange(false);
 
-      switch (result.type) {
-        case "reference":
-          onNavigate(result.bookUsfm, result.chapter, result.verseStart);
-          break;
-        case "note":
-          onNavigate(result.bookUsfm, result.chapterNumber, result.verseNumber);
-          break;
-        case "bunch":
-          if (result.firstBookUsfm && result.firstChapter) {
-            onNavigate(result.firstBookUsfm, result.firstChapter, result.firstVerse);
-          }
-          break;
-        case "ai":
-          onNavigate(result.bookUsfm, result.chapter, result.verseStart);
-          break;
-      }
+      // Let dialog exit animation clear before navigating
+      setTimeout(() => {
+        switch (result.type) {
+          case "reference":
+            onNavigate(result.bookUsfm, result.chapter, result.verseStart);
+            break;
+          case "note":
+            onNavigate(result.bookUsfm, result.chapterNumber, result.verseNumber);
+            break;
+          case "bunch":
+            if (result.firstBookUsfm && result.firstChapter) {
+              onNavigate(result.firstBookUsfm, result.firstChapter, result.firstVerse);
+            }
+            break;
+          case "ai":
+            onNavigate(result.bookUsfm, result.chapter, result.verseStart);
+            break;
+        }
+      }, 50);
     },
     [query, onOpenChange, onNavigate],
   );

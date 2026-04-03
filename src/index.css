@@ -363,16 +363,30 @@
   /* Verse glow after search navigation */
   .animate-verse-glow {
     @apply rounded-md;
-    animation: verse-glow 2s ease-out forwards;
-    position: relative;
-    z-index: 1;
+    will-change: transform;
+    border-radius: 6px;
+  }
+
+  /* Dark mode: gold-tinted glow */
+  .bible-dark .animate-verse-glow {
+    animation: verse-glow-dark 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes verse-glow-dark {
+    0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 134, 11, 0); }
+    40%  { transform: scale(1.02); box-shadow: 0 0 0 5px rgba(184, 134, 11, 0.15); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 134, 11, 0); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .animate-verse-glow {
-      animation: none;
-      background-color: hsl(var(--primary) / 0.1);
+    .animate-verse-glow,
+    .bible-dark .animate-verse-glow {
+      animation: none !important;
+      background-color: rgba(59, 130, 246, 0.08);
       transition: background-color 0.3s ease;
+    }
+    .bible-dark .animate-verse-glow {
+      background-color: rgba(184, 134, 11, 0.1);
     }
   }
 
