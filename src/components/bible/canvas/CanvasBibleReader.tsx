@@ -87,6 +87,15 @@ const CanvasBibleReader: React.FC = () => {
           drawMode={drawMode}
           fontSize={fontSize}
           onFontSizeChange={setFontSize}
+          overlay={
+            <InkCanvas
+              strokes={strokes}
+              drawMode={drawMode}
+              onStrokeStart={handleStrokeStart}
+              onStrokePoint={handleStrokePoint}
+              onStrokeEnd={handleStrokeEnd}
+            />
+          }
         >
           <div style={{ maxWidth: 680, margin: "0 auto", position: "relative" }}>
             <header style={{ textAlign: "center", marginBottom: 40 }}>
@@ -176,14 +185,6 @@ const CanvasBibleReader: React.FC = () => {
             >
               ✦ ✦ ✦
             </div>
-
-            <InkCanvas
-              strokes={strokes}
-              drawMode={drawMode}
-              onStrokeStart={handleStrokeStart}
-              onStrokePoint={handleStrokePoint}
-              onStrokeEnd={handleStrokeEnd}
-            />
           </div>
         </ZoomPanWrapper>
 
