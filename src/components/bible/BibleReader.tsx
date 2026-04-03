@@ -1458,7 +1458,14 @@ export function BibleReader() {
     [],
   );
 
-  const handleSaveNote = useCallback(
+  const handleCrossRef = useCallback(
+    (verseNumber: number) => {
+      setCrossRefVerse(verseNumber);
+      setCrossRefOpen(true);
+    },
+    [],
+  );
+
     (content: string, existingId?: string) => {
       if (noteInputVerse === null) return;
       mutations.saveNote.mutate({
