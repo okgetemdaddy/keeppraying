@@ -99,6 +99,7 @@ import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
 import { CrossReferencePopover } from "@/components/bible/CrossReferencePopover";
+import { ReferenceBloom } from "@/components/bible/ReferenceBloom";
 import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
