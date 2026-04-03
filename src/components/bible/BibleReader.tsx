@@ -971,6 +971,7 @@ export function BibleReader() {
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
   const glowingElRef = useRef<HTMLElement | null>(null);
+  const searchNavCounter = useRef(0);
 
   /** Remove glow from the previously-highlighted verse */
   const clearPreviousGlow = useCallback(() => {
