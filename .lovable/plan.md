@@ -1,51 +1,58 @@
 
 
-# Refine Bible Search-to-Verse Navigation & Glow Animation
+# Word-Boundary Snapping for Bible Highlights
 
-## Changes
+## What this does
+When a user drags to highlight text in the Bible reader, their selection will automatically snap to complete words instead of cutting off mid-word. A soft preview highlight appears before they pick a color. Touch devices (iPad) get the same behavior.
 
-### 1. `tailwind.config.ts` — Replace keyframe with compositor-safe properties only
+## Technical changes
 
-Current keyframe animates `background` (layout property). Replace with `transform` + `box-shadow` only:
+### 1. `BibleReader.tsx` — Add `snapToWordBoundaries` helper + apply in `handleMouseUp`
 
-```
-verse-glow: {
-  "0%":   { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)" },
-  "40%":  { transform: "scale(1.02)", boxShadow: "0 0 0 5px rgba(59, 130, 246, 0.12)" },
-  "100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)" },
+Add a utility function (outside the component or at top of the effect):
+
+```typescript
+function snapToWordBoundaries(text: string, start: number, end: number) {
+  while (start > 0 && /\w/.test(text[start - 1])) start--;
+  while (end < text.length && /\w/.test(text[end])) end++;
+  return { start, end };
 }
 ```
-Change animation duration from `2s ease-out` to `0.8s cubic-bezier(0.22, 1, 0.36, 1)`.
 
-### 2. `src/index.css` — Update `.animate-verse-glow` + add dark mode variant + fix reduced-motion
+In the `handleMouseUp` listener (line 1329-1338), after computing `textStart` and `selectedText.length`, snap before calling `setPartialSelection`:
 
-Replace existing `.animate-verse-glow` block (lines 363-369) and the reduced-motion block (lines 371-377):
+```typescript
+const rawStart = Math.max(textStart, 0);
+const rawEnd = rawStart + selectedText.length;
+const snapped = snapToWordBoundaries(textContent, rawStart, rawEnd);
+setPartialSelection({ verseNumber: startVerse, start: snapped.start, end: snapped.end });
+```
 
-- Remove `position: relative; z-index: 1;` (unnecessary, can interfere with ink overlay stacking)
-- Add `will-change: transform` to the class
-- Add `.bible-dark .animate-verse-glow` with a gold-tinted `verse-glow-dark` keyframe (dark amber `rgba(184, 134, 11, ...)` instead of blue)
-- Define `@keyframes verse-glow-dark` inline in CSS
-- Update `prefers-reduced-motion` to cover both light and dark variants with background-color fade
+### 2. `BibleReader.tsx` — Add `touchend` listener alongside `mouseup`
 
-### 3. `src/components/bible/BibleReader.tsx` — Scroll-end detection + same-chapter fix
+In the same `useEffect` (line 1309-1372), register a `touchend` handler that reuses the identical `getVerseFromNode` + snap logic. Both listeners share the same handler function; clean up both on unmount.
 
-**a) Add `searchNavCounter` ref** (near line 972) and increment it in `handleSearchNavigate` (line 1540). Add it to the `useEffect` dependency array (line 1046: `[verses]` → `[verses, searchNavCounter.current]`).
+### 3. `HighlightedText` — Add `previewRange` prop
 
-**b) Replace the `setTimeout(..., 400)` glow trigger** (lines 998-1018) with scroll-end detection:
-- Listen for `scroll` events on `readingAreaRef.current ?? window` with a 120ms debounce
-- When scroll settles, apply glow (clearPreviousGlow → willChange → reflow → add class → animationend cleanup)
-- Add a 500ms fallback timeout in case no scroll event fires (element already in view)
+Add optional `previewRange?: { start: number; end: number }` to the component's props. When set and no existing highlight covers that range, insert an additional span with `bg-primary/10 rounded-sm` styling into the rendered parts array — using the same cursor/span-splitting logic already in place.
 
-### 4. `src/components/bible/BibleSearchDialog.tsx` — 50ms navigation delay
+### 4. `EnrichedVerse` — Thread `previewRange` through (props only)
 
-In `handleSelect` (line 63-86), wrap the `switch` block in a `setTimeout(..., 50)` so the dialog exit animation clears before navigation begins.
+Add `previewRange` to `EnrichedVerseProps` and pass it to `HighlightedText`. No structural changes to the component.
 
-## Files Changed
+### 5. Verse render loop — Compute and pass `previewRange`
+
+In the `verses.map()` loop (line 1985), compute `previewRange` from `partialSelection` state:
+
+```typescript
+previewRange={partialSelection?.verseNumber === v.number
+  ? { start: partialSelection.start, end: partialSelection.end }
+  : undefined}
+```
+
+## Files changed
 
 | File | Change |
 |------|--------|
-| `tailwind.config.ts` | Compositor-safe keyframe (transform + box-shadow only), 0.8s duration |
-| `src/index.css` | Dark mode gold variant, will-change, improved reduced-motion |
-| `src/components/bible/BibleReader.tsx` | Scroll-end detection, searchNavCounter for same-chapter fix |
-| `src/components/bible/BibleSearchDialog.tsx` | 50ms delay before navigation |
+| `src/components/bible/BibleReader.tsx` | `snapToWordBoundaries` helper; apply in `handleMouseUp`; add `touchend` listener; add `previewRange` prop to `HighlightedText` and `EnrichedVerseProps`; pass `partialSelection` as preview in render loop |
 
