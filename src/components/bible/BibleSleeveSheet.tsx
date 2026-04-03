@@ -833,7 +833,44 @@ export function BibleSleeveSheet({
             </Collapsible>
 
 
+            <div className="h-px bg-border" />
 
+            {/* ── My Studies ── */}
+            <Collapsible open={isOpen(SECTION_IDS.studies)}>
+              <SectionHeader icon={ImageIcon} label="My Studies" badge={studyArtifacts.length} isOpen={isOpen(SECTION_IDS.studies)} onToggle={() => toggleSection(SECTION_IDS.studies)} />
+              <CollapsibleContent className="mt-3">
+                {studyArtifacts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    No saved study snapshots yet. Export a chapter canvas to save one.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {studyArtifacts.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => onNavigateToArtifact?.(a)}
+                        className="flex items-center gap-3 w-full text-left rounded-lg border border-border px-3 py-2.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <img
+                          src={a.image_url}
+                          alt={a.title}
+                          className="h-10 w-10 rounded-md object-cover border border-border shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
+                          <p className="text-[0.6rem] text-muted-foreground">
+                            {new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            {a.stroke_count > 0 && ` · ${a.stroke_count} strokes`}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            <div className="h-px bg-border" />
 
             {/* ── Trash Bin (always visible) ── */}
             <section>
@@ -846,6 +883,7 @@ export function BibleSleeveSheet({
                 <span className="ml-auto text-xs text-muted-foreground">30 days</span>
               </button>
             </section>
+            </div>
           </div>
         </div>
       </SheetContent>
