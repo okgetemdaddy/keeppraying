@@ -380,8 +380,10 @@ function EnrichedVerse({
   verseIdString,
   highlightStyle = "invert",
   previewRange,
+  onLongPressVerseNumber,
 }: EnrichedVerseProps) {
   const [showAnnotation, setShowAnnotation] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bunchBorderClass = useMemo(() => {
     if (!bunchGroupPosition || hideBunches) return "";
     const firstBunchId = bunchItems[0]?.bunch_id;
