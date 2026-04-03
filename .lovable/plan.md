@@ -1,32 +1,51 @@
 
 
-# Rotate iPad App Pill & Reposition to Break Bar
+# Suggestions Pill + Drawer on Bible Toolbar
 
-## What changes
-The "iPad App" pill banner gets rotated 90° counter-clockwise (so text reads left-to-right horizontally but the pill itself is oriented horizontally along the toolbar break bar) and repositioned to sit at the toolbar's bottom border, 20% from the left edge of the page.
+## What this does
+Adds a dark-themed "Suggestions" pill to the left of the existing iPad App pill on the toolbar break bar. Clicking it opens a redesigned suggestion drawer with a spacious writing area (pencil-friendly with auto-OCR), a type option, heartfelt copy about prayerful consideration of suggestions and bug reports, and submission to `feedback_submissions`.
 
 ## Technical changes
 
-### `src/components/bible/iPadWaitlistBanner.tsx`
+### 1. New component: `src/components/bible/SuggestionBanner.tsx`
 
-- Remove vertical text (`writingMode: "vertical-rl"`) — text will now read normally left-to-right
-- Rotate the entire button 90° counter-clockwise via `style={{ transform: "rotate(-90deg)", transformOrigin: "center center" }}`
-- Change layout from `flex-col` to `flex-row` (icon + text side by side)
-- Update rounded corners to `rounded-b-xl` with `border-t-0` (hangs from the bar)
+- Identical structure to `iPadWaitlistBanner.tsx` — rotated -90°, hangs from toolbar break bar
+- Dark mode styling: `bg-slate-800 dark:bg-slate-900 border-slate-600/50 text-slate-200`
+- Positioned at `left-[12%]` (to the left of the iPad pill at `left-[20%]`)
+- Uses `Lightbulb` icon + "Suggestions" uppercase text
+- No dismiss logic — always visible
 
-### `src/components/bible/BibleReader.tsx`
+### 2. Redesign `src/components/bible/BibleSuggestionSheet.tsx`
 
-- Move `<IPadWaitlistBanner>` out of the reading area `div` and into or just below the sticky toolbar `div` (the `border-b` bar at line 1767)
-- Position it with `absolute` at `left-[20%] top-full` relative to the toolbar container so it hangs from the break bar at 20% from the left page edge
-- Ensure the toolbar wrapper has `relative` positioning for the absolute child
+Complete rewrite of the existing sheet into a premium left-side drawer:
 
-### Section order of changes
-1. Restyle the pill component (horizontal layout, rotated -90°, new border radius)
-2. Relocate the render position from reading area to toolbar bar
-3. Adjust z-index to stay above content but below modals
+- **Side**: `side="left"` (drawer flies out from left)
+- **Writing space section**: Large textarea (min-h-[200px]) styled as a clean writing canvas with subtle dot-grid background — pencil-friendly on iPad
+- **Auto-OCR note**: Small label "Apple Pencil supported — handwriting auto-converts to text ✏️"
+- **Type toggle**: Small "Prefer to type?" link that switches to standard keyboard input mode
+- **Title input**: Optional, compact
+- **Category toggle**: "Suggestion" or "Bug Report" pill selector
+- **Heartfelt copy section** with clean SVG accents:
+  - "Every suggestion is prayerfully considered by our team."
+  - "We're constantly fine-tuning KeepRead.ing because we love the Word of God and want to interact with it as deeply as possible."
+  - "All suggestions welcome — and bugs reported here are fixed as soon as we know about them."
+  - "Thank you for blessing this ministry. 🙏"
+- **Submit button**: `Send` icon, full width
+- **Thank-you state**: Heart icon with blessing message, auto-close after 2.5s
+- Submits to existing `feedback_submissions` table with `feedback_type: "bible_suggestion"` or `"bible_bug"`
+
+### 3. Wire into `BibleReader.tsx`
+
+- Add `suggestionDrawerOpen` state
+- Import and render `SuggestionBanner` at `left-[12%]` inside the toolbar `relative` container (before the iPad pill)
+- Import and render `BibleSuggestionSheet` with `open={suggestionDrawerOpen}`
+- Show on all devices (not just iPad)
+
+## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/iPadWaitlistBanner.tsx` | Rotate -90°, horizontal layout, new border styling |
-| `src/components/bible/BibleReader.tsx` | Move banner to toolbar break bar at 20% left |
+| `src/components/bible/SuggestionBanner.tsx` | New — dark pill hanging from toolbar |
+| `src/components/bible/BibleSuggestionSheet.tsx` | Rewrite — premium left drawer with writing space, OCR, category toggle, heartfelt copy |
+| `src/components/bible/BibleReader.tsx` | Wire suggestion state + render banner and drawer |
 
