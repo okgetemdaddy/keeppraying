@@ -788,6 +788,9 @@ export default function Admin() {
               {/* ── SERMON CACHE ── */}
               {activeTab === "sermon-cache" && <SermonCacheTab />}
 
+              {/* ── KEEPREAD.ING WAITLIST ── */}
+              {activeTab === "waitlist" && <WaitlistTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
