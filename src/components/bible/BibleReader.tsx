@@ -1070,6 +1070,7 @@ export function BibleReader() {
     scheduleInkSave([]);
   }, [inkHistory, scheduleInkSave]);
 
+
   // ── Voice annotation handler ──
   const handleVoiceTranscript = useCallback(
     (transcript: string, linkedVerse: number | null) => {
@@ -1278,6 +1279,80 @@ export function BibleReader() {
   }, [chapterData?.bookmarks]);
   const bunchMap = useMemo(() => groupByVerse(chapterData?.bunchItems ?? []), [chapterData?.bunchItems]);
   const bunchPositions = useMemo(() => computeBunchPositions(verses, bunchMap), [verses, bunchMap]);
+
+  // ── X-gesture handler: delete highlights & ink under the X ──
+  const handleXGesture = useCallback(
+    (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => {
+      let highlightCount = 0;
+      let strokeCount = 0;
+
+      // Delete highlights under the X bbox
+      const svgEl = document.querySelector(".absolute.inset-0.z-10") as SVGSVGElement | null;
+      const svgRect = svgEl?.getBoundingClientRect();
+      const z = studyMode ? (typeof inkZoom === "number" ? inkZoom : 1) : 1;
+
+      if (svgRect) {
+        const screenBbox = {
+          left: bbox.minX * z + svgRect.left,
+          top: bbox.minY * z + svgRect.top,
+          right: bbox.maxX * z + svgRect.left,
+          bottom: bbox.maxY * z + svgRect.top,
+        };
+
+        document.querySelectorAll("[data-verse]").forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const intersects =
+            rect.left < screenBbox.right &&
+            rect.right > screenBbox.left &&
+            rect.top < screenBbox.bottom &&
+            rect.bottom > screenBbox.top;
+
+          if (intersects) {
+            const vNum = parseInt(el.getAttribute("data-verse") ?? "", 10);
+            if (!isNaN(vNum)) {
+              const highlights = highlightMap.get(vNum) ?? [];
+              highlights.forEach((h) => {
+                mutations.removeHighlight.mutate(h.id);
+                highlightCount++;
+              });
+            }
+          }
+        });
+      }
+
+      // Delete ink strokes whose bbox intersects the X bbox
+      const strokesToRemove: string[] = [];
+      inkHistory.strokes.forEach((s) => {
+        const sMinX = Math.min(...s.points.map((p) => p.x));
+        const sMaxX = Math.max(...s.points.map((p) => p.x));
+        const sMinY = Math.min(...s.points.map((p) => p.y));
+        const sMaxY = Math.max(...s.points.map((p) => p.y));
+
+        const intersects =
+          sMinX < bbox.maxX &&
+          sMaxX > bbox.minX &&
+          sMinY < bbox.maxY &&
+          sMaxY > bbox.minY;
+
+        if (intersects) strokesToRemove.push(s.id);
+      });
+
+      if (strokesToRemove.length > 0) {
+        strokeCount = strokesToRemove.length;
+        inkHistory.removeStrokes(strokesToRemove);
+        const remaining = inkHistory.strokes.filter((s) => !strokesToRemove.includes(s.id));
+        scheduleInkSave(remaining);
+      }
+
+      const parts: string[] = [];
+      if (highlightCount > 0) parts.push(`${highlightCount} highlight${highlightCount > 1 ? "s" : ""}`);
+      if (strokeCount > 0) parts.push(`${strokeCount} stroke${strokeCount > 1 ? "s" : ""}`);
+      if (parts.length > 0) {
+        toast.success(`Removed ${parts.join(" and ")}`, { icon: "✕" });
+      }
+    },
+    [highlightMap, mutations, inkHistory, scheduleInkSave, studyMode],
+  );
 
   // ── Derive current-chapter selection set from crossSelections ──
   const selectedVerses = useMemo(() => {
@@ -2258,6 +2333,7 @@ export function BibleReader() {
                           }
                         }
                       }}
+                      onXGesture={handleXGesture}
                     />
                   ) : undefined
                 }

@@ -81,6 +81,21 @@ export function useInkHistory(initialStrokes: InkStroke[] = []) {
     });
   }, [pushUndo]);
 
+  const removeStrokes = useCallback((strokeIds: string[]) => {
+    setStrokes((prev) => {
+      const removed = prev.filter((s) => strokeIds.includes(s.id));
+      const remaining = prev.filter((s) => !strokeIds.includes(s.id));
+      if (removed.length > 0) {
+        pushUndo(prev);
+        setTrashBin((bin) => [
+          ...bin,
+          { id: `trash-${Date.now()}`, strokes: removed, clearedAt: new Date() },
+        ]);
+      }
+      return remaining;
+    });
+  }, [pushUndo]);
+
   const replaceStrokes = useCallback((newStrokes: InkStroke[]) => {
     undoStackRef.current = [];
     redoStackRef.current = [];
@@ -90,6 +105,7 @@ export function useInkHistory(initialStrokes: InkStroke[] = []) {
   return {
     strokes,
     addStroke,
+    removeStrokes,
     undo,
     redo,
     clearAll,

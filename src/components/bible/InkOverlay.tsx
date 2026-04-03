@@ -48,6 +48,8 @@ interface InkOverlayProps {
   onWordCircle?: (words: string, verseNumber: number, anchorPoint: { x: number; y: number }) => void;
   /** Callback when an underline gesture is detected over text */
   onUnderlineGesture?: (verseNumber: number, underlinedText: string) => void;
+  /** Callback when an X gesture is detected — bbox is in SVG coordinates */
+  onXGesture?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
 }
 
 const STROKE_OPTIONS = {
@@ -76,6 +78,60 @@ function isUnderlineGesture(points: Array<{ x: number; y: number }>): boolean {
   return true;
 }
 
+/* ── X-gesture detection ── */
+function isXGesture(
+  points: Array<{ x: number; y: number }>,
+): { detected: boolean; bbox: { minX: number; minY: number; maxX: number; maxY: number } } {
+  const nope = { detected: false, bbox: { minX: 0, minY: 0, maxX: 0, maxY: 0 } };
+  if (points.length < 8) return nope;
+
+  const minX = Math.min(...points.map((p) => p.x));
+  const maxX = Math.max(...points.map((p) => p.x));
+  const minY = Math.min(...points.map((p) => p.y));
+  const maxY = Math.max(...points.map((p) => p.y));
+  const xRange = maxX - minX;
+  const yRange = maxY - minY;
+
+  // Must be big enough and roughly square-ish
+  if (xRange < 30 || yRange < 30) return nope;
+  if (xRange / yRange > 3 || yRange / xRange > 3) return nope;
+
+  // Find the sharpest direction reversal point (vertex of the X)
+  let bestReversal = -1;
+  let bestIdx = Math.floor(points.length / 2);
+  for (let i = 2; i < points.length - 2; i++) {
+    const dx1 = points[i].x - points[i - 2].x;
+    const dy1 = points[i].y - points[i - 2].y;
+    const dx2 = points[i + 2].x - points[i].x;
+    const dy2 = points[i + 2].y - points[i].y;
+    // Dot product of direction vectors — most negative = sharpest reversal
+    const dot = dx1 * dx2 + dy1 * dy2;
+    const mag = Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2)) || 1;
+    const cosAngle = dot / mag;
+    if (cosAngle < bestReversal || bestReversal === -1) {
+      bestReversal = cosAngle;
+      bestIdx = i;
+    }
+  }
+
+  // Must have a sharp reversal (cos < -0.3 means angle > ~107°)
+  if (bestReversal > -0.3) return nope;
+
+  const seg1 = points.slice(0, bestIdx + 1);
+  const seg2 = points.slice(bestIdx);
+
+  // Each segment should span most of the bbox
+  const seg1xRange = Math.max(...seg1.map((p) => p.x)) - Math.min(...seg1.map((p) => p.x));
+  const seg1yRange = Math.max(...seg1.map((p) => p.y)) - Math.min(...seg1.map((p) => p.y));
+  const seg2xRange = Math.max(...seg2.map((p) => p.x)) - Math.min(...seg2.map((p) => p.x));
+  const seg2yRange = Math.max(...seg2.map((p) => p.y)) - Math.min(...seg2.map((p) => p.y));
+
+  if (seg1xRange / xRange < 0.4 || seg1yRange / yRange < 0.4) return nope;
+  if (seg2xRange / xRange < 0.4 || seg2yRange / yRange < 0.4) return nope;
+
+  return { detected: true, bbox: { minX, minY, maxX, maxY } };
+}
+
 export function InkOverlay({
   zoom,
   strokes,
@@ -90,10 +146,12 @@ export function InkOverlay({
   onPencilFirstContact,
   onWordCircle,
   onUnderlineGesture,
+  onXGesture,
 }: InkOverlayProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const livePathRef = useRef<SVGPathElement>(null);
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
+  const [xFlash, setXFlash] = useState<{ x: number; y: number } | null>(null);
 
   // ── RAF point buffer (NOT React state) ──
   const pointsBufferRef = useRef<Point[]>([]);
@@ -337,6 +395,23 @@ export function InkOverlay({
       }
     }
 
+    /* ── X-gesture detection (delete highlights & ink) ── */
+    if (onXGesture && !isClosedLoop(currentPoints)) {
+      const xResult = isXGesture(currentPoints);
+      if (xResult.detected) {
+        const centerX = (xResult.bbox.minX + xResult.bbox.maxX) / 2;
+        const centerY = (xResult.bbox.minY + xResult.bbox.maxY) / 2;
+        // Flash red × at center
+        setXFlash({ x: centerX, y: centerY });
+        setTimeout(() => setXFlash(null), 400);
+        // Haptic double-tap
+        if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
+        onXGesture(xResult.bbox);
+        pointsBufferRef.current = [];
+        return;
+      }
+    }
+
     /* ── Underline gesture detection ── */
     if (onUnderlineGesture && isUnderlineGesture(currentPoints) && svgRef.current) {
       const svgRect = svgRef.current.getBoundingClientRect();
@@ -423,7 +498,7 @@ export function InkOverlay({
 
     onStrokeComplete(newStroke);
     pointsBufferRef.current = [];
-  }, [penColor, penSize, penGlow, zoom, onStrokeComplete, onCircleSelect, onWordCircle, onUnderlineGesture]);
+  }, [penColor, penSize, penGlow, zoom, onStrokeComplete, onCircleSelect, onWordCircle, onUnderlineGesture, onXGesture]);
 
   const handlePointerCancel = useCallback(() => {
     isDrawingRef.current = false;
@@ -590,6 +665,24 @@ export function InkOverlay({
           opacity={0.25}
           style={{ pointerEvents: "none" }}
         />
+      )}
+
+      {/* X-gesture flash */}
+      {xFlash && (
+        <text
+          x={xFlash.x}
+          y={xFlash.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="32"
+          fill="hsl(0, 72%, 51%)"
+          style={{
+            pointerEvents: "none",
+            animation: "xFlashFade 400ms ease-out forwards",
+          }}
+        >
+          ✕
+        </text>
       )}
     </svg>
   );
