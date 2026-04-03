@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bookmark,
   BookmarkCheck,
+  BookMarked,
   StickyNote,
   Package,
   X,
@@ -56,6 +57,7 @@ export interface FloatingToolbarProps {
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
   onAddToBunch?: () => void;
+  onCrossRef?: (verseNumber: number) => void;
   onDismiss: () => void;
   isAuthenticated: boolean;
   hasBunches?: boolean;
@@ -83,6 +85,7 @@ function ToolbarActions({
   onAddNote,
   onCreateBunch,
   onAddToBunch,
+  onCrossRef,
   hasBunches,
   onDismiss,
   layout = "horizontal",
@@ -213,6 +216,21 @@ function ToolbarActions({
           >
             <StickyNote className="h-4 w-4" />
             {isVertical && <span className="text-sm">Add Note</span>}
+          </button>
+        )}
+
+        {/* ── Cross-References ── */}
+        {primaryVerse && onCrossRef && (
+          <button
+            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
+            title="Cross-references"
+            onClick={() => {
+              onCrossRef(primaryVerse);
+              onDismiss();
+            }}
+          >
+            <BookMarked className="h-4 w-4" />
+            {isVertical && <span className="text-sm">Cross-refs</span>}
           </button>
         )}
 

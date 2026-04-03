@@ -98,6 +98,7 @@ import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
+import { CrossReferencePopover } from "@/components/bible/CrossReferencePopover";
 import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
@@ -359,6 +360,7 @@ interface EnrichedVerseProps {
   verseIdString?: string;
   highlightStyle?: HighlightStyleMode;
   previewRange?: { start: number; end: number };
+  onLongPressVerseNumber?: (verseNumber: number) => void;
 }
 
 function EnrichedVerse({
@@ -379,8 +381,10 @@ function EnrichedVerse({
   verseIdString,
   highlightStyle = "invert",
   previewRange,
+  onLongPressVerseNumber,
 }: EnrichedVerseProps) {
   const [showAnnotation, setShowAnnotation] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bunchBorderClass = useMemo(() => {
     if (!bunchGroupPosition || hideBunches) return "";
     const firstBunchId = bunchItems[0]?.bunch_id;
@@ -417,7 +421,17 @@ function EnrichedVerse({
         className={`${bunchBgClass} ${selectedClass} cursor-pointer`}
         onClick={(e) => onTapSelect(verse.number, e)}
       >
-        <sup className="mx-0.5 text-[0.65rem] font-semibold text-primary/60 select-none align-super">
+        <sup
+          className="mx-0.5 text-[0.65rem] font-semibold text-primary/60 select-none align-super"
+          onPointerDown={() => {
+            if (onLongPressVerseNumber) {
+              longPressTimer.current = setTimeout(() => onLongPressVerseNumber(verse.number), 500);
+            }
+          }}
+          onPointerUp={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerLeave={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerCancel={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+        >
           <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
@@ -448,7 +462,17 @@ function EnrichedVerse({
             <PenTool className="h-3 w-3" />
           </button>
         )}
-        <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
+        <sup
+          className="mr-1 text-xs font-semibold text-primary/70 select-none"
+          onPointerDown={() => {
+            if (onLongPressVerseNumber) {
+              longPressTimer.current = setTimeout(() => onLongPressVerseNumber(verse.number), 500);
+            }
+          }}
+          onPointerUp={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerLeave={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerCancel={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+        >
           {verse.number}
         </sup>
         <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
@@ -558,6 +582,10 @@ export function BibleReader() {
 
   // ── Note input state ──
   const [noteInputVerse, setNoteInputVerse] = useState<number | null>(null);
+
+  // ── Cross-reference popover state ──
+  const [crossRefVerse, setCrossRefVerse] = useState<number | null>(null);
+  const [crossRefOpen, setCrossRefOpen] = useState(false);
 
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
@@ -1430,6 +1458,14 @@ export function BibleReader() {
     [],
   );
 
+  const handleCrossRef = useCallback(
+    (verseNumber: number) => {
+      setCrossRefVerse(verseNumber);
+      setCrossRefOpen(true);
+    },
+    [],
+  );
+
   const handleSaveNote = useCallback(
     (content: string, existingId?: string) => {
       if (noteInputVerse === null) return;
@@ -2037,6 +2073,7 @@ export function BibleReader() {
                           verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
                           highlightStyle={highlightStyle}
                           previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                          onLongPressVerseNumber={user ? handleCrossRef : undefined}
                         />
                         <AnimatePresence>
                           {noteInputVerse === v.number && (
@@ -2115,11 +2152,33 @@ export function BibleReader() {
             onCreateBunch={handleCreateBunchRequest}
             onAddToBunch={handleAddToBunchRequest}
             hasBunches={(bunches ?? []).length > 0}
+            onCrossRef={handleCrossRef}
             onDismiss={dismissToolbar}
             isAuthenticated={!!user}
           />
         )}
       </AnimatePresence>
+
+      {/* ── Cross-Reference Popover ── */}
+      {crossRefVerse && versionId && bookUsfm && currentChapter && (
+        <CrossReferencePopover
+          bookUsfm={bookUsfm}
+          chapterNumber={currentChapter.id}
+          verseNumber={crossRefVerse}
+          versionId={versionId}
+          verseText={verses.find((v) => v.number === crossRefVerse)?.text ?? ""}
+          onNavigate={(navBookUsfm, chapter, verse) => {
+            handleSearchNavigate(navBookUsfm, chapter, verse);
+            setCrossRefOpen(false);
+            setCrossRefVerse(null);
+          }}
+          open={crossRefOpen}
+          onOpenChange={(open) => {
+            setCrossRefOpen(open);
+            if (!open) setCrossRefVerse(null);
+          }}
+        />
+      )}
 
       {/* ── Verse Bunch Tooltip ── */}
       <AnimatePresence>
