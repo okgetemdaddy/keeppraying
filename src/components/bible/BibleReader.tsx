@@ -1466,6 +1466,7 @@ export function BibleReader() {
     [],
   );
 
+  const handleSaveNote = useCallback(
     (content: string, existingId?: string) => {
       if (noteInputVerse === null) return;
       mutations.saveNote.mutate({
