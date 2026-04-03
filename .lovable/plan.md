@@ -1,84 +1,90 @@
 
 
-# AI-Powered Word Study & Reference Bloom System
+# Annotated Bible Chapter Export & Share System
 
 ## What this does
-When a user circles 1-3 words with Apple Pencil, a floating "Reference Bloom" card appears at the gesture location showing the original Hebrew/Greek word, Strong's number, cross-references, and an AI contextual note — all without leaving the current chapter. Also accessible from the FloatingToolbar via a new "Reference" button.
+Users can export their annotated Bible chapters (text + ink strokes + margin cards) as PNG images or PDFs, and share them to prayer circles, family rooms, or save as personal study artifacts. The Bible Sleeve gets a 2-column layout to accommodate the growing feature set including a new "My Studies" section.
 
 ## Technical changes
 
-### 1. New edge function: `supabase/functions/word-study/index.ts`
+### 1. Install dependencies
+- `html-to-image` — DOM-to-PNG capture
+- `jspdf` — PDF generation from captured image
 
-- Receives `{ word, verseText, bookUsfm, chapter, verseNumber, translationId }`
-- Uses Lovable AI (`google/gemini-3-flash-preview`) with a system prompt that:
-  - Identifies OT (Hebrew) vs NT (Greek)
-  - Returns the original word, transliteration, Strong's number, definition, frequency, semantic range
-  - Generates up to 6 cross-references with preview text and relevance labels
-  - Writes a 2-3 sentence contextual note
-- Uses tool calling to extract structured JSON output (avoiding JSON parse issues)
-- Handles 429/402 error codes with clear messages
-- CORS headers included
+### 2. Database migration
 
-### 2. New hook: `src/hooks/useWordStudy.ts`
+```sql
+-- Study artifacts table
+CREATE TABLE public.study_artifacts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  book_usfm text NOT NULL,
+  chapter_number int NOT NULL,
+  version_id int NOT NULL,
+  title text NOT NULL,
+  image_url text NOT NULL,
+  stroke_count int NOT NULL DEFAULT 0,
+  card_count int NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.study_artifacts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users manage own artifacts"
+  ON public.study_artifacts FOR ALL TO authenticated
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+```
 
-- Wraps the edge function call in React Query
-- `queryKey: ["word-study", word, bookUsfm, chapter, verseNumber]`
-- `staleTime: 24 * 60 * 60 * 1000` (24 hours)
-- Returns typed `WordStudyResult` matching the edge function output shape
-- `enabled` only when word is non-empty
+Also create a `study-exports` storage bucket (public) for hosting exported images.
 
-### 3. New component: `src/components/bible/ReferenceBloom.tsx`
+### 3. New component: `src/components/bible/CanvasExportSheet.tsx`
 
-- Props: `anchorPoint`, `word`, `verseNumber`, `bookUsfm`, `chapter`, `versionId`, `onClose`, `onNavigate`, `onPinToMargin`
-- Uses `position: fixed` with viewport edge-clamping logic
-- Three pill tabs: "Word" (default for 1-word), "Refs" (default for verse-level), "Note"
-  - **Word tab**: original language, transliteration, Strong's number, frequency, semantic range chips
-  - **Refs tab**: up to 6 cross-references with label + preview + "Go" button
-  - **Note tab**: AI contextual explanation (2-3 sentences)
-- Bottom action bar: Pin icon (`onPinToMargin`) and Plan+ icon (placeholder `onAddToPlan`)
-- 280px wide, max 360px tall, internal scroll
-- Framer Motion entry: scale 0.95→1, opacity 0→1
-- Styled with `bg-card border border-border shadow-lg rounded-xl`, EB Garamond for verse text
-- Bible-dark mode: `shadow-[0_0_12px_rgba(255,215,0,0.05)]` glow
-- Close on Escape or click-outside (useEffect listeners)
-- Loading skeleton while AI call resolves
+Bottom sheet with five actions:
+- **Save as Image** — `toPng()` on `readingAreaRef`, triggers browser download
+- **Save as PDF** — wraps PNG in jsPDF with chapter title header + "Created with KeepRead.ing" watermark footer
+- **Share to Circle** — circle selector via `useAccountabilityCircles`, uploads image to `study-exports` bucket, creates `accountability_circle_prayers` entry with type `bible_study`
+- **Share to Family Room** — same pattern via `useFamilyRooms` + `family_room_prayers`
+- **Save to My Studies** — uploads image, inserts into `study_artifacts`
+
+Props: `open`, `onOpenChange`, `readingAreaRef`, `bookUsfm`, `chapterNumber`, `chapterTitle`, `versionId`
+
+Preview thumbnail generated on open via `toPng(readingAreaRef.current)`.
 
 ### 4. Wire into `BibleReader.tsx`
 
-**New state:**
-```
-referenceBloom: { x: number; y: number; word: string; verseNumber: number } | null
-```
+- Add `exportSheetOpen` state
+- Pass `readingAreaRef` to `CanvasExportSheet`
+- Pass `onExportCanvas` callback to `BiblePocketSheet`
+- Add `Download` icon button to study mode toolbar area (visible when `studyMode` active)
 
-**Modify `onCircleSelect` callback (line ~2024):**
-- After the existing verse-selection logic, add a check: if circle encloses text within a single verse AND the enclosed area is small (1-3 words detected), extract the word text from the DOM using the convex hull center point + `document.elementFromPoint`
-- Set `referenceBloom` with the word, verse number, and hull center coordinates
-- If more than 3 words or multiple verses, keep existing behavior (verse selection)
+### 5. `BiblePocketSheet.tsx` — Add export trigger
 
-**Render `<ReferenceBloom>`** when `referenceBloom` is set, passing current `bookUsfm`, `currentChapter.id`, `versionId`, and `handleSearchNavigate` as `onNavigate`. Pin-to-margin calls `saveAnnotationMut` with a `type: "word-study"` flag.
+- New prop: `onExportCanvas?: () => void`
+- Render "Export Canvas" button in the Notes tab (visible when annotations or strokes exist)
 
-### 5. Add "Reference" button to `FloatingToolbar.tsx`
+### 6. `BibleSleeveSheet.tsx` — 2-column layout + "My Studies" section
 
-- New prop: `onReference?: (verseNumber: number, word?: string) => void`
-- Add `BookOpen` icon button after "Cross-refs" in the action buttons section
-- When tapped: if partial selection exists, pass the selected text as `word`; otherwise pass the full verse text
-- Calls `onReference(primaryVerse, word)` then `onDismiss()`
+**Layout refactor**: Change the single-column `space-y-5` container to a responsive 2-column grid on wider viewports:
+- Left column: Settings sections (Appearance, Text Size, Reading Mode, Display Toggles, Immersive, Study Mode)
+- Right column: Content sections (Highlights, Bookmarks, Notes, Bunches, My Studies, Trash Bin)
+- On narrow/mobile viewports (< 640px or sheet width < 400px): falls back to single column
 
-**BibleReader wiring:** Pass `onReference` that opens `referenceBloom` using toolbar position as anchor point.
+Implementation: wrap the existing sections in two `<div>` groups inside a `grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5` container. No structural changes to individual sections — just regrouping.
 
-### 6. No changes to
+**New "My Studies" collapsible section** (in right column, before Trash Bin):
+- New `SECTION_IDS.studies` entry
+- Fetches from `study_artifacts` table for current user
+- Each artifact shows: title, small thumbnail, date created
+- Tapping navigates to that chapter (calls existing `onNavigateToVerse` pattern)
+- New props: `studyArtifacts` array + `onNavigateToArtifact` callback
 
-- `InkOverlay.tsx` gesture detection logic
-- `ZoomWrapper` or `ManuscriptCanvas`
-- `EnrichedVerse` component structure
+The sheet width increases from `w-[80vw] sm:w-[360px]` to `w-[85vw] sm:w-[480px] lg:w-[560px]` to accommodate 2 columns.
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `supabase/functions/word-study/index.ts` | New — AI word study edge function |
-| `src/hooks/useWordStudy.ts` | New — React Query hook for word study data |
-| `src/components/bible/ReferenceBloom.tsx` | New — floating card with Word/Refs/Note tabs |
-| `src/components/bible/FloatingToolbar.tsx` | Add `onReference` prop + BookOpen button |
-| `src/components/bible/BibleReader.tsx` | Add `referenceBloom` state, modify circle-select handler, render ReferenceBloom, wire toolbar |
+| `src/components/bible/CanvasExportSheet.tsx` | New — export/share bottom sheet |
+| `src/components/bible/BibleReader.tsx` | Add export state, render CanvasExportSheet, pass ref + toolbar trigger |
+| `src/components/bible/BiblePocketSheet.tsx` | Add `onExportCanvas` prop + button |
+| `src/components/bible/BibleSleeveSheet.tsx` | 2-column grid layout + "My Studies" section |
+| Migration | `study_artifacts` table + RLS + `study-exports` storage bucket |
 
