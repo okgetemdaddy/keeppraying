@@ -1368,6 +1368,22 @@ export function BibleReader() {
     [handleTapSelectInner],
   );
 
+  const handleReference = useCallback(
+    (verseNumber: number, word?: string) => {
+      const verseEl = document.getElementById(`verse-${verseNumber}`);
+      const rect = verseEl?.getBoundingClientRect();
+      const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+      const y = rect ? rect.bottom : window.innerHeight / 2;
+      const verseText = verses.find((v) => v.number === verseNumber)?.text ?? "";
+      setReferenceBloom({
+        x,
+        y,
+        word: word || verseText.split(/\s+/).slice(0, 3).join(" "),
+        verseNumber,
+      });
+    },
+    [verses],
+  );
 
   useEffect(() => {
     const area = readingAreaRef.current;
