@@ -970,6 +970,18 @@ export function BibleReader() {
 
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
+  const glowingElRef = useRef<HTMLElement | null>(null);
+
+  /** Remove glow from the previously-highlighted verse */
+  const clearPreviousGlow = useCallback(() => {
+    const prev = glowingElRef.current;
+    if (prev) {
+      prev.classList.remove("animate-verse-glow");
+      prev.style.willChange = "auto";
+      prev.removeAttribute("aria-current");
+      glowingElRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (pendingScrollVerseRef.current == null) return;
@@ -978,12 +990,33 @@ export function BibleReader() {
     const tryScroll = () => {
       const el = document.getElementById(`verse-${verseNum}`);
       if (el) {
+        // Cancel any previous glow before starting a new one
+        clearPreviousGlow();
+
         el.scrollIntoView({ behavior: "smooth", block: "center" });
-        // Add glow animation after scroll completes
+
+        // Apply glow after scroll settles
         setTimeout(() => {
+          el.style.willChange = "transform";
+          el.setAttribute("aria-current", "true");
+          // Force reflow to restart animation if same verse searched twice
+          el.classList.remove("animate-verse-glow");
+          void el.offsetWidth;
           el.classList.add("animate-verse-glow");
-          setTimeout(() => el.classList.remove("animate-verse-glow"), 2200);
+          glowingElRef.current = el;
+
+          const cleanup = () => {
+            el.classList.remove("animate-verse-glow");
+            el.style.willChange = "auto";
+            el.removeAttribute("aria-current");
+            if (glowingElRef.current === el) glowingElRef.current = null;
+          };
+
+          el.addEventListener("animationend", cleanup, { once: true });
+          // Safety timeout if animationend doesn't fire
+          setTimeout(cleanup, 2500);
         }, 400);
+
         pendingScrollVerseRef.current = null;
         return true;
       }

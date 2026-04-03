@@ -107,6 +107,8 @@ export function BibleSearchDialog({
         <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
           <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <input
+            role="searchbox"
+            aria-label="Search Bible verses"
             className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Search verses, topics, notes, bunches..."
             value={query}
@@ -126,7 +128,7 @@ export function BibleSearchDialog({
           </kbd>
         </div>
 
-        <CommandList className="max-h-[60vh] overflow-y-auto">
+        <CommandList className="max-h-[60vh] overflow-y-auto" aria-live="polite">
           {/* ── Empty state ── */}
           {hasQuery && !hasAnyResults && !isSearching && query.trim().length >= 2 && (
             <CommandEmpty className="py-12 text-center">
