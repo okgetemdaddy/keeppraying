@@ -881,7 +881,6 @@ export function BibleSleeveSheet({
                 <span className="ml-auto text-xs text-muted-foreground">30 days</span>
               </button>
             </section>
-            </div>
           </div>
         </div>
       </SheetContent>
