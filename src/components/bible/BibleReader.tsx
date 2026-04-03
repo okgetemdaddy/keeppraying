@@ -612,6 +612,19 @@ export function BibleReader() {
   // ── Canvas Export sheet ──
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
 
+  // ── Study artifacts for Bible Sleeve ──
+  const [studyArtifacts, setStudyArtifacts] = useState<any[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("study_artifacts" as any)
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => { if (data) setStudyArtifacts(data as any[]); });
+  }, [user]);
+
   // ── Premium Dark Mode ──
   const [premiumDark, setPremiumDark] = useState(() => {
     try { return localStorage.getItem("bible_premium_dark") === "true"; } catch { return false; }
