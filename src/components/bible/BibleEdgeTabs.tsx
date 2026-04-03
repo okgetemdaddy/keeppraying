@@ -39,7 +39,7 @@ export function BibleEdgeTabs({ onSuggestionsClick, onIPadClick, showIPad }: Pro
       style={{ transform: "rotate(-90deg)", transformOrigin: "left top" }}
       className="absolute left-0 top-full z-20"
     >
-      <div className="inline-flex items-center p-1 bg-slate-900 dark:bg-slate-950 rounded-full overflow-hidden border border-slate-700/50">
+      <div className="inline-flex items-center p-1 bg-slate-900/50 dark:bg-slate-950/50 rounded-b-2xl rounded-t-none overflow-hidden border border-slate-700/50 border-t-0">
         {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.id;
 
