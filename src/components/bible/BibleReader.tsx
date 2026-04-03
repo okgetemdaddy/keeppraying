@@ -110,6 +110,8 @@ import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations,
 import { toast } from "sonner";
 import { IPadWaitlistBanner } from "@/components/bible/iPadWaitlistBanner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
+import { SuggestionBanner } from "@/components/bible/SuggestionBanner";
+import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
