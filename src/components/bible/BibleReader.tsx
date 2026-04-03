@@ -1361,11 +1361,13 @@ export function BibleReader() {
         const verseEl = area.querySelector(`[data-verse="${startVerse}"]`);
         const textContent = verseEl?.textContent ?? "";
         const selectedText = sel.toString();
-        const textStart = textContent.indexOf(selectedText);
+        const rawStart = Math.max(textContent.indexOf(selectedText), 0);
+        const rawEnd = rawStart + selectedText.length;
+        const snapped = snapToWordBoundaries(textContent, rawStart, rawEnd);
         setPartialSelection({
           verseNumber: startVerse,
-          start: Math.max(textStart, 0),
-          end: Math.max(textStart, 0) + selectedText.length,
+          start: snapped.start,
+          end: snapped.end,
         });
         // Add to crossSelections if not already
         if (versionId && bookUsfm && currentChapter && currentBook) {
