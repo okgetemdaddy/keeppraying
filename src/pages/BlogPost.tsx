@@ -63,6 +63,7 @@ function processChildren(children: React.ReactNode): React.ReactNode {
   return children;
 }
 
+export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
