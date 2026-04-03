@@ -516,6 +516,8 @@ export function InkOverlay({
       onPointerCancel={handlePointerCancel}
     >
       <defs>
+        {/* Brush texture filters */}
+        <BrushTextures />
         <filter id="ink-bleed">
           <feGaussianBlur stdDeviation="0.3" />
           <feComponentTransfer>
