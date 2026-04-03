@@ -1,64 +1,100 @@
 
 
-# Premium iPadOS Waitlist Drawer — Full Redesign with Illustrated Feature Cards
+# X-Gesture to Delete Highlights & Ink Strokes
 
 ## Summary
-Rewrite `IPadWaitlistDrawer` to match the dark frosted-glass reference screenshot. Each of the five feature cards gets a custom inline SVG illustration rendered as a React component. The confirmation state becomes a "Spot Secured" section with a cross/heart fusion SVG. The entire drawer uses the dark glass material system.
+Add an "X mark" gesture detector to InkOverlay. When a user draws an X shape with the Apple Pencil, the system identifies what's beneath the X's bounding box — highlighted verses and/or ink strokes — and deletes them (with trash bin support). The larger the X, the larger the deletion area.
 
 ## Technical Changes
 
-### `src/components/bible/iPadWaitlistDrawer.tsx` — Full rewrite
+### 1. `src/components/bible/InkOverlay.tsx` — X gesture detection + new callback
 
-**Container:**
-- Dark frosted glass: `bg-black/60 backdrop-blur-[24px] backdrop-brightness-[0.8] border-r border-white/10`
-- Close button: `text-white/50 hover:bg-white/10`
+**Add `isXGesture` detection function** (alongside existing `isUnderlineGesture` and `isClosedLoop`):
+- Analyze the stroke points to find two roughly diagonal crossing lines
+- Algorithm: split points into first-half and second-half segments. Check if each segment has a strong diagonal (aspect ratio near 1:1, not too flat/tall). Check if the two segments' bounding boxes overlap significantly (the crossing point). Check that X/Y ranges are both > 30px minimum
+- Return the bounding box of the X as the deletion area
 
-**Header:**
-- Tablet icon in rounded-2xl amber-900/40 container (keep existing pattern but adapt to dark)
-- Title: `"Waitlist Open: Experience KeepRead.ing Reimagined for iPad"` — `text-base font-bold tracking-tight text-white`
-- Subtitle paragraph: verbatim copy from prompt — `text-xs text-white/50 leading-relaxed`
+**Add new callback prop:**
+```typescript
+onXGesture?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
+```
 
-**Five Feature Cards** — each card has:
-- A ~80×80px illustration area on the left (`rounded-xl bg-white/[0.04] overflow-hidden`) containing an inline SVG illustration
-- Title + description on the right
-- Card container: `rounded-xl bg-white/[0.06] border border-white/[0.08] p-3`
+**Wire into `handlePointerUp`** — insert X detection AFTER circle detection but BEFORE underline detection. If X gesture is detected:
+- Flash a brief red "×" animation at the center of the X (CSS keyframe, auto-removes after 400ms)
+- Call `onXGesture` with the bounding box (in screen coordinates, accounting for zoom and SVG offset)
+- Do NOT persist the X stroke (return early, don't call `onStrokeComplete`)
+- Haptic feedback: `navigator.vibrate([30, 50, 30])` (double-tap pattern)
 
-The five inline SVG illustrations (rendered as React components within the file):
+### 2. `src/components/bible/BibleReader.tsx` — Handle X gesture
 
-1. **PenTipIllustration** — A stylized Apple Pencil tip pointing down with a golden highlight line beneath showing "heavens and the earth" text partially highlighted in amber
-2. **InfiniteCanvasIllustration** — A tilted page/canvas with faint handwritten-style text lines and expansion arrows, warm amber accent lines
-3. **SplitScreenIllustration** — Two side-by-side panels labeled "ESV" and "NIV" with faint text lines inside, separated by a thin divider, amber accent on the labels
-4. **OCRIllustration** — A search bar at top with "Q Search search..." placeholder, below it cursive "Deep wisdom..." text with an arrow pointing to clean typed "Deep wisdom" text
-5. **CrossRefIllustration** — A page with faint text lines and a floating popup/card overlaying it, showing referenced text
+**Add handler function `handleXGesture`:**
+- Receives the screen-coordinate bounding box from InkOverlay
+- **Delete highlights**: Query all `[data-verse]` elements. For each verse element whose bounding rect intersects the X bbox, check `highlightMap` for highlights on that verse. Call `mutations.removeHighlight.mutate(id)` for each found highlight (this already snapshots to trash_bin)
+- **Delete ink strokes**: Iterate `inkHistory.strokes`. For each stroke, compute its bounding box from its points (adjusting for zoom + SVG offset). If the stroke bbox intersects the X bbox, collect its ID. Remove matching strokes via a new `removeStrokes` method on inkHistory
+- Show toast: `"Removed N highlight(s) and M stroke(s)"` (only mentioning non-zero counts)
 
-Each SVG uses the copper-gold palette (`#d4a574`, `#b8956a`, `rgba(212,165,116,0.3)`) on dark backgrounds.
+**Wire to InkOverlay:**
+```tsx
+onXGesture={(bbox) => handleXGesture(bbox)}
+```
 
-**Feature card data:**
-1. Title: "Individual Word Selection and Granular Highlighting" / Desc: "Highlight precise words and partial phrases, not just entire verses, for truly inductive study. No more forced block highlighting."
-2. Title: "Infinite Margin Space" / Desc: "A canvas that dynamically expands horizontally and vertically for notes, reflections, and hand-drawn diagrams, keeping insights alongside the text."
-3. Title: "True Multi-Translation Split-Screen" / Desc: "Compare different versions side-by-side with independent scrolling and seamless annotation for detailed comparative analysis."
-4. Title: "Searchable Handwriting (OCR)" / Desc: "Search all your handwritten notes globally, bridging the tactile feel of analog with digital search utility."
-5. Title: "Seamless Cross-Referencing" / Desc: "Instantly view referenced texts in non-disruptive floating pop-ups and gestures, without navigating away from the current page."
+### 3. `src/hooks/useInkHistory.ts` — Add `removeStrokes` method
 
-**Email Form:**
-- Styled for dark surface: `bg-white/5 border-none text-white placeholder:text-white/30`
-- Submit button: `bg-amber-700/40 hover:bg-amber-600/50 text-amber-200`
+Add a new method that removes specific strokes by ID and moves them to the ink trash bin:
 
-**Confirmation State ("Spot Secured"):**
-- Replaces email form after submission
-- Dark card: `bg-white/[0.04] border border-amber-500/20 rounded-xl p-5 text-center`
-- Bold header: `"Spot Secured."` — `text-lg font-bold text-white font-serif`
-- Body: verbatim copy from prompt — `text-xs text-white/50 leading-relaxed`
-- Below text: custom cross/heart fusion SVG icon (~32px), copper-gold colored, centered
+```typescript
+const removeStrokes = useCallback((strokeIds: string[]) => {
+  setStrokes((prev) => {
+    const removed = prev.filter((s) => strokeIds.includes(s.id));
+    const remaining = prev.filter((s) => !strokeIds.includes(s.id));
+    if (removed.length > 0) {
+      pushUndo(prev);
+      setTrashBin((bin) => [
+        ...bin,
+        { id: `trash-${Date.now()}`, strokes: removed, clearedAt: new Date() },
+      ]);
+    }
+    return remaining;
+  });
+}, [pushUndo]);
+```
 
-**Cross/Heart Fusion SVG:**
-A single inline SVG combining a heart silhouette with a cross integrated into the center — matching the icon visible at the bottom of the reference screenshot.
+Return it from the hook.
 
-**SleeveWaitlistInput:** Unchanged.
+### 4. X Gesture Detection Algorithm
+
+```text
+function isXGesture(points):
+  if points.length < 8: return false
+  
+  bbox = computeBoundingBox(points)
+  xRange = bbox.maxX - bbox.minX
+  yRange = bbox.maxY - bbox.minY
+  
+  # Must be big enough and roughly square-ish
+  if xRange < 30 or yRange < 30: return false
+  if xRange / yRange > 3 or yRange / xRange > 3: return false
+  
+  # Find direction changes (the vertex of the X)
+  # Split stroke at the point where direction reverses most sharply
+  # Check that we have two diagonal segments crossing
+  
+  midIdx = floor(points.length / 2)
+  seg1 = points[0..midIdx]
+  seg2 = points[midIdx..end]
+  
+  # Each segment should span most of the bbox
+  seg1xRange / xRange > 0.5 AND seg1yRange / yRange > 0.5
+  seg2xRange / xRange > 0.5 AND seg2yRange / yRange > 0.5
+  
+  return true  # with bbox
+```
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/iPadWaitlistDrawer.tsx` | Full rewrite of `IPadWaitlistDrawer` with dark glass aesthetic, 5 inline SVG illustrations, new copy, cross/heart confirmation |
+| `src/components/bible/InkOverlay.tsx` | Add `isXGesture` detector, `onXGesture` prop, red flash animation, wire into `handlePointerUp` |
+| `src/hooks/useInkHistory.ts` | Add `removeStrokes(ids)` method with trash bin support |
+| `src/components/bible/BibleReader.tsx` | Add `handleXGesture` handler, wire to InkOverlay's `onXGesture` prop |
 
