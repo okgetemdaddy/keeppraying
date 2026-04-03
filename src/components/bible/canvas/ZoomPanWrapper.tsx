@@ -14,7 +14,7 @@ interface ZoomPanWrapperProps {
 const MIN_FONT = 14;
 const MAX_FONT = 72;
 const SPRING_CONFIG = { tension: 170, friction: 26 };
-const VELOCITY_BUFFER_SIZE = 4;
+const VELOCITY_BUFFER_SIZE = 5;
 const MOMENTUM_FACTOR = 150;
 
 /**
@@ -55,9 +55,12 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
 
     // Tracking state
     let gestureType: "none" | "zoom" | "pan" = "none";
+    let gestureFingerCount = 0;
+    let gestureDead = false; // true once finger count changes — ignore further moves
     let lastDist: number | null = null;
     let lastMidpoint: { x: number; y: number } | null = null;
     const velocityBuffer: { x: number; y: number; t: number }[] = [];
+    const MAX_VELOCITY = 1500; // px/s cap to filter finger-lift artifacts
 
     const getTouchDist = (touches: TouchList) => {
       const dx = touches[0].clientX - touches[1].clientX;
@@ -70,12 +73,19 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
       y: (touches[0].clientY + touches[1].clientY + touches[2].clientY) / 3,
     });
 
+    const clampVelocity = (v: number) =>
+      Math.max(-MAX_VELOCITY, Math.min(MAX_VELOCITY, v));
+
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         gestureType = "zoom";
+        gestureFingerCount = 2;
+        gestureDead = false;
         lastDist = getTouchDist(e.touches);
       } else if (e.touches.length === 3) {
         gestureType = "pan";
+        gestureFingerCount = 3;
+        gestureDead = false;
         lastMidpoint = getMidpoint3(e.touches);
         velocityBuffer.length = 0;
         api.stop();
@@ -83,7 +93,14 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (gestureType === "zoom" && e.touches.length === 2) {
+      // Once finger count changed, gesture is dead — ignore all further moves
+      if (gestureDead) return;
+
+      if (gestureType === "zoom") {
+        if (e.touches.length !== gestureFingerCount) {
+          gestureDead = true;
+          return;
+        }
         e.preventDefault();
         const dist = getTouchDist(e.touches);
         if (lastDist !== null) {
@@ -94,7 +111,11 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
           if (next !== fontSizeRef.current) onFontSizeChange(next);
         }
         lastDist = dist;
-      } else if (gestureType === "pan" && e.touches.length === 3) {
+      } else if (gestureType === "pan") {
+        if (e.touches.length !== gestureFingerCount) {
+          gestureDead = true;
+          return;
+        }
         e.preventDefault();
         const mid = getMidpoint3(e.touches);
         if (lastMidpoint) {
@@ -102,7 +123,6 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
           const dy = mid.y - lastMidpoint.y;
           api.set({ x: spring.x.get() + dx, y: spring.y.get() + dy });
 
-          // Push to velocity buffer
           velocityBuffer.push({ x: mid.x, y: mid.y, t: performance.now() });
           if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
         }
@@ -114,19 +134,22 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
       if (gestureType === "pan" && velocityBuffer.length >= 2) {
         const first = velocityBuffer[0];
         const last = velocityBuffer[velocityBuffer.length - 1];
-        const dt = (last.t - first.t) / 1000; // seconds
+        const dt = (last.t - first.t) / 1000;
         if (dt > 0.01) {
-          const vx = ((last.x - first.x) / dt) * (MOMENTUM_FACTOR / 1000);
-          const vy = ((last.y - first.y) / dt) * (MOMENTUM_FACTOR / 1000);
+          // Average velocity across the full rolling window
+          const vx = clampVelocity((last.x - first.x) / dt);
+          const vy = clampVelocity((last.y - first.y) / dt);
+          const scale = MOMENTUM_FACTOR / 1000;
           api.start({
-            x: spring.x.get() + vx * MOMENTUM_FACTOR,
-            y: spring.y.get() + vy * MOMENTUM_FACTOR,
+            x: spring.x.get() + vx * scale * MOMENTUM_FACTOR,
+            y: spring.y.get() + vy * scale * MOMENTUM_FACTOR,
             config: SPRING_CONFIG,
           });
         }
       }
-      // Reset all tracking
       gestureType = "none";
+      gestureFingerCount = 0;
+      gestureDead = false;
       lastDist = null;
       lastMidpoint = null;
       velocityBuffer.length = 0;
