@@ -17,6 +17,7 @@ interface BiblePocketSheetProps {
   inkStrokes: InkStroke[];
   journalAnnotations?: Annotation[];
   onTryAction?: (actionId: string) => void;
+  onExportCanvas?: () => void;
   /** Which tab to open to (controlled externally for onboarding) */
   defaultTab?: PocketTab;
 }
