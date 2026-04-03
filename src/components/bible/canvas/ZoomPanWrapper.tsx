@@ -121,9 +121,14 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
     >
       <animated.div
         style={{
-          transform: spring.x.to(
-            (x) => `translate3d(${x}px, ${spring.y.get()}px, 0)`
-          ),
+          transform: spring.x
+            .to((x) => x)
+            .to({
+              range: [-Infinity, Infinity],
+              output: [-Infinity, Infinity],
+            })
+            // Use interpolate with both x and y for reactive updates
+            .to(() => `translate3d(${spring.x.get()}px, ${spring.y.get()}px, 0)`),
           // CRITICAL: fontSize flows ONLY through CSS variables
           // Text column reads these — no React prop for fontSize
           ["--canvas-font-size" as string]: `${fontSize}px`,
