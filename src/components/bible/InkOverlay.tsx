@@ -107,7 +107,7 @@ interface InkOverlayProps {
   fingerDrawing?: boolean;
   isDark?: boolean;
   /** Callback when a circle-to-select gesture encloses verses */
-  onCircleSelect?: (verseNumbers: number[]) => void;
+  onCircleSelect?: (verseNumbers: number[], hullCenter?: { x: number; y: number }) => void;
   /** Callback for first-run Apple Pencil onboarding */
   onPencilFirstContact?: () => void;
 }
