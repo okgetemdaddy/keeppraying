@@ -96,6 +96,8 @@ export interface InkStroke {
   size: number;
   linkedVerse: number | null;
   glow?: string | null;
+  brushType?: BrushType;
+  opacity?: number;
 }
 
 interface InkOverlayProps {
@@ -106,6 +108,8 @@ interface InkOverlayProps {
   penColor?: string;
   penSize?: number;
   penGlow?: string | null;
+  activeBrush?: BrushConfig;
+  activeOpacity?: number;
   fingerDrawing?: boolean;
   isDark?: boolean;
   /** Callback when a circle-to-select gesture encloses verses */
