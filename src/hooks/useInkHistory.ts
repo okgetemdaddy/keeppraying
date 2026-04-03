@@ -105,6 +105,7 @@ export function useInkHistory(initialStrokes: InkStroke[] = []) {
   return {
     strokes,
     addStroke,
+    removeStrokes,
     undo,
     redo,
     clearAll,
