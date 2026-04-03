@@ -12,6 +12,8 @@ interface ZoomWrapperProps {
   marginWidth?: number;
   canvasBackground?: CanvasBackground;
   overlay?: React.ReactNode;
+  /** When true, sets touch-action: none to prevent browser scroll-interference during drawing */
+  studyMode?: boolean;
 }
 
 /* ── SVG pattern backgrounds for the writing margin space ── */
@@ -59,6 +61,7 @@ export function ZoomWrapper({
   marginWidth = 0,
   canvasBackground = "none",
   overlay,
+  studyMode = false,
 }: ZoomWrapperProps) {
   const hasMargin = marginWidth > 0;
 
@@ -79,7 +82,7 @@ export function ZoomWrapper({
         transformOrigin: "top left",
         width: zoom !== 1 ? `${100 / zoom}%` : undefined,
         willChange: zoom !== 1 ? "transform" : undefined,
-        touchAction: "pan-y",
+        touchAction: studyMode ? "none" : "pan-y",
         ["--verse-spacing" as string]: textSpacing,
         ...(hasMargin
           ? {
@@ -98,7 +101,7 @@ export function ZoomWrapper({
       )}
 
       {/* Text column — all children (verses + InkOverlay) live here */}
-      <div className="relative min-w-0">
+      <div className="relative min-w-0 overflow-visible">
         {children}
       </div>
 

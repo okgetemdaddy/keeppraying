@@ -1875,6 +1875,7 @@ export function BibleReader() {
                 textAlign={studyMode && studyModeVariant === "margin" ? wsTextAlign : "left"}
                 marginWidth={studyMode && studyModeVariant === "margin" ? wsMarginWidth : 0}
                 canvasBackground={studyMode && studyModeVariant === "margin" ? wsCanvasBackground : "none"}
+                studyMode={studyMode && studyModeVariant === "margin"}
                 overlay={
                   studyMode && studyModeVariant === "margin" ? (
                     <InkOverlay

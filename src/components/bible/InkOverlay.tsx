@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { getStroke } from "perfect-freehand";
+import simplify from "simplify-js";
 import type { Point } from "./HandwritingEngine";
 import { isClosedLoop, findVersesInsideStroke } from "@/lib/convexHull";
 
@@ -273,14 +274,18 @@ export function InkOverlay({
       if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
 
       setHoverPos(null);
-      const [x, y] = getTransformedPoint(e.clientX, e.clientY);
-      // Push directly to ref buffer — NO React state update, no re-render
-      pointsBufferRef.current.push({
-        x, y,
-        pressure: e.pressure ?? 0.5,
-        tiltX: e.tiltX,
-        tiltY: e.tiltY,
-      });
+
+      // ── ProMotion 120Hz: capture sub-frame coalesced events ──
+      const coalesced = (e.nativeEvent as PointerEvent).getCoalescedEvents?.() ?? [e.nativeEvent as PointerEvent];
+      for (const ce of coalesced) {
+        const [cx, cy] = getTransformedPoint(ce.clientX, ce.clientY);
+        pointsBufferRef.current.push({
+          x: cx, y: cy,
+          pressure: ce.pressure ?? 0.5,
+          tiltX: ce.tiltX,
+          tiltY: ce.tiltY,
+        });
+      }
     },
     [getTransformedPoint, fingerDrawing],
   );
@@ -341,9 +346,29 @@ export function InkOverlay({
       });
     }
 
+    /* ── Stroke Finalizer: Ramer-Douglas-Peucker compression ──
+     * Coalesced events capture 2-4× more points per frame. Before saving
+     * to the database, simplify the path to reduce point count ~50-70%
+     * while preserving the handwritten character of curves. */
+    const simplified = simplify(
+      currentPoints.map(p => ({ x: p.x, y: p.y })),
+      0.5,
+      true,
+    );
+    // Re-attach pressure/tilt from nearest original point
+    const compressedPoints: Point[] = simplified.map(sp => {
+      let best = currentPoints[0];
+      let bestDist = Infinity;
+      for (const op of currentPoints) {
+        const d = (op.x - sp.x) ** 2 + (op.y - sp.y) ** 2;
+        if (d < bestDist) { bestDist = d; best = op; }
+      }
+      return { x: sp.x, y: sp.y, pressure: best.pressure, tiltX: best.tiltX, tiltY: best.tiltY };
+    });
+
     const newStroke: InkStroke = {
       id: `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      points: currentPoints,
+      points: compressedPoints,
       color: penColor,
       size: penSize,
       linkedVerse: closestVerse,
@@ -454,6 +479,7 @@ export function InkOverlay({
         touchAction: "none",
         cursor: isDrawingRef.current ? "none" : "crosshair",
         pointerEvents: "auto",
+        overflow: "visible",
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
