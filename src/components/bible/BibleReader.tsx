@@ -359,6 +359,7 @@ interface EnrichedVerseProps {
   verseIdString?: string;
   highlightStyle?: HighlightStyleMode;
   previewRange?: { start: number; end: number };
+  onLongPressVerseNumber?: (verseNumber: number) => void;
 }
 
 function EnrichedVerse({
