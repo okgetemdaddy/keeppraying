@@ -56,6 +56,7 @@ export interface FloatingToolbarProps {
   onAddNote: (verseNumber: number) => void;
   onCreateBunch: () => void;
   onAddToBunch?: () => void;
+  onCrossRef?: (verseNumber: number) => void;
   onDismiss: () => void;
   isAuthenticated: boolean;
   hasBunches?: boolean;
