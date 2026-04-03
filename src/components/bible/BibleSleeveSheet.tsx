@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { PenTool, Layers, BookOpen } from "lucide-react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { PenTool, Layers, BookOpen, Image as ImageIcon } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
