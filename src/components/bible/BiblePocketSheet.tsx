@@ -30,6 +30,7 @@ export function BiblePocketSheet({
   inkStrokes,
   journalAnnotations = [],
   onTryAction,
+  onExportCanvas,
   defaultTab,
 }: BiblePocketSheetProps) {
   const [activeTab, setActiveTab] = useState<PocketTab>(defaultTab ?? "notes");
