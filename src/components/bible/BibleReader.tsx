@@ -1852,8 +1852,8 @@ export function BibleReader() {
                   }
                 }
               }}
-              style={{ fontSize: `${textSize}px`, filter: premiumDark && easeEyesDim < 1 ? `brightness(${easeEyesDim})` : undefined }}
-              className={`font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+              style={{ fontSize: `${textSize}px` }}
+              className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
               <ZoomWrapper
                 zoom={studyMode && studyModeVariant === "margin" ? inkZoom : 1}
