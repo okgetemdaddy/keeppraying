@@ -931,6 +931,76 @@ export function BibleReader() {
     crossBunchTranslation,
   );
 
+  // ── Study Mode input routing: lock pen to ink, two-finger scroll only ──
+  useEffect(() => {
+    if (!studyMode || studyModeVariant !== "margin") return;
+    const area = readingAreaRef.current;
+    if (!area) return;
+
+    const preventSingleFingerScroll = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        e.preventDefault();
+      }
+    };
+
+    const preventPenScroll = (e: PointerEvent) => {
+      if (e.pointerType === "pen") {
+        e.preventDefault();
+      }
+    };
+
+    area.addEventListener("touchmove", preventSingleFingerScroll, { passive: false });
+    area.addEventListener("pointerdown", preventPenScroll, { passive: false });
+    area.style.touchAction = "none";
+    area.style.overscrollBehavior = "none";
+
+    return () => {
+      area.removeEventListener("touchmove", preventSingleFingerScroll);
+      area.removeEventListener("pointerdown", preventPenScroll);
+      area.style.touchAction = "";
+      area.style.overscrollBehavior = "";
+    };
+  }, [studyMode, studyModeVariant]);
+
+  // ── Manual two-finger scroll in Study Mode ──
+  useEffect(() => {
+    if (!studyMode || studyModeVariant !== "margin") return;
+    const area = readingAreaRef.current;
+    if (!area) return;
+
+    let lastTwoFingerY = 0;
+    let isTwoFinger = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        isTwoFinger = true;
+        lastTwoFingerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isTwoFinger || e.touches.length !== 2) return;
+      const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const deltaY = lastTwoFingerY - currentY;
+      area.scrollTop += deltaY;
+      lastTwoFingerY = currentY;
+    };
+
+    const onTouchEnd = () => {
+      isTwoFinger = false;
+    };
+
+    area.addEventListener("touchstart", onTouchStart, { passive: true });
+    area.addEventListener("touchmove", onTouchMove, { passive: true });
+    area.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      area.removeEventListener("touchstart", onTouchStart);
+      area.removeEventListener("touchmove", onTouchMove);
+      area.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [studyMode, studyModeVariant]);
+
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
 
