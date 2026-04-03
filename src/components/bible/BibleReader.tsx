@@ -189,26 +189,47 @@ function groupByVerse<T extends { verse_number: number }>(items: T[]): Map<numbe
   }
   return map;
 }
+/* ── Word-boundary snapping helper ── */
+function snapToWordBoundaries(text: string, start: number, end: number): { start: number; end: number } {
+  while (start > 0 && /\w/.test(text[start - 1])) start--;
+  while (end < text.length && /\w/.test(text[end])) end++;
+  return { start, end };
+}
 
 /* ── Highlighted text renderer (supports partial-verse spans) ── */
 function HighlightedText({
   text,
   highlights,
   highlightStyle = "invert",
+  previewRange,
 }: {
   text: string;
   highlights: UserHighlight[];
   highlightStyle?: HighlightStyleMode;
+  previewRange?: { start: number; end: number };
 }) {
-  if (!highlights.length) return <>{text}</>;
+  if (!highlights.length && !previewRange) return <>{text}</>;
 
+  // Build highlight spans
   const spans = highlights
     .map((h) => ({
       start: h.reference_normalized?.start ?? 0,
       end: h.reference_normalized?.end ?? text.length,
       color: h.color,
+      isPreview: false,
     }))
     .sort((a, b) => a.start - b.start);
+
+  // Insert preview span if it doesn't overlap existing highlights
+  if (previewRange) {
+    const overlaps = spans.some(
+      (s) => s.start < previewRange.end && s.end > previewRange.start,
+    );
+    if (!overlaps) {
+      spans.push({ start: previewRange.start, end: previewRange.end, color: "__preview__", isPreview: true });
+      spans.sort((a, b) => a.start - b.start);
+    }
+  }
 
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -223,12 +244,20 @@ function HighlightedText({
     }
 
     if (end > start) {
-      const colorClass = getHighlightClass(span.color, highlightStyle);
-      parts.push(
-        <mark key={`hl-${i}`} className={`${colorClass} rounded-sm px-0.5 transition-colors`}>
-          {text.slice(start, end)}
-        </mark>,
-      );
+      if (span.isPreview) {
+        parts.push(
+          <mark key={`preview-${i}`} className="bg-primary/10 rounded-sm px-0.5 transition-colors">
+            {text.slice(start, end)}
+          </mark>,
+        );
+      } else {
+        const colorClass = getHighlightClass(span.color, highlightStyle);
+        parts.push(
+          <mark key={`hl-${i}`} className={`${colorClass} rounded-sm px-0.5 transition-colors`}>
+            {text.slice(start, end)}
+          </mark>,
+        );
+      }
     }
 
     cursor = end;
@@ -329,6 +358,7 @@ interface EnrichedVerseProps {
   onAnnotationSave?: (verseId: string, strokes: StrokeData[], existingId?: string) => void;
   verseIdString?: string;
   highlightStyle?: HighlightStyleMode;
+  previewRange?: { start: number; end: number };
 }
 
 function EnrichedVerse({
@@ -348,6 +378,7 @@ function EnrichedVerse({
   onAnnotationSave,
   verseIdString,
   highlightStyle = "invert",
+  previewRange,
 }: EnrichedVerseProps) {
   const [showAnnotation, setShowAnnotation] = useState(false);
   const bunchBorderClass = useMemo(() => {
@@ -390,7 +421,7 @@ function EnrichedVerse({
           <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}{" "}
       </span>
@@ -420,7 +451,7 @@ function EnrichedVerse({
         <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
@@ -1330,11 +1361,13 @@ export function BibleReader() {
         const verseEl = area.querySelector(`[data-verse="${startVerse}"]`);
         const textContent = verseEl?.textContent ?? "";
         const selectedText = sel.toString();
-        const textStart = textContent.indexOf(selectedText);
+        const rawStart = Math.max(textContent.indexOf(selectedText), 0);
+        const rawEnd = rawStart + selectedText.length;
+        const snapped = snapToWordBoundaries(textContent, rawStart, rawEnd);
         setPartialSelection({
           verseNumber: startVerse,
-          start: Math.max(textStart, 0),
-          end: Math.max(textStart, 0) + selectedText.length,
+          start: snapped.start,
+          end: snapped.end,
         });
         // Add to crossSelections if not already
         if (versionId && bookUsfm && currentChapter && currentBook) {
@@ -1368,7 +1401,11 @@ export function BibleReader() {
     };
 
     area.addEventListener("mouseup", handleMouseUp);
-    return () => area.removeEventListener("mouseup", handleMouseUp);
+    area.addEventListener("touchend", handleMouseUp);
+    return () => {
+      area.removeEventListener("mouseup", handleMouseUp);
+      area.removeEventListener("touchend", handleMouseUp);
+    };
   }, [versionId, bookUsfm, currentChapter, currentBook]);
 
   // ── Toolbar action handlers ──
@@ -1999,6 +2036,7 @@ export function BibleReader() {
                           onAnnotationSave={handleAnnotationSave}
                           verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
                           highlightStyle={highlightStyle}
+                          previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
                         />
                         <AnimatePresence>
                           {noteInputVerse === v.number && (
