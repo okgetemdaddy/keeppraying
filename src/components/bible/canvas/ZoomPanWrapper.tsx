@@ -78,7 +78,7 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
       onPinch: ({ delta: [d], event }) => {
         event.preventDefault();
         const next = Math.round(
-          Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + d * 0.5))
+          Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + d * 1.0))
         );
         if (next !== fontSizeRef.current) onFontSizeChange(next);
       },
