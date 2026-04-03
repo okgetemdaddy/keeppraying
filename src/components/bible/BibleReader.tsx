@@ -2229,6 +2229,35 @@ export function BibleReader() {
                           localStorage.setItem("pencil-onboarded", "true");
                         }
                       }}
+                      onWordCircle={(words, verseNum, anchor) => {
+                        const verseData = verses.find((v) => v.number === verseNum);
+                        if (verseData) {
+                          setReferenceBloom({
+                            x: anchor.x,
+                            y: anchor.y,
+                            word: words,
+                            verseNumber: verseNum,
+                          });
+                        }
+                      }}
+                      onUnderlineGesture={(verseNumber, underlinedText) => {
+                        const lastColor = (() => {
+                          try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
+                        })();
+                        const verseData = verses.find((v) => v.number === verseNumber);
+                        if (verseData) {
+                          const textStart = verseData.text.indexOf(underlinedText);
+                          if (textStart >= 0) {
+                            mutations.addHighlight.mutate({
+                              verseNumber,
+                              color: lastColor,
+                              start: textStart,
+                              end: textStart + underlinedText.length,
+                            });
+                            toast.success(`Highlighted: "${underlinedText.slice(0, 30)}${underlinedText.length > 30 ? "…" : ""}"`);
+                          }
+                        }
+                      }}
                     />
                   ) : undefined
                 }
