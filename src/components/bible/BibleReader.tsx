@@ -2607,6 +2607,7 @@ export function BibleReader() {
 
       {/* ── iPad Waitlist Drawer ── */}
       <IPadWaitlistDrawer open={waitlistDrawerOpen} onOpenChange={setWaitlistDrawerOpen} />
+      <BibleSuggestionSheet open={suggestionDrawerOpen} onClose={() => setSuggestionDrawerOpen(false)} />
     </article>
   );
 }
