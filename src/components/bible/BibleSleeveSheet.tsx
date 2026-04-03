@@ -633,59 +633,8 @@ export function BibleSleeveSheet({
             </Collapsible>
 
 
-            {/* ── Immersive Mode ── */}
-            {immersiveSupported && onToggleImmersive && (
-              <>
-                <div className="h-px bg-border" />
-                <Collapsible open={isOpen(SECTION_IDS.immersive)}>
-                  <SectionHeader icon={Maximize} label="Immersive Mode" isOpen={isOpen(SECTION_IDS.immersive)} onToggle={() => toggleSection(SECTION_IDS.immersive)} />
-                  <CollapsibleContent className="mt-3">
-                    {immersiveIOSLimited ? (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-                        <span className="text-sm font-medium text-foreground">Full-Screen Reading on iPhone</span>
-                        <p className="text-[0.65rem] text-muted-foreground mt-1 leading-relaxed">
-                          iOS doesn't support hiding browser bars directly. Add <span className="font-semibold text-primary">KeepRead.ing</span> to your Home Screen for a permanent full-screen, app-like experience with no browser UI.
-                        </p>
-                        <p className="text-[0.6rem] text-muted-foreground/70 mt-1.5 italic">
-                          Tap the share button (↑) → "Add to Home Screen"
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm text-foreground font-medium">Hide Browser Bars</span>
-                            <p className="text-[0.65rem] text-muted-foreground mt-0.5 leading-relaxed">
-                              {immersiveStandalone
-                                ? "You're running in app mode — browser bars are already hidden"
-                                : "Remove the address bar and toolbars for distraction-free reading. Swipe from top or bottom edge to exit."}
-                            </p>
-                          </div>
-                          <Switch
-                            checked={!!immersiveActive}
-                            onCheckedChange={onToggleImmersive}
-                            disabled={immersiveStandalone}
-                            className="shrink-0 mt-0.5"
-                          />
-                        </div>
-                        {!immersiveStandalone && !immersiveActive && (
-                          <p className="text-[0.6rem] text-muted-foreground/60 italic mt-2">
-                            Tip: Add to your Home Screen for a permanent app-like experience
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </CollapsibleContent>
-                </Collapsible>
-              </>
-            )}
 
-            </div>
-
-            {/* ── RIGHT COLUMN: Content ── */}
-            <div className="space-y-5">
-
-            <div className="h-px bg-border sm:hidden" />
+            <div className="h-px bg-border" />
 
             {/* ── Your Highlights ── */}
             <Collapsible open={isOpen(SECTION_IDS.highlights)}>
