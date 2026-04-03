@@ -1,51 +1,56 @@
 
 
-# Suggestions Pill + Drawer on Bible Toolbar
+# Premium iPadOS Redesign — Suggestions & Bugs Panel
 
-## What this does
-Adds a dark-themed "Suggestions" pill to the left of the existing iPad App pill on the toolbar break bar. Clicking it opens a redesigned suggestion drawer with a spacious writing area (pencil-friendly with auto-OCR), a type option, heartfelt copy about prayerful consideration of suggestions and bug reports, and submission to `feedback_submissions`.
+## Summary
+Complete visual overhaul of `BibleSuggestionSheet.tsx` to match native iPadOS material design: frosted glass container, iOS segmented control toggle, borderless inputs with inner shadows, warm metallic submit button, and a sleek footer note replacing the boxed info block.
 
-## Technical changes
+## Technical Changes
 
-### 1. New component: `src/components/bible/SuggestionBanner.tsx`
+### `src/components/bible/BibleSuggestionSheet.tsx` — Full rewrite
 
-- Identical structure to `iPadWaitlistBanner.tsx` — rotated -90°, hangs from toolbar break bar
-- Dark mode styling: `bg-slate-800 dark:bg-slate-900 border-slate-600/50 text-slate-200`
-- Positioned at `left-[12%]` (to the left of the iPad pill at `left-[20%]`)
-- Uses `Lightbulb` icon + "Suggestions" uppercase text
-- No dismiss logic — always visible
+**1. Container & Materials**
+- Override `SheetContent` className to remove default `bg-background` and apply frosted glass: `bg-white/5 backdrop-blur-[24px] backdrop-brightness-[0.8] border-r border-white/10`
+- Remove all `border-border` references; use `border-white/10` throughout
 
-### 2. Redesign `src/components/bible/BibleSuggestionSheet.tsx`
+**2. Header**
+- Drop `SheetDescription` entirely (no sub-text)
+- Make title slightly smaller (`text-[0.95rem]`) but heavier (`font-bold tracking-tight`)
+- Mute the Lightbulb icon to `text-amber-400/70`
 
-Complete rewrite of the existing sheet into a premium left-side drawer:
+**3. iOS Segmented Control**
+- Replace the two separate pill buttons with a single pill-shaped container (`rounded-full bg-white/5 p-1`)
+- Inside: two segments that share a sliding highlight `div` (absolutely positioned, `rounded-full bg-white/15`, animated with `transition-all duration-200`)
+- Active segment text is `text-white`, inactive is `text-white/50`
 
-- **Side**: `side="left"` (drawer flies out from left)
-- **Writing space section**: Large textarea (min-h-[200px]) styled as a clean writing canvas with subtle dot-grid background — pencil-friendly on iPad
-- **Auto-OCR note**: Small label "Apple Pencil supported — handwriting auto-converts to text ✏️"
-- **Type toggle**: Small "Prefer to type?" link that switches to standard keyboard input mode
-- **Title input**: Optional, compact
-- **Category toggle**: "Suggestion" or "Bug Report" pill selector
-- **Heartfelt copy section** with clean SVG accents:
-  - "Every suggestion is prayerfully considered by our team."
-  - "We're constantly fine-tuning KeepRead.ing because we love the Word of God and want to interact with it as deeply as possible."
-  - "All suggestions welcome — and bugs reported here are fixed as soon as we know about them."
-  - "Thank you for blessing this ministry. 🙏"
-- **Submit button**: `Send` icon, full width
-- **Thank-you state**: Heart icon with blessing message, auto-close after 2.5s
-- Submits to existing `feedback_submissions` table with `feedback_type: "bible_suggestion"` or `"bible_bug"`
+**4. Borderless Inputs**
+- Title input: remove `border`, apply `bg-white/5 shadow-inner` with `rounded-lg`, placeholder at `opacity-40`
+- Textarea: remove all borders, apply `bg-white/[0.03]` with `shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)]`
+- Dot-grid: reduce opacity from 12% to 3% (`hsl(var(--muted-foreground) / 0.03)`)
+- Move "Apple Pencil supported" micro-copy inside the textarea as an absolutely positioned element at `bottom-2 right-3`, `opacity-40`, that fades out when `message.length > 0`
+- Labels at `opacity-60`
 
-### 3. Wire into `BibleReader.tsx`
+**5. Submit Button**
+- Replace default blue with warm metallic gold: `bg-amber-700/30 border border-amber-500/20 text-amber-200/90`
+- Hover state: `hover:bg-amber-600/50 hover:text-amber-100`
+- Disabled state: `opacity-30`
 
-- Add `suggestionDrawerOpen` state
-- Import and render `SuggestionBanner` at `left-[12%]` inside the toolbar `relative` container (before the iPad pill)
-- Import and render `BibleSuggestionSheet` with `open={suggestionDrawerOpen}`
-- Show on all devices (not just iPad)
+**6. Footer Note (replaces boxed info block)**
+- Remove the entire `rounded-xl bg-muted/50` card with cross/heart SVGs
+- Replace with a left-aligned paragraph below the submit button area:
+  - Small muted text (`text-[0.65rem] text-white/40 leading-relaxed`)
+  - Inline minimalist feather/spark SVG icon (12px) at the start
+  - Copy: "Every suggestion is prayerfully considered by our team. Bugs are fixed as soon as we know about them. Thank you for helping refine this space."
 
-## Files changed
+**7. Thank-you State**
+- Keep the same structure but adapt colors to frosted glass theme: `text-white/90` heading, `text-white/50` body
+
+**8. Sign-in Warning**
+- Restyle to `text-amber-400/70` on glass background
+
+### No other files change — only `BibleSuggestionSheet.tsx`.
 
 | File | Change |
 |------|--------|
-| `src/components/bible/SuggestionBanner.tsx` | New — dark pill hanging from toolbar |
-| `src/components/bible/BibleSuggestionSheet.tsx` | Rewrite — premium left drawer with writing space, OCR, category toggle, heartfelt copy |
-| `src/components/bible/BibleReader.tsx` | Wire suggestion state + render banner and drawer |
+| `src/components/bible/BibleSuggestionSheet.tsx` | Full visual redesign to iPadOS frosted glass aesthetic |
 
