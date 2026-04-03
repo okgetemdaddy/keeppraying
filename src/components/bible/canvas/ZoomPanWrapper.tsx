@@ -14,7 +14,7 @@ interface ZoomPanWrapperProps {
 const MIN_FONT = 14;
 const MAX_FONT = 72;
 const SPRING_CONFIG = { tension: 170, friction: 26 };
-const VELOCITY_BUFFER_SIZE = 4;
+const VELOCITY_BUFFER_SIZE = 5;
 const MOMENTUM_FACTOR = 150;
 
 /**
