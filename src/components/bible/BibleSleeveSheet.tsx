@@ -70,8 +70,17 @@ const SECTION_IDS = {
 function loadCollapsed(): Set<string> {
   try {
     const raw = localStorage.getItem("bible_sleeve_collapsed");
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch { return new Set(); }
+    if (raw) {
+      const parsed = new Set(JSON.parse(raw));
+      // Clean up legacy immersive section ID
+      parsed.delete("immersive");
+      return parsed;
+    }
+    // First load: everything collapsed except appearance
+    return new Set(Object.values(SECTION_IDS).filter(id => id !== SECTION_IDS.appearance));
+  } catch {
+    return new Set(Object.values(SECTION_IDS).filter(id => id !== SECTION_IDS.appearance));
+  }
 }
 function saveCollapsed(set: Set<string>) {
   try { localStorage.setItem("bible_sleeve_collapsed", JSON.stringify([...set])); } catch {}
