@@ -1709,8 +1709,8 @@ export function BibleReader() {
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Search…"
-                className="h-8 w-[120px] focus:w-48 transition-all duration-200 pl-7 text-xs rounded-md bg-muted/50 border-transparent focus:border-input"
+                placeholder="What can I help you find?"
+                className="h-8 w-[240px] focus:w-80 transition-all duration-200 pl-7 text-xs rounded-md bg-muted/50 border-transparent focus:border-input"
                 onFocus={() => setSearchOpen(true)}
                 readOnly
               />
