@@ -99,6 +99,7 @@ import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
 import { CrossReferencePopover } from "@/components/bible/CrossReferencePopover";
+import { ReferenceBloom } from "@/components/bible/ReferenceBloom";
 import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
@@ -586,6 +587,9 @@ export function BibleReader() {
   // ── Cross-reference popover state ──
   const [crossRefVerse, setCrossRefVerse] = useState<number | null>(null);
   const [crossRefOpen, setCrossRefOpen] = useState(false);
+
+  // ── Reference Bloom state ──
+  const [referenceBloom, setReferenceBloom] = useState<{ x: number; y: number; word: string; verseNumber: number } | null>(null);
 
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
@@ -1364,6 +1368,22 @@ export function BibleReader() {
     [handleTapSelectInner],
   );
 
+  const handleReference = useCallback(
+    (verseNumber: number, word?: string) => {
+      const verseEl = document.getElementById(`verse-${verseNumber}`);
+      const rect = verseEl?.getBoundingClientRect();
+      const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+      const y = rect ? rect.bottom : window.innerHeight / 2;
+      const verseText = verses.find((v) => v.number === verseNumber)?.text ?? "";
+      setReferenceBloom({
+        x,
+        y,
+        word: word || verseText.split(/\s+/).slice(0, 3).join(" "),
+        verseNumber,
+      });
+    },
+    [verses],
+  );
 
   useEffect(() => {
     const area = readingAreaRef.current;
@@ -2021,8 +2041,32 @@ export function BibleReader() {
                       penGlow={inkPenGlow}
                       fingerDrawing={inkFingerDrawing}
                       isDark={premiumDark || document.documentElement.classList.contains("dark")}
-                      onCircleSelect={(verseNumbers) => {
+                      onCircleSelect={(verseNumbers, hullCenter) => {
                         if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                          // Word-level bloom: single verse + try to extract word from circle center
+                          if (verseNumbers.length === 1 && hullCenter) {
+                            const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
+                            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+                              const text = range.startContainer.textContent ?? "";
+                              const offset = range.startOffset;
+                              // Extract word at offset
+                              let start = offset;
+                              let end = offset;
+                              while (start > 0 && /\w/.test(text[start - 1])) start--;
+                              while (end < text.length && /\w/.test(text[end])) end++;
+                              const word = text.slice(start, end).trim();
+                              if (word && word.length >= 2 && word.length < 40) {
+                                setReferenceBloom({
+                                  x: hullCenter.x,
+                                  y: hullCenter.y,
+                                  word,
+                                  verseNumber: verseNumbers[0],
+                                });
+                                return;
+                              }
+                            }
+                          }
+                          // Default: verse selection
                           setCrossSelections((prev) => {
                             const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
                             const newSelections = verseNumbers
@@ -2153,6 +2197,7 @@ export function BibleReader() {
             onAddToBunch={handleAddToBunchRequest}
             hasBunches={(bunches ?? []).length > 0}
             onCrossRef={handleCrossRef}
+            onReference={handleReference}
             onDismiss={dismissToolbar}
             isAuthenticated={!!user}
           />
@@ -2179,6 +2224,39 @@ export function BibleReader() {
           }}
         />
       )}
+
+      {/* ── Reference Bloom ── */}
+      <AnimatePresence>
+        {referenceBloom && versionId && bookUsfm && currentChapter && (
+          <ReferenceBloom
+            anchorPoint={{ x: referenceBloom.x, y: referenceBloom.y }}
+            word={referenceBloom.word}
+            verseNumber={referenceBloom.verseNumber}
+            bookUsfm={bookUsfm}
+            chapter={currentChapter.id}
+            versionId={versionId}
+            verseText={verses.find((v) => v.number === referenceBloom.verseNumber)?.text ?? ""}
+            onClose={() => setReferenceBloom(null)}
+            onNavigate={(navBookUsfm, chapter, verse) => {
+              handleSearchNavigate(navBookUsfm, chapter, verse);
+              setReferenceBloom(null);
+            }}
+            onPinToMargin={() => {
+              if (bookUsfm && currentChapter) {
+                const verseIdStr = `${bookUsfm}.${currentChapter.id}.${referenceBloom.verseNumber}`;
+                saveAnnotationMut.mutate({
+                  verseIds: [verseIdStr],
+                  strokes: [],
+                  typedText: `[word-study] ${referenceBloom.word}`,
+                  existingId: undefined,
+                });
+                toast.success("📌 Pinned to margin");
+              }
+              setReferenceBloom(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Verse Bunch Tooltip ── */}
       <AnimatePresence>

@@ -4,6 +4,7 @@ import {
   Bookmark,
   BookmarkCheck,
   BookMarked,
+  BookOpen,
   StickyNote,
   Package,
   X,
@@ -58,6 +59,7 @@ export interface FloatingToolbarProps {
   onCreateBunch: () => void;
   onAddToBunch?: () => void;
   onCrossRef?: (verseNumber: number) => void;
+  onReference?: (verseNumber: number, word?: string) => void;
   onDismiss: () => void;
   isAuthenticated: boolean;
   hasBunches?: boolean;
@@ -86,6 +88,7 @@ function ToolbarActions({
   onCreateBunch,
   onAddToBunch,
   onCrossRef,
+  onReference,
   hasBunches,
   onDismiss,
   layout = "horizontal",
@@ -231,6 +234,21 @@ function ToolbarActions({
           >
             <BookMarked className="h-4 w-4" />
             {isVertical && <span className="text-sm">Cross-refs</span>}
+          </button>
+        )}
+
+        {/* ── Reference (Word Study) ── */}
+        {primaryVerse && onReference && (
+          <button
+            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
+            title="Word study & reference"
+            onClick={() => {
+              onReference(primaryVerse);
+              onDismiss();
+            }}
+          >
+            <BookOpen className="h-4 w-4" />
+            {isVertical && <span className="text-sm">Reference</span>}
           </button>
         )}
 

@@ -107,7 +107,7 @@ interface InkOverlayProps {
   fingerDrawing?: boolean;
   isDark?: boolean;
   /** Callback when a circle-to-select gesture encloses verses */
-  onCircleSelect?: (verseNumbers: number[]) => void;
+  onCircleSelect?: (verseNumbers: number[], hullCenter?: { x: number; y: number }) => void;
   /** Callback for first-run Apple Pencil onboarding */
   onPencilFirstContact?: () => void;
 }
@@ -311,7 +311,13 @@ export function InkOverlay({
     if (onCircleSelect && svgRef.current) {
       const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
       if (matched.length > 0) {
-        onCircleSelect(matched);
+        // Calculate hull center for word-level detection
+        const xs = currentPoints.map((p) => p.x / zoom);
+        const ys = currentPoints.map((p) => p.y / zoom);
+        const svgRect = svgRef.current.getBoundingClientRect();
+        const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length);
+        const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length);
+        onCircleSelect(matched, { x: centerX, y: centerY });
         pointsBufferRef.current = [];
         return; // Don't create a stroke for selection gestures
       }
