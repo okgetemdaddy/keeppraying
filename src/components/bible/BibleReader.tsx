@@ -1978,7 +1978,11 @@ export function BibleReader() {
       </div>
 
       {/* ── Reading Area ── */}
-      <div ref={readingAreaRef} className="mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
+      <div ref={readingAreaRef} className="relative mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
+        {/* iPad Waitlist Banner — desktop/iPad only */}
+        {!device.isIPhone && (
+          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
+        )}
         {currentBook && currentChapter && (
           <motion.header
             {...fadeIn}
