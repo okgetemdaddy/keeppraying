@@ -982,7 +982,7 @@ export function BibleReader() {
       if (!isTwoFinger || e.touches.length !== 2) return;
       const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const deltaY = lastTwoFingerY - currentY;
-      area.scrollTop += deltaY;
+      window.scrollBy(0, deltaY);
       lastTwoFingerY = currentY;
     };
 
