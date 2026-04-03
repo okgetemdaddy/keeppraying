@@ -461,7 +461,17 @@ function EnrichedVerse({
             <PenTool className="h-3 w-3" />
           </button>
         )}
-        <sup className="mr-1 text-xs font-semibold text-primary/70 select-none">
+        <sup
+          className="mr-1 text-xs font-semibold text-primary/70 select-none"
+          onPointerDown={() => {
+            if (onLongPressVerseNumber) {
+              longPressTimer.current = setTimeout(() => onLongPressVerseNumber(verse.number), 500);
+            }
+          }}
+          onPointerUp={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerLeave={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerCancel={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+        >
           {verse.number}
         </sup>
         <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
