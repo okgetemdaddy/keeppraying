@@ -1764,7 +1764,11 @@ export function BibleReader() {
       />
 
       {/* ── Toolbar ── */}
-      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
+        {/* iPad Waitlist Banner — hangs from toolbar break bar */}
+        {!isIPhone && (
+          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
+        )}
         <div className="mx-auto max-w-3xl px-4 py-2 space-y-1.5">
           {/* ── Row 1: Version · Book · Chapter ── */}
           <div className="flex items-center gap-2">
@@ -1979,10 +1983,6 @@ export function BibleReader() {
 
       {/* ── Reading Area ── */}
       <div ref={readingAreaRef} className="relative mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
-        {/* iPad Waitlist Banner — desktop/iPad only */}
-        {!isIPhone && (
-          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
-        )}
         {currentBook && currentChapter && (
           <motion.header
             {...fadeIn}
