@@ -2046,10 +2046,16 @@ export function BibleReader() {
                           // Word-level bloom: single verse + try to extract word from circle center
                           if (verseNumbers.length === 1 && hullCenter) {
                             const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
-                            if (range) {
-                              range.expand?.("word");
-                              const word = range.toString().trim();
-                              if (word && word.split(/\s+/).length <= 3 && word.length < 40) {
+                            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+                              const text = range.startContainer.textContent ?? "";
+                              const offset = range.startOffset;
+                              // Extract word at offset
+                              let start = offset;
+                              let end = offset;
+                              while (start > 0 && /\w/.test(text[start - 1])) start--;
+                              while (end < text.length && /\w/.test(text[end])) end++;
+                              const word = text.slice(start, end).trim();
+                              if (word && word.length >= 2 && word.length < 40) {
                                 setReferenceBloom({
                                   x: hullCenter.x,
                                   y: hullCenter.y,
