@@ -2013,16 +2013,21 @@ export function BibleReader() {
 
             {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
           <div className="flex items-center gap-2">
-            {/* Bible Sleeve button (left) */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSleeveOpen(true)}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              title="Your Bible Sleeve"
-            >
-              <PanelLeft className="h-4 w-4" />
-            </Button>
+            {/* Bible Sleeve button (left) + iPad waitlist banner */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSleeveOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Your Bible Sleeve"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+              {!isIPhone && (
+                <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} hidden={focusMode} />
+              )}
+            </div>
 
             {/* Study Mode (iPad/Pencil) */}
             <Button
