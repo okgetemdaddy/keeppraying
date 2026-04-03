@@ -12,24 +12,17 @@ interface ZoomPanWrapperProps {
 const MIN_FONT = 14;
 const MAX_FONT = 72;
 const SPRING_CONFIG = { tension: 170, friction: 26 };
+const VELOCITY_BUFFER_SIZE = 4;
+const MOMENTUM_FACTOR = 150;
 
 /**
- * ZoomPanWrapper — The spatial physics engine.
+ * ZoomPanWrapper — Strict finger-count gesture routing.
  *
- * Owns all pan (x, y) state via react-spring animated values.
- * Owns semantic zoom by mapping pinch / ctrl+wheel to fontSize.
- *
- * CRITICAL GESTURE GATE:
- * - Two-finger touch drag → pan with momentum
- * - Pinch → semantic zoom (fontSize)
- * - Ctrl/Cmd + wheel → semantic zoom
- * - Plain wheel → vertical pan with spring
- * - Single-finger / mouse drag → ONLY routed to children (InkCanvas) when drawMode=true
- *
- * CRITICAL CSS VARIABLE APPROACH:
- * fontSize is set ONLY via CSS variables on the container.
- * The text column reads --canvas-font-size and --canvas-line-height exclusively.
- * fontSize is NOT passed as a React prop to text — no one-frame desync.
+ * 2 fingers → semantic zoom (fontSize)
+ * 3 fingers → pan with momentum
+ * 1 finger  → reserved for ink / nothing
+ * Desktop scroll → vertical pan
+ * Desktop ctrl+scroll → semantic zoom
  */
 const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
   drawMode,
@@ -47,17 +40,21 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
     config: SPRING_CONFIG,
   }));
 
-  // Suppress Safari gestures + raw touch-based pinch detection
+  // All touch gesture handling — strict finger-count routing
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
+    // Suppress Safari proprietary gesture events
     const prevent = (e: Event) => e.preventDefault();
-    el.addEventListener('gesturestart', prevent, { passive: false });
-    el.addEventListener('gesturechange', prevent, { passive: false });
+    el.addEventListener("gesturestart", prevent, { passive: false });
+    el.addEventListener("gesturechange", prevent, { passive: false });
 
-    // Raw pinch detection — bypasses @use-gesture entirely for iPad reliability
+    // Tracking state
+    let gestureType: "none" | "zoom" | "pan" = "none";
     let lastDist: number | null = null;
+    let lastMidpoint: { x: number; y: number } | null = null;
+    const velocityBuffer: { x: number; y: number; t: number }[] = [];
 
     const getTouchDist = (touches: TouchList) => {
       const dx = touches[0].clientX - touches[1].clientX;
@@ -65,85 +62,106 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
       return Math.sqrt(dx * dx + dy * dy);
     };
 
+    const getMidpoint3 = (touches: TouchList) => ({
+      x: (touches[0].clientX + touches[1].clientX + touches[2].clientX) / 3,
+      y: (touches[0].clientY + touches[1].clientY + touches[2].clientY) / 3,
+    });
+
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
+        gestureType = "zoom";
         lastDist = getTouchDist(e.touches);
+      } else if (e.touches.length === 3) {
+        gestureType = "pan";
+        lastMidpoint = getMidpoint3(e.touches);
+        velocityBuffer.length = 0;
+        api.stop();
       }
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && lastDist !== null) {
+      if (gestureType === "zoom" && e.touches.length === 2) {
         e.preventDefault();
         const dist = getTouchDist(e.touches);
-        const delta = dist - lastDist;
-        const next = Math.round(
-          Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + delta * 0.15))
-        );
-        if (next !== fontSizeRef.current) onFontSizeChange(next);
+        if (lastDist !== null) {
+          const delta = dist - lastDist;
+          const next = Math.round(
+            Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + delta * 0.15))
+          );
+          if (next !== fontSizeRef.current) onFontSizeChange(next);
+        }
         lastDist = dist;
+      } else if (gestureType === "pan" && e.touches.length === 3) {
+        e.preventDefault();
+        const mid = getMidpoint3(e.touches);
+        if (lastMidpoint) {
+          const dx = mid.x - lastMidpoint.x;
+          const dy = mid.y - lastMidpoint.y;
+          api.set({ x: spring.x.get() + dx, y: spring.y.get() + dy });
+
+          // Push to velocity buffer
+          velocityBuffer.push({ x: mid.x, y: mid.y, t: performance.now() });
+          if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
+        }
+        lastMidpoint = mid;
       }
     };
 
-    const onTouchEnd = () => { lastDist = null; };
+    const onTouchEnd = () => {
+      if (gestureType === "pan" && velocityBuffer.length >= 2) {
+        const first = velocityBuffer[0];
+        const last = velocityBuffer[velocityBuffer.length - 1];
+        const dt = (last.t - first.t) / 1000; // seconds
+        if (dt > 0.01) {
+          const vx = ((last.x - first.x) / dt) * (MOMENTUM_FACTOR / 1000);
+          const vy = ((last.y - first.y) / dt) * (MOMENTUM_FACTOR / 1000);
+          api.start({
+            x: spring.x.get() + vx * MOMENTUM_FACTOR,
+            y: spring.y.get() + vy * MOMENTUM_FACTOR,
+            config: SPRING_CONFIG,
+          });
+        }
+      }
+      // Reset all tracking
+      gestureType = "none";
+      lastDist = null;
+      lastMidpoint = null;
+      velocityBuffer.length = 0;
+    };
 
-    el.addEventListener('touchstart', onTouchStart, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    el.addEventListener('touchend', onTouchEnd, { passive: false });
-    el.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd, { passive: false });
+    el.addEventListener("touchcancel", onTouchEnd, { passive: false });
 
     return () => {
-      el.removeEventListener('gesturestart', prevent);
-      el.removeEventListener('gesturechange', prevent);
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchcancel', onTouchEnd);
+      el.removeEventListener("gesturestart", prevent);
+      el.removeEventListener("gesturechange", prevent);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onFontSizeChange]);
+  }, [onFontSizeChange, api, spring.x, spring.y]);
 
+  // Desktop only — wheel for pan, ctrl+wheel for zoom
   useGesture(
     {
-      onDrag: ({ delta: [dx, dy], touches, event, cancel }) => {
-        // CRITICAL GATE: only pan on two-finger touch drag
-        if (touches > 0 && touches < 2) {
-          // Single-finger touch → do nothing here, let InkCanvas handle via pointer events
-          cancel();
-          return;
-        }
-        // Two-finger touch OR mouse drag (non-draw mode)
-        if (touches >= 2 || (!drawMode && touches === 0)) {
-          event.preventDefault();
-          api.start({ x: spring.x.get() + dx, y: spring.y.get() + dy });
-        }
-      },
       onWheel: ({ delta: [, dy], event, ctrlKey, metaKey }) => {
         if (ctrlKey || metaKey) {
-          // Semantic zoom
           event.preventDefault();
           const next = Math.round(
-            Math.min(
-              MAX_FONT,
-              Math.max(MIN_FONT, fontSizeRef.current - dy * 0.05)
-            )
+            Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current - dy * 0.05))
           );
           if (next !== fontSizeRef.current) onFontSizeChange(next);
         } else {
-          // Vertical pan with momentum
           api.start({ y: spring.y.get() - dy * 2.5 });
         }
       },
     },
     {
       target: containerRef,
-      drag: {
-        filterTaps: true,
-        // Prevent browser scroll during drag
-        preventDefault: true,
-        // Use touch: true so we get touch count info
-      },
-      wheel: {
-        preventDefault: false, // we handle it per-event above
-      },
+      wheel: { preventDefault: false },
       eventOptions: { passive: false },
     }
   );
@@ -158,15 +176,13 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
         inset: 0,
         overflow: "hidden",
         background: "#f5f0e8",
-        touchAction: "none", // we manage all touch ourselves
-        cursor: drawMode ? "crosshair" : "grab",
+        touchAction: "none",
+        cursor: drawMode ? "crosshair" : "default",
       }}
     >
       <animated.div
         style={{
           transform: to([spring.x, spring.y], (x, y) => `translate3d(${x}px, ${y}px, 0)`),
-          // CRITICAL: fontSize flows ONLY through CSS variables
-          // Text column reads these — no React prop for fontSize
           ["--canvas-font-size" as string]: `${fontSize}px`,
           ["--canvas-line-height" as string]: `${lineHeight}px`,
           position: "relative",
