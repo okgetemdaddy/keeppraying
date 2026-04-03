@@ -358,6 +358,7 @@ interface EnrichedVerseProps {
   onAnnotationSave?: (verseId: string, strokes: StrokeData[], existingId?: string) => void;
   verseIdString?: string;
   highlightStyle?: HighlightStyleMode;
+  previewRange?: { start: number; end: number };
 }
 
 function EnrichedVerse({
