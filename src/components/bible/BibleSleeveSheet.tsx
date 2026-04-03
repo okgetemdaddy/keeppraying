@@ -210,6 +210,8 @@ export function BibleSleeveSheet({
   onToggleOled,
   easeEyesDim,
   onEaseEyesDimChange,
+  easeEyesTint,
+  onEaseEyesTintChange,
   highlights,
   bookmarks,
   notes,
