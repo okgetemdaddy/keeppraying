@@ -21,6 +21,7 @@ import {
   Search,
   PenTool,
   BookMarked,
+  Download,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -63,6 +64,7 @@ import {
   type VerseBunchItemWithName,
 } from "@/hooks/useBibleChapterData";
 import { useBibleMutations, type ScriptureRef, type CrossBunchItem } from "@/hooks/useBibleMutations";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
 import { useBiblePosition, type BiblePosition } from "@/hooks/useBiblePosition";
@@ -100,6 +102,7 @@ import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
 import { CrossReferencePopover } from "@/components/bible/CrossReferencePopover";
 import { ReferenceBloom } from "@/components/bible/ReferenceBloom";
+import { CanvasExportSheet } from "@/components/bible/CanvasExportSheet";
 import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip";
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
@@ -606,6 +609,22 @@ export function BibleReader() {
 
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
+
+  // ── Canvas Export sheet ──
+  const [exportSheetOpen, setExportSheetOpen] = useState(false);
+
+  // ── Study artifacts for Bible Sleeve ──
+  const [studyArtifacts, setStudyArtifacts] = useState<any[]>([]);
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("study_artifacts" as any)
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => { if (data) setStudyArtifacts(data as any[]); });
+  }, [user]);
 
   // ── Premium Dark Mode ──
   const [premiumDark, setPremiumDark] = useState(() => {
@@ -1843,7 +1862,18 @@ export function BibleReader() {
               <PenTool className="h-4 w-4" />
             </Button>
 
-
+            {/* Export Canvas (visible in study mode) */}
+            {studyMode && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setExportSheetOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Export Canvas"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
 
 
             {/* Focus mode toggle */}
@@ -2366,6 +2396,12 @@ export function BibleReader() {
         onToggleTapNav={handleToggleTapNav}
         highlightStyle={highlightStyle}
         onHighlightStyleChange={handleHighlightStyleChange}
+        studyArtifacts={studyArtifacts}
+        onNavigateToArtifact={(artifact: any) => {
+          setSleeveOpen(false);
+          setBookUsfm(artifact.book_usfm);
+          setChapterIdx(artifact.chapter_number - 1);
+        }}
       />
 
       {/* ── Manuscript Canvas (Mode 2) ── */}
@@ -2501,6 +2537,7 @@ export function BibleReader() {
         chapterAnnotations={chapterAnnotations ?? []}
         inkStrokes={inkHistory.strokes}
         journalAnnotations={journalAnnotations ?? []}
+        onExportCanvas={() => { setPocketOpen(false); setExportSheetOpen(true); }}
         onTryAction={(actionId) => {
           setPocketOpen(false);
           switch (actionId) {
@@ -2515,6 +2552,17 @@ export function BibleReader() {
               break;
           }
         }}
+      />
+
+      {/* ── Canvas Export Sheet ── */}
+      <CanvasExportSheet
+        open={exportSheetOpen}
+        onOpenChange={setExportSheetOpen}
+        readingAreaRef={readingAreaRef}
+        bookUsfm={bookUsfm}
+        chapterNumber={chapterIdx + 1}
+        chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : "Chapter"}
+        versionId={versionId}
       />
 
       {/* ── Chapter Thumbnail Strip ── */}

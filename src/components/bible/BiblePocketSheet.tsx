@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BookOpen, PenTool, StickyNote, Clock, Lightbulb, BookMarked } from "lucide-react";
+import { BookOpen, PenTool, StickyNote, Clock, Lightbulb, BookMarked, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Annotation } from "@/hooks/useAnnotations";
 import type { InkStroke } from "./InkOverlay";
@@ -17,6 +17,7 @@ interface BiblePocketSheetProps {
   inkStrokes: InkStroke[];
   journalAnnotations?: Annotation[];
   onTryAction?: (actionId: string) => void;
+  onExportCanvas?: () => void;
   /** Which tab to open to (controlled externally for onboarding) */
   defaultTab?: PocketTab;
 }
@@ -29,6 +30,7 @@ export function BiblePocketSheet({
   inkStrokes,
   journalAnnotations = [],
   onTryAction,
+  onExportCanvas,
   defaultTab,
 }: BiblePocketSheetProps) {
   const [activeTab, setActiveTab] = useState<PocketTab>(defaultTab ?? "notes");
@@ -105,6 +107,19 @@ export function BiblePocketSheet({
             ))}
           </div>
         </div>
+
+        {/* Export Canvas Button — visible when there are annotations or strokes */}
+        {activeTab === "notes" && (totalAnnotations > 0 || inkCount > 0) && onExportCanvas && (
+          <div className="px-4 pb-2">
+            <button
+              onClick={onExportCanvas}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 py-2.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Export Canvas
+            </button>
+          </div>
+        )}
 
         {/* Tab Content */}
         {activeTab === "notes" ? (

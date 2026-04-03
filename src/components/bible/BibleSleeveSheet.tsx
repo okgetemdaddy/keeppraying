@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { PenTool, Layers, BookOpen } from "lucide-react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { PenTool, Layers, BookOpen, Image as ImageIcon } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
@@ -65,6 +65,7 @@ const SECTION_IDS = {
   bookmarks: "bookmarks",
   notes: "notes",
   bunches: "bunches",
+  studies: "studies",
 } as const;
 
 function loadCollapsed(): Set<string> {
@@ -110,6 +111,18 @@ function SectionHeader({
       </button>
     </CollapsibleTrigger>
   );
+}
+
+interface StudyArtifact {
+  id: string;
+  book_usfm: string;
+  chapter_number: number;
+  version_id: number;
+  title: string;
+  image_url: string;
+  stroke_count: number;
+  card_count: number;
+  created_at: string;
 }
 
 interface BibleSleeveSheetProps {
@@ -186,6 +199,10 @@ interface BibleSleeveSheetProps {
   /* highlight style */
   highlightStyle?: "invert" | "neon";
   onHighlightStyleChange?: (v: "invert" | "neon") => void;
+
+  /* study artifacts */
+  studyArtifacts?: StudyArtifact[];
+  onNavigateToArtifact?: (artifact: StudyArtifact) => void;
 }
 
 export function BibleSleeveSheet({
@@ -238,6 +255,8 @@ export function BibleSleeveSheet({
   onToggleTapNav,
   highlightStyle = "invert",
   onHighlightStyleChange,
+  studyArtifacts = [],
+  onNavigateToArtifact,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -273,7 +292,7 @@ export function BibleSleeveSheet({
   return (
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[80vw] sm:w-[360px] p-0 flex flex-col">
+      <SheetContent side="left" className="w-[85vw] sm:w-[480px] lg:w-[560px] p-0 flex flex-col">
         <SheetHeader className="px-5 pt-5 pb-3 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
           <SheetTitle className="text-left">
             <span className="text-base font-bold text-foreground">
@@ -290,7 +309,9 @@ export function BibleSleeveSheet({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4">
-          <div className="space-y-5 pb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0 pb-8">
+            {/* ── LEFT COLUMN: Settings ── */}
+            <div className="space-y-5">
 
             {/* ── Appearance ── */}
             <Collapsible open={isOpen(SECTION_IDS.appearance)}>
@@ -610,7 +631,12 @@ export function BibleSleeveSheet({
               </>
             )}
 
-            <div className="h-px bg-border" />
+            </div>
+
+            {/* ── RIGHT COLUMN: Content ── */}
+            <div className="space-y-5">
+
+            <div className="h-px bg-border sm:hidden" />
 
             {/* ── Your Highlights ── */}
             <Collapsible open={isOpen(SECTION_IDS.highlights)}>
@@ -807,7 +833,44 @@ export function BibleSleeveSheet({
             </Collapsible>
 
 
+            <div className="h-px bg-border" />
 
+            {/* ── My Studies ── */}
+            <Collapsible open={isOpen(SECTION_IDS.studies)}>
+              <SectionHeader icon={ImageIcon} label="My Studies" badge={studyArtifacts.length} isOpen={isOpen(SECTION_IDS.studies)} onToggle={() => toggleSection(SECTION_IDS.studies)} />
+              <CollapsibleContent className="mt-3">
+                {studyArtifacts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    No saved study snapshots yet. Export a chapter canvas to save one.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {studyArtifacts.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => onNavigateToArtifact?.(a)}
+                        className="flex items-center gap-3 w-full text-left rounded-lg border border-border px-3 py-2.5 hover:bg-muted/50 transition-colors"
+                      >
+                        <img
+                          src={a.image_url}
+                          alt={a.title}
+                          className="h-10 w-10 rounded-md object-cover border border-border shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
+                          <p className="text-[0.6rem] text-muted-foreground">
+                            {new Date(a.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                            {a.stroke_count > 0 && ` · ${a.stroke_count} strokes`}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            <div className="h-px bg-border" />
 
             {/* ── Trash Bin (always visible) ── */}
             <section>
@@ -820,6 +883,7 @@ export function BibleSleeveSheet({
                 <span className="ml-auto text-xs text-muted-foreground">30 days</span>
               </button>
             </section>
+            </div>
           </div>
         </div>
       </SheetContent>
