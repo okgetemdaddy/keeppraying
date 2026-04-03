@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { useSpring, animated } from "@react-spring/web";
+import { useSpring, animated, to } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 
 interface ZoomPanWrapperProps {
