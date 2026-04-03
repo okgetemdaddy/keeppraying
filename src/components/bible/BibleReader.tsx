@@ -1768,6 +1768,8 @@ export function BibleReader() {
 
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
+        {/* Suggestion Banner — hangs from toolbar break bar */}
+        <SuggestionBanner onClick={() => setSuggestionDrawerOpen(true)} />
         {/* iPad Waitlist Banner — hangs from toolbar break bar */}
         {!isIPhone && (
           <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
