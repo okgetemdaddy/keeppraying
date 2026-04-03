@@ -274,14 +274,18 @@ export function InkOverlay({
       if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
 
       setHoverPos(null);
-      const [x, y] = getTransformedPoint(e.clientX, e.clientY);
-      // Push directly to ref buffer — NO React state update, no re-render
-      pointsBufferRef.current.push({
-        x, y,
-        pressure: e.pressure ?? 0.5,
-        tiltX: e.tiltX,
-        tiltY: e.tiltY,
-      });
+
+      // ── ProMotion 120Hz: capture sub-frame coalesced events ──
+      const coalesced = (e.nativeEvent as PointerEvent).getCoalescedEvents?.() ?? [e.nativeEvent as PointerEvent];
+      for (const ce of coalesced) {
+        const [cx, cy] = getTransformedPoint(ce.clientX, ce.clientY);
+        pointsBufferRef.current.push({
+          x: cx, y: cy,
+          pressure: ce.pressure ?? 0.5,
+          tiltX: ce.tiltX,
+          tiltY: ce.tiltY,
+        });
+      }
     },
     [getTransformedPoint, fingerDrawing],
   );
