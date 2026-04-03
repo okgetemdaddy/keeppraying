@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import ZoomPanWrapper from "./ZoomPanWrapper";
 import InkCanvas, { type InkStroke } from "./InkCanvas";
 import { GENESIS_1 } from "./genesisData";
