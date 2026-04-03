@@ -300,7 +300,7 @@ function HighlightedText({
   }
 
   if (cursor < text.length) {
-    parts.push(<span key={`tail-${cursor}`}>{text.slice(cursor)}</span>);
+    parts.push(<WordWrappedText key={`tail-${cursor}`} text={text.slice(cursor)} verseNumber={verseNumber} />);
   }
 
   return <>{parts}</>;
