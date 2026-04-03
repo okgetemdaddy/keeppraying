@@ -2036,6 +2036,7 @@ export function BibleReader() {
                           onAnnotationSave={handleAnnotationSave}
                           verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
                           highlightStyle={highlightStyle}
+                          previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
                         />
                         <AnimatePresence>
                           {noteInputVerse === v.number && (
