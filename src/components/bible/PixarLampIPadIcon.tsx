@@ -11,7 +11,7 @@ export function PixarLampIPadIcon({ size = 24, ...props }: Props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 512 512"
+      viewBox="60 40 400 440"
       width={size}
       height={size}
       {...props}
