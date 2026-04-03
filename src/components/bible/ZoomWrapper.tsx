@@ -61,6 +61,7 @@ export function ZoomWrapper({
   marginWidth = 0,
   canvasBackground = "none",
   overlay,
+  studyMode = false,
 }: ZoomWrapperProps) {
   const hasMargin = marginWidth > 0;
 
