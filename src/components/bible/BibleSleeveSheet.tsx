@@ -321,7 +321,7 @@ export function BibleSleeveSheet({
                   </p>
                   <Slider
                     value={[easeEyesDim]}
-                    min={0.4}
+                    min={0.3}
                     max={1}
                     step={0.05}
                     onValueChange={([v]) => onEaseEyesDimChange(v)}
