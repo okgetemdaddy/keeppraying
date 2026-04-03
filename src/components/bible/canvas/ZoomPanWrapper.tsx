@@ -7,6 +7,8 @@ interface ZoomPanWrapperProps {
   fontSize: number;
   onFontSizeChange: (fs: number) => void;
   children: React.ReactNode;
+  /** Rendered as a direct child of the animated container, covering the full surface */
+  overlay?: React.ReactNode;
 }
 
 const MIN_FONT = 14;
@@ -29,6 +31,7 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
   fontSize,
   onFontSizeChange,
   children,
+  overlay,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const fontSizeRef = useRef(fontSize);
@@ -186,12 +189,26 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
           ["--canvas-font-size" as string]: `${fontSize}px`,
           ["--canvas-line-height" as string]: `${lineHeight}px`,
           position: "relative",
+          minWidth: "100vw",
           minHeight: "100vh",
           padding: "80px 40px 200px",
           willChange: "transform",
         }}
       >
         {children}
+        {/* Full-surface ink overlay — covers entire transformed space */}
+        {overlay && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              overflow: "visible",
+              pointerEvents: "none",
+            }}
+          >
+            {overlay}
+          </div>
+        )}
       </animated.div>
     </div>
   );

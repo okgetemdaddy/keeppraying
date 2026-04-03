@@ -92,9 +92,13 @@ const InkCanvas: React.FC<InkCanvasProps> = ({
       ref={svgRef}
       style={{
         position: "absolute",
-        inset: 0,
+        top: 0,
+        left: 0,
         width: "100%",
         height: "100%",
+        minWidth: "100vw",
+        minHeight: "100vh",
+        overflow: "visible",
         // Only intercept pointer events in draw mode, and only for non-touch
         pointerEvents: drawMode ? "auto" : "none",
         touchAction: "none",
