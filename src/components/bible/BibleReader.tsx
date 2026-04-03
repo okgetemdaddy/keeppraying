@@ -420,7 +420,17 @@ function EnrichedVerse({
         className={`${bunchBgClass} ${selectedClass} cursor-pointer`}
         onClick={(e) => onTapSelect(verse.number, e)}
       >
-        <sup className="mx-0.5 text-[0.65rem] font-semibold text-primary/60 select-none align-super">
+        <sup
+          className="mx-0.5 text-[0.65rem] font-semibold text-primary/60 select-none align-super"
+          onPointerDown={() => {
+            if (onLongPressVerseNumber) {
+              longPressTimer.current = setTimeout(() => onLongPressVerseNumber(verse.number), 500);
+            }
+          }}
+          onPointerUp={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerLeave={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+          onPointerCancel={() => { if (longPressTimer.current) clearTimeout(longPressTimer.current); }}
+        >
           <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
