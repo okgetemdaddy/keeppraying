@@ -1062,7 +1062,8 @@ export function BibleReader() {
       observer.disconnect();
       clearTimeout(timeout);
     };
-  }, [verses]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verses, searchNavCounter.current]);
 
   // Scripture ref for mutations
   const scriptureRef: ScriptureRef | null = useMemo(
