@@ -2041,10 +2041,10 @@ export function BibleReader() {
                   handleToggleStudyMode(!studyMode);
                 }
               }}
-              className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
             >
-              <PixarLampIPadIcon className="h-40 w-40" />
+              <PixarLampIPadIcon className="!h-full !w-full" />
             </Button>
 
             {/* Export Canvas (visible in study mode) */}
