@@ -206,19 +206,46 @@ function snapToWordBoundaries(text: string, start: number, end: number): { start
 }
 
 /* ── Highlighted text renderer (supports partial-verse spans) ── */
+/* ── Word-wrapped text for hit testing (invisible layout-wise) ── */
+function WordWrappedText({ text, verseNumber }: { text: string; verseNumber?: number }) {
+  const segments = text.split(/(\s+)/);
+  let wordIndex = 0;
+  return (
+    <>
+      {segments.map((seg, i) => {
+        if (/^\s+$/.test(seg)) {
+          return <span key={`ws-${i}`}>{seg}</span>;
+        }
+        const idx = wordIndex++;
+        return (
+          <span
+            key={`w-${i}`}
+            data-word={seg}
+            data-word-index={idx}
+            data-verse={verseNumber}
+          >
+            {seg}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 function HighlightedText({
   text,
   highlights,
   highlightStyle = "invert",
   previewRange,
+  verseNumber,
 }: {
   text: string;
   highlights: UserHighlight[];
   highlightStyle?: HighlightStyleMode;
   previewRange?: { start: number; end: number };
+  verseNumber?: number;
 }) {
-  if (!highlights.length && !previewRange) return <>{text}</>;
-
+  if (!highlights.length && !previewRange) return <WordWrappedText text={text} verseNumber={verseNumber} />;
   // Build highlight spans
   const spans = highlights
     .map((h) => ({
