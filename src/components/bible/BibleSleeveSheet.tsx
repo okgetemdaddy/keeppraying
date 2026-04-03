@@ -255,6 +255,8 @@ export function BibleSleeveSheet({
   onToggleTapNav,
   highlightStyle = "invert",
   onHighlightStyleChange,
+  studyArtifacts = [],
+  onNavigateToArtifact,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
