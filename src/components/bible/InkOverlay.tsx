@@ -93,8 +93,8 @@ function isXGesture(
   const yRange = maxY - minY;
 
   // Must be big enough and roughly square-ish
-  if (xRange < 30 || yRange < 30) return nope;
-  if (xRange / yRange > 3 || yRange / xRange > 3) return nope;
+  if (xRange < 20 || yRange < 20) return nope;
+  if (xRange / yRange > 4 || yRange / xRange > 4) return nope;
 
   // Find the sharpest direction reversal point (vertex of the X)
   let bestReversal = -1;
