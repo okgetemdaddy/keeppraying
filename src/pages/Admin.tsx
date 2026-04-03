@@ -932,6 +932,15 @@ export default function Admin() {
                             style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
                             {post.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                           </button>
+                          <button
+                            onClick={() => reformatPost(post)}
+                            disabled={reformattingId === post.id}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+                            style={{ background: "hsl(38 40% 22%)", color: "hsl(38 60% 65%)" }}
+                            title="Re-format with AI"
+                          >
+                            {reformattingId === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                          </button>
                         </GuardianCard>
                       ))}
                     </div>
