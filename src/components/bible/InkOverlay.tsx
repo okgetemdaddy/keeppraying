@@ -479,6 +479,7 @@ export function InkOverlay({
         touchAction: "none",
         cursor: isDrawingRef.current ? "none" : "crosshair",
         pointerEvents: "auto",
+        overflow: "visible",
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

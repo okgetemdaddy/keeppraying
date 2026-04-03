@@ -101,7 +101,7 @@ export function ZoomWrapper({
       )}
 
       {/* Text column — all children (verses + InkOverlay) live here */}
-      <div className="relative min-w-0">
+      <div className="relative min-w-0 overflow-visible">
         {children}
       </div>
 
