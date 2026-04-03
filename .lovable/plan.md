@@ -1,130 +1,51 @@
 
 
-# Premium Brush Engine & Tool Palette
+# Refine Bible Search-to-Verse Navigation & Glow Animation
 
-## Overview
+## Changes
 
-Replace the simple color/size pen controls with a Procreate-inspired brush system featuring 13 brush types across 3 categories, SVG texture filters, curated color palettes, and a professional tool selection UI. Live drawing stays texture-free for 60fps; textures "develop" on stroke completion.
+### 1. `tailwind.config.ts` — Replace keyframe with compositor-safe properties only
 
-## Architecture
+Current keyframe animates `background` (layout property). Replace with `transform` + `box-shadow` only:
 
-```text
-brushEngine.ts ──→ BrushConfig type + 13 BRUSH_PRESETS
-colorPalettes.ts ──→ 4 built-in palettes + custom palette type
-BrushTextures.tsx ──→ SVG <defs> filters (grain, watercolor, crayon, graphite, chalk)
-ToolPalette.tsx ──→ Full palette UI (categories, brushes, colors, sliders)
-                     + compact strip for inline toolbar
-
-InkOverlay.tsx ──→ Reads brushType from strokes, applies opacity/filter/blend
-                     Live path: plain (no filter). Committed: full brush rendering.
-
-iPadStudyToolbar ─┬→ Replaces color dots + size slider with <ToolPalette compact />
-MobileStudyToolbar─┘
-
-BibleStudyContext ──→ Adds activeBrush: BrushConfig, activeColor, activeOpacity
-InkStroke type ──→ Adds brushType?: BrushType (defaults to "ballpoint")
 ```
+verse-glow: {
+  "0%":   { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)" },
+  "40%":  { transform: "scale(1.02)", boxShadow: "0 0 0 5px rgba(59, 130, 246, 0.12)" },
+  "100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(59, 130, 246, 0)" },
+}
+```
+Change animation duration from `2s ease-out` to `0.8s cubic-bezier(0.22, 1, 0.36, 1)`.
 
-## Files to Create
+### 2. `src/index.css` — Update `.animate-verse-glow` + add dark mode variant + fix reduced-motion
 
-### 1. `src/lib/brushEngine.ts`
-- `BrushType` union (13 types: fine-liner, ballpoint, fountain, gel-pen, highlighter, brush-highlighter, underline, brush-pen, watercolor, calligraphy, crayon, pencil-graphite, chalk)
-- `BrushConfig` interface with perfect-freehand options + rendering properties (opacity, blendMode, textureId, feather, min/max/default size)
-- `BRUSH_PRESETS` record with all 13 presets as specified in the prompt
-- Helper: `getBrushStrokeOptions(config, size)` → returns perfect-freehand `StrokeOptions`
+Replace existing `.animate-verse-glow` block (lines 363-369) and the reduced-motion block (lines 371-377):
 
-### 2. `src/lib/colorPalettes.ts`
-- `ColorPalette` interface (`id`, `label`, `colors[]`)
-- 4 built-in palettes: Mildliner (15 colors), Earth Tones (10), Theological (10), Dark Mode Neon (10)
-- Export `BUILTIN_PALETTES` array
+- Remove `position: relative; z-index: 1;` (unnecessary, can interfere with ink overlay stacking)
+- Add `will-change: transform` to the class
+- Add `.bible-dark .animate-verse-glow` with a gold-tinted `verse-glow-dark` keyframe (dark amber `rgba(184, 134, 11, ...)` instead of blue)
+- Define `@keyframes verse-glow-dark` inline in CSS
+- Update `prefers-reduced-motion` to cover both light and dark variants with background-color fade
 
-### 3. `src/components/bible/BrushTextures.tsx`
-- SVG `<defs>` component with 5 lightweight filters (≤3 primitives each):
-  - `texture-grain-light`: feTurbulence low-freq
-  - `texture-watercolor`: feTurbulence + feDisplacementMap
-  - `texture-crayon`: feTurbulence high-freq
-  - `texture-graphite`: feTurbulence medium-freq
-  - `texture-chalk`: feTurbulence dusty/broken
+### 3. `src/components/bible/BibleReader.tsx` — Scroll-end detection + same-chapter fix
 
-### 4. `src/components/bible/ToolPalette.tsx`
-- **Compact mode**: horizontal strip — active brush icon + 4 recent colors + "more" button
-- **Full palette**: bottom sheet overlay with:
-  - 3 category tabs (Writing / Marking / Artistic)
-  - Tool grid with icon + label + tiny stroke preview on hover
-  - Size slider with live circle preview at thumb
-  - Opacity slider (contextual, only for brushes that support variable opacity)
-  - Color palette grid with palette tabs (Mildliner, Earth, Theological, Custom)
-  - Hex input + recent colors
-  - Gold ring on active tool, inner shadow on color swatches
-  - `navigator.vibrate(5)` on tool switch
-  - Spring animation via framer-motion
+**a) Add `searchNavCounter` ref** (near line 972) and increment it in `handleSearchNavigate` (line 1540). Add it to the `useEffect` dependency array (line 1046: `[verses]` → `[verses, searchNavCounter.current]`).
 
-### 5. `src/hooks/useCustomPalette.ts`
-- Up to 24 custom colors
-- localStorage persistence with user-scoped key
-- `addColor`, `removeColor`, `reorderColors`
+**b) Replace the `setTimeout(..., 400)` glow trigger** (lines 998-1018) with scroll-end detection:
+- Listen for `scroll` events on `readingAreaRef.current ?? window` with a 120ms debounce
+- When scroll settles, apply glow (clearPreviousGlow → willChange → reflow → add class → animationend cleanup)
+- Add a 500ms fallback timeout in case no scroll event fires (element already in view)
 
-## Files to Modify
+### 4. `src/components/bible/BibleSearchDialog.tsx` — 50ms navigation delay
 
-### 6. `src/components/bible/InkOverlay.tsx`
-- Import `BrushTextures` and render inside `<defs>`
-- Import `BRUSH_PRESETS`, `getBrushStrokeOptions`
-- Extend `InkStroke` interface: add optional `brushType?: BrushType`
-- **Committed strokes**: read `s.brushType ?? "ballpoint"` → look up config → apply:
-  - `opacity` from config
-  - `filter={url(#${textureId})}` if set
-  - `style.mixBlendMode` from config
-  - Use `getBrushStrokeOptions(config, s.size)` instead of hardcoded `STROKE_OPTIONS`
-- **Live path** (RAF loop): continue using simple rendering (no texture filter) for 60fps
-- **Hover cursor**: adjust radius based on active brush config
-- Accept `activeBrush: BrushConfig` prop instead of separate `penSize`/`penGlow`
+In `handleSelect` (line 63-86), wrap the `switch` block in a `setTimeout(..., 50)` so the dialog exit animation clears before navigation begins.
 
-### 7. `src/contexts/BibleStudyContext.tsx`
-- Replace `penColor`/`penSize`/`penGlow` with:
-  - `activeBrush: BrushConfig` + `setActiveBrush`
-  - `activeColor: string` + `setActiveColor`
-  - `activeOpacity: number` + `setActiveOpacity`
-- Persist last-used brush type + recent colors (5) to localStorage
-- Keep backward-compatible getters: `penColor` → `activeColor`, `penSize` → `activeBrush.size`
+## Files Changed
 
-### 8. `src/components/bible/iPadStudyToolbar.tsx`
-- Remove inline color dots + size slider
-- Import and render `<ToolPalette />` in compact mode in place of the color/size section
-- Keep undo/redo/clear/trash/voice controls unchanged
-
-### 9. `src/components/bible/MobileStudyToolbar.tsx`
-- Same refactor: replace color dots + size presets with `<ToolPalette compact />`
-- Full palette opens via the overflow drawer or by tapping the active brush icon
-
-### 10. `src/hooks/useInkHistory.ts`
-- No structural changes needed — `InkStroke` type extension is in InkOverlay
-
-### 11. `src/components/bible/BibleReader.tsx`
-- Pass `activeBrush` and `activeColor` to InkOverlay instead of `penColor`/`penSize`/`penGlow`
-- Update stroke creation to include `brushType` field
-
-## Backward Compatibility
-- Existing strokes without `brushType` default to `"ballpoint"` rendering
-- No data migration needed
-
-## Performance Strategy
-- Live drawing: plain SVG path, no filters → 60fps guaranteed
-- On `onStrokeComplete`: committed stroke renders with full brush config (texture, blend, opacity)
-- SVG filters are static `<defs>` — referenced by ID, not re-created per stroke
-- Keep filter primitives ≤ 3 per texture
-
-## Files Changed Summary
-
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/lib/brushEngine.ts` | Create — brush types, configs, presets |
-| `src/lib/colorPalettes.ts` | Create — curated color palettes |
-| `src/components/bible/BrushTextures.tsx` | Create — SVG texture filters |
-| `src/components/bible/ToolPalette.tsx` | Create — full palette UI |
-| `src/hooks/useCustomPalette.ts` | Create — custom color persistence |
-| `src/components/bible/InkOverlay.tsx` | Modify — brush-aware rendering |
-| `src/contexts/BibleStudyContext.tsx` | Modify — unified brush state |
-| `src/components/bible/iPadStudyToolbar.tsx` | Modify — integrate ToolPalette |
-| `src/components/bible/MobileStudyToolbar.tsx` | Modify — integrate ToolPalette |
-| `src/components/bible/BibleReader.tsx` | Modify — pass brush config to InkOverlay |
+| `tailwind.config.ts` | Compositor-safe keyframe (transform + box-shadow only), 0.8s duration |
+| `src/index.css` | Dark mode gold variant, will-change, improved reduced-motion |
+| `src/components/bible/BibleReader.tsx` | Scroll-end detection, searchNavCounter for same-chapter fix |
+| `src/components/bible/BibleSearchDialog.tsx` | 50ms delay before navigation |
 
