@@ -1,30 +1,27 @@
 
+Update the `/canvas` pinch implementation by moving semantic zoom off `@use-gesture` and onto raw iPad touch events in `src/components/bible/canvas/ZoomPanWrapper.tsx`.
 
-# Fix: iPad Pinch-to-Zoom + Pan Sensitivity
+1. Remove `onPinch` from the `useGesture(...)` handlers and delete the `pinch` config block entirely.
+   - Keep `onDrag` for two-finger panning
+   - Keep `onWheel` for desktop pan and ctrl/cmd semantic zoom
 
-## Problem
-Safari on iPad intercepts two-finger pinch via its proprietary `gesturestart`/`gesturechange` events before `@use-gesture`'s `onPinch` ever fires. The pinch handler never runs on iPad.
+2. Expand the existing `useEffect` on `containerRef`:
+   - keep Safari `gesturestart` / `gesturechange` suppression with `preventDefault()` and `{ passive: false }`
+   - add raw `touchstart`, `touchmove`, `touchend`, and `touchcancel` listeners
+   - track the previous two-touch distance with a local `lastDist`
+   - on two-touch move, compute distance delta and map it to semantic font size updates using:
+     `fontSizeRef.current + delta * 0.15`
+   - clamp to `MIN_FONT` / `MAX_FONT`, round, and only call `onFontSizeChange` when the value changes
+   - reset `lastDist` on end/cancel and clean up every listener on unmount
 
-## Changes — Single file: `src/components/bible/canvas/ZoomPanWrapper.tsx`
+3. Keep `touchAction: "none"` on the outer container so Safari cannot claim the gesture for native page zoom.
 
-### 1. Add Safari gesture suppression `useEffect`
-Add `useEffect` (import it) that attaches `gesturestart` and `gesturechange` listeners to `containerRef.current` with `e.preventDefault()` and `{ passive: false }`. This kills Safari's native pinch zoom so `@use-gesture` receives the events.
+4. Leave the rest of the architecture unchanged:
+   - `CanvasBibleReader` still owns `fontSize`
+   - the text already reads only `--canvas-font-size` and `--canvas-line-height`, so the CSS-variable semantic zoom path stays correct
+   - `InkCanvas` already ignores touch pointers, so touch remains dedicated to canvas navigation while pen/mouse drawing still works
 
-### 2. Increase pinch sensitivity
-Line 68: Change `d * 0.5` → `d * 1.0` so font size changes feel proportional to finger spread.
-
-### 3. Increase scroll-to-pan multiplier
-Line 85: Change `spring.y.get() - dy` → `spring.y.get() - dy * 2.5` so panning covers more ground per scroll.
-
-### 4. Confirm `touchAction: "none"` is set
-Already present on line 118 — no change needed. This prevents the browser from claiming touch gestures.
-
-## Summary of edits
-
-| Line | Current | New |
-|------|---------|-----|
-| 1 | `import React, { useRef }` | `import React, { useRef, useEffect }` |
-| 49 (after spring init) | — | Add Safari gesture suppression `useEffect` block |
-| 68 | `d * 0.5` | `d * 1.0` |
-| 85 | `spring.y.get() - dy` | `spring.y.get() - dy * 2.5` |
-
+Technical notes:
+- Use `fontSizeRef` inside the touch listeners to avoid stale state during pinch frames.
+- Add `touchcancel` in addition to `touchend`; iPad interruptions can otherwise leave pinch state stuck.
+- No other files need changes for this fix.
