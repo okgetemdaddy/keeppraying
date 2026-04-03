@@ -2044,7 +2044,7 @@ export function BibleReader() {
               className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
             >
-              <PixarLampIPadIcon className="h-7 w-7" />
+              <PixarLampIPadIcon className="h-12 w-12" />
             </Button>
 
             {/* Export Canvas (visible in study mode) */}
