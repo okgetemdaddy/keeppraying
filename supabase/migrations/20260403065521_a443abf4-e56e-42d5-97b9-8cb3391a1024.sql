@@ -1,0 +1,1 @@
+CREATE POLICY "Admins can view all waitlist signups" ON public.waitlist_signups FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'));
