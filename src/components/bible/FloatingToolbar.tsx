@@ -85,6 +85,7 @@ function ToolbarActions({
   onAddNote,
   onCreateBunch,
   onAddToBunch,
+  onCrossRef,
   hasBunches,
   onDismiss,
   layout = "horizontal",
