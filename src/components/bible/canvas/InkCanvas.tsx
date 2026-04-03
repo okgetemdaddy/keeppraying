@@ -27,6 +27,7 @@ interface InkCanvasProps {
  */
 const InkCanvas: React.FC<InkCanvasProps> = ({
   strokes,
+  activeStroke,
   drawMode,
   onStrokeStart,
   onStrokePoint,

@@ -79,6 +79,7 @@ const CanvasBibleReader: React.FC = () => {
           overlay={
             <InkCanvas
               strokes={strokes}
+              activeStroke={activeStroke}
               drawMode={drawMode}
               onStrokeStart={handleStrokeStart}
               onStrokePoint={handleStrokePoint}
