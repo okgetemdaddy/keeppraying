@@ -82,7 +82,7 @@ export function ZoomWrapper({
         transformOrigin: "top left",
         width: zoom !== 1 ? `${100 / zoom}%` : undefined,
         willChange: zoom !== 1 ? "transform" : undefined,
-        touchAction: "pan-y",
+        touchAction: studyMode ? "none" : "pan-y",
         ["--verse-spacing" as string]: textSpacing,
         ...(hasMargin
           ? {
