@@ -201,20 +201,35 @@ function HighlightedText({
   text,
   highlights,
   highlightStyle = "invert",
+  previewRange,
 }: {
   text: string;
   highlights: UserHighlight[];
   highlightStyle?: HighlightStyleMode;
+  previewRange?: { start: number; end: number };
 }) {
-  if (!highlights.length) return <>{text}</>;
+  if (!highlights.length && !previewRange) return <>{text}</>;
 
+  // Build highlight spans
   const spans = highlights
     .map((h) => ({
       start: h.reference_normalized?.start ?? 0,
       end: h.reference_normalized?.end ?? text.length,
       color: h.color,
+      isPreview: false,
     }))
     .sort((a, b) => a.start - b.start);
+
+  // Insert preview span if it doesn't overlap existing highlights
+  if (previewRange) {
+    const overlaps = spans.some(
+      (s) => s.start < previewRange.end && s.end > previewRange.start,
+    );
+    if (!overlaps) {
+      spans.push({ start: previewRange.start, end: previewRange.end, color: "__preview__", isPreview: true });
+      spans.sort((a, b) => a.start - b.start);
+    }
+  }
 
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -229,12 +244,20 @@ function HighlightedText({
     }
 
     if (end > start) {
-      const colorClass = getHighlightClass(span.color, highlightStyle);
-      parts.push(
-        <mark key={`hl-${i}`} className={`${colorClass} rounded-sm px-0.5 transition-colors`}>
-          {text.slice(start, end)}
-        </mark>,
-      );
+      if (span.isPreview) {
+        parts.push(
+          <mark key={`preview-${i}`} className="bg-primary/10 rounded-sm px-0.5 transition-colors">
+            {text.slice(start, end)}
+          </mark>,
+        );
+      } else {
+        const colorClass = getHighlightClass(span.color, highlightStyle);
+        parts.push(
+          <mark key={`hl-${i}`} className={`${colorClass} rounded-sm px-0.5 transition-colors`}>
+            {text.slice(start, end)}
+          </mark>,
+        );
+      }
     }
 
     cursor = end;
