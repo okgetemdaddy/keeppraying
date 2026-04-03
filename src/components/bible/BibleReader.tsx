@@ -1401,7 +1401,11 @@ export function BibleReader() {
     };
 
     area.addEventListener("mouseup", handleMouseUp);
-    return () => area.removeEventListener("mouseup", handleMouseUp);
+    area.addEventListener("touchend", handleMouseUp);
+    return () => {
+      area.removeEventListener("mouseup", handleMouseUp);
+      area.removeEventListener("touchend", handleMouseUp);
+    };
   }, [versionId, bookUsfm, currentChapter, currentBook]);
 
   // ── Toolbar action handlers ──
