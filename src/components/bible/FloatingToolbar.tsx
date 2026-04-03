@@ -88,6 +88,7 @@ function ToolbarActions({
   onCreateBunch,
   onAddToBunch,
   onCrossRef,
+  onReference,
   hasBunches,
   onDismiss,
   layout = "horizontal",
