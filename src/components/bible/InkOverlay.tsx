@@ -3,6 +3,8 @@ import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
 import type { Point } from "./HandwritingEngine";
 import { isClosedLoop, findVersesInsideStroke } from "@/lib/convexHull";
+import { type BrushType, type BrushConfig, BRUSH_PRESETS, getBrushStrokeOptions, resolveBrush } from "@/lib/brushEngine";
+import { BrushTextures } from "./BrushTextures";
 
 /**
  * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
