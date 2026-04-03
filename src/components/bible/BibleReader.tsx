@@ -1943,10 +1943,6 @@ export function BibleReader() {
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
         {/* Suggestion Banner — hangs from toolbar break bar */}
         <SuggestionBanner onClick={() => setSuggestionDrawerOpen(true)} hidden={focusMode} />
-        {/* iPad Waitlist Banner — below Suggestions */}
-        {!isIPhone && (
-          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} hidden={focusMode} />
-        )}
         <div className="mx-auto max-w-3xl px-4 py-2 space-y-1.5">
           {/* ── Row 1: Version · Book · Chapter ── */}
           <div className="flex items-center gap-2">
@@ -2017,16 +2013,21 @@ export function BibleReader() {
 
             {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
           <div className="flex items-center gap-2">
-            {/* Bible Sleeve button (left) */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSleeveOpen(true)}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              title="Your Bible Sleeve"
-            >
-              <PanelLeft className="h-4 w-4" />
-            </Button>
+            {/* Bible Sleeve button (left) + iPad waitlist banner */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSleeveOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Your Bible Sleeve"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+              {!isIPhone && (
+                <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} hidden={focusMode} />
+              )}
+            </div>
 
             {/* Study Mode (iPad/Pencil) */}
             <Button
