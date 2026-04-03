@@ -1,58 +1,52 @@
 
 
-# Word-Boundary Snapping for Bible Highlights
+# Cross-Reference Popover System
 
 ## What this does
-When a user drags to highlight text in the Bible reader, their selection will automatically snap to complete words instead of cutting off mid-word. A soft preview highlight appears before they pick a color. Touch devices (iPad) get the same behavior.
+Users can discover related Bible verses without leaving the current chapter. A popover shows AI-suggested cross-references with verse previews. Accessible via the FloatingToolbar ("Cross-refs" button) or by long-pressing any verse number.
 
 ## Technical changes
 
-### 1. `BibleReader.tsx` — Add `snapToWordBoundaries` helper + apply in `handleMouseUp`
+### 1. New component: `src/components/bible/CrossReferencePopover.tsx`
 
-Add a utility function (outside the component or at top of the effect):
+- Accepts `bookUsfm`, `chapterNumber`, `verseNumber`, `versionId`, `verseText`, `onNavigate`, `open`, `onOpenChange`
+- Calls `bible-search` edge function with the verse text as query (prompt already returns cross-references well)
+- Uses React Query with key `["cross-refs", bookUsfm, chapterNumber, verseNumber]` and `staleTime: 30 * 60 * 1000`
+- Renders a Radix `Popover` with max-height scrollable list (up to 8 results)
+- Each result: reference label (EB Garamond), 1-2 line preview fetched via `youversion-proxy`, and a "Go" button calling `onNavigate(bookUsfm, chapter, verse)`
+- Preview text fetched lazily per-result using the existing `fetchBible` pattern from `useBibleChapterData`
+- Styled with `bg-card border shadow-lg rounded-xl`, dark mode via `bible-dark` variant
 
-```typescript
-function snapToWordBoundaries(text: string, start: number, end: number) {
-  while (start > 0 && /\w/.test(text[start - 1])) start--;
-  while (end < text.length && /\w/.test(text[end])) end++;
-  return { start, end };
-}
-```
+### 2. `FloatingToolbar.tsx` — Add "Cross-refs" action button
 
-In the `handleMouseUp` listener (line 1329-1338), after computing `textStart` and `selectedText.length`, snap before calling `setPartialSelection`:
+- Add `onCrossRef?: (verseNumber: number) => void` prop to `FloatingToolbarProps` and `ToolbarActions`
+- Add a `BookMarked` icon button in the action buttons section (after "Add Note"), labeled "Cross-refs" in vertical layout
+- Calls `onCrossRef(primaryVerse)` then `onDismiss()`
 
-```typescript
-const rawStart = Math.max(textStart, 0);
-const rawEnd = rawStart + selectedText.length;
-const snapped = snapToWordBoundaries(textContent, rawStart, rawEnd);
-setPartialSelection({ verseNumber: startVerse, start: snapped.start, end: snapped.end });
-```
+### 3. `BibleReader.tsx` — Wire up cross-ref popover
 
-### 2. `BibleReader.tsx` — Add `touchend` listener alongside `mouseup`
+- Add state: `crossRefVerse: number | null` and `crossRefOpen: boolean`
+- Add `handleCrossRef` callback that sets `crossRefVerse` and opens the popover
+- Pass `onCrossRef={handleCrossRef}` to `FloatingToolbar`
+- Render `CrossReferencePopover` component anchored to `#verse-{crossRefVerse}`, passing current `bookUsfm`, `chapterNumber`, `versionId`, verse text from `verses` array, and `handleSearchNavigate` as `onNavigate`
 
-In the same `useEffect` (line 1309-1372), register a `touchend` handler that reuses the identical `getVerseFromNode` + snap logic. Both listeners share the same handler function; clean up both on unmount.
+### 4. `EnrichedVerse` — Long-press on verse number `<sup>`
 
-### 3. `HighlightedText` — Add `previewRange` prop
+- Add `onLongPressVerseNumber?: (verseNumber: number) => void` prop to `EnrichedVerseProps`
+- On the `<sup>` element containing the verse number, add `onPointerDown` / `onPointerUp` timer pattern (500ms threshold)
+- `onPointerDown` starts a timeout; `onPointerUp` / `onPointerLeave` / `onPointerCancel` clears it
+- Does NOT use `onContextMenu` (would conflict with Study Mode)
+- BibleReader passes `onLongPressVerseNumber={handleCrossRef}` to each `EnrichedVerse`
 
-Add optional `previewRange?: { start: number; end: number }` to the component's props. When set and no existing highlight covers that range, insert an additional span with `bg-primary/10 rounded-sm` styling into the rendered parts array — using the same cursor/span-splitting logic already in place.
+### 5. Edge function reuse
 
-### 4. `EnrichedVerse` — Thread `previewRange` through (props only)
-
-Add `previewRange` to `EnrichedVerseProps` and pass it to `HighlightedText`. No structural changes to the component.
-
-### 5. Verse render loop — Compute and pass `previewRange`
-
-In the `verses.map()` loop (line 1985), compute `previewRange` from `partialSelection` state:
-
-```typescript
-previewRange={partialSelection?.verseNumber === v.number
-  ? { start: partialSelection.start, end: partialSelection.end }
-  : undefined}
-```
+No changes to `bible-search` edge function — the existing prompt already returns `{ book, chapter, verseStart, label, confidence }` which is exactly what cross-refs need. We just send the verse text as the query.
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | `snapToWordBoundaries` helper; apply in `handleMouseUp`; add `touchend` listener; add `previewRange` prop to `HighlightedText` and `EnrichedVerseProps`; pass `partialSelection` as preview in render loop |
+| `src/components/bible/CrossReferencePopover.tsx` | New component — AI cross-refs popover with verse previews |
+| `src/components/bible/FloatingToolbar.tsx` | Add `onCrossRef` prop + BookMarked button |
+| `src/components/bible/BibleReader.tsx` | Wire state, callbacks, render popover, pass long-press handler |
 
