@@ -2152,11 +2152,33 @@ export function BibleReader() {
             onCreateBunch={handleCreateBunchRequest}
             onAddToBunch={handleAddToBunchRequest}
             hasBunches={(bunches ?? []).length > 0}
+            onCrossRef={handleCrossRef}
             onDismiss={dismissToolbar}
             isAuthenticated={!!user}
           />
         )}
       </AnimatePresence>
+
+      {/* ── Cross-Reference Popover ── */}
+      {crossRefVerse && versionId && bookUsfm && currentChapter && (
+        <CrossReferencePopover
+          bookUsfm={bookUsfm}
+          chapterNumber={currentChapter.id}
+          verseNumber={crossRefVerse}
+          versionId={versionId}
+          verseText={verses.find((v) => v.number === crossRefVerse)?.text ?? ""}
+          onNavigate={(navBookUsfm, chapter, verse) => {
+            handleSearchNavigate(navBookUsfm, chapter, verse);
+            setCrossRefOpen(false);
+            setCrossRefVerse(null);
+          }}
+          open={crossRefOpen}
+          onOpenChange={(open) => {
+            setCrossRefOpen(open);
+            if (!open) setCrossRefVerse(null);
+          }}
+        />
+      )}
 
       {/* ── Verse Bunch Tooltip ── */}
       <AnimatePresence>
