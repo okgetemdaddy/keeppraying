@@ -1,52 +1,84 @@
 
 
-# Cross-Reference Popover System
+# AI-Powered Word Study & Reference Bloom System
 
 ## What this does
-Users can discover related Bible verses without leaving the current chapter. A popover shows AI-suggested cross-references with verse previews. Accessible via the FloatingToolbar ("Cross-refs" button) or by long-pressing any verse number.
+When a user circles 1-3 words with Apple Pencil, a floating "Reference Bloom" card appears at the gesture location showing the original Hebrew/Greek word, Strong's number, cross-references, and an AI contextual note — all without leaving the current chapter. Also accessible from the FloatingToolbar via a new "Reference" button.
 
 ## Technical changes
 
-### 1. New component: `src/components/bible/CrossReferencePopover.tsx`
+### 1. New edge function: `supabase/functions/word-study/index.ts`
 
-- Accepts `bookUsfm`, `chapterNumber`, `verseNumber`, `versionId`, `verseText`, `onNavigate`, `open`, `onOpenChange`
-- Calls `bible-search` edge function with the verse text as query (prompt already returns cross-references well)
-- Uses React Query with key `["cross-refs", bookUsfm, chapterNumber, verseNumber]` and `staleTime: 30 * 60 * 1000`
-- Renders a Radix `Popover` with max-height scrollable list (up to 8 results)
-- Each result: reference label (EB Garamond), 1-2 line preview fetched via `youversion-proxy`, and a "Go" button calling `onNavigate(bookUsfm, chapter, verse)`
-- Preview text fetched lazily per-result using the existing `fetchBible` pattern from `useBibleChapterData`
-- Styled with `bg-card border shadow-lg rounded-xl`, dark mode via `bible-dark` variant
+- Receives `{ word, verseText, bookUsfm, chapter, verseNumber, translationId }`
+- Uses Lovable AI (`google/gemini-3-flash-preview`) with a system prompt that:
+  - Identifies OT (Hebrew) vs NT (Greek)
+  - Returns the original word, transliteration, Strong's number, definition, frequency, semantic range
+  - Generates up to 6 cross-references with preview text and relevance labels
+  - Writes a 2-3 sentence contextual note
+- Uses tool calling to extract structured JSON output (avoiding JSON parse issues)
+- Handles 429/402 error codes with clear messages
+- CORS headers included
 
-### 2. `FloatingToolbar.tsx` — Add "Cross-refs" action button
+### 2. New hook: `src/hooks/useWordStudy.ts`
 
-- Add `onCrossRef?: (verseNumber: number) => void` prop to `FloatingToolbarProps` and `ToolbarActions`
-- Add a `BookMarked` icon button in the action buttons section (after "Add Note"), labeled "Cross-refs" in vertical layout
-- Calls `onCrossRef(primaryVerse)` then `onDismiss()`
+- Wraps the edge function call in React Query
+- `queryKey: ["word-study", word, bookUsfm, chapter, verseNumber]`
+- `staleTime: 24 * 60 * 60 * 1000` (24 hours)
+- Returns typed `WordStudyResult` matching the edge function output shape
+- `enabled` only when word is non-empty
 
-### 3. `BibleReader.tsx` — Wire up cross-ref popover
+### 3. New component: `src/components/bible/ReferenceBloom.tsx`
 
-- Add state: `crossRefVerse: number | null` and `crossRefOpen: boolean`
-- Add `handleCrossRef` callback that sets `crossRefVerse` and opens the popover
-- Pass `onCrossRef={handleCrossRef}` to `FloatingToolbar`
-- Render `CrossReferencePopover` component anchored to `#verse-{crossRefVerse}`, passing current `bookUsfm`, `chapterNumber`, `versionId`, verse text from `verses` array, and `handleSearchNavigate` as `onNavigate`
+- Props: `anchorPoint`, `word`, `verseNumber`, `bookUsfm`, `chapter`, `versionId`, `onClose`, `onNavigate`, `onPinToMargin`
+- Uses `position: fixed` with viewport edge-clamping logic
+- Three pill tabs: "Word" (default for 1-word), "Refs" (default for verse-level), "Note"
+  - **Word tab**: original language, transliteration, Strong's number, frequency, semantic range chips
+  - **Refs tab**: up to 6 cross-references with label + preview + "Go" button
+  - **Note tab**: AI contextual explanation (2-3 sentences)
+- Bottom action bar: Pin icon (`onPinToMargin`) and Plan+ icon (placeholder `onAddToPlan`)
+- 280px wide, max 360px tall, internal scroll
+- Framer Motion entry: scale 0.95→1, opacity 0→1
+- Styled with `bg-card border border-border shadow-lg rounded-xl`, EB Garamond for verse text
+- Bible-dark mode: `shadow-[0_0_12px_rgba(255,215,0,0.05)]` glow
+- Close on Escape or click-outside (useEffect listeners)
+- Loading skeleton while AI call resolves
 
-### 4. `EnrichedVerse` — Long-press on verse number `<sup>`
+### 4. Wire into `BibleReader.tsx`
 
-- Add `onLongPressVerseNumber?: (verseNumber: number) => void` prop to `EnrichedVerseProps`
-- On the `<sup>` element containing the verse number, add `onPointerDown` / `onPointerUp` timer pattern (500ms threshold)
-- `onPointerDown` starts a timeout; `onPointerUp` / `onPointerLeave` / `onPointerCancel` clears it
-- Does NOT use `onContextMenu` (would conflict with Study Mode)
-- BibleReader passes `onLongPressVerseNumber={handleCrossRef}` to each `EnrichedVerse`
+**New state:**
+```
+referenceBloom: { x: number; y: number; word: string; verseNumber: number } | null
+```
 
-### 5. Edge function reuse
+**Modify `onCircleSelect` callback (line ~2024):**
+- After the existing verse-selection logic, add a check: if circle encloses text within a single verse AND the enclosed area is small (1-3 words detected), extract the word text from the DOM using the convex hull center point + `document.elementFromPoint`
+- Set `referenceBloom` with the word, verse number, and hull center coordinates
+- If more than 3 words or multiple verses, keep existing behavior (verse selection)
 
-No changes to `bible-search` edge function — the existing prompt already returns `{ book, chapter, verseStart, label, confidence }` which is exactly what cross-refs need. We just send the verse text as the query.
+**Render `<ReferenceBloom>`** when `referenceBloom` is set, passing current `bookUsfm`, `currentChapter.id`, `versionId`, and `handleSearchNavigate` as `onNavigate`. Pin-to-margin calls `saveAnnotationMut` with a `type: "word-study"` flag.
+
+### 5. Add "Reference" button to `FloatingToolbar.tsx`
+
+- New prop: `onReference?: (verseNumber: number, word?: string) => void`
+- Add `BookOpen` icon button after "Cross-refs" in the action buttons section
+- When tapped: if partial selection exists, pass the selected text as `word`; otherwise pass the full verse text
+- Calls `onReference(primaryVerse, word)` then `onDismiss()`
+
+**BibleReader wiring:** Pass `onReference` that opens `referenceBloom` using toolbar position as anchor point.
+
+### 6. No changes to
+
+- `InkOverlay.tsx` gesture detection logic
+- `ZoomWrapper` or `ManuscriptCanvas`
+- `EnrichedVerse` component structure
 
 ## Files changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/CrossReferencePopover.tsx` | New component — AI cross-refs popover with verse previews |
-| `src/components/bible/FloatingToolbar.tsx` | Add `onCrossRef` prop + BookMarked button |
-| `src/components/bible/BibleReader.tsx` | Wire state, callbacks, render popover, pass long-press handler |
+| `supabase/functions/word-study/index.ts` | New — AI word study edge function |
+| `src/hooks/useWordStudy.ts` | New — React Query hook for word study data |
+| `src/components/bible/ReferenceBloom.tsx` | New — floating card with Word/Refs/Note tabs |
+| `src/components/bible/FloatingToolbar.tsx` | Add `onReference` prop + BookOpen button |
+| `src/components/bible/BibleReader.tsx` | Add `referenceBloom` state, modify circle-select handler, render ReferenceBloom, wire toolbar |
 
