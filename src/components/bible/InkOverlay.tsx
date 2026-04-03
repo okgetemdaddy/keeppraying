@@ -146,10 +146,12 @@ export function InkOverlay({
   onPencilFirstContact,
   onWordCircle,
   onUnderlineGesture,
+  onXGesture,
 }: InkOverlayProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const livePathRef = useRef<SVGPathElement>(null);
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
+  const [xFlash, setXFlash] = useState<{ x: number; y: number } | null>(null);
 
   // ── RAF point buffer (NOT React state) ──
   const pointsBufferRef = useRef<Point[]>([]);
