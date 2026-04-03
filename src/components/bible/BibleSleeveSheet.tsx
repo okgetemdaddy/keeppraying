@@ -71,7 +71,7 @@ function loadCollapsed(): Set<string> {
   try {
     const raw = localStorage.getItem("bible_sleeve_collapsed");
     if (raw) {
-      const parsed = new Set(JSON.parse(raw));
+      const parsed = new Set<string>(JSON.parse(raw) as string[]);
       // Clean up legacy immersive section ID
       parsed.delete("immersive");
       return parsed;
