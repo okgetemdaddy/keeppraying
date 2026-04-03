@@ -21,6 +21,7 @@ import {
   Search,
   PenTool,
   BookMarked,
+  Download,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

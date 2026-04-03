@@ -108,6 +108,19 @@ export function BiblePocketSheet({
           </div>
         </div>
 
+        {/* Export Canvas Button — visible when there are annotations or strokes */}
+        {activeTab === "notes" && (totalAnnotations > 0 || inkCount > 0) && onExportCanvas && (
+          <div className="px-4 pb-2">
+            <button
+              onClick={onExportCanvas}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 py-2.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Export Canvas
+            </button>
+          </div>
+        )}
+
         {/* Tab Content */}
         {activeTab === "notes" ? (
           <>
