@@ -311,7 +311,13 @@ export function InkOverlay({
     if (onCircleSelect && svgRef.current) {
       const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
       if (matched.length > 0) {
-        onCircleSelect(matched);
+        // Calculate hull center for word-level detection
+        const xs = currentPoints.map((p) => p.x / zoom);
+        const ys = currentPoints.map((p) => p.y / zoom);
+        const svgRect = svgRef.current.getBoundingClientRect();
+        const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length);
+        const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length);
+        onCircleSelect(matched, { x: centerX, y: centerY });
         pointsBufferRef.current = [];
         return; // Don't create a stroke for selection gestures
       }
