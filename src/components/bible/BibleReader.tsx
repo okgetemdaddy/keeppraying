@@ -863,6 +863,7 @@ export function BibleReader() {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [waitlistDrawerOpen, setWaitlistDrawerOpen] = useState(false);
+  const [suggestionDrawerOpen, setSuggestionDrawerOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
