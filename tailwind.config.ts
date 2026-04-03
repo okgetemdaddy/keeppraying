@@ -79,6 +79,7 @@ export default {
         float: "float 4s ease-in-out infinite",
         "slide-right": "slide-right 0.5s ease-out",
         pulse_soft: "pulse_soft 2.5s ease-in-out infinite",
+        "verse-glow": "verse-glow 2s ease-out forwards",
       },
       backgroundImage: {
         "gradient-gold": "var(--gradient-gold)",

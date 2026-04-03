@@ -360,6 +360,14 @@
     color: unset;
   }
 
+  /* Verse glow after search navigation */
+  .animate-verse-glow {
+    @apply rounded-md;
+    animation: verse-glow 2s ease-out forwards;
+    position: relative;
+    z-index: 1;
+  }
+
   /* Bible serif reading font */
   .bible-serif-reading {
     font-family: 'EB Garamond', 'Playfair Display', Georgia, serif;

@@ -979,6 +979,11 @@ export function BibleReader() {
       const el = document.getElementById(`verse-${verseNum}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
+        // Add glow animation after scroll completes
+        setTimeout(() => {
+          el.classList.add("animate-verse-glow");
+          setTimeout(() => el.classList.remove("animate-verse-glow"), 2200);
+        }, 400);
         pendingScrollVerseRef.current = null;
         return true;
       }
