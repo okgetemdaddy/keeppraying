@@ -3,6 +3,8 @@ import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
 import type { Point } from "./HandwritingEngine";
 import { isClosedLoop, findVersesInsideStroke } from "@/lib/convexHull";
+import { type BrushType, type BrushConfig, BRUSH_PRESETS, getBrushStrokeOptions, resolveBrush } from "@/lib/brushEngine";
+import { BrushTextures } from "./BrushTextures";
 
 /**
  * @native-port — INTERNAL ENGINEERING NOTES (not user-facing)
@@ -94,6 +96,8 @@ export interface InkStroke {
   size: number;
   linkedVerse: number | null;
   glow?: string | null;
+  brushType?: BrushType;
+  opacity?: number;
 }
 
 interface InkOverlayProps {
@@ -104,6 +108,8 @@ interface InkOverlayProps {
   penColor?: string;
   penSize?: number;
   penGlow?: string | null;
+  activeBrush?: BrushConfig;
+  activeOpacity?: number;
   fingerDrawing?: boolean;
   isDark?: boolean;
   /** Callback when a circle-to-select gesture encloses verses */
@@ -134,6 +140,8 @@ export function InkOverlay({
   penColor = "#1a1a1a",
   penSize = 8,
   penGlow,
+  activeBrush,
+  activeOpacity,
   fingerDrawing = false,
   isDark = false,
   onCircleSelect,
@@ -161,9 +169,13 @@ export function InkOverlay({
   const penColorRef = useRef(penColor);
   const penSizeRef = useRef(penSize);
   const penGlowRef = useRef(penGlow);
+  const activeBrushRef = useRef(activeBrush);
+  const activeOpacityRef = useRef(activeOpacity);
   penColorRef.current = penColor;
   penSizeRef.current = penSize;
   penGlowRef.current = penGlow ?? null;
+  activeBrushRef.current = activeBrush;
+  activeOpacityRef.current = activeOpacity;
 
   /* ── DOMMatrix-based coordinate normalization ── */
   const getTransformedPoint = useCallback(
@@ -366,6 +378,7 @@ export function InkOverlay({
       return { x: sp.x, y: sp.y, pressure: best.pressure, tiltX: best.tiltX, tiltY: best.tiltY };
     });
 
+    const currentBrush = activeBrushRef.current;
     const newStroke: InkStroke = {
       id: `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       points: compressedPoints,
@@ -373,6 +386,8 @@ export function InkOverlay({
       size: penSize,
       linkedVerse: closestVerse,
       glow: penGlow ?? null,
+      brushType: currentBrush?.type,
+      opacity: activeOpacityRef.current,
     };
 
     onStrokeComplete(newStroke);
@@ -430,9 +445,12 @@ export function InkOverlay({
   const renderedStrokes = useMemo(
     () =>
       strokes.map((s) => {
+        // Resolve brush config for this stroke (backward compat: default to ballpoint)
+        const brushConfig = resolveBrush(s.brushType);
+        const strokeOpts = getBrushStrokeOptions(brushConfig, s.size);
         const outline = getStroke(
           s.points.map((p) => [p.x, p.y, p.pressure]),
-          { ...STROKE_OPTIONS, size: s.size },
+          strokeOpts,
         );
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
@@ -441,18 +459,28 @@ export function InkOverlay({
         const isNeon = !!s.glow;
         const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
+
+        // Determine filter: brush texture > neon > ink-bleed
+        const textureFilter = brushConfig.textureId ? `url(#${brushConfig.textureId})` : null;
         const appliedFilter = isSelected
           ? undefined
           : isNeon
             ? `url(#${neonFilterId})`
-            : bleedFilter;
+            : textureFilter ?? bleedFilter;
+
+        // Opacity: use stroke-level opacity if set, else brush default
+        const strokeOpacity = isSelected ? 0.5 : isSepia ? 0.6 : (s.opacity ?? brushConfig.opacity);
+
+        // Blend mode from brush config
+        const blendMode = isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : brushConfig.blendMode !== "normal" ? brushConfig.blendMode : undefined;
+
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
+            opacity={strokeOpacity}
             filter={appliedFilter}
             onClick={(e) => {
               e.stopPropagation();
@@ -460,7 +488,7 @@ export function InkOverlay({
             }}
             className="cursor-pointer"
             style={{
-              mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
+              mixBlendMode: blendMode,
               filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
             }}
           />
@@ -488,6 +516,8 @@ export function InkOverlay({
       onPointerCancel={handlePointerCancel}
     >
       <defs>
+        {/* Brush texture filters */}
+        <BrushTextures />
         <filter id="ink-bleed">
           <feGaussianBlur stdDeviation="0.3" />
           <feComponentTransfer>
