@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { useSpring, animated, to } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 
@@ -47,6 +47,19 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
     config: SPRING_CONFIG,
   }));
 
+  // Suppress Safari's proprietary gesture events so @use-gesture receives pinch
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const prevent = (e: Event) => e.preventDefault();
+    el.addEventListener('gesturestart', prevent, { passive: false });
+    el.addEventListener('gesturechange', prevent, { passive: false });
+    return () => {
+      el.removeEventListener('gesturestart', prevent);
+      el.removeEventListener('gesturechange', prevent);
+    };
+  }, []);
+
   useGesture(
     {
       onDrag: ({ delta: [dx, dy], touches, event, cancel }) => {
@@ -65,7 +78,7 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
       onPinch: ({ delta: [d], event }) => {
         event.preventDefault();
         const next = Math.round(
-          Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + d * 0.5))
+          Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + d * 1.0))
         );
         if (next !== fontSizeRef.current) onFontSizeChange(next);
       },
@@ -82,7 +95,7 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
           if (next !== fontSizeRef.current) onFontSizeChange(next);
         } else {
           // Vertical pan with momentum
-          api.start({ y: spring.y.get() - dy });
+          api.start({ y: spring.y.get() - dy * 2.5 });
         }
       },
     },
