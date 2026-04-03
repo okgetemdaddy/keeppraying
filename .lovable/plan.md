@@ -1,34 +1,57 @@
 
 
-# Add Verse Glow Animation After Search Navigation
+# Harden Bible Search-to-Verse Navigation
 
 ## Current State
 
-Everything is already wired for verse-level navigation:
-- Each verse element has `id="verse-{number}"` and `data-verse="{number}"`
-- `handleSearchNavigate` sets `pendingScrollVerseRef.current = verse` which triggers a `scrollIntoView` via MutationObserver
-- Search results (reference, AI, notes, bunches) all pass `verseStart`/`verseNumber` through `onNavigate`
+Most of this feature already exists:
+- Inline search input → opens `BibleSearchDialog` (Command palette with AI, notes, bunches, references)
+- `handleSearchNavigate` sets `pendingScrollVerseRef` → MutationObserver scrolls to verse
+- `animate-verse-glow` golden animation fires after scroll
 
-The only missing piece: **after scrolling to the verse, nothing visually highlights it**. The verse just scrolls into view silently.
+## What's Missing (from the prompt)
+
+The prompt specifies several hardening improvements not yet implemented:
+
+### 1. Animation cleanup via `animationend` instead of blind `setTimeout`
+Currently uses `setTimeout(() => el.classList.remove(...), 2200)`. The prompt requires `animationend` event listener with `will-change` cleanup and a safety timeout fallback.
+
+### 2. Cancel previous highlight on rapid re-search
+No mechanism to clear a previous glow if the user quickly searches again. Need to track the currently-glowing element and remove its class before starting a new scroll.
+
+### 3. `prefers-reduced-motion` support
+Add a CSS media query that replaces the scale/box-shadow animation with a simple background fade for users who prefer reduced motion.
+
+### 4. Accessibility attributes
+- Search input: `role="searchbox"`, `aria-label="Search Bible verses"`
+- Results list: `aria-live="polite"` with result count announcement
+- Highlighted verse: `aria-current="true"` during glow
 
 ## Changes
 
-### 1. Add a glow keyframe animation to `tailwind.config.ts`
+### `src/components/bible/BibleReader.tsx` (scroll effect, ~lines 974-1013)
 
-Add a `verse-glow` keyframe: a warm golden pulse that scales subtly, glows via `box-shadow`, then fades back to normal over ~2 seconds.
+- Track currently-glowing element in a ref (`glowingElRef`)
+- Before applying glow to new element, remove class from previous element
+- Replace `setTimeout` cleanup with `animationend` listener + safety timeout
+- Set `will-change: transform` before animation, clear to `auto` on end
+- Set `aria-current="true"` during glow, remove after
 
-### 2. Update the scroll-to-verse effect in `BibleReader.tsx` (lines 974-1008)
+### `src/index.css` (verse-glow class)
 
-After `scrollIntoView` succeeds, add the `animate-verse-glow` CSS class to the target verse element. Set a timeout to remove it after the animation completes (~2s). This creates a smooth "found it" moment — the verse glows warmly then returns to normal.
+- Add `will-change: transform` to `.animate-verse-glow`
+- Add `@media (prefers-reduced-motion: reduce)` block that uses a background-color transition instead of scale/box-shadow animation
 
-### 3. Add the animation class in `src/index.css`
+### `src/components/bible/BibleSearchDialog.tsx`
 
-Define `.animate-verse-glow` with the keyframe reference and a `rounded-md` style so the glow has soft edges around the verse text.
+- Add `role="searchbox"` and `aria-label` to the search input
+- Wrap result list in `aria-live="polite"` region with result count
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `tailwind.config.ts` | Add `verse-glow` keyframe + animation |
-| `src/components/bible/BibleReader.tsx` | Add glow class to verse element after scroll completes |
+| `src/components/bible/BibleReader.tsx` | Harden glow lifecycle: animationend cleanup, cancel previous, will-change, aria-current |
+| `src/index.css` | Add will-change + prefers-reduced-motion fallback to verse-glow |
+| `src/components/bible/BibleSearchDialog.tsx` | Add accessibility attributes to search input and results |
 
