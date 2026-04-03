@@ -1942,7 +1942,11 @@ export function BibleReader() {
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
         {/* Suggestion Banner — hangs from toolbar break bar */}
-        <SuggestionBanner onClick={() => setSuggestionDrawerOpen(true)} hidden={focusMode} />
+        <SuggestionBanner onClick={() => setSuggestionDrawerOpen(true)} />
+        {/* iPad Waitlist Banner — hangs from toolbar break bar */}
+        {!isIPhone && (
+          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
+        )}
         <div className="mx-auto max-w-3xl px-4 py-2 space-y-1.5">
           {/* ── Row 1: Version · Book · Chapter ── */}
           <div className="flex items-center gap-2">
@@ -2013,21 +2017,16 @@ export function BibleReader() {
 
             {/* ── Row 2: Sleeve · flex · selection count · text size · reading mode ── */}
           <div className="flex items-center gap-2">
-            {/* Bible Sleeve button (left) + iPad waitlist banner */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSleeveOpen(true)}
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                title="Your Bible Sleeve"
-              >
-                <PanelLeft className="h-4 w-4" />
-              </Button>
-              {!isIPhone && (
-                <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} hidden={focusMode} />
-              )}
-            </div>
+            {/* Bible Sleeve button (left) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSleeveOpen(true)}
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              title="Your Bible Sleeve"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </Button>
 
             {/* Study Mode (iPad/Pencil) */}
             <Button
@@ -2045,7 +2044,7 @@ export function BibleReader() {
               className={`h-8 w-8 p-0 ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
               title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
             >
-              <PixarLampIPadIcon className="h-6 w-6" />
+              <PixarLampIPadIcon className="h-4 w-4" />
             </Button>
 
             {/* Export Canvas (visible in study mode) */}
