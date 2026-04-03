@@ -93,8 +93,8 @@ function isXGesture(
   const yRange = maxY - minY;
 
   // Must be big enough and roughly square-ish
-  if (xRange < 30 || yRange < 30) return nope;
-  if (xRange / yRange > 3 || yRange / xRange > 3) return nope;
+  if (xRange < 20 || yRange < 20) return nope;
+  if (xRange / yRange > 4 || yRange / xRange > 4) return nope;
 
   // Find the sharpest direction reversal point (vertex of the X)
   let bestReversal = -1;
@@ -114,8 +114,8 @@ function isXGesture(
     }
   }
 
-  // Must have a sharp reversal (cos < -0.3 means angle > ~107°)
-  if (bestReversal > -0.3) return nope;
+  // Must have a sharp reversal (cos < -0.15 means angle > ~99°)
+  if (bestReversal > -0.15) return nope;
 
   const seg1 = points.slice(0, bestIdx + 1);
   const seg2 = points.slice(bestIdx);
@@ -126,8 +126,8 @@ function isXGesture(
   const seg2xRange = Math.max(...seg2.map((p) => p.x)) - Math.min(...seg2.map((p) => p.x));
   const seg2yRange = Math.max(...seg2.map((p) => p.y)) - Math.min(...seg2.map((p) => p.y));
 
-  if (seg1xRange / xRange < 0.4 || seg1yRange / yRange < 0.4) return nope;
-  if (seg2xRange / xRange < 0.4 || seg2yRange / yRange < 0.4) return nope;
+  if (seg1xRange / xRange < 0.3 || seg1yRange / yRange < 0.3) return nope;
+  if (seg2xRange / xRange < 0.3 || seg2yRange / yRange < 0.3) return nope;
 
   return { detected: true, bbox: { minX, minY, maxX, maxY } };
 }

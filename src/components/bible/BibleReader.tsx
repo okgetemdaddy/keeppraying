@@ -982,7 +982,7 @@ export function BibleReader() {
       if (!isTwoFinger || e.touches.length !== 2) return;
       const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const deltaY = lastTwoFingerY - currentY;
-      area.scrollTop += deltaY;
+      window.scrollBy(0, deltaY);
       lastTwoFingerY = currentY;
     };
 
@@ -1287,7 +1287,7 @@ export function BibleReader() {
       let strokeCount = 0;
 
       // Delete highlights under the X bbox
-      const svgEl = document.querySelector(".absolute.inset-0.z-10") as SVGSVGElement | null;
+      const svgEl = readingAreaRef.current?.querySelector("svg") as SVGSVGElement | null;
       const svgRect = svgEl?.getBoundingClientRect();
       const z = studyMode ? (typeof inkZoom === "number" ? inkZoom : 1) : 1;
 
