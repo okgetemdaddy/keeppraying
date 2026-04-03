@@ -3,11 +3,12 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Calendar, Loader2, Share2, BookmarkPlus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
+import { VERSE_REGEX } from "@/lib/renderWithVerseLinks";
 import { useToast } from "@/hooks/use-toast";
 
 interface BlogPostFull {
