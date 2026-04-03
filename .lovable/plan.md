@@ -1,72 +1,51 @@
 
 
-# Pan Physics Refinement — ZoomPanWrapper.tsx
+## Refactor: Unified Tab Navigation for Suggestions & iPad App Banners
 
-## What changes
+### Problem
+The two vertical banners ("Suggestions" and "iPad App") use absolute positioning with manual margin offsets, causing visual clipping and overlap as shown in the screenshot.
 
-Four improvements to 3-finger pan behavior: hard velocity cap, finger-lift grace period, boundary rubber-banding, and micro-movement dead zone.
+### Solution
+Replace both banner components with a single `BibleEdgeTabs` component that uses an inline flex container with Framer Motion `layoutId` for the active indicator — exactly matching the user's specification.
 
-## Implementation details
+### Files to Change
 
-All changes are in `src/components/bible/canvas/ZoomPanWrapper.tsx`.
+**1. Create `src/components/bible/BibleEdgeTabs.tsx`** (new file)
+- Inline flex container with `bg-[#1A1D24] rounded-full overflow-hidden p-1`
+- Two tab buttons: "SUGGESTIONS" (Lightbulb icon) and "IPAD APP" (Tablet icon)
+- iPad App tab conditionally hidden if `ipad_waitlist_dismissed` is set in localStorage
+- Active tab gets a `<motion.div layoutId="activeTabIndicator">` background with `absolute inset-0 z-0` and amber/orange styling
+- Text/icons wrapped in `<span className="relative z-10 flex items-center gap-2">`
+- Component accepts `onSuggestionsClick` and `onIPadClick` callbacks — clicking a tab fires the callback and sets it as active briefly (or just fires the click immediately)
+- Positioned at the left edge of the toolbar using standard flow (not absolute/rotated) — placed as a vertical rotated element or kept horizontal depending on the design intent
 
-### Constants to add/change
+Since the screenshot and current code show these as rotated vertical tabs along the left edge, the container will be:
+- `absolute left-0 top-full z-20` on the toolbar wrapper
+- `transform: rotate(-90deg)` with `transformOrigin: "left top"` 
+- But now as a single flex group, no overlap possible
 
-```text
-MAX_VELOCITY:  1500 → 400  (px/s)
-MOMENTUM_FACTOR: 150 → 100  (reduce projection distance to match lower cap)
-+ GRACE_MS = 180
-+ DEAD_ZONE_PX = 8
-+ MIN_VELOCITY = 50  (below this, zero momentum)
-+ BOUNDARY_FRACTION = 0.6  (content can be at most 60% off-screen)
-+ OVERSCROLL_RESISTANCE = 0.3
-+ SNAPBACK_CONFIG = { tension: 120, friction: 20 }
+**2. Delete or deprecate:**
+- `src/components/bible/SuggestionBanner.tsx` — remove
+- `src/components/bible/iPadWaitlistBanner.tsx` — remove
+
+**3. Update `src/components/bible/BibleReader.tsx`**
+- Replace the two separate banner imports/renders (lines 112-115, 1944-1949) with a single `<BibleEdgeTabs>` component
+- Pass `onSuggestionsClick={() => setSuggestionDrawerOpen(true)}` and `onIPadClick={() => setWaitlistDrawerOpen(true)}`
+- Conditionally hide iPad tab based on `isIPhone` and localStorage dismissal
+- Hide the entire component in focus mode (existing pattern)
+
+### Technical Details
+
+```
+┌─────────────────────────────────────────┐
+│  Toolbar (sticky, relative)             │
+│                                         │
+│  ┌──────────────────────────────┐       │
+│  │ [💡 SUGGESTIONS] [📱 IPAD APP] │ ← single rotated flex container
+│  └──────────────────────────────┘       │
+│  ↑ absolute left-0 top-full, rotated    │
+└─────────────────────────────────────────┘
 ```
 
-### 1. Hard velocity cap — trivial
-
-Change `MAX_VELOCITY` from 1500 to 400. The existing `clampVelocity` helper already enforces it.
-
-### 2. Grace period on finger lift
-
-Add tracking state: `graceTimer: ReturnType<typeof setTimeout> | null`, `graceVx/graceVy` for stored clean velocity, `inGracePeriod: boolean`.
-
-**On `touchend`/`touchcancel` when `gestureType === "pan"`:**
-- Freeze canvas at current position (`api.set()`, no animation)
-- Calculate smoothed velocity from buffer, store as `graceVx`/`graceVy`
-- Set `inGracePeriod = true`, start 180ms timer
-- After 180ms: if no new 3-finger gesture started, apply momentum (if velocity > 50px/s and < 400px/s cap), then clear grace state
-
-**During grace period:**
-- `onTouchStart`: if 3 fingers arrive, cancel grace timer, resume pan normally
-- `onTouchMove` / `onTouchStart` with < 3 fingers: ignore entirely (sloppy lift contacts)
-
-### 3. Boundary rubber-banding
-
-Add a `clampToBounds` helper that takes `(x, y)` and the viewport dimensions (`window.innerWidth`, `window.innerHeight`):
-- Compute content bounds: the animated div is at least `100vw × 100vh`. Max allowed offset = `±viewport * BOUNDARY_FRACTION` in each direction.
-- Returns `{ x, y, clamped: boolean }` — if past bounds, returns the edge position.
-
-**During active pan (`api.set` in touchmove):**
-- After computing new `x/y`, check if past boundary. If so, apply resistance: `edge + (overshoot * OVERSCROLL_RESISTANCE)`.
-
-**During momentum (`api.start` in grace callback):**
-- Compute projected target. If past boundary, redirect target to edge position using `SNAPBACK_CONFIG` instead of `SPRING_CONFIG`.
-
-**Desktop wheel pan** also gets the same boundary check — clamp the `api.start` target for `y`.
-
-### 4. Dead zone for micro-movements
-
-Track `totalMovement` (cumulative absolute px moved during a 3-finger gesture). Accumulate `Math.abs(dx) + Math.abs(dy)` on each touchmove frame.
-
-On gesture end: if `totalMovement < DEAD_ZONE_PX` (8px), skip momentum entirely and reset position to where the gesture started (undo any micro-drift).
-
-### Cleanup
-
-- Clear `graceTimer` in the effect's cleanup function to prevent leaks.
-- Reset `totalMovement` on touchstart alongside other state.
-
-## Files modified
-
-- `src/components/bible/canvas/ZoomPanWrapper.tsx`
+The active tab indicator uses `layoutId="bibleEdgeTab"` so it smoothly animates between tabs with a spring transition (`stiffness: 400, damping: 30`).
 
