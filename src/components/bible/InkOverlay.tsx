@@ -48,6 +48,8 @@ interface InkOverlayProps {
   onWordCircle?: (words: string, verseNumber: number, anchorPoint: { x: number; y: number }) => void;
   /** Callback when an underline gesture is detected over text */
   onUnderlineGesture?: (verseNumber: number, underlinedText: string) => void;
+  /** Callback when an X gesture is detected — bbox is in SVG coordinates */
+  onXGesture?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
 }
 
 const STROKE_OPTIONS = {
