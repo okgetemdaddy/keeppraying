@@ -318,8 +318,6 @@ export function BibleSleeveSheet({
 
         <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4">
           <div className="space-y-5 pb-8">
-            {/* ── LEFT COLUMN: Settings ── */}
-            <div className="space-y-5">
 
             {/* ── Appearance ── */}
             <Collapsible open={isOpen(SECTION_IDS.appearance)}>
