@@ -1,27 +1,34 @@
 
 
-# Fix AI-Powered Bible Search (500 Error)
+# Add Verse Glow Animation After Search Navigation
 
-## The Problem
+## Current State
 
-The Bible search is already AI-powered — the `bible-search` edge function calls an AI model to interpret topic queries like "what does the Bible say about worry?" and return relevant passages. But it's returning 500 errors because it's hitting the **wrong API endpoint**.
+Everything is already wired for verse-level navigation:
+- Each verse element has `id="verse-{number}"` and `data-verse="{number}"`
+- `handleSearchNavigate` sets `pendingScrollVerseRef.current = verse` which triggers a `scrollIntoView` via MutationObserver
+- Search results (reference, AI, notes, bunches) all pass `verseStart`/`verseNumber` through `onNavigate`
 
-Current (broken): `https://ai.lovable.dev/api/generate`
-Correct: `https://ai.gateway.lovable.dev/v1/chat/completions`
+The only missing piece: **after scrolling to the verse, nothing visually highlights it**. The verse just scrolls into view silently.
 
 ## Changes
 
-### `supabase/functions/bible-search/index.ts`
+### 1. Add a glow keyframe animation to `tailwind.config.ts`
 
-1. **Fix the API URL** — change `https://ai.lovable.dev/api/generate` to `https://ai.gateway.lovable.dev/v1/chat/completions`
-2. **Update the response parsing** — the gateway returns standard OpenAI-format responses, so the existing `aiData.choices?.[0]?.message?.content` parsing should work, but verify the model field uses a valid model name (switch from `google/gemini-2.5-flash` to `google/gemini-3-flash-preview` for the latest default)
-3. **Add 429/402 error handling** — surface rate limit and payment errors gracefully instead of returning a generic 500
+Add a `verse-glow` keyframe: a warm golden pulse that scales subtly, glows via `box-shadow`, then fades back to normal over ~2 seconds.
 
-Once deployed, typing "what does the Bible say about worry?" will return AI-suggested passages like Matthew 6:25-34, Philippians 4:6-7, and 1 Peter 5:7.
+### 2. Update the scroll-to-verse effect in `BibleReader.tsx` (lines 974-1008)
+
+After `scrollIntoView` succeeds, add the `animate-verse-glow` CSS class to the target verse element. Set a timeout to remove it after the animation completes (~2s). This creates a smooth "found it" moment — the verse glows warmly then returns to normal.
+
+### 3. Add the animation class in `src/index.css`
+
+Define `.animate-verse-glow` with the keyframe reference and a `rounded-md` style so the glow has soft edges around the verse text.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `supabase/functions/bible-search/index.ts` | Fix gateway URL, update model, add rate-limit error handling |
+| `tailwind.config.ts` | Add `verse-glow` keyframe + animation |
+| `src/components/bible/BibleReader.tsx` | Add glow class to verse element after scroll completes |
 
