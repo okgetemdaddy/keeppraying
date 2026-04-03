@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { SleeveWaitlistInput } from "@/components/bible/iPadWaitlistDrawer";
 import { PenTool, Layers, BookOpen, Image as ImageIcon } from "lucide-react";
 import {
   ArrowLeft,
@@ -878,6 +879,12 @@ export function BibleSleeveSheet({
                 <span className="text-sm font-medium text-foreground">Trash Bin</span>
                 <span className="ml-auto text-xs text-muted-foreground">30 days</span>
               </button>
+            </section>
+
+            {/* ── iPad Waitlist Signup ── */}
+            <div className="h-px bg-border" />
+            <section className="pb-2">
+              <SleeveWaitlistInput />
             </section>
           </div>
         </div>

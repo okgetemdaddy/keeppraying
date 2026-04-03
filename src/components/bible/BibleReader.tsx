@@ -108,6 +108,8 @@ import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverla
 import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
+import { IPadWaitlistBanner } from "@/components/bible/iPadWaitlistBanner";
+import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
@@ -858,6 +860,7 @@ export function BibleReader() {
   const [verseAddedToast, setVerseAddedToast] = useState<{ name: string; visible: boolean }>({ name: "", visible: false });
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [waitlistDrawerOpen, setWaitlistDrawerOpen] = useState(false);
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
@@ -1975,7 +1978,11 @@ export function BibleReader() {
       </div>
 
       {/* ── Reading Area ── */}
-      <div ref={readingAreaRef} className="mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
+      <div ref={readingAreaRef} className="relative mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
+        {/* iPad Waitlist Banner — desktop/iPad only */}
+        {!isIPhone && (
+          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
+        )}
         {currentBook && currentChapter && (
           <motion.header
             {...fadeIn}
@@ -2594,6 +2601,9 @@ export function BibleReader() {
         availableBooks={index?.books?.map((b) => b.id)}
         onNavigate={handleSearchNavigate}
       />
+
+      {/* ── iPad Waitlist Drawer ── */}
+      <IPadWaitlistDrawer open={waitlistDrawerOpen} onOpenChange={setWaitlistDrawerOpen} />
     </article>
   );
 }
