@@ -232,7 +232,7 @@ function ToolbarActions({
             <BookMarked className="h-4 w-4" />
             {isVertical && <span className="text-sm">Cross-refs</span>}
           </button>
-        )
+        )}
 
         {/* ── Verse Bunch (only for multi-verse selection) ── */}
         {selectedVerses.length >= 2 && (
