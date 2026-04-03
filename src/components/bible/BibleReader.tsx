@@ -608,6 +608,9 @@ export function BibleReader() {
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
 
+  // ── Canvas Export sheet ──
+  const [exportSheetOpen, setExportSheetOpen] = useState(false);
+
   // ── Premium Dark Mode ──
   const [premiumDark, setPremiumDark] = useState(() => {
     try { return localStorage.getItem("bible_premium_dark") === "true"; } catch { return false; }
