@@ -73,14 +73,14 @@ Use standard English book names (Genesis, Exodus, ..., Revelation).
 "confidence" is 0.0-1.0 indicating how well this matches the query.
 If no match is possible, return an empty array [].`;
 
-    const response = await fetch("https://ai.lovable.dev/api/generate", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: query.trim() },
@@ -91,6 +91,18 @@ If no match is possible, return an empty array [].`;
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limited — please try again shortly.", suggestions: [] }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted.", suggestions: [] }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       console.error("AI API error:", response.status, await response.text());
       return new Response(
         JSON.stringify({ suggestions: [] }),
