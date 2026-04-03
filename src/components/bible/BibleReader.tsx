@@ -971,6 +971,7 @@ export function BibleReader() {
   // ── Pending scroll-to-verse (render-aware, replaces all setTimeout scroll patterns) ──
   const pendingScrollVerseRef = useRef<number | null>(null);
   const glowingElRef = useRef<HTMLElement | null>(null);
+  const searchNavCounter = useRef(0);
 
   /** Remove glow from the previously-highlighted verse */
   const clearPreviousGlow = useCallback(() => {
@@ -995,13 +996,16 @@ export function BibleReader() {
 
         el.scrollIntoView({ behavior: "smooth", block: "center" });
 
-        // Apply glow after scroll settles
-        setTimeout(() => {
+        // Wait for scroll to actually finish before applying glow
+        let scrollTimeout: ReturnType<typeof setTimeout>;
+        const scrollArea = readingAreaRef.current ?? window;
+
+        const applyGlow = () => {
+          clearPreviousGlow();
           el.style.willChange = "transform";
           el.setAttribute("aria-current", "true");
-          // Force reflow to restart animation if same verse searched twice
           el.classList.remove("animate-verse-glow");
-          void el.offsetWidth;
+          void el.offsetWidth; // force reflow to restart animation
           el.classList.add("animate-verse-glow");
           glowingElRef.current = el;
 
@@ -1011,11 +1015,26 @@ export function BibleReader() {
             el.removeAttribute("aria-current");
             if (glowingElRef.current === el) glowingElRef.current = null;
           };
-
           el.addEventListener("animationend", cleanup, { once: true });
-          // Safety timeout if animationend doesn't fire
-          setTimeout(cleanup, 2500);
-        }, 400);
+          setTimeout(cleanup, 2500); // safety timeout
+        };
+
+        const onScrollEnd = () => {
+          clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(() => {
+            scrollArea.removeEventListener("scroll", onScrollEnd);
+            applyGlow();
+          }, 120); // 120ms debounce — scroll has settled
+        };
+
+        scrollArea.addEventListener("scroll", onScrollEnd, { passive: true });
+
+        // Fallback: if no scroll event fires (element already in view)
+        setTimeout(() => {
+          scrollArea.removeEventListener("scroll", onScrollEnd);
+          clearTimeout(scrollTimeout);
+          applyGlow();
+        }, 500);
 
         pendingScrollVerseRef.current = null;
         return true;
@@ -1043,7 +1062,8 @@ export function BibleReader() {
       observer.disconnect();
       clearTimeout(timeout);
     };
-  }, [verses]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verses, searchNavCounter.current]);
 
   // Scripture ref for mutations
   const scriptureRef: ScriptureRef | null = useMemo(
@@ -1538,6 +1558,7 @@ export function BibleReader() {
       setChapterIdx(Math.max(chIdx, 0));
       if (verse) {
         pendingScrollVerseRef.current = verse;
+        searchNavCounter.current += 1;
       }
     },
     [index],
