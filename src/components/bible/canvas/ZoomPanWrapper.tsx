@@ -31,6 +31,7 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
   fontSize,
   onFontSizeChange,
   children,
+  overlay,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const fontSizeRef = useRef(fontSize);
