@@ -6,6 +6,7 @@ export interface InkStroke {
 
 interface InkCanvasProps {
   strokes: InkStroke[];
+  activeStroke: [number, number][] | null;
   drawMode: boolean;
   onStrokeStart: () => void;
   onStrokePoint: (pt: [number, number]) => void;
