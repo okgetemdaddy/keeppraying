@@ -7,6 +7,8 @@ interface ZoomPanWrapperProps {
   fontSize: number;
   onFontSizeChange: (fs: number) => void;
   children: React.ReactNode;
+  /** Rendered as a direct child of the animated container, covering the full surface */
+  overlay?: React.ReactNode;
 }
 
 const MIN_FONT = 14;
