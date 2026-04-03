@@ -582,6 +582,10 @@ export function BibleReader() {
   // ── Note input state ──
   const [noteInputVerse, setNoteInputVerse] = useState<number | null>(null);
 
+  // ── Cross-reference popover state ──
+  const [crossRefVerse, setCrossRefVerse] = useState<number | null>(null);
+  const [crossRefOpen, setCrossRefOpen] = useState(false);
+
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
   const [bunchAwareState, setBunchAwareStateReact] = useState(isBunchAware);
