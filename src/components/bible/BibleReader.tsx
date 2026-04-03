@@ -572,6 +572,12 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
   }, []);
 
+  // Sync ease-eyes-dim to CSS variable — zero React re-renders on text
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ease-eyes-dim', String(easeEyesDim));
+    return () => document.documentElement.style.setProperty('--ease-eyes-dim', '1');
+  }, [easeEyesDim]);
+
   // ── Highlight style (invert vs neon) ──
   const [highlightStyle, setHighlightStyleRaw] = useState<HighlightStyleMode>(() => {
     try { return (localStorage.getItem("bible_highlight_style") as HighlightStyleMode) || "invert"; } catch { return "invert"; }
