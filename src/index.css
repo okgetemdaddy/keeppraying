@@ -333,11 +333,31 @@
   /* ═══ Ease the Eyes — solid color-mix dimmer ═══ */
   :root { --ease-eyes-dim: 1; }
 
-  .bible-dark .bible-reading-canvas p,
-  .bible-dark .bible-reading-canvas span,
-  .bible-dark .bible-reading-canvas sup {
+  .bible-dark p,
+  .bible-dark span,
+  .bible-dark sup,
+  .bible-dark h1,
+  .bible-dark h2,
+  .bible-dark h3,
+  .bible-dark h4,
+  .bible-dark label,
+  .bible-dark a,
+  .bible-dark button,
+  .bible-dark input,
+  .bible-dark textarea,
+  .bible-dark select,
+  .bible-dark li,
+  .bible-dark td,
+  .bible-dark th,
+  .bible-dark div {
     color: color-mix(in srgb, #f4f4f5 calc(var(--ease-eyes-dim) * 100%), #09090b);
     transition: color 0.1s linear;
+  }
+
+  /* Protect SVG ink layers and highlighters from dimming */
+  .bible-dark svg,
+  .bible-dark .highlighter-layer {
+    color: unset;
   }
 
   /* Bible serif reading font */
