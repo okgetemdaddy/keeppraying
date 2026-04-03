@@ -113,6 +113,18 @@ function SectionHeader({
   );
 }
 
+interface StudyArtifact {
+  id: string;
+  book_usfm: string;
+  chapter_number: number;
+  version_id: number;
+  title: string;
+  image_url: string;
+  stroke_count: number;
+  card_count: number;
+  created_at: string;
+}
+
 interface BibleSleeveSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -187,6 +199,10 @@ interface BibleSleeveSheetProps {
   /* highlight style */
   highlightStyle?: "invert" | "neon";
   onHighlightStyleChange?: (v: "invert" | "neon") => void;
+
+  /* study artifacts */
+  studyArtifacts?: StudyArtifact[];
+  onNavigateToArtifact?: (artifact: StudyArtifact) => void;
 }
 
 export function BibleSleeveSheet({
