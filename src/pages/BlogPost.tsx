@@ -228,7 +228,7 @@ export default function BlogPost() {
               [&_em]:text-primary/80
               [&_hr]:border-border [&_hr]:my-6
             ">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown>
             </div>
           )}
 
