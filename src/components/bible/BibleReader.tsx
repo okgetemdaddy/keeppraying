@@ -2201,6 +2201,39 @@ export function BibleReader() {
         />
       )}
 
+      {/* ── Reference Bloom ── */}
+      <AnimatePresence>
+        {referenceBloom && versionId && bookUsfm && currentChapter && (
+          <ReferenceBloom
+            anchorPoint={{ x: referenceBloom.x, y: referenceBloom.y }}
+            word={referenceBloom.word}
+            verseNumber={referenceBloom.verseNumber}
+            bookUsfm={bookUsfm}
+            chapter={currentChapter.id}
+            versionId={versionId}
+            verseText={verses.find((v) => v.number === referenceBloom.verseNumber)?.text ?? ""}
+            onClose={() => setReferenceBloom(null)}
+            onNavigate={(navBookUsfm, chapter, verse) => {
+              handleSearchNavigate(navBookUsfm, chapter, verse);
+              setReferenceBloom(null);
+            }}
+            onPinToMargin={() => {
+              if (bookUsfm && currentChapter) {
+                const verseIdStr = `${bookUsfm}.${currentChapter.id}.${referenceBloom.verseNumber}`;
+                saveAnnotationMut.mutate({
+                  verseIds: [verseIdStr],
+                  strokes: [],
+                  typedText: `[word-study] ${referenceBloom.word}`,
+                  existingId: undefined,
+                });
+                toast.success("📌 Pinned to margin");
+              }
+              setReferenceBloom(null);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ── Verse Bunch Tooltip ── */}
       <AnimatePresence>
         {showBunchDialog && currentBook && currentChapter && versionId && bookUsfm && (
