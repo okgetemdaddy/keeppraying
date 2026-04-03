@@ -2073,6 +2073,7 @@ export function BibleReader() {
                           verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
                           highlightStyle={highlightStyle}
                           previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                          onLongPressVerseNumber={user ? handleCrossRef : undefined}
                         />
                         <AnimatePresence>
                           {noteInputVerse === v.number && (
