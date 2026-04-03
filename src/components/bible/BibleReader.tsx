@@ -109,10 +109,9 @@ import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverla
 import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
-import { IPadWaitlistBanner } from "@/components/bible/iPadWaitlistBanner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
-import { SuggestionBanner } from "@/components/bible/SuggestionBanner";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
+import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
@@ -1941,12 +1940,12 @@ export function BibleReader() {
 
       {/* ── Toolbar ── */}
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
-        {/* Suggestion Banner — hangs from toolbar break bar */}
-        <SuggestionBanner onClick={() => setSuggestionDrawerOpen(true)} />
-        {/* iPad Waitlist Banner — hangs from toolbar break bar */}
-        {!isIPhone && (
-          <IPadWaitlistBanner onClick={() => setWaitlistDrawerOpen(true)} />
-        )}
+        {/* Edge Tabs — Suggestions & iPad Waitlist */}
+        <BibleEdgeTabs
+          onSuggestionsClick={() => setSuggestionDrawerOpen(true)}
+          onIPadClick={() => setWaitlistDrawerOpen(true)}
+          showIPad={!isIPhone}
+        />
         <div className="mx-auto max-w-3xl px-4 py-2 space-y-1.5">
           {/* ── Row 1: Version · Book · Chapter ── */}
           <div className="flex items-center gap-2">
