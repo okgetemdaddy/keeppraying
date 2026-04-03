@@ -3,11 +3,12 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ArrowLeft, Calendar, Loader2, Share2, BookmarkPlus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import VerseLink from "@/components/VerseLink";
+import { VERSE_REGEX } from "@/lib/renderWithVerseLinks";
 import { useToast } from "@/hooks/use-toast";
 
 interface BlogPostFull {
@@ -27,6 +28,39 @@ function sanitiseContent(raw: string): string {
     return raw.replace(/\\n/g, "\n");
   }
   return raw;
+}
+
+/** Process a plain text string, replacing Bible references with <VerseLink> */
+function textWithVerseLinks(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  const re = new RegExp(VERSE_REGEX.source, "g");
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const ref = match[0];
+    parts.push(<VerseLink key={`${ref}-${match.index}`} reference={ref} />);
+    last = match.index + ref.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length ? parts : text;
+}
+
+/** Custom ReactMarkdown components that inject VerseLinks into text nodes */
+const markdownComponents: Components = {
+  p: ({ children }) => <p>{processChildren(children)}</p>,
+  li: ({ children }) => <li>{processChildren(children)}</li>,
+  strong: ({ children }) => <strong>{processChildren(children)}</strong>,
+  em: ({ children }) => <em>{processChildren(children)}</em>,
+  blockquote: ({ children }) => <blockquote>{children}</blockquote>,
+};
+
+function processChildren(children: React.ReactNode): React.ReactNode {
+  if (typeof children === "string") return textWithVerseLinks(children);
+  if (Array.isArray(children)) return children.map((c, i) =>
+    typeof c === "string" ? <span key={i}>{textWithVerseLinks(c)}</span> : c
+  );
+  return children;
 }
 
 export default function BlogPost() {
@@ -194,7 +228,7 @@ export default function BlogPost() {
               [&_em]:text-primary/80
               [&_hr]:border-border [&_hr]:my-6
             ">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{content}</ReactMarkdown>
             </div>
           )}
 
