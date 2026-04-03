@@ -108,6 +108,8 @@ import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverla
 import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
 import { toast } from "sonner";
+import { IPadWaitlistBanner } from "@/components/bible/iPadWaitlistBanner";
+import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
