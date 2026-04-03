@@ -95,7 +95,7 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
           if (next !== fontSizeRef.current) onFontSizeChange(next);
         } else {
           // Vertical pan with momentum
-          api.start({ y: spring.y.get() - dy });
+          api.start({ y: spring.y.get() - dy * 2.5 });
         }
       },
     },
