@@ -114,8 +114,8 @@ function isXGesture(
     }
   }
 
-  // Must have a sharp reversal (cos < -0.3 means angle > ~107°)
-  if (bestReversal > -0.3) return nope;
+  // Must have a sharp reversal (cos < -0.15 means angle > ~99°)
+  if (bestReversal > -0.15) return nope;
 
   const seg1 = points.slice(0, bestIdx + 1);
   const seg2 = points.slice(bestIdx);
