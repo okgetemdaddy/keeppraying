@@ -4,6 +4,7 @@ import {
   Bookmark,
   BookmarkCheck,
   BookMarked,
+  BookOpen,
   StickyNote,
   Package,
   X,
