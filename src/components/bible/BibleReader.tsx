@@ -206,19 +206,46 @@ function snapToWordBoundaries(text: string, start: number, end: number): { start
 }
 
 /* ── Highlighted text renderer (supports partial-verse spans) ── */
+/* ── Word-wrapped text for hit testing (invisible layout-wise) ── */
+function WordWrappedText({ text, verseNumber }: { text: string; verseNumber?: number }) {
+  const segments = text.split(/(\s+)/);
+  let wordIndex = 0;
+  return (
+    <>
+      {segments.map((seg, i) => {
+        if (/^\s+$/.test(seg)) {
+          return <span key={`ws-${i}`}>{seg}</span>;
+        }
+        const idx = wordIndex++;
+        return (
+          <span
+            key={`w-${i}`}
+            data-word={seg}
+            data-word-index={idx}
+            data-verse={verseNumber}
+          >
+            {seg}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 function HighlightedText({
   text,
   highlights,
   highlightStyle = "invert",
   previewRange,
+  verseNumber,
 }: {
   text: string;
   highlights: UserHighlight[];
   highlightStyle?: HighlightStyleMode;
   previewRange?: { start: number; end: number };
+  verseNumber?: number;
 }) {
-  if (!highlights.length && !previewRange) return <>{text}</>;
-
+  if (!highlights.length && !previewRange) return <WordWrappedText text={text} verseNumber={verseNumber} />;
   // Build highlight spans
   const spans = highlights
     .map((h) => ({
@@ -249,7 +276,7 @@ function HighlightedText({
     const end = Math.min(span.end, text.length);
 
     if (start > cursor) {
-      parts.push(<span key={`gap-${cursor}`}>{text.slice(cursor, start)}</span>);
+      parts.push(<WordWrappedText key={`gap-${cursor}`} text={text.slice(cursor, start)} verseNumber={verseNumber} />);
     }
 
     if (end > start) {
@@ -273,7 +300,7 @@ function HighlightedText({
   }
 
   if (cursor < text.length) {
-    parts.push(<span key={`tail-${cursor}`}>{text.slice(cursor)}</span>);
+    parts.push(<WordWrappedText key={`tail-${cursor}`} text={text.slice(cursor)} verseNumber={verseNumber} />);
   }
 
   return <>{parts}</>;
@@ -443,7 +470,7 @@ function EnrichedVerse({
           <BookmarkRibbon bookmark={bookmark} />
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} verseNumber={verse.number} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}{" "}
       </span>
@@ -483,7 +510,7 @@ function EnrichedVerse({
         >
           {verse.number}
         </sup>
-        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} />
+        <HighlightedText text={verse.text} highlights={highlights} highlightStyle={highlightStyle} previewRange={previewRange} verseNumber={verse.number} />
         <NoteMarginalia notes={notes} />
         {!hideBunches && <BunchIndicator bunchItems={bunchItems} bunchColorMap={bunchColorMap} />}
       </p>
@@ -903,6 +930,76 @@ export function BibleReader() {
     crossTranslation,
     crossBunchTranslation,
   );
+
+  // ── Study Mode input routing: lock pen to ink, two-finger scroll only ──
+  useEffect(() => {
+    if (!studyMode || studyModeVariant !== "margin") return;
+    const area = readingAreaRef.current;
+    if (!area) return;
+
+    const preventSingleFingerScroll = (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        e.preventDefault();
+      }
+    };
+
+    const preventPenScroll = (e: PointerEvent) => {
+      if (e.pointerType === "pen") {
+        e.preventDefault();
+      }
+    };
+
+    area.addEventListener("touchmove", preventSingleFingerScroll, { passive: false });
+    area.addEventListener("pointerdown", preventPenScroll, { passive: false });
+    area.style.touchAction = "none";
+    area.style.overscrollBehavior = "none";
+
+    return () => {
+      area.removeEventListener("touchmove", preventSingleFingerScroll);
+      area.removeEventListener("pointerdown", preventPenScroll);
+      area.style.touchAction = "";
+      area.style.overscrollBehavior = "";
+    };
+  }, [studyMode, studyModeVariant]);
+
+  // ── Manual two-finger scroll in Study Mode ──
+  useEffect(() => {
+    if (!studyMode || studyModeVariant !== "margin") return;
+    const area = readingAreaRef.current;
+    if (!area) return;
+
+    let lastTwoFingerY = 0;
+    let isTwoFinger = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        isTwoFinger = true;
+        lastTwoFingerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isTwoFinger || e.touches.length !== 2) return;
+      const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const deltaY = lastTwoFingerY - currentY;
+      area.scrollTop += deltaY;
+      lastTwoFingerY = currentY;
+    };
+
+    const onTouchEnd = () => {
+      isTwoFinger = false;
+    };
+
+    area.addEventListener("touchstart", onTouchStart, { passive: true });
+    area.addEventListener("touchmove", onTouchMove, { passive: true });
+    area.addEventListener("touchend", onTouchEnd, { passive: true });
+
+    return () => {
+      area.removeEventListener("touchstart", onTouchStart);
+      area.removeEventListener("touchmove", onTouchMove);
+      area.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [studyMode, studyModeVariant]);
 
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
@@ -2130,6 +2227,35 @@ export function BibleReader() {
                         if (!onboarded) {
                           setPocketOpen(true);
                           localStorage.setItem("pencil-onboarded", "true");
+                        }
+                      }}
+                      onWordCircle={(words, verseNum, anchor) => {
+                        const verseData = verses.find((v) => v.number === verseNum);
+                        if (verseData) {
+                          setReferenceBloom({
+                            x: anchor.x,
+                            y: anchor.y,
+                            word: words,
+                            verseNumber: verseNum,
+                          });
+                        }
+                      }}
+                      onUnderlineGesture={(verseNumber, underlinedText) => {
+                        const lastColor = (() => {
+                          try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
+                        })();
+                        const verseData = verses.find((v) => v.number === verseNumber);
+                        if (verseData) {
+                          const textStart = verseData.text.indexOf(underlinedText);
+                          if (textStart >= 0) {
+                            mutations.addHighlight.mutate({
+                              verseNumber,
+                              color: lastColor,
+                              start: textStart,
+                              end: textStart + underlinedText.length,
+                            });
+                            toast.success(`Highlighted: "${underlinedText.slice(0, 30)}${underlinedText.length > 30 ? "…" : ""}"`);
+                          }
                         }
                       }}
                     />
