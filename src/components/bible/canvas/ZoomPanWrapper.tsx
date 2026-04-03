@@ -189,12 +189,26 @@ const ZoomPanWrapper: React.FC<ZoomPanWrapperProps> = ({
           ["--canvas-font-size" as string]: `${fontSize}px`,
           ["--canvas-line-height" as string]: `${lineHeight}px`,
           position: "relative",
+          minWidth: "100vw",
           minHeight: "100vh",
           padding: "80px 40px 200px",
           willChange: "transform",
         }}
       >
         {children}
+        {/* Full-surface ink overlay — covers entire transformed space */}
+        {overlay && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              overflow: "visible",
+              pointerEvents: "none",
+            }}
+          >
+            {overlay}
+          </div>
+        )}
       </animated.div>
     </div>
   );
