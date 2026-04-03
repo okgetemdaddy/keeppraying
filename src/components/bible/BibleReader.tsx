@@ -378,6 +378,7 @@ function EnrichedVerse({
   onAnnotationSave,
   verseIdString,
   highlightStyle = "invert",
+  previewRange,
 }: EnrichedVerseProps) {
   const [showAnnotation, setShowAnnotation] = useState(false);
   const bunchBorderClass = useMemo(() => {
