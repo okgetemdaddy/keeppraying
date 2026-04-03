@@ -20,7 +20,7 @@ import {
   BarChart2, FileText, PlusCircle, Eye, EyeOff, Sparkles, BookMarked, Search, ScrollText,
   Pencil, Save, XCircle, Scroll, Trash2, Shield, Activity, Settings, LayoutDashboard,
   ChevronRight, TrendingUp, Heart, MessageSquare, Star, Bell, LogOut, Menu, ChevronDown,
-  BookText, Flag, Flame, Crown, Wind, Volume2, Youtube,
+  BookText, Flag, Flame, Crown, Wind, Volume2, Youtube, Tablet,
 } from "lucide-react";
 import AIInsightsTab from "@/components/admin/AIInsightsTab";
 import UserMonitorTab from "@/components/admin/UserMonitorTab";
@@ -30,6 +30,7 @@ import SayingsTab from "@/components/admin/SayingsTab";
 import WelcomeMessagesTab from "@/components/admin/WelcomeMessagesTab";
 import AudioCacheTab from "@/components/admin/AudioCacheTab";
 import SermonCacheTab from "@/components/admin/SermonCacheTab";
+import WaitlistTab from "@/components/admin/WaitlistTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -72,7 +73,7 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache";
+type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache" | "waitlist";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "overview",         label: "Overview",          icon: LayoutDashboard },
@@ -93,6 +94,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "welcome",          label: "Welcome Messages",   icon: Bell },
   { id: "audio-cache",      label: "Audio Cache",        icon: Volume2 },
   { id: "sermon-cache",     label: "Sermon Cache",       icon: Youtube },
+  { id: "waitlist",          label: "KeepRead.ing Waitlist", icon: Tablet },
 ];
 
 export default function Admin() {
@@ -785,6 +787,9 @@ export default function Admin() {
 
               {/* ── SERMON CACHE ── */}
               {activeTab === "sermon-cache" && <SermonCacheTab />}
+
+              {/* ── KEEPREAD.ING WAITLIST ── */}
+              {activeTab === "waitlist" && <WaitlistTab />}
 
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
