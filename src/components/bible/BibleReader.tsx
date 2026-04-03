@@ -588,6 +588,9 @@ export function BibleReader() {
   const [crossRefVerse, setCrossRefVerse] = useState<number | null>(null);
   const [crossRefOpen, setCrossRefOpen] = useState(false);
 
+  // ── Reference Bloom state ──
+  const [referenceBloom, setReferenceBloom] = useState<{ x: number; y: number; word: string; verseNumber: number } | null>(null);
+
   // ── Bunch dialog state ──
   const [showBunchDialog, setShowBunchDialog] = useState(false);
   const [bunchAwareState, setBunchAwareStateReact] = useState(isBunchAware);
