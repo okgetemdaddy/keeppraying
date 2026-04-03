@@ -30,7 +30,39 @@ function sanitiseContent(raw: string): string {
   return raw;
 }
 
-export default function BlogPost() {
+/** Process a plain text string, replacing Bible references with <VerseLink> */
+function textWithVerseLinks(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  let match: RegExpExecArray | null;
+  const re = new RegExp(VERSE_REGEX.source, "g");
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    const ref = match[0];
+    parts.push(<VerseLink key={`${ref}-${match.index}`} reference={ref} />);
+    last = match.index + ref.length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length ? parts : text;
+}
+
+/** Custom ReactMarkdown components that inject VerseLinks into text nodes */
+const markdownComponents: Components = {
+  p: ({ children }) => <p>{processChildren(children)}</p>,
+  li: ({ children }) => <li>{processChildren(children)}</li>,
+  strong: ({ children }) => <strong>{processChildren(children)}</strong>,
+  em: ({ children }) => <em>{processChildren(children)}</em>,
+  blockquote: ({ children }) => <blockquote>{children}</blockquote>,
+};
+
+function processChildren(children: React.ReactNode): React.ReactNode {
+  if (typeof children === "string") return textWithVerseLinks(children);
+  if (Array.isArray(children)) return children.map((c, i) =>
+    typeof c === "string" ? <span key={i}>{textWithVerseLinks(c)}</span> : c
+  );
+  return children;
+}
+
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
