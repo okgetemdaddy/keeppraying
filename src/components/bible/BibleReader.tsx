@@ -189,6 +189,12 @@ function groupByVerse<T extends { verse_number: number }>(items: T[]): Map<numbe
   }
   return map;
 }
+/* ── Word-boundary snapping helper ── */
+function snapToWordBoundaries(text: string, start: number, end: number): { start: number; end: number } {
+  while (start > 0 && /\w/.test(text[start - 1])) start--;
+  while (end < text.length && /\w/.test(text[end])) end++;
+  return { start, end };
+}
 
 /* ── Highlighted text renderer (supports partial-verse spans) ── */
 function HighlightedText({
