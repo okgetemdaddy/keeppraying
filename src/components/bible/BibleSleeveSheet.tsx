@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { SleeveWaitlistInput } from "@/components/bible/iPadWaitlistDrawer";
 import { PenTool, Layers, BookOpen, Image as ImageIcon } from "lucide-react";
 import {
   ArrowLeft,
