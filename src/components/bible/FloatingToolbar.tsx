@@ -219,6 +219,21 @@ function ToolbarActions({
           </button>
         )}
 
+        {/* ── Cross-References ── */}
+        {primaryVerse && onCrossRef && (
+          <button
+            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
+            title="Cross-references"
+            onClick={() => {
+              onCrossRef(primaryVerse);
+              onDismiss();
+            }}
+          >
+            <BookMarked className="h-4 w-4" />
+            {isVertical && <span className="text-sm">Cross-refs</span>}
+          </button>
+        )
+
         {/* ── Verse Bunch (only for multi-verse selection) ── */}
         {selectedVerses.length >= 2 && (
           <button
