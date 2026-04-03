@@ -2159,7 +2159,11 @@ export function BibleReader() {
       </div>
 
       {/* ── Reading Area ── */}
-      <div ref={readingAreaRef} className="relative mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
+      <div ref={readingAreaRef} className={`relative py-8 sm:py-12 ${
+        studyMode && studyModeVariant === "margin"
+          ? "w-full px-0"
+          : "mx-auto max-w-3xl px-5 sm:px-8"
+      }`}>
         {currentBook && currentChapter && (
           <motion.header
             {...fadeIn}

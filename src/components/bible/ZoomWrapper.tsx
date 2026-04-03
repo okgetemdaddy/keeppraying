@@ -65,13 +65,23 @@ export function ZoomWrapper({
 }: ZoomWrapperProps) {
   const hasMargin = marginWidth > 0;
 
-  /* Build CSS Grid columns based on alignment + margin */
+  /* Build CSS Grid columns based on alignment + margin.
+     When study mode is active the container spans the full viewport,
+     so the text column is capped at 768px (≈ max-w-3xl) and remaining
+     space flows into the margin columns — giving the InkOverlay SVG
+     edge-to-edge coverage while keeping scripture readable. */
   const gridTemplateColumns = hasMargin
-    ? textAlign === "left"
-      ? `1fr ${marginWidth}%`
-      : textAlign === "right"
-        ? `${marginWidth}% 1fr`
-        : `${marginWidth / 2}% 1fr ${marginWidth / 2}%`
+    ? studyMode
+      ? textAlign === "left"
+        ? `minmax(0, 768px) 1fr`
+        : textAlign === "right"
+          ? `1fr minmax(0, 768px)`
+          : `1fr minmax(0, 768px) 1fr`
+      : textAlign === "left"
+        ? `1fr ${marginWidth}%`
+        : textAlign === "right"
+          ? `${marginWidth}% 1fr`
+          : `${marginWidth / 2}% 1fr ${marginWidth / 2}%`
     : undefined;
 
   return (
