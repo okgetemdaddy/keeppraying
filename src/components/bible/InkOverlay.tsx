@@ -666,6 +666,24 @@ export function InkOverlay({
           style={{ pointerEvents: "none" }}
         />
       )}
+
+      {/* X-gesture flash */}
+      {xFlash && (
+        <text
+          x={xFlash.x}
+          y={xFlash.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="32"
+          fill="hsl(0, 72%, 51%)"
+          style={{
+            pointerEvents: "none",
+            animation: "xFlashFade 400ms ease-out forwards",
+          }}
+        >
+          ✕
+        </text>
+      )}
     </svg>
   );
 }
