@@ -1,49 +1,52 @@
 
 
-# Fix: Restore Light Theme When Premium Dark Is Toggled Off
+# Ease the Eyes: CSS Variable Architecture (Updated)
 
 ## Problem
 
-When turning off Premium Dark Mode, the code checks `prefers-color-scheme: dark` before removing the `"dark"` class from `<html>`. If the user's OS is in dark mode, the class stays — leaving the Bible reader stuck in dark theme even though the toggle is off. The cleanup function also fails to remove `"dark"`.
+Current inline `filter: brightness()` causes React re-renders of the entire chapter. Using `opacity` (as previously proposed) would cause SVG highlighters and selections to bleed through the text.
 
-Additionally, the code doesn't track whether `"dark"` was already present *before* Premium Dark was enabled, so toggling off can accidentally strip dark mode that was set by another part of the app.
+## Solution
 
-## Fix — `BibleReader.tsx` (lines 724–739)
+Use `color-mix(in srgb, ...)` to produce a **solid, fully opaque** dimmed color that smoothly reduces contrast without any ghosting over ink/highlight layers. The slider sets a CSS variable on `document.documentElement` — zero React re-renders.
 
-Track the original dark-class state when the effect mounts, then restore it on toggle-off or unmount:
+## Changes
 
-```tsx
-useEffect(() => {
-  const root = document.documentElement;
-  const hadDarkBefore = root.classList.contains("dark");
+### 1. `src/index.css` — Add at bottom
 
-  if (premiumDark) {
-    root.classList.add("dark", "bible-dark");
-    if (oledMode) root.classList.add("bible-oled");
-    else root.classList.remove("bible-oled");
-  } else {
-    root.classList.remove("bible-dark", "bible-oled");
-    if (!hadDarkBefore) {
-      root.classList.remove("dark");
-    }
-  }
+```css
+:root {
+  --ease-eyes-dim: 1;
+}
 
-  return () => {
-    root.classList.remove("bible-dark", "bible-oled");
-    if (!hadDarkBefore) {
-      root.classList.remove("dark");
-    }
-  };
-}, [premiumDark, oledMode]);
+.bible-dark .bible-reading-canvas p,
+.bible-dark .bible-reading-canvas span,
+.bible-dark .bible-reading-canvas sup {
+  color: color-mix(in srgb, #f4f4f5 calc(var(--ease-eyes-dim) * 100%), #09090b);
+  transition: color 0.1s linear;
+}
 ```
 
-The key change: capture `hadDarkBefore` at effect setup (before `premiumDark` adds it), then use that to decide whether to restore light mode. This ensures:
-- Toggling Premium Dark off **always** returns to light theme (unless the app was already in dark mode before)
-- Cleanup on unmount also restores correctly
+### 2. `src/components/bible/BibleReader.tsx`
+
+- **Remove** the inline `filter: brightness(${easeEyesDim})` style from the reading container.
+- **Add `useEffect`** to sync `easeEyesDim` state to `--ease-eyes-dim` CSS variable:
+  ```tsx
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ease-eyes-dim', String(easeEyesDim));
+    return () => document.documentElement.style.setProperty('--ease-eyes-dim', '1');
+  }, [easeEyesDim]);
+  ```
+- **Add `bible-reading-canvas`** class to the scripture content container div.
+
+### 3. No changes to `BibleSleeveSheet.tsx`
+
+The slider already drives `easeEyesDim` state — it will work as-is.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | Fix dark class restore logic in the sync effect (lines 724–739) |
+| `src/index.css` | Add `--ease-eyes-dim` variable and `color-mix()` rules |
+| `src/components/bible/BibleReader.tsx` | Replace inline brightness filter with CSS variable side-effect; add `bible-reading-canvas` class to reading container |
 
