@@ -378,6 +378,7 @@ export function InkOverlay({
       return { x: sp.x, y: sp.y, pressure: best.pressure, tiltX: best.tiltX, tiltY: best.tiltY };
     });
 
+    const currentBrush = activeBrushRef.current;
     const newStroke: InkStroke = {
       id: `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       points: compressedPoints,
@@ -385,6 +386,8 @@ export function InkOverlay({
       size: penSize,
       linkedVerse: closestVerse,
       glow: penGlow ?? null,
+      brushType: currentBrush?.type,
+      opacity: activeOpacityRef.current,
     };
 
     onStrokeComplete(newStroke);
