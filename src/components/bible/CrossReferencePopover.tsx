@@ -39,6 +39,11 @@ async function fetchCrossRefs(verseText: string): Promise<CrossReference[]> {
 }
 
 function CrossRefItem({
+  ref_,
+  versionId,
+  onNavigate,
+  onClose,
+}: {
   ref_: CrossReference;
   versionId: number;
   onNavigate: (bookUsfm: string, chapter: number, verse?: number) => void;
