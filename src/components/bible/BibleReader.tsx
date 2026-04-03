@@ -2333,6 +2333,7 @@ export function BibleReader() {
                           }
                         }
                       }}
+                      onXGesture={handleXGesture}
                     />
                   ) : undefined
                 }
