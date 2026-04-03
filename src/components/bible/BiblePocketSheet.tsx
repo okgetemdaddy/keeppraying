@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BookOpen, PenTool, StickyNote, Clock, Lightbulb, BookMarked } from "lucide-react";
+import { BookOpen, PenTool, StickyNote, Clock, Lightbulb, BookMarked, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Annotation } from "@/hooks/useAnnotations";
 import type { InkStroke } from "./InkOverlay";
