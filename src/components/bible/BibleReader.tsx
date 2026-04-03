@@ -276,7 +276,7 @@ function HighlightedText({
     const end = Math.min(span.end, text.length);
 
     if (start > cursor) {
-      parts.push(<span key={`gap-${cursor}`}>{text.slice(cursor, start)}</span>);
+      parts.push(<WordWrappedText key={`gap-${cursor}`} text={text.slice(cursor, start)} verseNumber={verseNumber} />);
     }
 
     if (end > start) {
