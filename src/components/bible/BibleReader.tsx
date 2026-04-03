@@ -2516,6 +2516,7 @@ export function BibleReader() {
         chapterAnnotations={chapterAnnotations ?? []}
         inkStrokes={inkHistory.strokes}
         journalAnnotations={journalAnnotations ?? []}
+        onExportCanvas={() => { setPocketOpen(false); setExportSheetOpen(true); }}
         onTryAction={(actionId) => {
           setPocketOpen(false);
           switch (actionId) {
@@ -2530,6 +2531,17 @@ export function BibleReader() {
               break;
           }
         }}
+      />
+
+      {/* ── Canvas Export Sheet ── */}
+      <CanvasExportSheet
+        open={exportSheetOpen}
+        onOpenChange={setExportSheetOpen}
+        readingAreaRef={readingAreaRef}
+        bookUsfm={bookUsfm}
+        chapterNumber={chapterIdx + 1}
+        chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : "Chapter"}
+        versionId={versionId}
       />
 
       {/* ── Chapter Thumbnail Strip ── */}
