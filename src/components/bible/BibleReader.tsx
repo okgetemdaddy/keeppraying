@@ -64,6 +64,7 @@ import {
   type VerseBunchItemWithName,
 } from "@/hooks/useBibleChapterData";
 import { useBibleMutations, type ScriptureRef, type CrossBunchItem } from "@/hooks/useBibleMutations";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCrossTranslationAnnotations } from "@/hooks/useCrossTranslationAnnotations";
 import { useBiblePosition, type BiblePosition } from "@/hooks/useBiblePosition";
