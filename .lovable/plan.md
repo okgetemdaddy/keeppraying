@@ -1,56 +1,59 @@
 
 
-# Fix: Full-Screen Ink Drawing Surface in Study Mode
+# Fix: Two-Finger Scroll in Study Mode + X-Gesture Reliability
 
-## Problem
-The reading area container has `max-w-3xl mx-auto` (768px max-width, centered), leaving ~30% of screen width on each side as dead zones with no InkOverlay coverage. When the Apple Pencil touches these outer areas, no SVG captures the pointer events, so the browser falls back to scroll/selection behavior. Drawing only works if you start inside the text area and drag outward (because `setPointerCapture` keeps the existing stroke alive).
+## Problems Identified
 
-## Solution
-In study mode, expand the `readingAreaRef` container to fill the full viewport width so the ZoomWrapper's grid (text + margins) and the InkOverlay SVG span edge-to-edge. The text column stays centered via the CSS Grid columns, but the ink surface covers the entire screen.
+**1. Two-finger scroll completely broken in study mode**
+The manual two-finger scroll handler (lines 965-1002) does `area.scrollTop += deltaY` on `readingAreaRef` — but that div has no `overflow` property and is NOT a scroll container. The page scrolls via `window`. Additionally, `preventSingleFingerScroll` sets `touchAction: "none"` on the area AND prevents all single-finger touchmove, which blocks the browser's native two-finger scroll too since `touchAction: none` disables ALL touch-driven scrolling.
+
+**2. X-gesture detection too strict for natural pencil strokes**
+The algorithm requires a cosine angle < -0.3 at the reversal point and both segments spanning 40% of the bbox. Natural X marks with Apple Pencil often have rounded vertices and uneven strokes that fail these thresholds. The detection needs to be more forgiving.
 
 ## Changes
 
-### 1. `src/components/bible/BibleReader.tsx` — Expand reading area in study mode
+### 1. `src/components/bible/BibleReader.tsx` — Fix two-finger scroll target
 
-On the `readingAreaRef` div (line ~2162), conditionally remove `max-w-3xl` and adjust padding when study mode is active:
+**Lines 965-1002** — The two-finger scroll handler must scroll `window` (or `document.documentElement`), not `readingAreaRef.current`:
 
-```tsx
-// Currently:
-<div ref={readingAreaRef} className="relative mx-auto max-w-3xl px-5 sm:px-8 py-8 sm:py-12">
-
-// Change to:
-<div ref={readingAreaRef} className={`relative py-8 sm:py-12 ${
-  studyMode && studyModeVariant === "margin"
-    ? "w-full px-0"           // full width, no padding — grid handles spacing
-    : "mx-auto max-w-3xl px-5 sm:px-8"  // original constrained layout
-}`}>
+```typescript
+// Change: area.scrollTop += deltaY;
+// To:     window.scrollBy(0, deltaY);
 ```
 
-### 2. `src/components/bible/ZoomWrapper.tsx` — Ensure grid fills viewport
+**Lines 940-955** — The `preventSingleFingerScroll` handler must allow two-finger touches to pass through to the manual handler. The `touchAction: "none"` on the area is correct (it forces all touch through JS), but the `touchmove` handler must NOT call `e.preventDefault()` on two-finger touches:
 
-When the margin system is active, the CSS Grid already provides text vs margin columns. We need to ensure the text column has a max-width equivalent to `max-w-3xl` so readability is preserved while the margins extend to screen edges.
-
-Update the `gridTemplateColumns` calculation to use `minmax()` so the text column caps at ~768px and extra space flows into the margins:
-
-```tsx
-// For left-align: text column capped, right margin gets remaining space
-// "minmax(0, 768px) 1fr" instead of "1fr 30%"
+```typescript
+const preventSingleFingerScroll = (e: TouchEvent) => {
+  // Only block single-finger scroll (pen-like drags)
+  // Allow 2-finger scroll to be handled by our manual scroll handler
+  if (e.touches.length < 2) {
+    e.preventDefault();
+  }
+  // Don't preventDefault for 2-finger — let our manual handler process it
+};
 ```
 
-This gives us: `[text: max 768px] [margin: rest of screen]` — the ink overlay (absolute inset-0 spanning grid column 1/-1) now covers the entire viewport width.
+Wait — actually the issue is that the `touchmove` listener with `{ passive: false }` calls `preventDefault` only for single-finger, which is correct. But `touchAction: "none"` on the element tells the browser to never scroll, even for two-finger. The manual scroll handler listens on the SAME element, so two-finger `touchmove` events should fire. The real bug is that `area.scrollTop` doesn't scroll because the div isn't scrollable.
 
-### 3. `src/components/bible/InkOverlay.tsx` — No changes needed
+**Fix**: Change the two-finger scroll to use `window.scrollBy(0, deltaY)` instead of `area.scrollTop += deltaY`.
 
-The SVG already uses `absolute inset-0` with a ResizeObserver on its parent. Once the parent spans the full viewport, the SVG will automatically resize to match.
+### 2. `src/components/bible/InkOverlay.tsx` — Relax X-gesture detection
 
-### 4. Study mode scroll prevention — No changes needed
+Loosen the thresholds to catch more natural X marks:
+- Reduce minimum size from 30px to 20px
+- Relax aspect ratio from 3:1 to 4:1
+- Relax cosine threshold from -0.3 to -0.15 (angle > ~99°)
+- Reduce segment span requirement from 40% to 30%
 
-The `touchAction: "none"` and `preventSingleFingerScroll` listeners are already attached to `readingAreaRef`, so expanding its width means the entire screen surface will have scroll prevention active.
+### 3. `src/components/bible/BibleReader.tsx` — Fix X-gesture SVG selector
+
+The selector `".absolute.inset-0.z-10"` is fragile. Use a ref or data attribute instead. Pass the InkOverlay SVG ref via a callback, or more simply, use `readingAreaRef.current?.querySelector("svg")` since there's only one SVG in the reading area.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | Conditionally remove `max-w-3xl mx-auto` and padding in study mode |
-| `src/components/bible/ZoomWrapper.tsx` | Update grid columns to use `minmax()` so text stays readable while margins extend to edges |
+| `src/components/bible/BibleReader.tsx` | Fix two-finger scroll to use `window.scrollBy`; fix SVG selector to use a stable query |
+| `src/components/bible/InkOverlay.tsx` | Relax X-gesture thresholds for natural pencil strokes |
 
