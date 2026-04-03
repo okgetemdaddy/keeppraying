@@ -6,6 +6,7 @@ export interface InkStroke {
 
 interface InkCanvasProps {
   strokes: InkStroke[];
+  activeStroke: [number, number][] | null;
   drawMode: boolean;
   onStrokeStart: () => void;
   onStrokePoint: (pt: [number, number]) => void;
@@ -26,6 +27,7 @@ interface InkCanvasProps {
  */
 const InkCanvas: React.FC<InkCanvasProps> = ({
   strokes,
+  activeStroke,
   drawMode,
   onStrokeStart,
   onStrokePoint,
@@ -127,6 +129,18 @@ const InkCanvas: React.FC<InkCanvasProps> = ({
           />
         );
       })}
+      {/* Active stroke being drawn right now */}
+      {activeStroke && activeStroke.length >= 2 && (
+        <path
+          d={activeStroke.map((p, j) => `${j === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ")}
+          fill="none"
+          stroke="#1a1410"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          opacity={0.8}
+        />
+      )}
     </svg>
   );
 };
