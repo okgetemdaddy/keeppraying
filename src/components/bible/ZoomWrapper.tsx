@@ -12,6 +12,8 @@ interface ZoomWrapperProps {
   marginWidth?: number;
   canvasBackground?: CanvasBackground;
   overlay?: React.ReactNode;
+  /** When true, sets touch-action: none to prevent browser scroll-interference during drawing */
+  studyMode?: boolean;
 }
 
 /* ── SVG pattern backgrounds for the writing margin space ── */
