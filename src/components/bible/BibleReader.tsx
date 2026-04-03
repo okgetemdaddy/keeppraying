@@ -2399,14 +2399,8 @@ export function BibleReader() {
         studyArtifacts={studyArtifacts}
         onNavigateToArtifact={(artifact: any) => {
           setSleeveOpen(false);
-          // Navigate to the artifact's chapter
-          if (index?.books) {
-            const bookIdx = index.books.findIndex((b: any) => b.id === artifact.book_usfm);
-            if (bookIdx >= 0) {
-              setBookIdx(bookIdx);
-              setChapterIdx(artifact.chapter_number - 1);
-            }
-          }
+          setBookUsfm(artifact.book_usfm);
+          setChapterIdx(artifact.chapter_number - 1);
         }}
       />
 
