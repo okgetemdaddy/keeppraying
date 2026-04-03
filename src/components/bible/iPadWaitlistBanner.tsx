@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 
 interface Props {
   onClick: () => void;
+  hidden?: boolean;
 }
 
 export function IPadWaitlistBanner({ onClick }: Props) {
