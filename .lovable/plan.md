@@ -1,76 +1,32 @@
 
 
-# Native iPadOS App Waitlist Signup
+# Rotate iPad App Pill & Reposition to Break Bar
 
-## What this does
-Adds a vertical waitlist banner to the left of the Bible reading column and a matching email input at the bottom of the Bible Sleeve. Clicking the banner opens a drawer with feature highlights, an email input, and a thank-you blessing on submission.
+## What changes
+The "iPad App" pill banner gets rotated 90° counter-clockwise (so text reads left-to-right horizontally but the pill itself is oriented horizontally along the toolbar break bar) and repositioned to sit at the toolbar's bottom border, 20% from the left edge of the page.
 
 ## Technical changes
 
-### 1. Database migration: `waitlist_signups` table
+### `src/components/bible/iPadWaitlistBanner.tsx`
 
-```sql
-CREATE TABLE public.waitlist_signups (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text NOT NULL,
-  platform text NOT NULL DEFAULT 'ipados',
-  user_id uuid,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (email, platform)
-);
-ALTER TABLE public.waitlist_signups ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can insert waitlist" ON public.waitlist_signups FOR INSERT TO anon, authenticated WITH CHECK (true);
-CREATE POLICY "Users see own signups" ON public.waitlist_signups FOR SELECT TO authenticated USING (auth.uid() = user_id);
-```
+- Remove vertical text (`writingMode: "vertical-rl"`) — text will now read normally left-to-right
+- Rotate the entire button 90° counter-clockwise via `style={{ transform: "rotate(-90deg)", transformOrigin: "center center" }}`
+- Change layout from `flex-col` to `flex-row` (icon + text side by side)
+- Update rounded corners to `rounded-b-xl` with `border-t-0` (hangs from the bar)
 
-### 2. New component: `src/components/bible/iPadWaitlistBanner.tsx`
+### `src/components/bible/BibleReader.tsx`
 
-- A vertically-oriented pill/tab fixed to the left edge of the `max-w-3xl` reading column
-- Text reads "iPad App" rotated 90° with a small Apple icon or tablet icon
-- Subtle warm gold accent border, gentle pulse animation
-- `onClick` opens the waitlist drawer
-- Dismissible: once user signs up or clicks X, store `ipad_waitlist_dismissed` in localStorage and hide
+- Move `<IPadWaitlistBanner>` out of the reading area `div` and into or just below the sticky toolbar `div` (the `border-b` bar at line 1767)
+- Position it with `absolute` at `left-[20%] top-full` relative to the toolbar container so it hangs from the break bar at 20% from the left page edge
+- Ensure the toolbar wrapper has `relative` positioning for the absolute child
 
-### 3. New component: `src/components/bible/iPadWaitlistDrawer.tsx`
-
-- Uses `ResponsiveSheet` (Drawer on touch, Sheet on desktop)
-- **Content sections:**
-  - Header: "The Native iPadOS Experience is Coming" with tablet illustration/icon
-  - Feature bullets (4-5): Apple Pencil pressure sensitivity, offline chapters, Split View support, Siri shortcuts for prayer, native haptics
-  - Each bullet has an icon + short description
-- **Email signup form:**
-  - `Input` component for email with validation
-  - Arrow submit button (amber-500 accent)
-  - On submit: insert into `waitlist_signups`, show thank-you state
-- **Thank you state:**
-  - Replaces form with a blessing message: "God bless your study journey. We'll notify you when the iPad app is ready. 🕊️"
-  - Auto-closes after 3 seconds or tap to dismiss
-- **X close button** in top-right corner
-- Premium styling: cream/paper background, warm gold accents, EB Garamond headings
-
-### 4. Wire into `BibleReader.tsx`
-
-- Add `waitlistDrawerOpen` state
-- Render `iPadWaitlistBanner` positioned to the left of the reading area (using `relative` wrapper on the `max-w-3xl` container + `absolute -left-14` positioning for the banner)
-- Only show on desktop/iPad viewports (not phone — use `useDeviceDetect`)
-- Render `iPadWaitlistDrawer`
-
-### 5. Add email input to `BibleSleeveSheet.tsx`
-
-- After the Trash Bin section (bottom of the sleeve), add a compact waitlist signup section
-- Small label: "Native iPad App — Coming Soon"
-- Same email `Input` + arrow button pattern
-- Same `waitlist_signups` insert logic
-- Same thank-you/blessing state
-- No collapsible wrapper — always visible at the bottom
-
-## Files changed
+### Section order of changes
+1. Restyle the pill component (horizontal layout, rotated -90°, new border radius)
+2. Relocate the render position from reading area to toolbar bar
+3. Adjust z-index to stay above content but below modals
 
 | File | Change |
 |------|--------|
-| `src/components/bible/iPadWaitlistBanner.tsx` | New — vertical left-edge pill trigger |
-| `src/components/bible/iPadWaitlistDrawer.tsx` | New — feature highlights + email signup drawer |
-| `src/components/bible/BibleReader.tsx` | Add waitlist state, render banner + drawer |
-| `src/components/bible/BibleSleeveSheet.tsx` | Add waitlist email input at bottom |
-| Migration | `waitlist_signups` table |
+| `src/components/bible/iPadWaitlistBanner.tsx` | Rotate -90°, horizontal layout, new border styling |
+| `src/components/bible/BibleReader.tsx` | Move banner to toolbar break bar at 20% left |
 
