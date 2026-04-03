@@ -126,8 +126,8 @@ function isXGesture(
   const seg2xRange = Math.max(...seg2.map((p) => p.x)) - Math.min(...seg2.map((p) => p.x));
   const seg2yRange = Math.max(...seg2.map((p) => p.y)) - Math.min(...seg2.map((p) => p.y));
 
-  if (seg1xRange / xRange < 0.4 || seg1yRange / yRange < 0.4) return nope;
-  if (seg2xRange / xRange < 0.4 || seg2yRange / yRange < 0.4) return nope;
+  if (seg1xRange / xRange < 0.3 || seg1yRange / yRange < 0.3) return nope;
+  if (seg2xRange / xRange < 0.3 || seg2yRange / yRange < 0.3) return nope;
 
   return { detected: true, bbox: { minX, minY, maxX, maxY } };
 }

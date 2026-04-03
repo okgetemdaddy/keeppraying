@@ -1287,7 +1287,7 @@ export function BibleReader() {
       let strokeCount = 0;
 
       // Delete highlights under the X bbox
-      const svgEl = document.querySelector(".absolute.inset-0.z-10") as SVGSVGElement | null;
+      const svgEl = readingAreaRef.current?.querySelector("svg") as SVGSVGElement | null;
       const svgRect = svgEl?.getBoundingClientRect();
       const z = studyMode ? (typeof inkZoom === "number" ? inkZoom : 1) : 1;
 
