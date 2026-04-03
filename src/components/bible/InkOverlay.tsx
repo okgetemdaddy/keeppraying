@@ -78,6 +78,60 @@ function isUnderlineGesture(points: Array<{ x: number; y: number }>): boolean {
   return true;
 }
 
+/* ── X-gesture detection ── */
+function isXGesture(
+  points: Array<{ x: number; y: number }>,
+): { detected: boolean; bbox: { minX: number; minY: number; maxX: number; maxY: number } } {
+  const nope = { detected: false, bbox: { minX: 0, minY: 0, maxX: 0, maxY: 0 } };
+  if (points.length < 8) return nope;
+
+  const minX = Math.min(...points.map((p) => p.x));
+  const maxX = Math.max(...points.map((p) => p.x));
+  const minY = Math.min(...points.map((p) => p.y));
+  const maxY = Math.max(...points.map((p) => p.y));
+  const xRange = maxX - minX;
+  const yRange = maxY - minY;
+
+  // Must be big enough and roughly square-ish
+  if (xRange < 30 || yRange < 30) return nope;
+  if (xRange / yRange > 3 || yRange / xRange > 3) return nope;
+
+  // Find the sharpest direction reversal point (vertex of the X)
+  let bestReversal = -1;
+  let bestIdx = Math.floor(points.length / 2);
+  for (let i = 2; i < points.length - 2; i++) {
+    const dx1 = points[i].x - points[i - 2].x;
+    const dy1 = points[i].y - points[i - 2].y;
+    const dx2 = points[i + 2].x - points[i].x;
+    const dy2 = points[i + 2].y - points[i].y;
+    // Dot product of direction vectors — most negative = sharpest reversal
+    const dot = dx1 * dx2 + dy1 * dy2;
+    const mag = Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2)) || 1;
+    const cosAngle = dot / mag;
+    if (cosAngle < bestReversal || bestReversal === -1) {
+      bestReversal = cosAngle;
+      bestIdx = i;
+    }
+  }
+
+  // Must have a sharp reversal (cos < -0.3 means angle > ~107°)
+  if (bestReversal > -0.3) return nope;
+
+  const seg1 = points.slice(0, bestIdx + 1);
+  const seg2 = points.slice(bestIdx);
+
+  // Each segment should span most of the bbox
+  const seg1xRange = Math.max(...seg1.map((p) => p.x)) - Math.min(...seg1.map((p) => p.x));
+  const seg1yRange = Math.max(...seg1.map((p) => p.y)) - Math.min(...seg1.map((p) => p.y));
+  const seg2xRange = Math.max(...seg2.map((p) => p.x)) - Math.min(...seg2.map((p) => p.x));
+  const seg2yRange = Math.max(...seg2.map((p) => p.y)) - Math.min(...seg2.map((p) => p.y));
+
+  if (seg1xRange / xRange < 0.4 || seg1yRange / yRange < 0.4) return nope;
+  if (seg2xRange / xRange < 0.4 || seg2yRange / yRange < 0.4) return nope;
+
+  return { detected: true, bbox: { minX, minY, maxX, maxY } };
+}
+
 export function InkOverlay({
   zoom,
   strokes,
