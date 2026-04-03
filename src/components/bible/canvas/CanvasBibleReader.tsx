@@ -6,10 +6,10 @@ import { Pen, Eraser, Type } from "lucide-react";
 
 const CanvasBibleReader: React.FC = () => {
   const [strokes, setStrokes] = useState<InkStroke[]>([]);
+  const [activeStroke, setActiveStroke] = useState<[number, number][] | null>(null);
   const [drawMode, setDrawMode] = useState(false);
   const [fontSize, setFontSize] = useState(20);
   const [ready, setReady] = useState(false);
-  const currentStroke = useRef<[number, number][]>([]);
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 300);
@@ -17,31 +17,20 @@ const CanvasBibleReader: React.FC = () => {
   }, []);
 
   const handleStrokeStart = useCallback(() => {
-    currentStroke.current = [];
+    setActiveStroke([]);
   }, []);
 
   const handleStrokePoint = useCallback((pt: [number, number]) => {
-    currentStroke.current.push(pt);
-    setStrokes((prev) => {
-      const next = [...prev];
-      if (currentStroke.current.length === 1) {
-        next.push({ points: [pt] });
-      } else {
-        next[next.length - 1] = { points: [...currentStroke.current] };
-      }
-      return next;
-    });
+    setActiveStroke(prev => prev ? [...prev, pt] : [pt]);
   }, []);
 
   const handleStrokeEnd = useCallback(() => {
-    if (currentStroke.current.length > 1) {
-      setStrokes((prev) => {
-        const next = [...prev];
-        next[next.length - 1] = { points: [...currentStroke.current] };
-        return next;
-      });
-    }
-    currentStroke.current = [];
+    setActiveStroke(prev => {
+      if (prev && prev.length > 1) {
+        setStrokes(s => [...s, { points: prev }]);
+      }
+      return null;
+    });
   }, []);
 
   const clearStrokes = useCallback(() => setStrokes([]), []);
