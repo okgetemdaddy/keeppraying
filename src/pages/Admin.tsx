@@ -249,7 +249,7 @@ export default function Admin() {
     }
   };
 
-  const reformatPost = async (post: { id: string; title: string; content: string | null }) => {
+  const reformatPost = async (post: { id: string; title: string; content?: string | null }) => {
     if (!post.content) return;
     setReformattingId(post.id);
     try {
