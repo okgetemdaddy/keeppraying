@@ -2173,6 +2173,7 @@ export function BibleReader() {
             onAddToBunch={handleAddToBunchRequest}
             hasBunches={(bunches ?? []).length > 0}
             onCrossRef={handleCrossRef}
+            onReference={handleReference}
             onDismiss={dismissToolbar}
             isAuthenticated={!!user}
           />
