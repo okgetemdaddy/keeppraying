@@ -879,6 +879,12 @@ export function BibleSleeveSheet({
                 <span className="ml-auto text-xs text-muted-foreground">30 days</span>
               </button>
             </section>
+
+            {/* ── iPad Waitlist Signup ── */}
+            <div className="h-px bg-border" />
+            <section className="pb-2">
+              <SleeveWaitlistInput />
+            </section>
           </div>
         </div>
       </SheetContent>

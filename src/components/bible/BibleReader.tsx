@@ -2601,6 +2601,9 @@ export function BibleReader() {
         availableBooks={index?.books?.map((b) => b.id)}
         onNavigate={handleSearchNavigate}
       />
+
+      {/* ── iPad Waitlist Drawer ── */}
+      <IPadWaitlistDrawer open={waitlistDrawerOpen} onOpenChange={setWaitlistDrawerOpen} />
     </article>
   );
 }
