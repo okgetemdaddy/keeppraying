@@ -631,7 +631,12 @@ export function BibleSleeveSheet({
               </>
             )}
 
-            <div className="h-px bg-border" />
+            </div>
+
+            {/* ── RIGHT COLUMN: Content ── */}
+            <div className="space-y-5">
+
+            <div className="h-px bg-border sm:hidden" />
 
             {/* ── Your Highlights ── */}
             <Collapsible open={isOpen(SECTION_IDS.highlights)}>
