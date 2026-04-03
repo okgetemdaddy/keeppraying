@@ -572,11 +572,24 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ease_eyes", String(v)); } catch {}
   }, []);
 
-  // Sync ease-eyes-dim to CSS variable — zero React re-renders on text
+  // ── Ease the Eyes tint ──
+  const [easeEyesTint, setEaseEyesTint] = useState(() => {
+    try { return localStorage.getItem("bible_ease_tint") ?? "#f4f4f5"; } catch { return "#f4f4f5"; }
+  });
+  const handleEaseEyesTintChange = useCallback((hex: string) => {
+    setEaseEyesTint(hex);
+    try { localStorage.setItem("bible_ease_tint", hex); } catch {}
+  }, []);
+
+  // Sync ease-eyes-dim + tint to CSS variables — zero React re-renders on text
   useEffect(() => {
     document.documentElement.style.setProperty('--ease-eyes-dim', String(easeEyesDim));
-    return () => document.documentElement.style.setProperty('--ease-eyes-dim', '1');
-  }, [easeEyesDim]);
+    document.documentElement.style.setProperty('--ease-eyes-tint', easeEyesTint);
+    return () => {
+      document.documentElement.style.setProperty('--ease-eyes-dim', '1');
+      document.documentElement.style.setProperty('--ease-eyes-tint', '#f4f4f5');
+    };
+  }, [easeEyesDim, easeEyesTint]);
 
   // ── Highlight style (invert vs neon) ──
   const [highlightStyle, setHighlightStyleRaw] = useState<HighlightStyleMode>(() => {
@@ -2086,6 +2099,8 @@ export function BibleReader() {
         onToggleOled={handleToggleOled}
         easeEyesDim={easeEyesDim}
         onEaseEyesDimChange={handleEaseEyesDimChange}
+        easeEyesTint={easeEyesTint}
+        onEaseEyesTintChange={handleEaseEyesTintChange}
         highlights={chapterData?.highlights ?? []}
         bookmarks={chapterData?.bookmarks ?? []}
         notes={chapterData?.notes ?? []}

@@ -140,6 +140,8 @@ interface BibleSleeveSheetProps {
   /* ease the eyes */
   easeEyesDim: number;
   onEaseEyesDimChange: (v: number) => void;
+  easeEyesTint: string;
+  onEaseEyesTintChange: (hex: string) => void;
 
   /* annotations for current chapter */
   highlights: UserHighlight[];
@@ -208,6 +210,8 @@ export function BibleSleeveSheet({
   onToggleOled,
   easeEyesDim,
   onEaseEyesDimChange,
+  easeEyesTint,
+  onEaseEyesTintChange,
   highlights,
   bookmarks,
   notes,
@@ -328,6 +332,44 @@ export function BibleSleeveSheet({
                     disabled={!premiumDark}
                     className="w-full"
                   />
+                </div>
+
+                {/* ── Page Tint ── */}
+                <div className={`transition-opacity duration-200 ${!premiumDark ? 'opacity-40 pointer-events-none' : ''}`}>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Page Tint</label>
+                  <div className="flex items-center gap-3 mt-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {[
+                      { name: 'Neutral', hex: '#f4f4f5' },
+                      { name: 'Amber',   hex: '#fbbf24' },
+                      { name: 'Sepia',   hex: '#d4a574' },
+                      { name: 'Sage',    hex: '#86efac' },
+                      { name: 'Sky',     hex: '#93c5fd' },
+                    ].map((preset) => (
+                      <button
+                        key={preset.hex}
+                        onClick={() => onEaseEyesTintChange(preset.hex)}
+                        className={`flex-shrink-0 w-8 h-8 rounded-full border-2 transition-all duration-200 ${
+                          easeEyesTint === preset.hex
+                            ? 'border-emerald-500 scale-110 shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+                            : 'border-transparent hover:border-muted-foreground/30'
+                        }`}
+                        style={{ backgroundColor: preset.hex }}
+                        aria-label={preset.name}
+                        disabled={!premiumDark}
+                      />
+                    ))}
+                    {/* Custom colour picker */}
+                    <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-transparent">
+                      <input
+                        type="color"
+                        value={easeEyesTint}
+                        onChange={(e) => onEaseEyesTintChange(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        disabled={!premiumDark}
+                      />
+                      <span className="text-muted-foreground text-xl pointer-events-none">+</span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className={`flex items-start justify-between gap-3 transition-opacity duration-200 ${!premiumDark ? 'opacity-40 pointer-events-none' : ''}`}>
