@@ -1,29 +1,27 @@
 
 
-# Swap Focus/Search Positions & Replace Search Icon with Input Field
+# Fix AI-Powered Bible Search (500 Error)
 
-## Overview
+## The Problem
 
-Swap the positions of the Search button and Focus Mode button, and replace the Search icon button with an inline search input field.
+The Bible search is already AI-powered — the `bible-search` edge function calls an AI model to interpret topic queries like "what does the Bible say about worry?" and return relevant passages. But it's returning 500 errors because it's hitting the **wrong API endpoint**.
+
+Current (broken): `https://ai.lovable.dev/api/generate`
+Correct: `https://ai.gateway.lovable.dev/v1/chat/completions`
 
 ## Changes
 
-### `src/components/bible/BibleReader.tsx` (lines 1696–1716)
+### `supabase/functions/bible-search/index.ts`
 
-Replace the current Search button + Focus Mode button block with:
+1. **Fix the API URL** — change `https://ai.lovable.dev/api/generate` to `https://ai.gateway.lovable.dev/v1/chat/completions`
+2. **Update the response parsing** — the gateway returns standard OpenAI-format responses, so the existing `aiData.choices?.[0]?.message?.content` parsing should work, but verify the model field uses a valid model name (switch from `google/gemini-2.5-flash` to `google/gemini-3-flash-preview` for the latest default)
+3. **Add 429/402 error handling** — surface rate limit and payment errors gracefully instead of returning a generic 500
 
-1. **Focus Mode button first** (moved up) — the existing `toggleFocusMode` button with `Maximize2`/`Minimize2` icon
-2. **Search input field second** (moved down, replacing the icon button) — a compact `<Input>` with placeholder `"Search…"`, that on focus or Enter opens the existing `setSearchOpen(true)` dialog. Styled to match the toolbar: small height (`h-8`), rounded, muted background, ~120px wide expanding on focus via `focus:w-48 transition-all`
-
-```
-[PanelLeft] [PenTool] [Focus] [Search Input___] ── flex-1 ── [verses selected] [TextSize] ...
-```
-
-The input acts as a trigger — typing or pressing Enter opens the full `BibleSearchDialog`. This keeps the existing search logic intact while giving a more discoverable entry point.
+Once deployed, typing "what does the Bible say about worry?" will return AI-suggested passages like Matthew 6:25-34, Philippians 4:6-7, and 1 Peter 5:7.
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | Swap button order; replace Search icon button with inline Input trigger |
+| `supabase/functions/bible-search/index.ts` | Fix gateway URL, update model, add rate-limit error handling |
 
