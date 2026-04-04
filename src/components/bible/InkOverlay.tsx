@@ -647,7 +647,7 @@ export function InkOverlay({
         height={svgHeight}
         viewBox={viewBox}
         style={{
-          touchAction: "none",
+          touchAction: "pan-y",
           cursor: isDrawingRef.current ? "none" : "crosshair",
           pointerEvents: "auto",
           overflow: "visible",
