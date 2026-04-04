@@ -1,36 +1,31 @@
 
 
-## Three Changes in Two Files
+## Fix Two Study Mode Bugs
 
-### 1. Fix underline word detection — `InkOverlay.tsx` (lines 417-450)
+### Bug 1 — Two-finger scroll barely moves
 
-Replace the manual `* zoom + svgRect` coordinate conversion with CTM-based transform. The current code manually multiplies SVG coordinates by zoom and adds the SVG element's screen offset, but this disagrees with how `getScreenCTM()` works (which already accounts for all transforms including scroll offset).
+**Root cause**: `touchAction: "none"` suppresses native gesture tracking, reducing touchmove event frequency. The manual JS scroll handler was a workaround but can't match native performance.
 
-**Replace lines 417-450** with:
-- Remove the two DEBUG toast lines (419, 442)
-- Remove `svgRect` / manual math
-- Use `svg.getScreenCTM()` + `svg.createSVGPoint().matrixTransform(ctm)` to convert each stroke point to screen coordinates
-- Increase Y tolerance from `rect.height * 0.5` to `rect.height * 0.8`
+**Fix in `BibleReader.tsx`**:
+- In the "Study Mode input routing" useEffect (lines 934-955): change `area.style.touchAction = "none"` to `area.style.touchAction = "pan-y"`, and remove the `preventSingleFingerScroll` handler and its event listener entirely (single-finger blocking is already handled by InkOverlay's SVG capture).
+- Delete the entire "Manual two-finger scroll in Study Mode" useEffect (lines 957-994). With `pan-y`, the browser handles vertical scrolling natively at full speed with momentum.
 
-### 2. Fix verse-linking coordinate conversion — `InkOverlay.tsx` (lines 463-478)
+### Bug 2 — Underline gesture fails to find words
 
-The "Dynamic verse linking" block at lines 470-471 uses the same broken `* zoom + svgRect` math to find the closest verse to a freehand stroke. Apply the same CTM fix here.
+**Root cause**: The Y comparison `Math.abs(avgY - elBottom) < rect.height * 0.8` is too restrictive. An underline stroke sits below the text, and the average Y of stroke points can be well below `elBottom`.
 
-### 3. Circle gesture center positioning — `InkOverlay.tsx` (lines 365-366, 376-377, 390-391)
+**Fix in `InkOverlay.tsx`** (around line 460-467): Replace the Y check with a range-based comparison:
 
-These compute popup center positions for circle-select UI. They use `svgRect.left + (...) * zoom` which has the same issue. Apply CTM transform for consistency.
+```ts
+const elMidY = rect.top + rect.height / 2;
+const elBottomPlusSlack = rect.bottom + rect.height;
 
-**Note:** The circle *hit-testing* at lines 345-346 converts screen→SVG (the reverse direction) and is correct — leave it untouched.
+if (elCenterX >= startX && elCenterX <= endX && avgY >= elMidY && avgY <= elBottomPlusSlack) {
+```
 
-### 4. Remove debug toasts — `BibleReader.tsx` (line 2303)
-
-Remove the `toast(\`DEBUG underline: ...\`)` line from the `onUnderlineGesture` callback.
-
-### 5. Two-finger scroll — already done
-
-The `deltaY * 3` multiplier is already in place from the previous edit. No change needed.
+This catches underlines from mid-text to one full line height below — covering natural handwriting variation.
 
 ### Files
-- `src/components/bible/InkOverlay.tsx` — CTM-based coordinate conversion for underline, verse-linking, and circle center; remove debug toasts
-- `src/components/bible/BibleReader.tsx` — remove debug toast line
+- `src/components/bible/BibleReader.tsx` — simplify study mode input routing, remove manual scroll handler
+- `src/components/bible/InkOverlay.tsx` — fix underline Y-axis hit-test range
 
