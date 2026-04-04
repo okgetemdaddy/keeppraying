@@ -399,11 +399,18 @@ export function InkOverlay({
         if (onCircleSelect) {
           const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
           if (matched.length > 0) {
-            const xs = currentPoints.map((p) => p.x / zoom);
-            const ys = currentPoints.map((p) => p.y / zoom);
-            const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length);
-            const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length);
-            onCircleSelect(matched, { x: centerX, y: centerY });
+            const svgEl = svgRef.current!;
+            const ctmF = svgEl.getScreenCTM();
+            if (ctmF) {
+              const xs = currentPoints.map((p) => p.x);
+              const ys = currentPoints.map((p) => p.y);
+              const avgSvgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const avgSvgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+              const pt = svgEl.createSVGPoint();
+              pt.x = avgSvgX; pt.y = avgSvgY;
+              const screen = pt.matrixTransform(ctmF);
+              onCircleSelect(matched, { x: screen.x, y: screen.y });
+            }
             pointsBufferRef.current = [];
             return;
           }
