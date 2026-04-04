@@ -2227,6 +2227,135 @@ export function BibleReader() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* ── Secondary toolbar controls ── */}
+            <div className="flex items-center gap-2 mt-2 pb-1 flex-wrap">
+              {/* Bible Sleeve */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setSleeveOpen(true); setStudyNavOpen(false); }}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Your Bible Sleeve"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+
+              {/* Study Mode toggle */}
+              <Button
+                variant={studyMode ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  handleToggleStudyMode(!studyMode);
+                  setStudyNavOpen(false);
+                }}
+                className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
+              >
+                <PixarLampIPadIcon className="!h-full !w-full" />
+              </Button>
+
+              {/* Export Canvas */}
+              {studyMode && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setExportSheetOpen(true); setStudyNavOpen(false); }}
+                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                  title="Export Canvas"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              )}
+
+              {/* Focus mode */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { toggleFocusMode(); setStudyNavOpen(false); }}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title={focusMode ? "Show navigation" : "Focus mode"}
+              >
+                {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  placeholder="Search…"
+                  className="h-8 w-[160px] pl-7 text-xs rounded-md bg-muted/50 border-transparent focus:border-input"
+                  onFocus={() => { setSearchOpen(true); setStudyNavOpen(false); }}
+                  readOnly
+                />
+              </div>
+
+              <div className="flex-1" />
+
+              {/* Text size */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                    title="Text size"
+                  >
+                    <AArrowUp className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-3" align="end">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <AArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-foreground">{textSize}px</span>
+                      <AArrowUp className="h-4.5 w-4.5 text-muted-foreground" />
+                    </div>
+                    <Slider
+                      value={[textSize]}
+                      min={MIN_SIZE}
+                      max={MAX_SIZE}
+                      step={1}
+                      onValueChange={([v]) => setTextSize(v)}
+                      className="w-full"
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Reading mode toggle */}
+              <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+                <Toggle
+                  pressed={mode === "verse"}
+                  onPressedChange={() => setMode("verse")}
+                  size="sm"
+                  className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                  aria-label="Verse-by-verse mode"
+                >
+                  <List className="h-3.5 w-3.5" />
+                </Toggle>
+                <Toggle
+                  pressed={mode === "paragraph"}
+                  onPressedChange={() => setMode("paragraph")}
+                  size="sm"
+                  className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                  aria-label="Paragraph mode"
+                >
+                  <AlignJustify className="h-3.5 w-3.5" />
+                </Toggle>
+              </div>
+
+              {/* Bible Pocket */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setPocketOpen(true); setStudyNavOpen(false); }}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                title="Bible Pocket"
+              >
+                <PanelRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </>
       )}

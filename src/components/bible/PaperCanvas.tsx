@@ -121,10 +121,13 @@ export function PaperCanvas({
     config: SPRING_CONFIG,
   }));
 
-  /* ── Sync incoming zoom prop to spring scale ── */
+  /* ── Gesture-active guard — prevents zoom sync from overriding gestures ── */
+  const gestureActive = useRef(false);
+
+  /* ── Sync incoming zoom prop to spring scale (toolbar slider only) ── */
   const zoomRef = useRef(zoom);
   useEffect(() => {
-    if (Math.abs(zoom - zoomRef.current) > 0.001) {
+    if (!gestureActive.current && Math.abs(zoom - zoomRef.current) > 0.001) {
       zoomRef.current = zoom;
       api.set({ scale: zoom });
     }
@@ -234,11 +237,13 @@ export function PaperCanvas({
         gestureType = "zoom";
         gestureFingerCount = 2;
         gestureDead = false;
+        gestureActive.current = true;
         lastDist = getTouchDist(e.touches);
       } else if (e.touches.length === 3) {
         gestureType = "pan";
         gestureFingerCount = 3;
         gestureDead = false;
+        gestureActive.current = true;
         lastMidpoint = getMidpoint3(e.touches);
         lastAngle = getAngle3(e.touches);
         velocityBuffer.length = 0;
@@ -356,6 +361,7 @@ export function PaperCanvas({
       gestureType = "none";
       gestureFingerCount = 0;
       gestureDead = false;
+      gestureActive.current = false;
       lastDist = null;
       lastMidpoint = null;
       lastAngle = null;
@@ -379,7 +385,7 @@ export function PaperCanvas({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onZoomChange, api, spring.x, spring.y, spring.rotation, spring.scale]);
+  }, [onZoomChange, api]);
 
   /* ── Desktop: wheel for pan, ctrl+wheel for zoom ── */
   useGesture(
