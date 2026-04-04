@@ -1,115 +1,64 @@
 
 
-## Three Fixes: Canvas Unmount, Ink Echo, Drawing Offset
+## Replace react-spring with Direct DOM Manipulation + Fix Ink Save Echo
 
-### Fix 1 — Keep PaperCanvas mounted during loading
+### Problem
+React-spring's `useSpring` re-targets to initial values (x:0, y:0, scale:1, rotation:0) on every React re-render. Pencil strokes trigger state changes → re-render → spring animates back to origin.
 
-**File:** `src/components/bible/BibleReader.tsx` (lines 2419-2427)
+### Fix 1 — Remove react-spring from PaperCanvas
 
-Move the PaperCanvas rendering OUTSIDE the `AnimatePresence` block. When `studyMode && studyModeVariant === "margin"`, render PaperCanvas unconditionally — put the loading state INSIDE it as children:
+**File:** `src/components/bible/PaperCanvas.tsx`
 
-```tsx
-{studyMode && studyModeVariant === "margin" ? (
-  <div
-    key={`canvas-${bookUsfm}-${chapterIdx}`}
-    style={{ fontSize: `${textSize}px` }}
-    className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
-  >
-    <PaperCanvas
-      baseFontSize={textSize}
-      textSpacing={inkTextSpacing}
-      textAlign={wsTextAlign}
-      marginWidth={wsMarginWidth}
-      canvasBackground={wsCanvasBackground}
-      overlay={/* existing InkOverlay */}
-    >
-      {isLoading ? (
-        <div style={{ padding: 40, opacity: 0.4 }}>Loading...</div>
-      ) : (
-        <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-          {/* existing verse rendering */}
-        </section>
-      )}
-    </PaperCanvas>
-  </div>
-) : (
-  <AnimatePresence mode="wait">
-    {isLoading ? (
-      <motion.div key="skeleton" {...fadeIn}><ReadingSkeleton /></motion.div>
-    ) : hasVerses ? (
-      /* existing non-study rendering */
-    ) : null}
-  </AnimatePresence>
-)}
-```
+Replace the entire spring system with plain refs and direct DOM writes:
 
-Key change: `key` uses only `bookUsfm` and `chapterIdx` — remounts on chapter navigation, stable during saves/mode changes.
+1. **Imports:** Remove `useSpring, animated, to` from `@react-spring/web`. Keep `useGesture` from `@use-gesture/react`.
 
-### Fix 2 — Guard ink sync against own save echoes
-
-**File:** `src/components/bible/BibleReader.tsx` (lines 966-990)
-
-Add an `inkSaveInFlight` ref. Set it `true` before `saveAnnotationMut.mutate()`, clear on `onSettled`. Skip `replaceStrokes` when the flag is set:
-
+2. **Replace spring state** (lines 98-116) with:
 ```ts
-const inkSaveInFlight = useRef(false);
+const paperRef = useRef<HTMLDivElement>(null);
+const transformState = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
+
+const applyTransform = () => {
+  const el = paperRef.current;
+  if (!el) return;
+  const { x, y, scale, rotation } = transformState.current;
+  el.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${rotation}deg) scale(${scale})`;
+};
 ```
 
-In `scheduleInkSave` (line 982), wrap the mutate call:
-```ts
-inkSaveInFlight.current = true;
-saveAnnotationMut.mutate({
-  verseIds: [inkKey],
-  strokes: strokesToSave as unknown as StrokeData[],
-  existingId: inkAnnotationId,
-}, {
-  onSettled: () => { inkSaveInFlight.current = false; },
-});
-```
+3. **Touch handlers** (lines 122-250): Replace all `spring.scale.get()` / `spring.x.get()` / `api.set()` / `api.stop()` with `transformState.current` reads/writes + `applyTransform()`.
 
-In the useEffect (line 966):
+4. **Desktop wheel handler** (lines 253-272): Same — read/write `transformState.current`, call `applyTransform()`.
+
+5. **Render** (lines 293-346): Replace `<animated.div style={{transform: to(...)...}}>` with `<div ref={paperRef} style={{...static styles, transform: initial value...}}>`. Remove the dynamic `transform` from the style object — it will be set imperatively.
+
+6. **Delete** `committedScale`, `committedRotation`, `committedX`, `committedY` refs and `SPRING_CONFIG` constant — no longer needed.
+
+### Fix 2 — Ink save echo guard with content comparison
+
+**File:** `src/components/bible/BibleReader.tsx` (lines 966-974)
+
+Replace the `inkSaveInFlight` ref approach with a stroke-count comparison:
+
 ```ts
 useEffect(() => {
-  if (inkSaveInFlight.current) return;
   if (inkAnnotation) {
-    inkHistory.replaceStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
+    const incoming = (inkAnnotation.strokes as unknown as InkStroke[]) ?? [];
+    if (incoming.length === inkHistory.strokes.length) return;
+    inkHistory.replaceStrokes(incoming);
   } else {
+    if (inkHistory.strokes.length === 0) return;
     inkHistory.replaceStrokes([]);
   }
 }, [inkAnnotation]);
 ```
 
-### Fix 3 — Replace getScreenCTM with getBoundingClientRect mapping
-
-**File:** `src/components/bible/InkOverlay.tsx` (lines 173-192)
-
-Replace `getTransformedPoint` to use `getBoundingClientRect()` (which always reflects current visual transforms) and map proportionally into SVG viewBox space:
-
-```ts
-const getTransformedPoint = useCallback(
-  (clientX: number, clientY: number): [number, number] => {
-    const svg = svgRef.current;
-    if (!svg) return [0, 0];
-
-    const rect = svg.getBoundingClientRect();
-    const svgW = canvasWidth ?? rect.width;
-    const svgH = canvasHeight ?? rect.height;
-
-    const x = ((clientX - rect.left) / rect.width) * svgW;
-    const y = ((clientY - rect.top) / rect.height) * svgH;
-
-    return [x, y];
-  },
-  [canvasWidth, canvasHeight],
-);
-```
-
-This works because `getBoundingClientRect()` is computed by the browser layout engine and always includes CSS transforms (scale, translate, rotate) applied by react-spring — unlike `getScreenCTM()` which can return stale values.
+Delete `inkSaveInFlight` ref (line 966), remove the `inkSaveInFlight.current = true` and `onSettled` callback from `scheduleInkSave` (lines 984, 990).
 
 ### Summary
 
 | File | Change |
 |------|--------|
-| `BibleReader.tsx` | Move PaperCanvas outside AnimatePresence; add `inkSaveInFlight` guard |
-| `InkOverlay.tsx` | Replace `getScreenCTM` with `getBoundingClientRect` proportional mapping |
+| `PaperCanvas.tsx` | Remove react-spring; use refs + direct DOM writes for transform |
+| `BibleReader.tsx` | Replace `inkSaveInFlight` with stroke-count comparison guard |
 
