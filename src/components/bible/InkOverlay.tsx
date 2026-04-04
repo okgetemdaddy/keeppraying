@@ -565,18 +565,6 @@ export function InkOverlay({
     return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
 
-  /* ── Global touch suppression while Pencil is active ── */
-  useEffect(() => {
-    const suppress = (ev: TouchEvent) => {
-      if (isDrawingRef.current) ev.preventDefault();
-    };
-    document.addEventListener("touchstart", suppress, { passive: false });
-    document.addEventListener("touchmove", suppress, { passive: false });
-    return () => {
-      document.removeEventListener("touchstart", suppress);
-      document.removeEventListener("touchmove", suppress);
-    };
-  }, []);
 
   /* ── Keyboard undo ── */
   useEffect(() => {
