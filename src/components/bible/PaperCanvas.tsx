@@ -305,7 +305,7 @@ export function PaperCanvas({
           if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
         }
 
-        lastDist = dist;
+        if (intent !== "zoom") lastDist = dist;
         lastMidpoint = midpoint;
       }
 
