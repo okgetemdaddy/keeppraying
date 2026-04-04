@@ -859,9 +859,6 @@ export default function Prayers() {
                 <Users className="w-3 h-3" style={{ color: "hsl(150 38% 34%)" }} />Community
               </span>
             )}
-            <span className="flex items-center gap-1 text-[11px]" style={{ color: "hsl(25 18% 56%)" }}>
-              <Sparkles className="w-3 h-3" style={{ color: "hsl(42 75% 45%)" }} />AI-generated
-            </span>
           </div>
         </div>
       </section>
