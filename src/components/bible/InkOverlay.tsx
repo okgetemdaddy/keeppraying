@@ -616,7 +616,7 @@ export function InkOverlay({
         className="absolute inset-0 z-10"
         width={canvasWidth ?? "100%"}
         height={canvasHeight ?? "100%"}
-        viewBox={canvasWidth && canvasHeight ? `0 0 ${canvasWidth} ${canvasHeight}` : undefined}
+        viewBox={canvasWidth && canvasHeight ? `${-canvasWidth/2} ${-canvasHeight/2} ${canvasWidth} ${canvasHeight}` : undefined}
         style={{
           pointerEvents: "none",
           cursor: "crosshair",
