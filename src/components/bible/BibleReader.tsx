@@ -725,6 +725,7 @@ export function BibleReader() {
   });
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
+  const [canvasSetupOpen, setCanvasSetupOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
