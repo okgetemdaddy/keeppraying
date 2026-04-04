@@ -599,7 +599,6 @@ export function InkOverlay({
     : undefined;
 
   return (
-    <>
       <svg
         ref={svgRef}
         className="absolute inset-0 z-10"
