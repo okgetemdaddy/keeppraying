@@ -720,9 +720,8 @@ export function BibleReader() {
   }, []);
 
   // ── iPad Study Mode (handwritten annotations) ──
-  const [studyMode, setStudyMode] = useState(() => {
-    try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
-  });
+  // Always start in reading mode — user must explicitly activate study mode
+  const [studyMode, setStudyMode] = useState(false);
   const [studyModeVariant, setStudyModeVariant] = useState<StudyModeVariant>(() => {
     try { return (localStorage.getItem("bible_study_variant") as StudyModeVariant) || "margin"; } catch { return "margin"; }
   });
@@ -731,6 +730,7 @@ export function BibleReader() {
   const [canvasSetupOpen, setCanvasSetupOpen] = useState(false);
   const [canvasCreationOpen, setCanvasCreationOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
   const [inkZoom, setInkZoom] = useState(() => {
