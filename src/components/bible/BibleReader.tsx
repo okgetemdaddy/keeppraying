@@ -101,8 +101,9 @@ import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
-import { CanvasSetupSheet } from "@/components/bible/CanvasSetupSheet";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
+import { GestureEducationOverlay, shouldShowGestureOverlay } from "@/components/bible/GestureEducationOverlay";
+import { useStudySessionHeartbeat } from "@/hooks/useStudySessionHeartbeat";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
@@ -755,9 +756,11 @@ export function BibleReader() {
   });
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
-  const [canvasSetupOpen, setCanvasSetupOpen] = useState(false);
   const [canvasCreationOpen, setCanvasCreationOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [activeSessionConfig, setActiveSessionConfig] = useState<CanvasSessionConfig | null>(null);
+  const [gestureOverlayOpen, setGestureOverlayOpen] = useState(false);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
   const [inkZoom, setInkZoom] = useState(() => {
@@ -855,10 +858,16 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ink_spacing", String(v)); } catch {}
   }, []);
 
+  // Session heartbeat for study_sessions persistence
+  useStudySessionHeartbeat({
+    sessionId: activeSessionId,
+    timerMinutes: activeSessionConfig?.timerMinutes,
+  });
+
   const handleToggleStudyMode = useCallback((v: boolean) => {
     if (v && studyModeVariant === "margin") {
-      // Open setup sheet instead of immediately entering study mode
-      setCanvasSetupOpen(true);
+      // Open canvas creation drawer for margin study mode too
+      setCanvasCreationOpen(true);
       return;
     }
     if (v && studyModeVariant === "canvas") {
@@ -3024,27 +3033,11 @@ export function BibleReader() {
           canvasBackground={wsCanvasBackground}
           onCanvasBackgroundChange={handleWsCanvasBackground}
           hideSpacing={studyModeVariant === "margin"}
+          onShowGestureHelp={() => setGestureOverlayOpen(true)}
         />
       )}
 
-      {/* ── Canvas Setup Sheet ── */}
-      <CanvasSetupSheet
-        open={canvasSetupOpen}
-        onOpenChange={setCanvasSetupOpen}
-        bookTitle={currentBook?.title ?? ""}
-        chapterTitle={currentChapter?.id ?? ""}
-        versionAbbr={versions?.find((v) => v.id === versionId)?.localized_abbreviation ?? ""}
-        previewVerses={verses.slice(0, 3)}
-        onConfirm={(spacing) => {
-          setInkTextSpacing(spacing);
-          try { localStorage.setItem("bible_ink_spacing", String(spacing)); } catch {}
-          setStudyMode(true);
-          try { localStorage.setItem("bible_study_mode", "true"); } catch {}
-          setCanvasSetupOpen(false);
-        }}
-      />
-
-      {/* ── Canvas Creation Drawer ── */}
+      {/* ── Canvas Creation Drawer (replaces CanvasSetupSheet) ── */}
       <CanvasCreationDrawer
         open={canvasCreationOpen}
         onOpenChange={setCanvasCreationOpen}
@@ -3054,11 +3047,24 @@ export function BibleReader() {
         currentChapterIdx={chapterIdx}
         onStartSession={(config) => {
           console.log("Canvas session config:", config);
+          setActiveSessionId(config.sessionId ?? null);
+          setActiveSessionConfig(config);
           setInkTextSpacing(config.typography.lineSpacing);
           try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
           setStudyMode(true);
           try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+
+          // Show gesture overlay for first-time users
+          if (shouldShowGestureOverlay(0)) {
+            setTimeout(() => setGestureOverlayOpen(true), 600);
+          }
         }}
+      />
+
+      {/* ── Gesture Education Overlay ── */}
+      <GestureEducationOverlay
+        open={gestureOverlayOpen}
+        onDismiss={() => setGestureOverlayOpen(false)}
       />
 
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>

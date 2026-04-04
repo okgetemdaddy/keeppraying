@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Undo2,
@@ -41,6 +42,8 @@ const NEON_COLORS = [
 ];
 
 interface IPadStudyToolbarProps {
+  // ... existing props
+  onShowGestureHelp?: () => void;
   penColor: string;
   onPenColorChange: (color: string) => void;
   penSize: number;
@@ -98,6 +101,7 @@ export function IPadStudyToolbar({
   canvasBackground = "none",
   onCanvasBackgroundChange,
   hideSpacing = false,
+  onShowGestureHelp,
 }: IPadStudyToolbarProps) {
   const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
@@ -300,6 +304,17 @@ export function IPadStudyToolbar({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Gesture help — "?" button */}
+        {onShowGestureHelp && (
+          <button
+            onClick={onShowGestureHelp}
+            className="flex items-center justify-center w-8 h-8 hover:bg-muted rounded-xl text-muted-foreground transition-colors shrink-0"
+            title="Learn canvas gestures"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+        )}
 
         {/* Collapse */}
         <button

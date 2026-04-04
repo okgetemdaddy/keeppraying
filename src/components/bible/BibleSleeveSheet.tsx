@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { SleeveWaitlistInput } from "@/components/bible/iPadWaitlistDrawer";
+import { SessionCards } from "@/components/bible/SessionCards";
 import { PenTool, Layers, BookOpen, Image as ImageIcon } from "lucide-react";
 import {
   ArrowLeft,
@@ -319,6 +320,12 @@ export function BibleSleeveSheet({
 
         <div className="flex-1 overflow-y-auto scrollbar-hide px-5 py-4">
           <div className="space-y-5 pb-8">
+
+            {/* ── Recent Sessions ── */}
+            <SessionCards onResume={(session) => {
+              onOpenChange(false);
+              console.log("Resume session:", session.id);
+            }} />
 
             {/* ── Appearance ── */}
             <Collapsible open={isOpen(SECTION_IDS.appearance)}>
