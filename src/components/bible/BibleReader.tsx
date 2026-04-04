@@ -102,6 +102,7 @@ import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasSetupSheet } from "@/components/bible/CanvasSetupSheet";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
+import { SessionPickerSheet, type SavedSession, saveNewSession } from "@/components/bible/SessionPickerSheet";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
