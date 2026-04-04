@@ -972,9 +972,17 @@ export function BibleReader() {
 
     const onTouchMove = (e: TouchEvent) => {
       if (!isTwoFinger || e.touches.length !== 2) return;
+      e.preventDefault();
       const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const deltaY = lastTwoFingerY - currentY;
-      window.scrollBy(0, deltaY);
+
+      // Find nearest scrollable ancestor, fall back to window
+      const scrollTarget = area.closest('[style*="overflow"]') || area.parentElement || window;
+      if (scrollTarget instanceof HTMLElement) {
+        scrollTarget.scrollTop += deltaY * 2.5;
+      } else {
+        window.scrollBy(0, deltaY * 2.5);
+      }
       lastTwoFingerY = currentY;
     };
 
