@@ -101,6 +101,7 @@ export function IPadStudyToolbar({
   onMarginWidthChange,
   canvasBackground = "none",
   onCanvasBackgroundChange,
+  hideSpacing = false,
 }: IPadStudyToolbarProps) {
   const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
