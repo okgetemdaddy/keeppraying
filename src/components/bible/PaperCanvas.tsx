@@ -160,11 +160,12 @@ export function PaperCanvas({
     },
   }));
 
-  /* ── Sync incoming zoom prop from toolbar slider — skip if it matches our last gesture ── */
+  /* ── Sync incoming zoom prop (toolbar/external) — skip echo from our own commit ── */
   useEffect(() => {
-    if (Math.abs(zoom - lastGestureZoom.current) > 0.001) {
+    if (!internalZoomUpdate.current) {
       api.set({ scale: zoom });
     }
+    internalZoomUpdate.current = false;
   }, [zoom, api]);
 
   /* ── Touch gesture system ──
