@@ -279,11 +279,14 @@ export function PaperCanvas({
 
         if (intent === "zoom") {
           const ratio = dist / lastDist;
-          const currentScale = spring.scale.get();
-          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
-          api.set({ scale: nextScale });
-          lastGestureZoom.current = nextScale;
-          onZoomChange(nextScale);
+          if (Math.abs(ratio - 1.0) > 0.008) {
+            const currentScale = spring.scale.get();
+            const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
+            api.set({ scale: nextScale });
+            lastGestureZoom.current = nextScale;
+            onZoomChange(nextScale);
+            lastDist = dist;
+          }
         }
 
         if (intent === "pan") {
