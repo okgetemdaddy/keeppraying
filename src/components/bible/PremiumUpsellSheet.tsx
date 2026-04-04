@@ -60,9 +60,10 @@ function DiamondBullet() {
 interface PremiumUpsellSheetProps {
   open: boolean;
   onClose: () => void;
+  onProceed?: () => void;
 }
 
-export function PremiumUpsellSheet({ open, onClose }: PremiumUpsellSheetProps) {
+export function PremiumUpsellSheet({ open, onClose, onProceed }: PremiumUpsellSheetProps) {
   if (!open) return null;
 
   return (
@@ -125,12 +126,15 @@ export function PremiumUpsellSheet({ open, onClose }: PremiumUpsellSheetProps) {
               </div>
 
               {/* CTA */}
+              {/* TODO: Restore StoreKit 2 / Stripe gate */}
               <Button
                 className="w-full h-12 rounded-xl text-base font-medium bg-amber-600 hover:bg-amber-700 text-white"
                 onClick={() => {
-                  toast("Coming soon ✦", {
-                    description: "Premium subscriptions are launching soon. Stay tuned!",
-                  });
+                  if (onProceed) {
+                    onProceed();
+                  } else {
+                    onClose();
+                  }
                 }}
               >
                 Unlock Premium
