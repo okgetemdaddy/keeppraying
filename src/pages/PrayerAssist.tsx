@@ -127,8 +127,11 @@ export default function PrayerAssist() {
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
 
-    // Guest limit check
-    if (!user && guestLimited) return;
+    // Guest limit check — show graceful message instead of silent failure
+    if (!user && guestLimited) {
+      toast({ title: "Continue your journey ✦", description: "Sign up free to keep exploring Scripture together." });
+      return;
+    }
 
     const userMsg: Message = { role: "user", content: text };
     setMessages(prev => [...prev, userMsg]);
@@ -178,11 +181,13 @@ export default function PrayerAssist() {
         }
       }
 
-      // Track guest usage
+      // Track guest usage — set limited state before clearing loading
       if (!user) {
         const count = parseInt(localStorage.getItem(GUEST_STORAGE_KEY) || "0", 10) + 1;
         localStorage.setItem(GUEST_STORAGE_KEY, String(count));
-        if (count >= 1) setGuestLimited(true);
+        if (count >= 1) {
+          setGuestLimited(true);
+        }
       }
 
       if (user) {
@@ -291,11 +296,14 @@ export default function PrayerAssist() {
 
       {/* Input or Guest Banner — offset above mobile tab bar + safe area */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 pr-20 md:pr-4 max-w-3xl">
+        <div className="container mx-auto px-4 py-4 max-w-3xl">
           {showGuestBanner ? (
-            <div className="text-center space-y-3 py-2">
-              <p className="text-sm text-muted-foreground">
-                PrayerAssist loved walking with you. Sign up to continue your prayer journey — it's free.
+            <div className="text-center space-y-4 py-3">
+              <p className="text-sm text-foreground/80 leading-relaxed max-w-md mx-auto">
+                We loved exploring that passage with you. ✦ Create a free account to continue your journey — save prayers, dive deeper into Scripture, and let PrayerAssist walk with you every day.
+              </p>
+              <p className="verse-text text-xs italic text-muted-foreground">
+                "For where two or three gather in my name, there am I with them." — <VerseLink reference="Matthew 18:20" />
               </p>
               <Button asChild className="rounded-xl bg-gradient-gold text-white hover:opacity-90 shadow-gold">
                 <Link to="/auth">
