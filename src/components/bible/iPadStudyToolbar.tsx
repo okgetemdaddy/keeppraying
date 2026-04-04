@@ -41,6 +41,8 @@ const NEON_COLORS = [
 ];
 
 interface IPadStudyToolbarProps {
+  // ... existing props
+  onShowGestureHelp?: () => void;
   penColor: string;
   onPenColorChange: (color: string) => void;
   penSize: number;
