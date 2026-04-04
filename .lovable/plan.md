@@ -1,43 +1,36 @@
 
 
-## Fix: Underline Gesture Not Reaching BibleReader Callback
+## Three Changes in Two Files
 
-### Problem
+### 1. Fix underline word detection — `InkOverlay.tsx` (lines 417-450)
 
-The debug toast in `onUnderlineGesture` never fires, meaning InkOverlay's gesture detection pipeline never calls the callback. The "Failed to highlight" message the user sees comes from a different code path (likely the mutation error handler from a regular highlight attempt).
+Replace the manual `* zoom + svgRect` coordinate conversion with CTM-based transform. The current code manually multiplies SVG coordinates by zoom and adds the SVG element's screen offset, but this disagrees with how `getScreenCTM()` works (which already accounts for all transforms including scroll offset).
 
-Two possible failure points in InkOverlay.tsx (lines 416-443):
+**Replace lines 417-450** with:
+- Remove the two DEBUG toast lines (419, 442)
+- Remove `svgRect` / manual math
+- Use `svg.getScreenCTM()` + `svg.createSVGPoint().matrixTransform(ctm)` to convert each stroke point to screen coordinates
+- Increase Y tolerance from `rect.height * 0.5` to `rect.height * 0.8`
 
-1. **`isUnderlineGesture()` returns false** — the stroke doesn't pass the shape check (xRange < 40 or yRange > xRange * 0.3)
-2. **Word hit-test finds no words** — even if the gesture is recognized, the `[data-word]` element scan at line 432 uses `Math.abs(avgY - elBottom) < rect.height * 0.5`, which may be too restrictive with zoom applied
+### 2. Fix verse-linking coordinate conversion — `InkOverlay.tsx` (lines 463-478)
 
-Since we can't tell which is failing without visibility, the fix is to add diagnostic toasts inside InkOverlay itself.
+The "Dynamic verse linking" block at lines 470-471 uses the same broken `* zoom + svgRect` math to find the closest verse to a freehand stroke. Apply the same CTM fix here.
 
-### Changes — `src/components/bible/InkOverlay.tsx`
+### 3. Circle gesture center positioning — `InkOverlay.tsx` (lines 365-366, 376-377, 390-391)
 
-**Add debug toasts at the gesture detection stage** (around line 415-443):
+These compute popup center positions for circle-select UI. They use `svgRect.left + (...) * zoom` which has the same issue. Apply CTM transform for consistency.
 
-```ts
-/* ── Underline gesture detection ── */
-const underlineDetected = isUnderlineGesture(currentPoints);
-toast(`DEBUG gesture: underline=${underlineDetected} points=${currentPoints.length}`);
+**Note:** The circle *hit-testing* at lines 345-346 converts screen→SVG (the reverse direction) and is correct — leave it untouched.
 
-if (onUnderlineGesture && underlineDetected && svgRef.current) {
-  // ... existing word scan code ...
-  
-  toast(`DEBUG words found: ${underlinedWords.length} verse=${underlinedVerse} text="${underlinedWords.join(' ').slice(0,30)}"`);
-  
-  if (underlinedWords.length > 0 && underlinedVerse > 0) {
-    onUnderlineGesture(underlinedVerse, underlinedWords.join(" "));
-    // ...
-  }
-}
-```
+### 4. Remove debug toasts — `BibleReader.tsx` (line 2303)
 
-This will reveal:
-- Whether `isUnderlineGesture` recognizes the stroke shape
-- Whether `[data-word]` elements are being found within the Y threshold
-- What verse/text data is being collected
+Remove the `toast(\`DEBUG underline: ...\`)` line from the `onUnderlineGesture` callback.
 
-**One file edit**: `src/components/bible/InkOverlay.tsx` — add two `toast()` calls inside the gesture detection block, importing `toast` from sonner at the top.
+### 5. Two-finger scroll — already done
+
+The `deltaY * 3` multiplier is already in place from the previous edit. No change needed.
+
+### Files
+- `src/components/bible/InkOverlay.tsx` — CTM-based coordinate conversion for underline, verse-linking, and circle center; remove debug toasts
+- `src/components/bible/BibleReader.tsx` — remove debug toast line
 
