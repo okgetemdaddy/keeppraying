@@ -836,7 +836,7 @@ export function BibleReader() {
     }
     setStudyMode(false);
     try { localStorage.setItem("bible_study_mode", "false"); } catch {}
-    setCanvasOpen(false);
+    setActiveSession(null);
     setJournalOpen(false);
   }, []);
 
