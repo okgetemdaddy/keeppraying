@@ -1,90 +1,78 @@
 
 
-## Fix Pencil Coordinate Drift: Replace getScreenCTM with Pure-Math Transform
+## Canvas Creation Drawer — Full-Screen Split-Screen Modal
 
-### Problem
-Safari's `getScreenCTM().inverse()` fails with nested CSS 3D rotations due to a WebKit bug. Coordinates drift after rotation.
-
-### Solution
-Replace `getScreenCTM().inverse()` with a deterministic pure-math function that manually reverses the CSS transform using the known camera state (x, y, scale, rotation) from PaperCanvas.
+### Overview
+Replace the current `CanvasSetupSheet` (bottom sheet) with a premium full-screen split-screen drawer for creating isolated verse study canvases. Left pane = dark control panel, right pane = live WYSIWYG canvas preview with a draggable/resizable text bounding box.
 
 ### Architecture
-Since InkOverlay is passed as a `ReactNode` overlay prop to PaperCanvas, we need a way to share the transform state. We'll use a lightweight React context.
 
-### Changes
-
-**1. New file: `src/components/bible/PaperCanvasContext.tsx`**
-
-Create a small context that holds:
-- `camera`: ref to `{ x, y, scale, rotation }`
-- `deskRef`: ref to the un-transformed outer container div
-
-```ts
-const PaperCanvasContext = React.createContext<{
-  camera: React.RefObject<{ x: number; y: number; scale: number; rotation: number }>;
-  deskRef: React.RefObject<HTMLDivElement>;
-} | null>(null);
+```text
+┌──────────────────────────────────────────────────────────┐
+│  CanvasCreationDrawer (fixed inset-0, z-[100])           │
+│ ┌────────────────┬───────────────────────────────────────┐│
+│ │ Left Pane 35%  │  Right Pane 65%                      ││
+│ │ bg-zinc-950     │  bg-zinc-900 (dark backdrop)         ││
+│ │                │                                       ││
+│ │ Verse Selector │  Scaled white canvas div              ││
+│ │ Paper Size     │  ┌─────────────────────┐              ││
+│ │ Chars/Line     │  │ Draggable/Resizable │              ││
+│ │ Line Spacing   │  │ Text Bounding Box   │              ││
+│ │                │  │ (dashed blue border) │              ││
+│ │ [Start Session]│  └─────────────────────┘              ││
+│ └────────────────┴───────────────────────────────────────┘│
+└──────────────────────────────────────────────────────────┘
 ```
 
-Export a `usePaperCamera` hook that reads the context.
+### New File: `src/components/bible/CanvasCreationDrawer.tsx`
 
-**2. `src/components/bible/PaperCanvas.tsx`**
+**Props:**
+- `open`, `onOpenChange` — visibility control
+- `bibleId` — current version ID for verse fetching
+- `books` — book index for selectors
+- `onStartSession(config)` — emits the JSON configuration
 
-Wrap the render output in `<PaperCanvasContext.Provider>` passing `transformState` as `camera` and `deskRef` as `deskRef`. No other changes needed — the transform state and refs already exist.
+**Left Pane Controls:**
+1. **Verse Selector** — Book dropdown + chapter dropdown + "from verse" / "to verse" number inputs. Fetches verse text via existing `useBibleChapterVerses` hook.
+2. **Paper Size** — Dropdown presets (Letter 8.5×11, A4, Square 8×8, Tabloid 11×17) + "Custom" option that reveals width/height sliders (4–17 inches).
+3. **Characters Per Line** — Slider (20–80), controls the text block width relative to canvas.
+4. **Line Spacing** — Slider (1.0×–3.0×, step 0.1), controls interlinear space.
 
-**3. `src/components/bible/InkOverlay.tsx`**
+**Right Pane Preview:**
+- Dark neutral backdrop (`bg-zinc-900`).
+- White div sized to the exact aspect ratio of the selected paper dimensions, CSS-scaled via `transform: scale(fitScale)` to fit the pane.
+- **Text Bounding Box**: Instead of `react-rnd` (not installed), implement a lightweight custom draggable/resizable div using pointer events. The box has `border-2 border-dashed border-blue-500` when active, with 8 resize handles (corners + sides) as small solid blue squares. Dragging moves the box; dragging handles resizes it. Text reflows to fit the new width.
+- Verses render inside the box with the selected typography settings (font size derived from chars-per-line, line spacing applied).
 
-Replace `getTransformedPoint` (lines 173-194). Instead of `getScreenCTM().inverse()`, use `usePaperCamera()` and compute the inverse transform with pure math:
-
+**Data Output:**
+"Start Session" button emits:
 ```ts
-const getTransformedPoint = useCallback(
-  (clientX: number, clientY: number): [number, number] => {
-    const ctx = cameraCtx; // from usePaperCamera()
-    if (!ctx?.deskRef.current) {
-      // Fallback for non-PaperCanvas usage (ZoomWrapper mode)
-      const svg = svgRef.current;
-      if (!svg) return [0, 0];
-      const rect = svg.getBoundingClientRect();
-      return [clientX - rect.left, clientY - rect.top];
-    }
-
-    const rect = ctx.deskRef.current.getBoundingClientRect();
-    const cx = rect.width / 2;
-    const cy = rect.height / 2;
-
-    // Map screen coords to wrapper-local, centered at origin
-    let x = (clientX - rect.left) - cx;
-    let y = (clientY - rect.top) - cy;
-
-    // Reverse translate
-    x -= ctx.camera.current.x;
-    y -= ctx.camera.current.y;
-
-    // Reverse scale
-    x /= ctx.camera.current.scale;
-    y /= ctx.camera.current.scale;
-
-    // Reverse rotation
-    const rad = -ctx.camera.current.rotation * (Math.PI / 180);
-    const cos = Math.cos(rad);
-    const sin = Math.sin(rad);
-    const rx = x * cos - y * sin;
-    const ry = x * sin + y * cos;
-
-    // Shift back to top-left origin, then to centered SVG viewBox coords
-    return [rx, ry]; // Already centered since viewBox origin is at paper center
-  },
-  [],
-);
+interface CanvasSessionConfig {
+  verses: { number: number; text: string }[];
+  verseRange: string; // e.g. "Romans 8:1-4"
+  paper: { widthIn: number; heightIn: number };
+  textBox: { x: number; y: number; width: number; height: number }; // in inches
+  typography: { charsPerLine: number; lineSpacing: number };
+}
 ```
 
-Note: The viewBox is already centered at `(-528, -816)`, so the math output (centered coordinates) maps directly to SVG space without needing a top-left shift.
+### Mobile Handling
+On mobile (`useIsMobile()`), stack the panes vertically — controls on top (collapsible accordion sections), preview below. The preview auto-scrolls into view when settings change.
+
+### Integration: `src/components/bible/BibleReader.tsx`
+- Add new state `canvasCreationOpen` and render `CanvasCreationDrawer` alongside the existing `CanvasSetupSheet`.
+- The existing `CanvasSetupSheet` remains for the "margin" study mode variant. The new drawer is for the "extract verses" flow (triggered from a new entry point — e.g. a toolbar button or context menu action on selected verses).
+- `onStartSession` handler receives the config JSON object, stores it in state, and initializes `PaperCanvas` with the custom dimensions and text layout.
 
 ### Files
 
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/components/bible/PaperCanvasContext.tsx` | New — context + hook for camera state sharing |
-| `src/components/bible/PaperCanvas.tsx` | Wrap render in context provider |
-| `src/components/bible/InkOverlay.tsx` | Replace getScreenCTM with pure-math inverse transform |
+| `src/components/bible/CanvasCreationDrawer.tsx` | **Create** — full-screen split-screen modal with all controls and WYSIWYG preview |
+| `src/components/bible/BibleReader.tsx` | **Edit** — add state + render the new drawer, wire up entry point |
+
+### Technical Notes
+- Custom drag/resize implementation avoids adding `react-rnd` dependency. Uses `onPointerDown` → `onPointerMove` → `onPointerUp` pattern with `setPointerCapture` for reliable tracking.
+- Canvas coordinates stored in inches (paper-relative), converted to pixels at 96 DPI for preview rendering.
+- The existing `useBibleChapterVerses` hook handles verse fetching. The drawer composes book/chapter/verse selectors from the `books` index prop.
 
