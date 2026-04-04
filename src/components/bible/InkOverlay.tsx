@@ -147,6 +147,7 @@ export function InkOverlay({
   onXGesture,
 }: InkOverlayProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const cameraCtx = usePaperCamera();
   const livePathRef = useRef<SVGPathElement>(null);
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
   const [xFlash, setXFlash] = useState<{ x: number; y: number } | null>(null);
