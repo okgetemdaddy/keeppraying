@@ -146,6 +146,13 @@ export function PaperCanvas({
   /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
   const lastGestureZoom = useRef(zoom);
 
+  /* ── Debug tick for live panel ── */
+  const [debugTick, setDebugTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setDebugTick(t => t + 1), 100);
+    return () => clearInterval(id);
+  }, []);
+
   const [spring, api] = useSpring(() => ({
     x: 0,
     y: 0,
