@@ -143,9 +143,8 @@ export function PaperCanvas({
   const committedX = useRef(0);
   const committedY = useRef(0);
 
-  /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
-  const lastGestureZoom = useRef(zoom);
-
+  /* ── One-shot flag: when true, the next zoom prop echo is from our own gesture/wheel commit ── */
+  const internalZoomUpdate = useRef(false);
 
   const [spring, api] = useSpring(() => ({
     x: 0,
