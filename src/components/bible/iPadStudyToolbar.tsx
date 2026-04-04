@@ -69,6 +69,7 @@ interface IPadStudyToolbarProps {
   onMarginWidthChange?: (v: number) => void;
   canvasBackground?: CanvasBackground;
   onCanvasBackgroundChange?: (v: CanvasBackground) => void;
+  hideSpacing?: boolean;
 }
 
 export function IPadStudyToolbar({
