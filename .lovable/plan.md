@@ -1,78 +1,62 @@
 
 
-## Canvas Creation Drawer — Full-Screen Split-Screen Modal
+## Always Start /bible in Reading Mode — Add Session Picker Flow
 
-### Overview
-Replace the current `CanvasSetupSheet` (bottom sheet) with a premium full-screen split-screen drawer for creating isolated verse study canvases. Left pane = dark control panel, right pane = live WYSIWYG canvas preview with a draggable/resizable text bounding box.
+### Problem
+Currently, `/bible` on iPad restores `studyMode` from localStorage, so users can land directly in study mode. The request is to always start in reading mode and require an explicit action to enter study mode — either manually selecting it or having Apple Pencil auto-detect trigger it.
 
-### Architecture
+Additionally, when study mode is activated, instead of jumping straight into a canvas, present a **Session Picker** that lets the user resume an existing session or create a new one (entering the Canvas Creation Drawer).
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│  CanvasCreationDrawer (fixed inset-0, z-[100])           │
-│ ┌────────────────┬───────────────────────────────────────┐│
-│ │ Left Pane 35%  │  Right Pane 65%                      ││
-│ │ bg-zinc-950     │  bg-zinc-900 (dark backdrop)         ││
-│ │                │                                       ││
-│ │ Verse Selector │  Scaled white canvas div              ││
-│ │ Paper Size     │  ┌─────────────────────┐              ││
-│ │ Chars/Line     │  │ Draggable/Resizable │              ││
-│ │ Line Spacing   │  │ Text Bounding Box   │              ││
-│ │                │  │ (dashed blue border) │              ││
-│ │ [Start Session]│  └─────────────────────┘              ││
-│ └────────────────┴───────────────────────────────────────┘│
-└──────────────────────────────────────────────────────────┘
-```
+### Changes
 
-### New File: `src/components/bible/CanvasCreationDrawer.tsx`
+**1. `src/components/bible/BibleReader.tsx` — Force reading mode on mount**
 
-**Props:**
-- `open`, `onOpenChange` — visibility control
-- `bibleId` — current version ID for verse fetching
-- `books` — book index for selectors
-- `onStartSession(config)` — emits the JSON configuration
+- Change `studyMode` initial state from reading localStorage to always `false`
+- Keep localStorage persistence for the *variant* preference, but not the active state
+- When Apple Pencil is detected, instead of auto-enabling study mode, show the Session Picker
+- When the user toggles study mode on (via Sleeve or toolbar), show the Session Picker instead of going directly to setup/creation
 
-**Left Pane Controls:**
-1. **Verse Selector** — Book dropdown + chapter dropdown + "from verse" / "to verse" number inputs. Fetches verse text via existing `useBibleChapterVerses` hook.
-2. **Paper Size** — Dropdown presets (Letter 8.5×11, A4, Square 8×8, Tabloid 11×17) + "Custom" option that reveals width/height sliders (4–17 inches).
-3. **Characters Per Line** — Slider (20–80), controls the text block width relative to canvas.
-4. **Line Spacing** — Slider (1.0×–3.0×, step 0.1), controls interlinear space.
+**2. New component: `src/components/bible/SessionPickerSheet.tsx`**
 
-**Right Pane Preview:**
-- Dark neutral backdrop (`bg-zinc-900`).
-- White div sized to the exact aspect ratio of the selected paper dimensions, CSS-scaled via `transform: scale(fitScale)` to fit the pane.
-- **Text Bounding Box**: Instead of `react-rnd` (not installed), implement a lightweight custom draggable/resizable div using pointer events. The box has `border-2 border-dashed border-blue-500` when active, with 8 resize handles (corners + sides) as small solid blue squares. Dragging moves the box; dragging handles resizes it. Text reflows to fit the new width.
-- Verses render inside the box with the selected typography settings (font size derived from chars-per-line, line spacing applied).
+A bottom sheet / dialog that appears when the user activates study mode. Contains:
 
-**Data Output:**
-"Start Session" button emits:
+- **"Resume Session"** section — lists saved canvas sessions from localStorage (keyed by book+chapter+timestamp). Each card shows the verse range, paper size, and a timestamp. Tap to resume.
+- **"New Session"** button — opens the Canvas Creation Drawer
+- If no saved sessions exist, skip the list and show a hero prompt: "Start your first canvas session" with a single CTA that opens the Canvas Creation Drawer
+
+Data structure for saved sessions (localStorage key: `bible_canvas_sessions`):
 ```ts
-interface CanvasSessionConfig {
-  verses: { number: number; text: string }[];
-  verseRange: string; // e.g. "Romans 8:1-4"
-  paper: { widthIn: number; heightIn: number };
-  textBox: { x: number; y: number; width: number; height: number }; // in inches
-  typography: { charsPerLine: number; lineSpacing: number };
+interface SavedSession {
+  id: string;
+  createdAt: string;
+  verseRange: string;
+  bookUsfm: string;
+  chapterIdx: number;
+  config: CanvasSessionConfig;
 }
 ```
 
-### Mobile Handling
-On mobile (`useIsMobile()`), stack the panes vertically — controls on top (collapsible accordion sections), preview below. The preview auto-scrolls into view when settings change.
+**3. Flow changes**
 
-### Integration: `src/components/bible/BibleReader.tsx`
-- Add new state `canvasCreationOpen` and render `CanvasCreationDrawer` alongside the existing `CanvasSetupSheet`.
-- The existing `CanvasSetupSheet` remains for the "margin" study mode variant. The new drawer is for the "extract verses" flow (triggered from a new entry point — e.g. a toolbar button or context menu action on selected verses).
-- `onStartSession` handler receives the config JSON object, stores it in state, and initializes `PaperCanvas` with the custom dimensions and text layout.
+```text
+User taps Study Mode toggle (or Pencil detected)
+  → SessionPickerSheet opens
+    → "New Session" → CanvasCreationDrawer opens → onStartSession → study mode activates
+    → "Resume [session]" → study mode activates with saved config
+    → Dismiss → nothing happens, stays in reading mode
+```
+
+**4. Apple Pencil detection update**
+
+When pencil is detected and study mode is off:
+- Set `pencilDetected = true`  
+- Show toast: "🍎 Apple Pencil detected"  
+- Open the SessionPickerSheet (not auto-enable study mode)
 
 ### Files
 
 | File | Action |
 |------|--------|
-| `src/components/bible/CanvasCreationDrawer.tsx` | **Create** — full-screen split-screen modal with all controls and WYSIWYG preview |
-| `src/components/bible/BibleReader.tsx` | **Edit** — add state + render the new drawer, wire up entry point |
-
-### Technical Notes
-- Custom drag/resize implementation avoids adding `react-rnd` dependency. Uses `onPointerDown` → `onPointerMove` → `onPointerUp` pattern with `setPointerCapture` for reliable tracking.
-- Canvas coordinates stored in inches (paper-relative), converted to pixels at 96 DPI for preview rendering.
-- The existing `useBibleChapterVerses` hook handles verse fetching. The drawer composes book/chapter/verse selectors from the `books` index prop.
+| `src/components/bible/SessionPickerSheet.tsx` | **Create** — session list + new session CTA |
+| `src/components/bible/BibleReader.tsx` | **Edit** — force `studyMode=false` on mount, wire SessionPickerSheet into toggle + pencil detection flow |
 
