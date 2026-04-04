@@ -239,7 +239,6 @@ export function PaperCanvas({
         velocityBuffer.length = 0;
         clearGrace();
       } else if (e.touches.length === 3) {
-        gestureActive.current = true;
         api.stop();
 
         gestureType = "rotate";
