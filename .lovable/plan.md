@@ -1,62 +1,84 @@
 
 
-## Always Start /bible in Reading Mode — Add Session Picker Flow
+## Fix State Routing: Mutually Exclusive Render Paths
 
-### Problem
-Currently, `/bible` on iPad restores `studyMode` from localStorage, so users can land directly in study mode. The request is to always start in reading mode and require an explicit action to enter study mode — either manually selecting it or having Apple Pencil auto-detect trigger it.
+### Root Cause
+The reading area (lines 2394-2730) has two conditional branches:
+- **Paper Canvas (margin variant)**: gated by `studyMode && studyModeVariant === "margin"` 
+- **Standard reader**: gated by `!(studyMode && studyModeVariant === "margin")`
 
-Additionally, when study mode is activated, instead of jumping straight into a canvas, present a **Session Picker** that lets the user resume an existing session or create a new one (entering the Canvas Creation Drawer).
+When the user creates a canvas session (`studyModeVariant === "canvas"`), the standard reader **still renders** because it only checks for the margin variant. The `ManuscriptCanvas` at line 2933 renders as a sibling overlay, not as a replacement — so the old reader stays visible underneath.
+
+### Solution
+Introduce a unified `activeSession` state and implement strict mutually exclusive rendering with a single ternary.
 
 ### Changes
 
-**1. `src/components/bible/BibleReader.tsx` — Force reading mode on mount**
+**File: `src/components/bible/BibleReader.tsx`**
 
-- Change `studyMode` initial state from reading localStorage to always `false`
-- Keep localStorage persistence for the *variant* preference, but not the active state
-- When Apple Pencil is detected, instead of auto-enabling study mode, show the Session Picker
-- When the user toggles study mode on (via Sleeve or toolbar), show the Session Picker instead of going directly to setup/creation
-
-**2. New component: `src/components/bible/SessionPickerSheet.tsx`**
-
-A bottom sheet / dialog that appears when the user activates study mode. Contains:
-
-- **"Resume Session"** section — lists saved canvas sessions from localStorage (keyed by book+chapter+timestamp). Each card shows the verse range, paper size, and a timestamp. Tap to resume.
-- **"New Session"** button — opens the Canvas Creation Drawer
-- If no saved sessions exist, skip the list and show a hero prompt: "Start your first canvas session" with a single CTA that opens the Canvas Creation Drawer
-
-Data structure for saved sessions (localStorage key: `bible_canvas_sessions`):
+1. **Add `activeSession` state** (replaces the `canvasOpen` boolean for the canvas variant):
 ```ts
-interface SavedSession {
-  id: string;
-  createdAt: string;
-  verseRange: string;
-  bookUsfm: string;
-  chapterIdx: number;
-  config: CanvasSessionConfig;
-}
+const [activeSession, setActiveSession] = useState<CanvasSessionConfig | null>(null);
 ```
 
-**3. Flow changes**
-
-```text
-User taps Study Mode toggle (or Pencil detected)
-  → SessionPickerSheet opens
-    → "New Session" → CanvasCreationDrawer opens → onStartSession → study mode activates
-    → "Resume [session]" → study mode activates with saved config
-    → Dismiss → nothing happens, stays in reading mode
+2. **Derive a view mode enum** for clean conditional rendering:
+```ts
+const viewMode: "reading" | "margin" | "canvas" | "journal" = 
+  activeSession ? "canvas" :
+  studyMode && studyModeVariant === "margin" ? "margin" :
+  studyMode && studyModeVariant === "journal" ? "journal" :
+  "reading";
 ```
 
-**4. Apple Pencil detection update**
+3. **Update `onStartSession` callback** (CanvasCreationDrawer, ~line 3052):
+   - Set `setActiveSession(config)` instead of just `setCanvasOpen(true)`
+   - Still set `studyMode = true` for toolbar gating
 
-When pencil is detected and study mode is off:
-- Set `pencilDetected = true`  
-- Show toast: "🍎 Apple Pencil detected"  
-- Open the SessionPickerSheet (not auto-enable study mode)
+4. **Update `handleResumeSession`** (~line 856):
+   - Set `setActiveSession(session.config)` instead of `setCanvasOpen(true)`
+
+5. **Update `handleToggleStudyMode(false)`** (~line 837):
+   - Add `setActiveSession(null)` to clear the session on exit
+
+6. **Restructure the Reading Area** (lines 2393-2730) into a strict ternary:
+```tsx
+<div ref={readingAreaRef} className={...}>
+  {viewMode === "canvas" ? (
+    /* CANVAS STUDIO — full takeover, standard reader unmounted */
+    <div className="w-full h-screen overflow-hidden bg-neutral-900">
+      <ManuscriptCanvas
+        sessionData={activeSession}
+        chapterTitle={...}
+        verses={...}
+        initialStrokes={canvasInitialStrokes}
+        onSave={handleCanvasSave}
+        onClose={() => { setActiveSession(null); setStudyMode(false); }}
+        textSize={textSize}
+      />
+    </div>
+  ) : viewMode === "margin" ? (
+    /* PAPER CANVAS (margin study) — existing PaperCanvas block */
+    <div key={`canvas-${bookUsfm}-${chapterIdx}`} ...>
+      <PaperCanvas ...>...</PaperCanvas>
+    </div>
+  ) : (
+    /* STANDARD READING MODE (+ journal uses this too) */
+    <>
+      {/* chapter header */}
+      {/* AnimatePresence verse list */}
+      {/* chapter nav */}
+    </>
+  )}
+</div>
+```
+
+7. **Remove the orphaned ManuscriptCanvas block** at lines 2932-2942 (it's now inside the ternary).
+
+8. **Clean up `canvasOpen` state**: Remove `canvasOpen` entirely — replaced by `activeSession !== null`. Update all references (toolbar toggles, swipe guards, etc.) to use `!!activeSession` instead of `canvasOpen`.
 
 ### Files
 
 | File | Action |
 |------|--------|
-| `src/components/bible/SessionPickerSheet.tsx` | **Create** — session list + new session CTA |
-| `src/components/bible/BibleReader.tsx` | **Edit** — force `studyMode=false` on mount, wire SessionPickerSheet into toggle + pencil detection flow |
+| `src/components/bible/BibleReader.tsx` | Refactor render paths + replace `canvasOpen` with `activeSession` |
 
