@@ -3162,6 +3162,36 @@ export function BibleReader() {
       {/* ── iPad Waitlist Drawer ── */}
       <IPadWaitlistDrawer open={waitlistDrawerOpen} onOpenChange={setWaitlistDrawerOpen} />
       <BibleSuggestionSheet open={suggestionDrawerOpen} onClose={() => setSuggestionDrawerOpen(false)} />
+
+      {/* ── Guest exit prompt ── */}
+      <AlertDialog open={showGuestExitPrompt} onOpenChange={setShowGuestExitPrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save your study session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sign up free to keep your highlights, notes, and bookmarks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowGuestExitPrompt(false);
+              if (pendingNavTarget.current) {
+                const target = pendingNavTarget.current;
+                pendingNavTarget.current = null;
+                navigate(target);
+              }
+            }}>
+              Not right now
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowGuestExitPrompt(false);
+              navigate("/auth");
+            }}>
+              Sign Up
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }
