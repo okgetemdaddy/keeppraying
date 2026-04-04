@@ -277,7 +277,8 @@ export function PaperCanvas({
           const currentScale = spring.scale.get();
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
           api.set({ scale: nextScale });
-          notifyZoomChange(nextScale);
+          lastGestureZoom.current = nextScale;
+          onZoomChange(nextScale);
         }
 
         if (intent === "pan") {
