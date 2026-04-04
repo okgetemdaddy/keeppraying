@@ -2765,7 +2765,7 @@ export function BibleReader() {
             onCrossRef={handleCrossRef}
             onReference={handleReference}
             onDismiss={dismissToolbar}
-            isAuthenticated={!!user}
+            isAuthenticated={!!user || isGuestSession}
           />
         )}
       </AnimatePresence>
