@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
@@ -591,6 +592,33 @@ export function BibleReader() {
   const [chapterIdx, setChapterIdx] = useState<number>(0);
   const [mode, setMode] = useState<ReadingMode>("verse");
   const [positionLoaded, setPositionLoaded] = useState(false);
+  const navigate = useNavigate();
+
+  // ── Guest session tracking ──
+  const guestHasChanges = useRef(false);
+  const [showGuestExitPrompt, setShowGuestExitPrompt] = useState(false);
+  const pendingNavTarget = useRef<string | null>(null);
+
+  const isGuestSession = useMemo(() => {
+    if (user) return false;
+    try { return sessionStorage.getItem("kp_guest_bible_session") === "true"; } catch { return false; }
+  }, [user]);
+
+  const markGuestChange = useCallback(() => {
+    if (!user) guestHasChanges.current = true;
+  }, [user]);
+
+  // ── beforeunload for guest with changes ──
+  useEffect(() => {
+    if (user) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (guestHasChanges.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [user]);
 
   // ── Tap-to-navigate mode (iPhone swipe-free) ──
   const [tapNavMode, setTapNavMode] = useState<boolean>(() => {
@@ -1243,12 +1271,13 @@ export function BibleReader() {
   // ── X-gesture handler: delete highlights & ink under the X ──
   const handleXGesture = useCallback(
     (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => {
-      if (!user) {
+      if (!user && !isGuestSession) {
         toast("Unlock this feature ✦", {
           description: "Editing highlights lets you refine your study. Create a free account to start.",
         });
         return;
       }
+      if (!user) markGuestChange();
       let highlightCount = 0;
       let strokeCount = 0;
 
@@ -1622,16 +1651,18 @@ export function BibleReader() {
   // ── Toolbar action handlers ──
   const handleHighlight = useCallback(
     (color: string, verseNumber: number, start?: number, end?: number) => {
+      markGuestChange();
       mutations.addHighlight.mutate({ verseNumber, color, start, end });
     },
-    [mutations.addHighlight],
+    [mutations.addHighlight, markGuestChange],
   );
 
   const handleToggleBookmark = useCallback(
     (verseNumber: number, color: string, existingId?: string) => {
+      markGuestChange();
       mutations.toggleBookmark.mutate({ verseNumber, color, existingId });
     },
-    [mutations.toggleBookmark],
+    [mutations.toggleBookmark, markGuestChange],
   );
 
   const handleAddNote = useCallback(
@@ -2508,12 +2539,13 @@ export function BibleReader() {
                     }
                   }}
                   onUnderlineGesture={(verseNumber, underlinedText) => {
-                    if (!user) {
+                    if (!user && !isGuestSession) {
                       toast("Unlock this feature ✦", {
                         description: "Highlighting lets you mark and revisit meaningful passages. Create a free account to start.",
                       });
                       return;
                     }
+                    if (!user) markGuestChange();
                     const lastColor = (() => {
                       try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
                     })();
@@ -2733,7 +2765,7 @@ export function BibleReader() {
             onCrossRef={handleCrossRef}
             onReference={handleReference}
             onDismiss={dismissToolbar}
-            isAuthenticated={!!user}
+            isAuthenticated={!!user || isGuestSession}
           />
         )}
       </AnimatePresence>
@@ -3132,6 +3164,36 @@ export function BibleReader() {
       {/* ── iPad Waitlist Drawer ── */}
       <IPadWaitlistDrawer open={waitlistDrawerOpen} onOpenChange={setWaitlistDrawerOpen} />
       <BibleSuggestionSheet open={suggestionDrawerOpen} onClose={() => setSuggestionDrawerOpen(false)} />
+
+      {/* ── Guest exit prompt ── */}
+      <AlertDialog open={showGuestExitPrompt} onOpenChange={setShowGuestExitPrompt}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save your study session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sign up free to keep your highlights, notes, and bookmarks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowGuestExitPrompt(false);
+              if (pendingNavTarget.current) {
+                const target = pendingNavTarget.current;
+                pendingNavTarget.current = null;
+                navigate(target);
+              }
+            }}>
+              Not right now
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowGuestExitPrompt(false);
+              navigate("/auth");
+            }}>
+              Sign Up
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </article>
   );
 }

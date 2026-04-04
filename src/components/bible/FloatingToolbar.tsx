@@ -317,8 +317,13 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
   } = props;
   const isMobile = useIsMobile();
 
-  /* ── Not authenticated — warm benefit-driven auth gate ── */
-  if (!isAuthenticated) {
+  /* ── Guest session: once dismissed, allow full toolbar for this tab session ── */
+  const hasGuestSession = (() => {
+    try { return sessionStorage.getItem("kp_guest_bible_session") === "true"; } catch { return false; }
+  })();
+
+  /* ── Not authenticated — warm benefit-driven auth gate (only first time) ── */
+  if (!isAuthenticated && !hasGuestSession) {
     const benefits = [
       { icon: Palette, text: "Highlight in multiple colors" },
       { icon: Circle, text: "Circle words for detailed cross-references" },
@@ -327,6 +332,7 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
     ];
 
     const handleDismissGuest = () => {
+      try { sessionStorage.setItem("kp_guest_bible_session", "true"); } catch {}
       toast("Changes are only saved if you are signed in.", { duration: 3000 });
       onDismiss();
     };
