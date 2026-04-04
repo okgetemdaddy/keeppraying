@@ -296,7 +296,7 @@ export default function PrayerAssist() {
 
       {/* Input or Guest Banner — offset above mobile tab bar + safe area */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-4 pr-20 md:pr-4 max-w-3xl">
+        <div className="container mx-auto px-4 py-4 max-w-3xl">
           {showGuestBanner ? (
             <div className="text-center space-y-3 py-2">
               <p className="text-sm text-muted-foreground">
