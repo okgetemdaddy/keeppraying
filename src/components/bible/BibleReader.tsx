@@ -3211,6 +3211,10 @@ export function BibleReader() {
       <PremiumUpsellSheet
         open={showPremiumUpsell}
         onClose={() => setShowPremiumUpsell(false)}
+        onProceed={() => {
+          setShowPremiumUpsell(false);
+          handleStudyModeEntry();
+        }}
       />
 
       {/* ── Resume or New Session Sheet ── */}
