@@ -170,26 +170,27 @@ export function InkOverlay({
   penSizeRef.current = penSize;
   penGlowRef.current = penGlow ?? null;
 
-  /* ── Coordinate normalization via getBoundingClientRect ──
-   * getBoundingClientRect() always reflects current visual transforms
-   * (scale, translate, rotate) applied by react-spring, unlike getScreenCTM()
-   * which can return stale values on iPadOS Safari. We map proportionally
-   * from screen space into SVG viewBox space. */
+  /* ── Coordinate normalization via getScreenCTM ──
+   * With direct DOM transforms (no react-spring), getScreenCTM() always
+   * reflects the current transform. Its inverse correctly undoes scale,
+   * translate, AND rotation to map screen coords into SVG-local space. */
   const getTransformedPoint = useCallback(
     (clientX: number, clientY: number): [number, number] => {
       const svg = svgRef.current;
       if (!svg) return [0, 0];
-
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const pt = svg.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const transformed = pt.matrixTransform(ctm.inverse());
+        return [transformed.x, transformed.y];
+      }
+      // Fallback only if CTM unavailable
       const rect = svg.getBoundingClientRect();
-      const svgW = canvasWidth ?? rect.width;
-      const svgH = canvasHeight ?? rect.height;
-
-      const x = ((clientX - rect.left) / rect.width) * svgW;
-      const y = ((clientY - rect.top) / rect.height) * svgH;
-
-      return [x, y];
+      return [clientX - rect.left, clientY - rect.top];
     },
-    [canvasWidth, canvasHeight],
+    [],
   );
 
   /* ── RAF render loop ── */
