@@ -332,10 +332,10 @@ export function PaperCanvas({
         }
       }
 
-      /* Sync zoom to React state */
+      /* Sync zoom to React state — only place touch zoom commits */
       if (gestureType === "two-finger" && intent === "zoom") {
         const finalScale = spring.scale.get();
-        lastGestureZoom.current = finalScale;
+        internalZoomUpdate.current = true;
         onZoomChange(finalScale);
       }
 
