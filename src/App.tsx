@@ -36,6 +36,7 @@ import Bible from "./pages/Bible";
 import BibleCanvas from "./pages/BibleCanvas";
 import SharedPrayerLanding from "./pages/SharedPrayerLanding";
 import Profile from "./pages/Profile";
+import Classical from "./pages/Classical";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
@@ -212,6 +213,7 @@ function AppShell() {
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
         <Route path="/bible" element={<Bible />} />
+        <Route path="/classical" element={<Classical />} />
         <Route path="/canvas" element={<BibleCanvas />} />
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="/shared-prayer/:token" element={<SharedPrayerLanding />} />
