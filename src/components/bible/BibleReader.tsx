@@ -2039,7 +2039,13 @@ export function BibleReader() {
               size="sm"
               onClick={() => {
                 if (studyMode && studyModeVariant === "canvas") {
-                  setCanvasOpen(!canvasOpen);
+                  if (activeSession) {
+                    setActiveSession(null);
+                    setStudyMode(false);
+                    try { localStorage.setItem("bible_study_mode", "false"); } catch {}
+                  } else {
+                    setSessionPickerOpen(true);
+                  }
                 } else if (studyMode && studyModeVariant === "journal") {
                   setJournalOpen(!journalOpen);
                 } else {
