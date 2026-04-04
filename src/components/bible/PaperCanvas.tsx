@@ -365,14 +365,12 @@ export function PaperCanvas({
       onWheel: ({ delta: [, dy], event, ctrlKey, metaKey }) => {
         if (ctrlKey || metaKey) {
           event.preventDefault();
-          gestureActive.current = true;
           const currentScale = spring.scale.get();
           const delta = -dy * 0.003;
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
-          api.start({ scale: nextScale });
-          committedScale.current = nextScale;
-          notifyZoomChange(nextScale);
-          gestureActive.current = false;
+          api.set({ scale: nextScale });
+          lastGestureZoom.current = nextScale;
+          onZoomChange(nextScale);
         } else {
           const targetY = spring.y.get() - dy * 2.5;
           const vh = window.innerHeight;
