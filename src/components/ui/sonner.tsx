@@ -7,7 +7,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme="system"
       className="toaster group"
+      position="top-right"
+      offset={16}
       toastOptions={{
+        style: {
+          marginTop: '60px',
+          borderRadius: '12px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+          padding: '12px 16px',
+          fontSize: '13px',
+        },
         classNames: {
           toast:
             "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",

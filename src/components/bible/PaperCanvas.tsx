@@ -224,8 +224,10 @@ export function PaperCanvas({
       }
     };
 
-    const onTouchEnd = () => {
-      /* Reset tracking — NOT spring values */
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!gestureStarted) return;
+      if (e.touches.length > 0) return; // still fingers on screen
+      gestureStarted = false;
       gestureType = "none";
       intent = "none";
       accumulatedPan = 0;

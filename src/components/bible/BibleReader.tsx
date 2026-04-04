@@ -2489,7 +2489,6 @@ export function BibleReader() {
                     onPencilFirstContact={() => {
                       const onboarded = localStorage.getItem("pencil-onboarded");
                       if (!onboarded) {
-                        setPocketOpen(true);
                         localStorage.setItem("pencil-onboarded", "true");
                       }
                     }}
