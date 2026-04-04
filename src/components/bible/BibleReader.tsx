@@ -1271,12 +1271,13 @@ export function BibleReader() {
   // ── X-gesture handler: delete highlights & ink under the X ──
   const handleXGesture = useCallback(
     (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => {
-      if (!user) {
+      if (!user && !isGuestSession) {
         toast("Unlock this feature ✦", {
           description: "Editing highlights lets you refine your study. Create a free account to start.",
         });
         return;
       }
+      if (!user) markGuestChange();
       let highlightCount = 0;
       let strokeCount = 0;
 
