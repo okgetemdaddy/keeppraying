@@ -95,8 +95,6 @@ export function MobileStudyToolbar({
   onPenSizeChange,
   penGlow,
   onPenGlowChange,
-  zoom,
-  onZoomChange,
   textSpacing,
   onTextSpacingChange,
   onUndo,
