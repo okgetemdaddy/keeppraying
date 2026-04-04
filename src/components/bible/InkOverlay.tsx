@@ -603,95 +603,115 @@ export function InkOverlay({
     : undefined;
 
   return (
-    <svg
-      ref={svgRef}
-      className="absolute inset-0 z-10"
-      width={svgWidth}
-      height={svgHeight}
-      viewBox={viewBox}
-      style={{
-        touchAction: "none",
-        cursor: isDrawingRef.current ? "none" : "crosshair",
-        pointerEvents: "auto",
-        overflow: "visible",
-      }}
-      onPointerDown={(e) => {
-        console.log('[INK-SVG] raw pointerdown', e.pointerType, e.pressure);
-        handlePointerDown(e);
-      }}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerLeave}
-      onPointerCancel={handlePointerCancel}
-    >
-      <defs>
-        <filter id="ink-bleed">
-          <feGaussianBlur stdDeviation="0.3" />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="0.95" />
-          </feComponentTransfer>
-        </filter>
-        <filter id="ink-bleed-dark">
-          <feGaussianBlur stdDeviation="0.25" />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="1.0" />
-          </feComponentTransfer>
-        </filter>
-        {[
-          { id: "neon-00FFFF", bloom: "#00FFFF" },
-          { id: "neon-FF00FF", bloom: "#FF00FF" },
-          { id: "neon-39FF14", bloom: "#39FF14" },
-        ].map(({ id, bloom }) => (
-          <filter key={id} id={id} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
-            <feFlood floodColor={bloom} floodOpacity="0.8" result="glowColor" />
-            <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
-            <feMerge>
-              <feMergeNode in="softGlow" />
-              <feMergeNode in="softGlow" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+    <>
+      <svg
+        ref={svgRef}
+        className="absolute inset-0 z-10"
+        width={svgWidth}
+        height={svgHeight}
+        viewBox={viewBox}
+        style={{
+          touchAction: "none",
+          cursor: isDrawingRef.current ? "none" : "crosshair",
+          pointerEvents: "auto",
+          overflow: "visible",
+        }}
+        onPointerDown={(e) => {
+          setDebugLog(prev => [...prev.slice(-8), `SVG-RAW: type=${e.pointerType} pressure=${e.pressure.toFixed(3)}`]);
+          handlePointerDown(e);
+        }}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
+        onPointerCancel={handlePointerCancel}
+      >
+        <defs>
+          <filter id="ink-bleed">
+            <feGaussianBlur stdDeviation="0.3" />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.95" />
+            </feComponentTransfer>
           </filter>
-        ))}
-      </defs>
-      {renderedStrokes}
+          <filter id="ink-bleed-dark">
+            <feGaussianBlur stdDeviation="0.25" />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="1.0" />
+            </feComponentTransfer>
+          </filter>
+          {[
+            { id: "neon-00FFFF", bloom: "#00FFFF" },
+            { id: "neon-FF00FF", bloom: "#FF00FF" },
+            { id: "neon-39FF14", bloom: "#39FF14" },
+          ].map(({ id, bloom }) => (
+            <filter key={id} id={id} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+              <feFlood floodColor={bloom} floodOpacity="0.8" result="glowColor" />
+              <feComposite in="glowColor" in2="blur" operator="in" result="softGlow" />
+              <feMerge>
+                <feMergeNode in="softGlow" />
+                <feMergeNode in="softGlow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          ))}
+        </defs>
+        {renderedStrokes}
 
-      <path
-        ref={livePathRef}
-        fill={penColor}
-        stroke="none"
-        opacity={0.7}
-        style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
-      />
-
-      {hoverPos && !isDrawingRef.current && (
-        <circle
-          cx={hoverPos.x}
-          cy={hoverPos.y}
-          r={penSize / 2}
+        <path
+          ref={livePathRef}
           fill={penColor}
-          opacity={0.25}
-          style={{ pointerEvents: "none" }}
+          stroke="none"
+          opacity={0.7}
+          style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
         />
-      )}
 
-      {/* X-gesture flash */}
-      {xFlash && (
-        <text
-          x={xFlash.x}
-          y={xFlash.y}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize="32"
-          fill="hsl(0, 72%, 51%)"
-          style={{
-            pointerEvents: "none",
-            animation: "xFlashFade 400ms ease-out forwards",
-          }}
-        >
-          ✕
-        </text>
-      )}
-    </svg>
+        {hoverPos && !isDrawingRef.current && (
+          <circle
+            cx={hoverPos.x}
+            cy={hoverPos.y}
+            r={penSize / 2}
+            fill={penColor}
+            opacity={0.25}
+            style={{ pointerEvents: "none" }}
+          />
+        )}
+
+        {xFlash && (
+          <text
+            x={xFlash.x}
+            y={xFlash.y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize="32"
+            fill="hsl(0, 72%, 51%)"
+            style={{
+              pointerEvents: "none",
+              animation: "xFlashFade 400ms ease-out forwards",
+            }}
+          >
+            ✕
+          </text>
+        )}
+      </svg>
+      <div style={{
+        position: 'fixed',
+        bottom: 80,
+        left: 10,
+        right: 10,
+        maxHeight: 180,
+        overflow: 'auto',
+        background: 'rgba(0,0,0,0.85)',
+        color: '#0f0',
+        fontFamily: 'monospace',
+        fontSize: 10,
+        padding: 8,
+        borderRadius: 8,
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}>
+        {debugLog.map((line, i) => <div key={i}>{line}</div>)}
+        {debugLog.length === 0 && <div style={{color:'#666'}}>Touch pencil to screen...</div>}
+      </div>
+    </>
   );
 }
