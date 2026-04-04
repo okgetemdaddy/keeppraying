@@ -120,7 +120,7 @@ export default function PrayerAssist() {
   useEffect(() => {
     if (!user) {
       const count = parseInt(localStorage.getItem(GUEST_STORAGE_KEY) || "0", 10);
-      if (count >= 1) setGuestLimited(true);
+      if (count >= 3) setGuestLimited(true);
     }
   }, [user]);
 
