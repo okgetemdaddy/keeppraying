@@ -1,44 +1,27 @@
 
 
-## Fix Pencil Drawing Offset on Rotated Canvas
+## Fix Pencil Coordinate Drift After Rotation
 
 ### Problem
-`getBoundingClientRect()` returns an axis-aligned bounding box that inflates when the element is rotated, causing proportional mapping to produce incorrect coordinates.
+The SVG viewBox origin (0,0 at top-left) doesn't match the paper's CSS rotation pivot (center center = 528, 816). When `getScreenCTM().inverse()` maps screen coordinates, the rotation pivot mismatch causes progressive coordinate drift at non-zero rotation angles.
 
 ### Fix
 
-**File:** `src/components/bible/InkOverlay.tsx` (lines 173-193)
+**File:** `src/components/bible/InkOverlay.tsx`
 
-Replace the `getBoundingClientRect` proportional mapping with `getScreenCTM().inverse()`. Now that react-spring has been removed from PaperCanvas (replaced with direct DOM manipulation), the browser's computed transform matrix is always current.
+**Line 619** — Change the viewBox to center the coordinate origin:
 
-```ts
-/* ── Coordinate normalization via getScreenCTM ──
- * With direct DOM transforms (no react-spring), getScreenCTM() always
- * reflects the current transform. Its inverse correctly undoes scale,
- * translate, AND rotation to map screen coords into SVG-local space. */
-const getTransformedPoint = useCallback(
-  (clientX: number, clientY: number): [number, number] => {
-    const svg = svgRef.current;
-    if (!svg) return [0, 0];
-    const ctm = svg.getScreenCTM();
-    if (ctm) {
-      const pt = svg.createSVGPoint();
-      pt.x = clientX;
-      pt.y = clientY;
-      const transformed = pt.matrixTransform(ctm.inverse());
-      return [transformed.x, transformed.y];
-    }
-    // Fallback only if CTM unavailable
-    const rect = svg.getBoundingClientRect();
-    return [clientX - rect.left, clientY - rect.top];
-  },
-  [],
-);
+```tsx
+viewBox={canvasWidth && canvasHeight 
+  ? `${-canvasWidth/2} ${-canvasHeight/2} ${canvasWidth} ${canvasHeight}` 
+  : undefined}
 ```
 
-The dependency array becomes empty — no external values needed.
+This sets the origin to (-528, -816), placing SVG coordinate (0,0) at the paper's center — matching the CSS `transformOrigin: center center`. Now `getScreenCTM().inverse()` correctly accounts for rotation at any angle.
 
-| File | Change |
-|------|--------|
-| `InkOverlay.tsx` | Replace `getBoundingClientRect` mapping with `getScreenCTM().inverse()` |
+No other changes needed — `getTransformedPoint` already uses `getScreenCTM().inverse()` which will automatically produce coordinates in the new centered space. All stroke points, hover cursor, and gesture hit-testing will work in the new coordinate system. No migration needed for existing strokes since this is a fresh canvas system.
+
+| File | Line | Change |
+|------|------|--------|
+| `InkOverlay.tsx` | 619 | Center viewBox origin at paper midpoint |
 
