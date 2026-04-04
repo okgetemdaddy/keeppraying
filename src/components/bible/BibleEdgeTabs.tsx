@@ -85,13 +85,13 @@ export function BibleEdgeTabs({ onSuggestionsClick, onIPadClick, showIPad, hidde
                           backgroundSize: "200% 100%",
                         }}
                         animate={{
-                          backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%"],
-                          opacity: [1, 1, 0],
+                          backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%", "200% 0%"],
+                          opacity: [1, 1, 0, 0],
                         }}
                         transition={{
                           duration: 43,
-                          times: [0, 3 / 43, 3 / 43],
-                          ease: "easeInOut",
+                          times: [0, 3 / 43, 3.01 / 43, 1],
+                          ease: "linear",
                           repeat: Infinity,
                         }}
                       />
