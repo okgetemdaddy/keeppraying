@@ -137,6 +137,8 @@ export function InkOverlay({
   penGlow,
   fingerDrawing = false,
   isDark = false,
+  canvasWidth,
+  canvasHeight,
   onCircleSelect,
   onPencilFirstContact,
   onWordCircle,
