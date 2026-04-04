@@ -78,6 +78,7 @@ export function PaperCanvas({
   textSpacing,
   textAlign,
   marginWidth,
+  textBoxConfig,
   canvasBackground,
   overlay,
   children,
