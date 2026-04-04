@@ -245,7 +245,7 @@ export function InkOverlay({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       if (e.pointerType === "pen") {
-        if (e.pressure < 0.01) return;
+        if (e.pressure === 0) return;
         lastPenDownRef.current = Date.now();
         // Pen events: capture and prevent passthrough
         e.preventDefault();
