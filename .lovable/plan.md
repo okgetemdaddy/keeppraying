@@ -1,33 +1,34 @@
 
 
-## Fix: Glimmer Visible During Pause
+## Fix: Apple Pencil Pro Drawing on /bible Study Mode
 
-### Problem
-The `times` array `[0, 3/43, 3/43]` has duplicate values — framer-motion needs distinct keyframe positions to properly hold opacity at 0. The gradient tail also remains partially visible at `-200%`.
+Three targeted edits to strip event gates that block Apple Pencil Pro, matching the simpler approach used by /canvas's InkCanvas.
 
-### Fix
+### Changes
 
-**`src/components/bible/BibleEdgeTabs.tsx` — lines 87-96**
+**1. `src/components/bible/BibleReader.tsx` — Remove `preventPenScroll` listener (lines 946-950, 953, 959)**
 
-Change the keyframes to use a 4-point sequence with a tiny epsilon gap so opacity snaps to 0 right after the sweep ends and stays there:
+Remove the `preventPenScroll` function and its `addEventListener`/`removeEventListener` calls. Keep `preventSingleFingerScroll` intact. The parent-level `preventDefault` on pen pointerdown fires before InkOverlay receives the event, breaking the pointer capture chain on Apple Pencil Pro. InkOverlay already handles its own `preventDefault`.
 
+**2. `src/components/bible/InkOverlay.tsx` — Simplify pressure check (line 248)**
+
+Change:
 ```ts
-animate={{
-  backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%", "200% 0%"],
-  opacity: [1, 1, 0, 0],
-}}
-transition={{
-  duration: 43,
-  times: [0, 3 / 43, 3.01 / 43, 1],
-  ease: "linear",
-  repeat: Infinity,
-}}
+if (e.pressure < 0.01) return;
+```
+To:
+```ts
+if (e.pressure === 0) return;
 ```
 
-- 0 → 3s: sweep moves across (opacity 1)
-- 3s → 3.01s: opacity snaps to 0 (instant)  
-- 3.01s → 43s: invisible, position resets silently
-- Cycle repeats
+Apple Pencil Pro can report initial pressure very close to zero on light contact. Hover events always report exactly `0`.
 
-One-line-range edit, no other files affected.
+**3. `src/components/bible/InkOverlay.tsx` — Remove button check (line 267)**
+
+Remove:
+```ts
+if (e.button !== 0) return;
+```
+
+Apple Pencil Pro's squeeze gesture reports non-zero button values. The `pointerType` check already gates input correctly.
 
