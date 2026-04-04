@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bookmark,
@@ -10,6 +11,11 @@ import {
   X,
   Check,
   Plus,
+  Palette,
+  Circle,
+  Layers,
+  PenTool,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
