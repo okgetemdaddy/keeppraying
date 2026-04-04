@@ -1015,8 +1015,8 @@ export function BibleReader() {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
         if (!studyMode) {
-          handleToggleStudyMode(true);
-          toast("🍎 Apple Pencil detected — Study Mode enabled", {
+          handleStudyModeEntry();
+          toast("🍎 Apple Pencil detected", {
             description: "Write directly on the page alongside your verses",
           });
         }
@@ -1024,7 +1024,7 @@ export function BibleReader() {
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [isIPad, pencilDetected, studyMode, handleToggleStudyMode]);
+  }, [isIPad, pencilDetected, studyMode, handleStudyModeEntry]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
