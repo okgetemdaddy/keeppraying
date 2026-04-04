@@ -43,6 +43,8 @@ interface InkOverlayProps {
   penGlow?: string | null;
   fingerDrawing?: boolean;
   isDark?: boolean;
+  canvasWidth?: number;
+  canvasHeight?: number;
   onCircleSelect?: (verseNumbers: number[], hullCenter?: { x: number; y: number }) => void;
   onPencilFirstContact?: () => void;
   onWordCircle?: (words: string, verseNumber: number, anchorPoint: { x: number; y: number }) => void;
