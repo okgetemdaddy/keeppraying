@@ -915,10 +915,12 @@ export function BibleReader() {
     }
 
     // Step 2: Premium
-    if (userSubscriptionTier !== "premium") {
-      setShowPremiumUpsell(true);
-      return;
-    }
+    // TODO: Re-enable premium gate when admin flips billing on
+    // Beta period — all study mode features are free
+    // if (userSubscriptionTier !== "premium") {
+    //   setShowPremiumUpsell(true);
+    //   return;
+    // }
 
     // Step 3: Resume check
     const { data: session } = await supabase
