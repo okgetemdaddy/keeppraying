@@ -361,6 +361,7 @@ export function PaperCanvas({
       gestureType = "none";
       gestureFingerCount = 0;
       gestureDead = false;
+      gestureActive.current = false;
       lastDist = null;
       lastMidpoint = null;
       lastAngle = null;
