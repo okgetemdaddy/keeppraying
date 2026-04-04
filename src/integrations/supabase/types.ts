@@ -1219,6 +1219,33 @@ export type Database = {
         }
         Relationships: []
       }
+      library_chunks: {
+        Row: {
+          author: string | null
+          book_title: string
+          content: string
+          embedding: string | null
+          id: string
+          page_reference: string | null
+        }
+        Insert: {
+          author?: string | null
+          book_title: string
+          content: string
+          embedding?: string | null
+          id?: string
+          page_reference?: string | null
+        }
+        Update: {
+          author?: string | null
+          book_title?: string
+          content?: string
+          embedding?: string | null
+          id?: string
+          page_reference?: string | null
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
@@ -2683,6 +2710,21 @@ export type Database = {
       is_sermon_plan_member: {
         Args: { _plan_id: string; _user_id: string }
         Returns: boolean
+      }
+      match_library_chunks: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: string
+        }
+        Returns: {
+          author: string
+          book_title: string
+          content: string
+          id: string
+          page_reference: string
+          similarity: number
+        }[]
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
