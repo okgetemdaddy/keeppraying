@@ -966,9 +966,13 @@ export function BibleReader() {
     setActiveSessionConfig({
       sessionId: s.id,
       verses: [], // Will be populated from Bible data on mount
-      verseRange: s.verse_start && s.verse_end
-        ? `${s.book_usfm} ${s.chapter_id}:${s.verse_start}–${s.verse_end}`
-        : `${s.book_usfm} ${s.chapter_id}`,
+      // TODO: Multi-book sessions — track last_book_usfm and last_chapter_id on session row
+      verseRange: (() => {
+        const bookTitle = index?.books?.find(b => b.id === s.book_usfm)?.title ?? s.book_usfm;
+        return s.verse_start && s.verse_end
+          ? `${bookTitle} ${s.chapter_id}:${s.verse_start}–${s.verse_end}`
+          : `${bookTitle} ${s.chapter_id}`;
+      })(),
       paper: { widthIn: s.paper_width_px / 96, heightIn: s.paper_height_px / 96 },
       typography: {
         charsPerLine: s.chars_per_line,
