@@ -1796,6 +1796,7 @@ export type Database = {
           longest_streak: number
           region: string | null
           role: string
+          subscription_tier: string
           updated_at: string
         }
         Insert: {
@@ -1814,6 +1815,7 @@ export type Database = {
           longest_streak?: number
           region?: string | null
           role?: string
+          subscription_tier?: string
           updated_at?: string
         }
         Update: {
@@ -1832,6 +1834,7 @@ export type Database = {
           longest_streak?: number
           region?: string | null
           role?: string
+          subscription_tier?: string
           updated_at?: string
         }
         Relationships: []
