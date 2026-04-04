@@ -1,45 +1,36 @@
 
 
-## Fix Two Bugs: Auth Check for Gestures + Native Scrolling in Study Mode
+## Move InkOverlay Pointer Capture to Window
 
-### 1. Restore sign-in prompt for unauthenticated gesture actions — `BibleReader.tsx`
+### Problem
+The SVG has `touchAction: "pan-y"` but this applies to ALL pointer types equally. Apple Pencil vertical strokes get interpreted as scroll gestures instead of drawing. CSS cannot distinguish between pen and touch.
 
-**onUnderlineGesture** (line 2255): Add auth check at the top of the callback, before the highlight mutation:
-```ts
-if (!user) {
-  toast("Please sign in to highlight verses", {
-    description: "Create a free account to save highlights and annotations"
-  });
-  return;
-}
-```
+### Solution
+Make the SVG a pure rendering surface (`pointerEvents: "none"`). Attach pointer listeners to `window` so we can selectively call `preventDefault()` for pen events while letting touch events flow through for native scrolling.
 
-**handleXGesture** (line 1229): Add the same auth check at the top of the callback body (it calls `mutations.removeHighlight.mutate` which is a Supabase write).
+### Changes
 
-**onCircleSelect** and **onWordCircle**: These are client-side state operations (setting selected verses, opening Reference Bloom) — no auth check needed.
+**`src/components/bible/InkOverlay.tsx`** — 4 edits:
 
-### 2. Fix two-finger scroll in study mode
+1. **SVG element** (line 631-648): Remove all `onPointer*` handlers. Change style to `pointerEvents: "none"`, remove `touchAction`. Keep `cursor: "crosshair"` and `overflow: "visible"`.
 
-Three files, four small edits:
+2. **Remove React pointer handler functions** (lines 246-561): Delete `handlePointerDown`, `handlePointerMove`, `handlePointerUp`, `handlePointerLeave`, `handlePointerCancel` callback definitions.
 
-**BibleReader.tsx** (lines 934-947): Replace the current study mode useEffect with a simpler version that only sets `overscrollBehavior`. Remove the `touchAction` override — ZoomWrapper handles that:
-```ts
-useEffect(() => {
-  if (!studyMode || studyModeVariant !== "margin") return;
-  const area = readingAreaRef.current;
-  if (!area) return;
-  area.style.overscrollBehavior = "none";
-  return () => { area.style.overscrollBehavior = ""; };
-}, [studyMode, studyModeVariant]);
-```
+3. **Add window pointer listeners useEffect**: A single `useEffect` that attaches `pointerdown`, `pointermove`, `pointerup`, `pointercancel` to `window` with `{ passive: false }`. Logic:
+   - `onDown`: pen → `e.preventDefault()` + start drawing. Touch → palm rejection check, if `!fingerDrawing` return (let browser scroll), if fingerDrawing + `!e.isPrimary` return, else `e.preventDefault()` + start drawing. Mouse → return.
+   - `onMove`: pen hover (pressure===0, not drawing) → update hover cursor. If drawing, capture coalesced points.
+   - `onUp`: finalize stroke — all existing gesture detection logic (circle, word circle, X, underline, verse linking, compression, `onStrokeComplete`) stays identical.
+   - `onCancel`: reset drawing state.
+   - Deps: `[fingerDrawing, getTransformedPoint, renderLoop, penColor, penSize, penGlow, zoom, onStrokeComplete, onCircleSelect, onWordCircle, onUnderlineGesture, onXGesture, onUndo, onPencilFirstContact]`
 
-**ZoomWrapper.tsx** line 95: Change `touchAction: studyMode ? "none" : "pan-y"` → `touchAction: "pan-y"`.
+4. **Remove ResizeObserver** (lines 162-181): Delete the `canvasSize` state and ResizeObserver `useEffect`. Change SVG to use `width="100%" height="100%"` with no viewBox (lines 625-629).
 
-**ZoomWrapper.tsx** line 128: Remove `touchAction: "none"` from the overlay wrapper div style. Keep `userSelect: "none"` and `WebkitUserSelect: "none"`.
+5. **Stroke click handlers on rendered paths** (line 609-611): These need `pointerEvents: "auto"` on each path since the SVG itself is `pointerEvents: "none"`. Actually, per the user's earlier instruction to remove stroke selection, remove the `onClick` and `cursor-pointer` from rendered strokes entirely.
 
 ### Files
 | File | Changes |
 |------|---------|
-| `src/components/bible/BibleReader.tsx` | Add auth checks to gesture callbacks; simplify study mode useEffect |
-| `src/components/bible/ZoomWrapper.tsx` | Two style prop edits |
+| `src/components/bible/InkOverlay.tsx` | Move pointer capture to window, SVG becomes render-only, remove ResizeObserver |
+
+No changes needed to BibleReader.tsx or ZoomWrapper.tsx — those were already fixed in the previous round.
 
