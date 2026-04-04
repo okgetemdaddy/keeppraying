@@ -175,6 +175,8 @@ export function InkOverlay({
     (clientX: number, clientY: number): [number, number] => {
       const svg = svgRef.current;
       if (!svg) return [0, 0];
+      // Force layout recalc so CTM reflects current react-spring transforms
+      svg.getBoundingClientRect();
       const screenCTM = svg.getScreenCTM();
       if (screenCTM) {
         const pt = svg.createSVGPoint();
