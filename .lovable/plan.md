@@ -1,36 +1,41 @@
 
 
-## Update Anonymous PrayerAssist: Allow 3 Interactions Before Signup
+## Two Fixes in BibleReader.tsx
 
-### Change from Previous Plan
-The guest limit increases from 1 message to **3 messages**. The anonymous user gets three full send-and-receive exchanges before seeing the signup nudge. This gives them a real feel for PrayerAssist's depth.
+### FIX 1: `.single()` → `.maybeSingle()`
 
-### Flow
-```
-Guest arrives → suggestions + input with mic button
-  → sends message #1 → receives streamed response
-  → sends message #2 → receives streamed response
-  → sends message #3 → receives streamed response
-  → signup-nudge card inserted after 3rd response
-  → input disabled, placeholder: "Sign up to continue…"
-  → "Sign Up Free" CTA → /auth
-```
+**File:** `src/components/bible/BibleReader.tsx` (line 926)
 
-### Changes — `src/pages/PrayerAssist.tsx`
+Change `.single()` to `.maybeSingle()` in the resume-check query inside `handleStudyModeEntry`. The existing `if (session)` null check already handles the no-session case — this just prevents Supabase from throwing PGRST116 when zero rows match.
 
-1. **Change `GUEST_STORAGE_KEY` limit check** from `>= 1` to `>= 3` in both the mount check and the post-response increment
-2. **Add mic button** next to send — uses Web Speech API (`webkitSpeechRecognition`), populates textarea with transcript
-3. **After the 3rd AI response finishes streaming**, append a `signup-nudge` message to the messages array instead of immediately replacing the input
-4. **`signup-nudge` card** renders inline in chat:
-   - Headline: "You're off to a beautiful start ✦"
-   - 4 feature pills: Save & revisit prayers, Voice-recorded prayers, Daily prayer streaks, Prayer companions
-   - Scripture: Matthew 18:20
-   - "Sign Up Free" amber CTA
-5. **Input area**: stays visible but disabled once `guestLimited` is true, placeholder text: "Sign up to continue your conversation…"
-6. **Message type**: extend `role` to `"user" | "assistant" | "signup-nudge"`
+### FIX 2: Pass camera ref to heartbeat
+
+**Problem:** `PaperCanvas` owns `transformState` internally (line 99 of PaperCanvas.tsx) and exposes it via `PaperCanvasContext`. But `useStudySessionHeartbeat` is called at the `BibleReader` level — **outside** the context provider's subtree. So we can't just call `usePaperCamera()`.
+
+**Solution:** Add an optional `cameraRef` prop to `PaperCanvas` so BibleReader can pass in a ref it owns:
+
+1. **BibleReader.tsx**: Create a `useRef` for the camera state:
+   ```ts
+   const paperCameraRef = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
+   ```
+   Pass it to both `PaperCanvas` and `useStudySessionHeartbeat`:
+   ```ts
+   useStudySessionHeartbeat({
+     sessionId: activeSessionId,
+     timerMinutes: activeSessionConfig?.timerMinutes,
+     cameraRef: paperCameraRef,
+   });
+   ```
+   ```tsx
+   <PaperCanvas cameraRef={paperCameraRef} ... />
+   ```
+
+2. **PaperCanvas.tsx**: Accept optional `cameraRef` prop. When provided, sync it with the internal `transformState` — after every `applyTransform()` call, copy the current values to `cameraRef.current`. Also use it as the value in the context provider so resume-session restore works through the same ref.
 
 ### Files
-| File | Action |
+
+| File | Change |
 |------|--------|
-| `src/pages/PrayerAssist.tsx` | Update limit to 3, add mic button, add inline signup nudge card |
+| `src/components/bible/BibleReader.tsx` | `.maybeSingle()` fix + create `paperCameraRef` + wire to heartbeat and PaperCanvas |
+| `src/components/bible/PaperCanvas.tsx` | Accept `cameraRef` prop, sync with internal transform state |
 
