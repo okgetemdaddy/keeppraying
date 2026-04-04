@@ -69,6 +69,7 @@ interface IPadStudyToolbarProps {
   onMarginWidthChange?: (v: number) => void;
   canvasBackground?: CanvasBackground;
   onCanvasBackgroundChange?: (v: CanvasBackground) => void;
+  hideSpacing?: boolean;
 }
 
 export function IPadStudyToolbar({
@@ -100,6 +101,7 @@ export function IPadStudyToolbar({
   onMarginWidthChange,
   canvasBackground = "none",
   onCanvasBackgroundChange,
+  hideSpacing = false,
 }: IPadStudyToolbarProps) {
   const PEN_COLORS = isDark ? PEN_COLORS_DARK : PEN_COLORS_LIGHT;
   const [expanded, setExpanded] = useState(true);
@@ -328,21 +330,24 @@ export function IPadStudyToolbar({
           <span className="text-[0.6rem] font-mono text-muted-foreground w-6">{zoom.toFixed(1)}×</span>
         </div>
 
-        <div className="w-px h-5 bg-border" />
+        {!hideSpacing && (
+          <>
+            <div className="w-px h-5 bg-border" />
 
-        <div className="flex items-center gap-1.5">
-          <span className="text-[0.6rem] text-muted-foreground font-medium">Spacing</span>
-          <Slider
-            value={[textSpacing]}
-            min={1}
-            max={4}
-            step={0.2}
-            onValueChange={([v]) => onTextSpacingChange(v)}
-            className="w-20"
-          />
-          <span className="text-[0.6rem] font-mono text-muted-foreground w-6">{textSpacing.toFixed(1)}×</span>
-        </div>
-
+            <div className="flex items-center gap-1.5">
+              <span className="text-[0.6rem] text-muted-foreground font-medium">Spacing</span>
+              <Slider
+                value={[textSpacing]}
+                min={1}
+                max={4}
+                step={0.2}
+                onValueChange={([v]) => onTextSpacingChange(v)}
+                className="w-20"
+              />
+              <span className="text-[0.6rem] font-mono text-muted-foreground w-6">{textSpacing.toFixed(1)}×</span>
+            </div>
+          </>
+        )}
         <div className="w-px h-5 bg-border" />
 
         {/* ─── Workspace: Text Align ─── */}

@@ -98,6 +98,8 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { PaperCanvas } from "@/components/bible/PaperCanvas";
+import { CanvasSetupSheet } from "@/components/bible/CanvasSetupSheet";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
@@ -723,6 +725,7 @@ export function BibleReader() {
   });
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
+  const [canvasSetupOpen, setCanvasSetupOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
@@ -822,9 +825,13 @@ export function BibleReader() {
   }, []);
 
   const handleToggleStudyMode = useCallback((v: boolean) => {
+    if (v && studyModeVariant === "margin") {
+      // Open setup sheet instead of immediately entering study mode
+      setCanvasSetupOpen(true);
+      return;
+    }
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    // If turning on with canvas variant, open canvas
     if (v && studyModeVariant === "canvas") setCanvasOpen(true);
     if (v && studyModeVariant === "journal") setJournalOpen(true);
     if (!v) { setCanvasOpen(false); setJournalOpen(false); }
@@ -2174,122 +2181,116 @@ export function BibleReader() {
               style={{ fontSize: `${textSize}px` }}
               className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
-              <ZoomWrapper
-                zoom={studyMode && studyModeVariant === "margin" ? inkZoom : 1}
-                textSpacing={studyMode && studyModeVariant === "margin" ? inkTextSpacing : 1.6}
-                className="relative"
-                textAlign={studyMode && studyModeVariant === "margin" ? wsTextAlign : "left"}
-                marginWidth={studyMode && studyModeVariant === "margin" ? wsMarginWidth : 0}
-                canvasBackground={studyMode && studyModeVariant === "margin" ? wsCanvasBackground : "none"}
-                studyMode={studyMode && studyModeVariant === "margin"}
+              <PaperCanvas
+                zoom={inkZoom}
+                onZoomChange={handleInkZoomChange}
+                baseFontSize={textSize}
+                textSpacing={inkTextSpacing}
+                textAlign={wsTextAlign}
+                marginWidth={wsMarginWidth}
+                canvasBackground={wsCanvasBackground}
                 overlay={
-                  studyMode && studyModeVariant === "margin" ? (
-                    <InkOverlay
-                      zoom={inkZoom}
-                      strokes={inkHistory.strokes}
-                      onStrokeComplete={handleInkStrokeComplete}
-                      onUndo={handleInkUndo}
-                      penColor={inkPenColor}
-                      penSize={inkPenSize}
-                      penGlow={inkPenGlow}
-                      fingerDrawing={inkFingerDrawing}
-                      isDark={premiumDark || document.documentElement.classList.contains("dark")}
-                      onCircleSelect={(verseNumbers, hullCenter) => {
-                        if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
-                          // Word-level bloom: single verse + try to extract word from circle center
-                          if (verseNumbers.length === 1 && hullCenter) {
-                            const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
-                            if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-                              const text = range.startContainer.textContent ?? "";
-                              const offset = range.startOffset;
-                              // Extract word at offset
-                              let start = offset;
-                              let end = offset;
-                              while (start > 0 && /\w/.test(text[start - 1])) start--;
-                              while (end < text.length && /\w/.test(text[end])) end++;
-                              const word = text.slice(start, end).trim();
-                              if (word && word.length >= 2 && word.length < 40) {
-                                setReferenceBloom({
-                                  x: hullCenter.x,
-                                  y: hullCenter.y,
-                                  word,
-                                  verseNumber: verseNumbers[0],
-                                });
-                                return;
-                              }
+                  <InkOverlay
+                    zoom={inkZoom}
+                    strokes={inkHistory.strokes}
+                    onStrokeComplete={handleInkStrokeComplete}
+                    onUndo={handleInkUndo}
+                    penColor={inkPenColor}
+                    penSize={inkPenSize}
+                    penGlow={inkPenGlow}
+                    fingerDrawing={inkFingerDrawing}
+                    isDark={premiumDark || document.documentElement.classList.contains("dark")}
+                    onCircleSelect={(verseNumbers, hullCenter) => {
+                      if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                        if (verseNumbers.length === 1 && hullCenter) {
+                          const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
+                          if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+                            const text = range.startContainer.textContent ?? "";
+                            const offset = range.startOffset;
+                            let start = offset;
+                            let end = offset;
+                            while (start > 0 && /\w/.test(text[start - 1])) start--;
+                            while (end < text.length && /\w/.test(text[end])) end++;
+                            const word = text.slice(start, end).trim();
+                            if (word && word.length >= 2 && word.length < 40) {
+                              setReferenceBloom({
+                                x: hullCenter.x,
+                                y: hullCenter.y,
+                                word,
+                                verseNumber: verseNumbers[0],
+                              });
+                              return;
                             }
                           }
-                          // Default: verse selection
-                          setCrossSelections((prev) => {
-                            const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
-                            const newSelections = verseNumbers
-                              .filter((v) => !existing.has(`${bookUsfm}.${currentChapter.id}.${v}`))
-                              .map((v) => ({
-                                versionId,
-                                bookUsfm,
-                                bookTitle: currentBook.title,
-                                chapterNumber: currentChapter.id,
-                                verseNumber: v,
-                              }));
-                            return [...prev, ...newSelections];
+                        }
+                        setCrossSelections((prev) => {
+                          const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
+                          const newSelections = verseNumbers
+                            .filter((v) => !existing.has(`${bookUsfm}.${currentChapter.id}.${v}`))
+                            .map((v) => ({
+                              versionId,
+                              bookUsfm,
+                              bookTitle: currentBook.title,
+                              chapterNumber: currentChapter.id,
+                              verseNumber: v,
+                            }));
+                          return [...prev, ...newSelections];
+                        });
+                        toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
+                      }
+                    }}
+                    onPencilFirstContact={() => {
+                      const onboarded = localStorage.getItem("pencil-onboarded");
+                      if (!onboarded) {
+                        setPocketOpen(true);
+                        localStorage.setItem("pencil-onboarded", "true");
+                      }
+                    }}
+                    onWordCircle={(words, verseNum, anchor) => {
+                      const verseData = verses.find((v) => v.number === verseNum);
+                      if (verseData) {
+                        setReferenceBloom({
+                          x: anchor.x,
+                          y: anchor.y,
+                          word: words,
+                          verseNumber: verseNum,
+                        });
+                      }
+                    }}
+                    onUnderlineGesture={(verseNumber, underlinedText) => {
+                      if (!user) {
+                        toast("Please sign in to highlight verses", {
+                          description: "Create a free account to save highlights and annotations",
+                        });
+                        return;
+                      }
+                      const lastColor = (() => {
+                        try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
+                      })();
+                      const verseData = verses.find((v) => v.number === verseNumber);
+                      if (verseData) {
+                        const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
+                        const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
+                        const textStart = normalizedVerse.indexOf(normalizedUnderline);
+                        if (textStart >= 0) {
+                          mutations.addHighlight.mutate({
+                            verseNumber,
+                            color: lastColor,
+                            start: textStart,
+                            end: textStart + normalizedUnderline.length,
                           });
-                          toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
-                        }
-                      }}
-                      onPencilFirstContact={() => {
-                        const onboarded = localStorage.getItem("pencil-onboarded");
-                        if (!onboarded) {
-                          setPocketOpen(true);
-                          localStorage.setItem("pencil-onboarded", "true");
-                        }
-                      }}
-                      onWordCircle={(words, verseNum, anchor) => {
-                        const verseData = verses.find((v) => v.number === verseNum);
-                        if (verseData) {
-                          setReferenceBloom({
-                            x: anchor.x,
-                            y: anchor.y,
-                            word: words,
-                            verseNumber: verseNum,
+                          toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
+                        } else {
+                          mutations.addHighlight.mutate({
+                            verseNumber,
+                            color: lastColor,
                           });
+                          toast.success(`Highlighted verse ${verseNumber}`);
                         }
-                      }}
-                      onUnderlineGesture={(verseNumber, underlinedText) => {
-                        if (!user) {
-                          toast("Please sign in to highlight verses", {
-                            description: "Create a free account to save highlights and annotations",
-                          });
-                          return;
-                        }
-                        const lastColor = (() => {
-                          try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
-                        })();
-                        const verseData = verses.find((v) => v.number === verseNumber);
-                        if (verseData) {
-                          const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
-                          const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
-                          const textStart = normalizedVerse.indexOf(normalizedUnderline);
-                          if (textStart >= 0) {
-                            mutations.addHighlight.mutate({
-                              verseNumber,
-                              color: lastColor,
-                              start: textStart,
-                              end: textStart + normalizedUnderline.length,
-                            });
-                            toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
-                          } else {
-                            // Fallback: highlight the entire verse
-                            mutations.addHighlight.mutate({
-                              verseNumber,
-                              color: lastColor,
-                            });
-                            toast.success(`Highlighted verse ${verseNumber}`);
-                          }
-                        }
-                      }}
-                      onXGesture={handleXGesture}
-                    />
-                  ) : undefined
+                      }
+                    }}
+                    onXGesture={handleXGesture}
+                  />
                 }
               >
                 <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
@@ -2333,7 +2334,7 @@ export function BibleReader() {
                   })}
                 </section>
 
-              </ZoomWrapper>
+              </PaperCanvas>
             </div>
             ) : (
             <motion.div
@@ -2730,8 +2731,26 @@ export function BibleReader() {
           onMarginWidthChange={handleWsMarginWidth}
           canvasBackground={wsCanvasBackground}
           onCanvasBackgroundChange={handleWsCanvasBackground}
+          hideSpacing={studyModeVariant === "margin"}
         />
       )}
+
+      {/* ── Canvas Setup Sheet ── */}
+      <CanvasSetupSheet
+        open={canvasSetupOpen}
+        onOpenChange={setCanvasSetupOpen}
+        bookTitle={currentBook?.title ?? ""}
+        chapterTitle={currentChapter?.id ?? ""}
+        versionAbbr={versions?.find((v) => v.id === versionId)?.localized_abbreviation ?? ""}
+        previewVerses={verses.slice(0, 3)}
+        onConfirm={(spacing) => {
+          setInkTextSpacing(spacing);
+          try { localStorage.setItem("bible_ink_spacing", String(spacing)); } catch {}
+          setStudyMode(true);
+          try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+          setCanvasSetupOpen(false);
+        }}
+      />
 
       {/* ── Eraser Confirmation Dialog ── */}
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
