@@ -154,7 +154,7 @@ export function KeepReadingNav({ onOpenDrawer }: KeepReadingNavProps) {
                 </motion.span>
               )}
             </AnimatePresence>
-          </Link>
+          </a>
         </div>
 
         {/* Right: auth area */}
