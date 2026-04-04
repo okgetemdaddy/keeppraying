@@ -817,7 +817,7 @@ export function BibleReader() {
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [isTouch, studyMode, canvasOpen, journalOpen]);
+  }, [isTouch, studyMode, activeSession, journalOpen]);
 
   const handleInkZoomChange = useCallback((v: number) => {
     setInkZoom(v);
