@@ -1651,9 +1651,10 @@ export function BibleReader() {
   // ── Toolbar action handlers ──
   const handleHighlight = useCallback(
     (color: string, verseNumber: number, start?: number, end?: number) => {
+      markGuestChange();
       mutations.addHighlight.mutate({ verseNumber, color, start, end });
     },
-    [mutations.addHighlight],
+    [mutations.addHighlight, markGuestChange],
   );
 
   const handleToggleBookmark = useCallback(
