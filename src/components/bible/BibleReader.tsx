@@ -2731,8 +2731,26 @@ export function BibleReader() {
           onMarginWidthChange={handleWsMarginWidth}
           canvasBackground={wsCanvasBackground}
           onCanvasBackgroundChange={handleWsCanvasBackground}
+          hideSpacing={studyModeVariant === "margin"}
         />
       )}
+
+      {/* ── Canvas Setup Sheet ── */}
+      <CanvasSetupSheet
+        open={canvasSetupOpen}
+        onOpenChange={setCanvasSetupOpen}
+        bookTitle={currentBook?.title ?? ""}
+        chapterTitle={currentChapter?.id ?? ""}
+        versionAbbr={versions?.find((v) => v.id === versionId)?.localized_abbreviation ?? ""}
+        previewVerses={verses.slice(0, 3)}
+        onConfirm={(spacing) => {
+          setInkTextSpacing(spacing);
+          try { localStorage.setItem("bible_ink_spacing", String(spacing)); } catch {}
+          setStudyMode(true);
+          try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+          setCanvasSetupOpen(false);
+        }}
+      />
 
       {/* ── Eraser Confirmation Dialog ── */}
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
