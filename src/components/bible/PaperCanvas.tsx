@@ -18,9 +18,8 @@ const GRACE_MS = 180;
 const BOUNDARY_FRACTION = 0.6;
 const OVERSCROLL_RESISTANCE = 0.3;
 
-/* ── Intent locking thresholds ── */
+/* ── Intent locking thresholds (2-finger: pan/zoom only) ── */
 const ZOOM_THRESHOLD = 15;    // px finger distance change
-const ROTATE_THRESHOLD = 8;   // degrees angle change
 const PAN_THRESHOLD = 12;     // px midpoint movement
 
 /* ── Rubber-banding helper ── */
