@@ -3209,6 +3209,8 @@ export function BibleReader() {
         currentChapterIdx={chapterIdx}
         onStartSession={(config) => {
           console.log("Canvas session config:", config);
+          isNewSessionRef.current = true;
+          inkHistory.replaceStrokes([]);
           setActiveSessionId(config.sessionId ?? null);
           setActiveSessionConfig(config);
           setInkTextSpacing(config.typography.lineSpacing);
