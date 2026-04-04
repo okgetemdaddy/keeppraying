@@ -1,79 +1,76 @@
 
 
-## Strip Zoom Feedback Loop & Pan Momentum from PaperCanvas
+## Three Fixes: Pencil Touch Guard, Onboarding Drawer, Toast Positioning
 
-Two root causes, two fixes: (1) zoom snaps to 1.0 because the sync `useEffect` re-fires and resets the spring, (2) pan flicks because momentum captures messy finger-lift velocity.
+### Fix 1 — Guard PaperCanvas touch handlers against pencil events
 
-### Fix 1 — Remove ALL React state from zoom in PaperCanvas
+**File:** `src/components/bible/PaperCanvas.tsx`
 
-**PaperCanvas.tsx:**
-- Delete `zoom` and `onZoomChange` from `PaperCanvasProps` interface and destructured props
-- Delete `internalZoomUpdate` ref (line 147)
-- Delete the zoom sync `useEffect` (lines 163-169)
-- Change spring init from `scale: zoom` to `scale: 1` (line 153)
-- Change `committedScale` init from `useRef(zoom)` to `useRef(1)` (line 141)
-- In `onTouchEnd`, delete the zoom-to-React-state sync block (lines 335-340)
-- In desktop wheel handler, delete `internalZoomUpdate.current = true` and `onZoomChange(nextScale)` (lines 376-377)
-- Remove `onZoomChange` from touch useEffect deps: change `[onZoomChange, api]` to `[api]` (line 364)
+Add a `gestureStarted` flag alongside existing tracking variables (around line 127). Guard both `onTouchStart` and `onTouchEnd`:
 
-### Fix 2 — Remove pan momentum entirely
-
-**PaperCanvas.tsx:**
-- Delete constants: `SNAPBACK_CONFIG`, `VELOCITY_BUFFER_SIZE`, `MAX_VELOCITY`, `MIN_VELOCITY`, `MOMENTUM_FACTOR`, `GRACE_MS`, `BOUNDARY_FRACTION`, `OVERSCROLL_RESISTANCE`
-- Delete `rubberBand` helper function (lines 26-50)
-- Delete `clampVelocity` helper (lines 99-100)
-- Delete `velocityBuffer`, `graceTimer`, `clearGrace`, `applyPanMomentum` from inside the touch useEffect
-- Replace pan block in `onTouchMove` with raw position update (no rubber-banding):
+- In `onTouchStart`: set `gestureStarted = true` only when entering the 2-finger or 3-finger branches
+- Replace `onTouchEnd` with:
 ```ts
-if (intent === "pan") {
-  const dx = midpoint.x - lastMidpoint.x;
-  const dy = midpoint.y - lastMidpoint.y;
-  api.set({
-    x: spring.x.get() + dx,
-    y: spring.y.get() + dy,
-  });
-}
-```
-- Replace `onTouchEnd` with minimal reset (no momentum, no grace timer):
-```ts
-const onTouchEnd = () => {
+const onTouchEnd = (e: TouchEvent) => {
+  if (!gestureStarted) return;
+  if (e.touches.length > 0) return; // still fingers on screen
+  gestureStarted = false;
   gestureType = "none";
   intent = "none";
   accumulatedPan = 0;
   accumulatedZoom = 0;
 };
 ```
-- In desktop wheel handler, remove rubber-banding from vertical scroll — use simple `api.set({ y: ... })` instead of `api.start` with snapback config
 
-### Fix 3 — Remove zoom slider from toolbars
+This prevents pencil lifts (single-touch events) from resetting gesture tracking mid-pinch.
 
-**iPadStudyToolbar.tsx:**
-- Delete the zoom slider section from the secondary row (ZoomIn icon, Slider, percentage display — lines 320-331)
-- Remove `zoom` and `onZoomChange` from the component's props interface
+### Fix 2 — Remove pencil onboarding drawer open in PaperCanvas mode
 
-**MobileStudyToolbar.tsx:**
-- Delete the zoom section (lines 267-282)
-- Remove `zoom` and `onZoomChange` from the component's props interface
+**File:** `src/components/bible/BibleReader.tsx` (lines 2489-2495)
 
-**BibleReader.tsx:**
-- Remove `zoom={inkZoom}` and `onZoomChange={handleInkZoomChange}` from `<PaperCanvas>` render (line 2432-2433)
-- Remove `zoom={inkZoom}` and `onZoomChange={handleInkZoomChange}` from `<IPadStudyToolbar>` render (lines 2931-2932)
-- Remove `zoom={inkZoom}` and `onZoomChange={handleInkZoomChange}` from `<MobileStudyToolbar>` render (lines 2962-2963)
-- Keep `inkZoom` state and `handleInkZoomChange` — `InkOverlay` still uses them (line 2441)
+Change the `onPencilFirstContact` callback to set the localStorage flag without opening the pocket drawer:
 
-### Result after changes
+```tsx
+onPencilFirstContact={() => {
+  const onboarded = localStorage.getItem("pencil-onboarded");
+  if (!onboarded) {
+    localStorage.setItem("pencil-onboarded", "true");
+  }
+}}
+```
 
-The gesture system becomes dead simple:
-- 2-finger pinch → `api.set({ scale })` directly, no React state
-- 2-finger pan → `api.set({ x, y })` directly, no momentum
-- 3-finger rotate → `api.set({ rotation })` directly
-- Finger lift → nothing happens, canvas stays put
-- No useEffect syncing zoom. No velocity buffers. No grace periods. No rubber-banding.
+### Fix 3 — Reposition toasts to top-right with premium styling
 
-| File | Changes |
-|------|---------|
-| `src/components/bible/PaperCanvas.tsx` | Remove zoom props, sync effect, internalZoomUpdate, momentum system, rubber-banding |
-| `src/components/bible/iPadStudyToolbar.tsx` | Remove zoom slider and zoom/onZoomChange props |
-| `src/components/bible/MobileStudyToolbar.tsx` | Remove zoom slider and zoom/onZoomChange props |
-| `src/components/bible/BibleReader.tsx` | Remove zoom/onZoomChange from PaperCanvas & toolbar renders |
+**File:** `src/components/ui/sonner.tsx`
+
+Update the `Sonner` component to use `position="top-right"` and add premium styling via `toastOptions.style`:
+
+```tsx
+<Sonner
+  theme="system"
+  className="toaster group"
+  position="top-right"
+  offset={16}
+  toastOptions={{
+    style: {
+      marginTop: '60px',
+      borderRadius: '12px',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+      padding: '12px 16px',
+      fontSize: '13px',
+    },
+    classNames: { /* keep existing classNames */ },
+  }}
+/>
+```
+
+**File:** `src/components/keepreading/KeepReadingShell.tsx` — same `<Sonner>` is rendered here; it imports from `sonner.tsx` so the change propagates automatically.
+
+### Summary
+
+| File | Change |
+|------|--------|
+| `PaperCanvas.tsx` | Add `gestureStarted` flag, guard `onTouchEnd` against pencil lifts |
+| `BibleReader.tsx` | Remove `setPocketOpen(true)` from `onPencilFirstContact` |
+| `sonner.tsx` | Position top-right, add premium toast styling |
 
