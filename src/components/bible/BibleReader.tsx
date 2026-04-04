@@ -886,22 +886,116 @@ export function BibleReader() {
     timerMinutes: activeSessionConfig?.timerMinutes,
   });
 
+  /**
+   * STUDY MODE GATE — entry order is strict, do not reorder.
+   *
+   * Tap "Study Mode"
+   *   → 1. Auth?        No  → /auth               (abort)
+   *   → 2. Premium?     No  → PremiumUpsell        (abort)
+   *   → 3. Session?     Yes → ResumeOrNew          (abort or continue)
+   *   → 4.              No  → CanvasCreationDrawer
+   *                               ↓
+   *                          PaperCanvas
+   *                          + GestureOverlay
+   *                          + SessionHeartbeat
+   *
+   * iPadOS port: gate steps 1-2 map to AppDelegate scene routing.
+   * Step 3 maps to SceneDelegate restoreState(_:) check against CoreData.
+   */
+  const handleStudyModeEntry = useCallback(async () => {
+    // Step 1: Auth
+    if (!user) {
+      navigate("/auth?returnTo=/bible");
+      return;
+    }
+
+    // Step 2: Premium
+    if (userSubscriptionTier !== "premium") {
+      setShowPremiumUpsell(true);
+      return;
+    }
+
+    // Step 3: Resume check
+    const { data: session } = await supabase
+      .from("study_sessions")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["active", "paused"])
+      .order("last_active_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (session) {
+      setExistingSession(session as unknown as StudySession);
+      setShowResumeOrNew(true);
+      return;
+    }
+
+    // Step 4: No existing session — open drawer directly
+    setCanvasCreationOpen(true);
+  }, [user, userSubscriptionTier, navigate]);
+
+  // Keep handleToggleStudyMode for exit-only (turning OFF study mode)
   const handleToggleStudyMode = useCallback((v: boolean) => {
-    if (v && studyModeVariant === "margin") {
-      // Open canvas creation drawer for margin study mode too
-      setCanvasCreationOpen(true);
+    if (v) {
+      // All entry goes through the gate
+      handleStudyModeEntry();
       return;
     }
-    if (v && studyModeVariant === "canvas") {
-      // Open canvas creation drawer for verse extraction
-      setCanvasCreationOpen(true);
-      return;
+    setStudyMode(false);
+    try { localStorage.setItem("bible_study_mode", "false"); } catch {}
+    setCanvasOpen(false);
+    setJournalOpen(false);
+  }, [handleStudyModeEntry]);
+
+  // ── Resume handler ──
+  const handleResumeSession = useCallback(() => {
+    if (!existingSession) return;
+    setShowResumeOrNew(false);
+
+    // Build config from session
+    const s = existingSession;
+    setActiveSessionId(s.id);
+    setActiveSessionConfig({
+      sessionId: s.id,
+      paper: { widthPx: s.paper_width_px, heightPx: s.paper_height_px },
+      typography: {
+        charsPerLine: s.chars_per_line,
+        lineSpacing: parseFloat(s.line_spacing) || 2.4,
+        fontSize: s.font_size_px,
+      },
+      textBox: { x: s.text_x, y: s.text_y, widthPx: s.text_width_px },
+      marginStyle: s.margin_style as "blank" | "ruled" | "dotgrid",
+      timerMinutes: null,
+    } as CanvasSessionConfig);
+
+    setInkTextSpacing(parseFloat(s.line_spacing) || 2.4);
+    try { localStorage.setItem("bible_ink_spacing", String(parseFloat(s.line_spacing) || 2.4)); } catch {}
+    setStudyMode(true);
+    try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+
+    // Mark session active
+    supabase
+      .from("study_sessions")
+      .update({ status: "active", last_active_at: new Date().toISOString() })
+      .eq("id", s.id)
+      .then(() => {});
+  }, [existingSession]);
+
+  // ── Start New handler ──
+  const handleStartNewSession = useCallback(() => {
+    if (existingSession) {
+      // Pause existing session
+      supabase
+        .from("study_sessions")
+        .update({ status: "paused", last_active_at: new Date().toISOString() })
+        .eq("id", existingSession.id)
+        .then(() => {});
     }
-    setStudyMode(v);
-    try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    if (v && studyModeVariant === "journal") setJournalOpen(true);
-    if (!v) { setCanvasOpen(false); setJournalOpen(false); }
-  }, [studyModeVariant]);
+    setExistingSession(null);
+    setShowResumeOrNew(false);
+    setCanvasCreationOpen(true);
+  }, [existingSession]);
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
     try { localStorage.setItem("bible_study_variant", v); } catch {}
