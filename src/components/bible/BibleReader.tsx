@@ -931,17 +931,13 @@ export function BibleReader() {
     crossBunchTranslation,
   );
 
-  // ── Study Mode input routing: allow native pan-y scrolling ──
+  // ── Study Mode scroll behavior ──
   useEffect(() => {
     if (!studyMode || studyModeVariant !== "margin") return;
     const area = readingAreaRef.current;
     if (!area) return;
-
-    area.style.touchAction = "pan-y";
     area.style.overscrollBehavior = "none";
-
     return () => {
-      area.style.touchAction = "";
       area.style.overscrollBehavior = "";
     };
   }, [studyMode, studyModeVariant]);
