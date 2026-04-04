@@ -2417,7 +2417,11 @@ export function BibleReader() {
                 variant={studyMode ? "default" : "ghost"}
                 size="sm"
                 onClick={() => {
-                  handleToggleStudyMode(!studyMode);
+                  if (studyMode) {
+                    handleToggleStudyMode(false);
+                  } else {
+                    handleStudyModeEntry();
+                  }
                   setStudyNavOpen(false);
                 }}
                 className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
