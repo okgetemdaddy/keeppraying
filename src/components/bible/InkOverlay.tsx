@@ -241,14 +241,13 @@ export function InkOverlay({
     rafIdRef.current = requestAnimationFrame(renderLoop);
   }, []);
 
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-
   /* ── Pointer handlers ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      setDebugLog(prev => [...prev.slice(-8), `DOWN: type=${e.pointerType} pressure=${e.pressure.toFixed(3)} button=${e.button} target=${(e.target as Element).tagName} time=${Date.now()}`]);
       if (e.pointerType === "pen") {
-        if (e.pressure === 0) return;
+        // No pressure check — Apple Pencil Pro reports pressure=0 on pointerdown
+        // in iPadOS Safari. Real pressure arrives on first pointermove.
+        // Hover is distinguished by pointerdown never firing during hover.
         lastPenDownRef.current = Date.now();
         // Pen events: capture and prevent passthrough
         e.preventDefault();
