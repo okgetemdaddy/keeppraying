@@ -305,6 +305,17 @@ export function IPadStudyToolbar({
           )}
         </AnimatePresence>
 
+        {/* Gesture help — "?" button */}
+        {onShowGestureHelp && (
+          <button
+            onClick={onShowGestureHelp}
+            className="flex items-center justify-center w-8 h-8 hover:bg-muted rounded-xl text-muted-foreground transition-colors shrink-0"
+            title="Learn canvas gestures"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
+        )}
+
         {/* Collapse */}
         <button
           onClick={() => setExpanded(false)}
