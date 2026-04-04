@@ -616,7 +616,6 @@ export type Database = {
           author_era: string | null
           created_at: string
           created_by: string | null
-          extended_text: string | null
           id: string
           labels: string[] | null
           prayer_text: string
@@ -629,7 +628,6 @@ export type Database = {
           author_era?: string | null
           created_at?: string
           created_by?: string | null
-          extended_text?: string | null
           id?: string
           labels?: string[] | null
           prayer_text: string
@@ -642,7 +640,6 @@ export type Database = {
           author_era?: string | null
           created_at?: string
           created_by?: string | null
-          extended_text?: string | null
           id?: string
           labels?: string[] | null
           prayer_text?: string
