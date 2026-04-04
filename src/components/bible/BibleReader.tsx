@@ -1188,6 +1188,48 @@ export function BibleReader() {
   const verses = chapterData?.verses ?? [];
   const hasVerses = verses.length > 0;
 
+  // ── Implicit Reading Session (deferred — needs currentChapter & hasVerses) ──
+  const ensureReadingSession = useCallback(async () => {
+    if (activeReadingSessionId || !user?.id || !bookUsfm || !currentChapter) return;
+    if (activeSessionId) return;
+    const { data, error } = await supabase
+      .from("study_sessions")
+      .insert({
+        user_id: user.id,
+        book_usfm: bookUsfm,
+        chapter_id: parseInt(currentChapter.id, 10),
+        status: "active",
+        session_type: "reading",
+        paper_width_px: 0, paper_height_px: 0, chars_per_line: 0,
+        line_spacing: "1.6", margin_style: "none", font_size_px: textSize,
+        text_x: 0, text_y: 0, text_width_px: 0,
+      } as any)
+      .select("id")
+      .single();
+    if (!error && data) {
+      setActiveReadingSessionId(data.id);
+      readingStartedRef.current = true;
+    }
+  }, [activeReadingSessionId, user?.id, bookUsfm, currentChapter, activeSessionId, textSize]);
+
+  // Auto-start reading session after 30s sustained reading
+  useEffect(() => {
+    if (!user?.id || activeReadingSessionId || activeSessionId || !hasVerses) return;
+    readingStartTimerRef.current = setTimeout(() => { ensureReadingSession(); }, READING_START_DELAY_MS);
+    return () => { if (readingStartTimerRef.current) clearTimeout(readingStartTimerRef.current); };
+  }, [user?.id, bookUsfm, chapterIdx, hasVerses, activeReadingSessionId, activeSessionId, ensureReadingSession]);
+
+  // End reading session on unmount
+  useEffect(() => {
+    return () => {
+      if (activeReadingSessionId) {
+        supabase.from("study_sessions").update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() }).eq("id", activeReadingSessionId).then(() => {});
+        supabase.functions.invoke("summarize-session", { body: { session_id: activeReadingSessionId } }).catch(() => {});
+      }
+    };
+  }, [activeReadingSessionId]);
+  // iPadOS: Implicit reading sessions map to BGAppRefreshTask with CoreData sync
+
   // ── Chapter annotations (handwriting) ──
   const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
   const { data: journalAnnotations } = useJournalAnnotations(bookUsfm, currentChapter?.id);
