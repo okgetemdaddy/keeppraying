@@ -361,39 +361,31 @@ export default function PrayerAssist() {
       {/* Input or Guest Banner — offset above mobile tab bar + safe area */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 py-4 max-w-3xl">
-          {showGuestBanner ? (
-            <div className="text-center space-y-4 py-3">
-              <p className="text-sm text-foreground/80 leading-relaxed max-w-md mx-auto">
-                We loved exploring that passage with you. ✦ Create a free account to continue your journey — save prayers, dive deeper into Scripture, and let PrayerAssist walk with you every day.
-              </p>
-              <p className="verse-text text-xs italic text-muted-foreground">
-                "For where two or three gather in my name, there am I with them." — <VerseLink reference="Matthew 18:20" />
-              </p>
-              <Button asChild className="rounded-xl bg-gradient-gold text-white hover:opacity-90 shadow-gold">
-                <Link to="/auth">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign Up Free
-                </Link>
+          <div className="flex gap-2 items-end">
+            <Textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
+              placeholder={guestLimited ? "Sign up to continue your conversation…" : "Ask for prayer guidance, Bible answers, or help crafting a prayer…"}
+              className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
+              rows={1}
+              disabled={guestLimited}
+            />
+            {!guestLimited && !user && (
+              <Button
+                type="button"
+                onClick={toggleListening}
+                variant="outline"
+                className={`h-12 w-12 p-0 rounded-xl flex-shrink-0 ${listening ? "border-primary text-primary animate-pulse" : ""}`}
+              >
+                {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
-            </div>
-          ) : (
-            <>
-              <div className="flex gap-3 items-end">
-                <Textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                  placeholder="Ask for prayer guidance, Bible answers, or help crafting a prayer…"
-                  className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
-                  rows={1}
-                />
-                <Button onClick={() => send(input)} disabled={loading || !input.trim()} className="h-12 w-12 p-0 rounded-xl flex-shrink-0 bg-foreground text-background hover:bg-foreground/90">
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-center text-xs text-muted-foreground mt-2">PrayerAssist guides your prayer journey. Always verify with Scripture.</p>
-            </>
-          )}
+            )}
+            <Button onClick={() => send(input)} disabled={loading || !input.trim() || guestLimited} className="h-12 w-12 p-0 rounded-xl flex-shrink-0 bg-foreground text-background hover:bg-foreground/90">
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-2">PrayerAssist guides your prayer journey. Always verify with Scripture.</p>
         </div>
       </div>
     </div>
