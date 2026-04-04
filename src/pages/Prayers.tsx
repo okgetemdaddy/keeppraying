@@ -843,7 +843,7 @@ export default function Prayers() {
                     color: pal.text
                   }}
                 >
-                  #{tag}
+                  {tag}
                 </motion.button>
               );
             })}
