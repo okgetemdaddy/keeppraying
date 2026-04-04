@@ -1,22 +1,33 @@
 
 
-## Fix: Apple Pencil Pro Drawing Blocked by Width/Height Check
+## Fix: Glimmer Visible During Pause
 
 ### Problem
-Line 248 in `InkOverlay.tsx` rejects pen events where `e.width > 20 || e.height > 20`. Apple Pencil Pro reports larger contact dimensions due to its barrel roll sensor, causing all strokes to be silently dropped.
+The `times` array `[0, 3/43, 3/43]` has duplicate values — framer-motion needs distinct keyframe positions to properly hold opacity at 0. The gradient tail also remains partially visible at `-200%`.
 
-### Fix (one line)
+### Fix
 
-**`src/components/bible/InkOverlay.tsx` — line 248**
+**`src/components/bible/BibleEdgeTabs.tsx` — lines 87-96**
 
-Change:
+Change the keyframes to use a 4-point sequence with a tiny epsilon gap so opacity snaps to 0 right after the sweep ends and stays there:
+
 ```ts
-if (e.pressure < 0.01 || e.width > 20 || e.height > 20) return;
-```
-To:
-```ts
-if (e.pressure < 0.01) return;
+animate={{
+  backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%", "200% 0%"],
+  opacity: [1, 1, 0, 0],
+}}
+transition={{
+  duration: 43,
+  times: [0, 3 / 43, 3.01 / 43, 1],
+  ease: "linear",
+  repeat: Infinity,
+}}
 ```
 
-The pressure check alone filters hover events (pressure: 0). The width/height palm-rejection guard is unnecessary for `pointerType === "pen"` — the browser already classifies the input as a pen, not a palm. No other lines need changes; the move handler at line 289 has no width/height filtering.
+- 0 → 3s: sweep moves across (opacity 1)
+- 3s → 3.01s: opacity snaps to 0 (instant)  
+- 3.01s → 43s: invisible, position resets silently
+- Cycle repeats
+
+One-line-range edit, no other files affected.
 
