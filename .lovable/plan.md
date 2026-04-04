@@ -1,32 +1,24 @@
 
 
-## Fix Session Chapter Index & Display Label
+## Fix: New Sessions Loading Old Ink Strokes
 
-### Changes
+### Problem
+Ink annotations are stored per-chapter (keyed `GEN.1.ink`), not per-session. When a new canvas session is created for a chapter that already has ink, the `useEffect` at line 1140 loads those old strokes into `inkHistory`, causing them to appear on the fresh canvas.
 
-**1. `src/components/bible/CanvasCreationDrawer.tsx` (line 327)**
+### Fix
 
-Change the fallback from `chapterNum` to `chapterNum + 1` so the stored chapter_id is 1-indexed:
+**`src/components/bible/BibleReader.tsx`** — Two changes:
 
-```ts
-chapter_id: typeof selectedChapter?.id === "number" ? selectedChapter.id : chapterNum + 1,
-```
+1. **Clear ink on new session start (~line 3203, inside `onStartSession` callback)**:
+   Add `inkHistory.replaceStrokes([])` when a new session begins from the `CanvasCreationDrawer`, so the canvas starts blank regardless of chapter-level ink in the DB.
 
-**2. `src/components/bible/BibleReader.tsx` (lines 969–971)**
+2. **Guard the ink-load effect (~line 1140) to skip when a fresh session is active**:
+   The `useEffect` that syncs `inkAnnotation` → `inkHistory` should not overwrite a blank canvas when `activeSessionId` exists and the session was just created (not resumed). Add a ref `isNewSession` that is set to `true` in `onStartSession` and `false` in `handleResumeSession`. The ink-load effect skips loading when `isNewSession.current` is `true`.
 
-Look up the human-readable book title from `index?.books` and use it in `verseRange`. Add a TODO comment for multi-book sessions:
-
-```ts
-// TODO: Multi-book sessions — track last_book_usfm and last_chapter_id on session row
-const bookTitle = index?.books?.find(b => b.id === s.book_usfm)?.title ?? s.book_usfm;
-verseRange: s.verse_start && s.verse_end
-  ? `${bookTitle} ${s.chapter_id}:${s.verse_start}–${s.verse_end}`
-  : `${bookTitle} ${s.chapter_id}`,
-```
+   For resumed sessions (`handleResumeSession`), ink loading proceeds normally since the user expects to see their previous work.
 
 ### Files
 | File | Change |
 |------|--------|
-| `src/components/bible/CanvasCreationDrawer.tsx` | Fix 0-indexed fallback → `chapterNum + 1` |
-| `src/components/bible/BibleReader.tsx` | Use book title instead of USFM code in session verseRange; add multi-book TODO |
+| `src/components/bible/BibleReader.tsx` | Add `isNewSession` ref; clear ink on new session; guard ink-load effect |
 
