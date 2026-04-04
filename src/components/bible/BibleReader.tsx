@@ -2213,22 +2213,9 @@ export function BibleReader() {
               <ReadingSkeleton />
             </motion.div>
           ) : hasVerses ? (
-            <motion.div
+            studyMode && studyModeVariant === "margin" ? (
+            <div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
-              {...fadeIn}
-              drag={studyMode || tapNavMode ? false : "x"}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.15}
-              onDragEnd={(_e, info) => {
-                // Only respond to touch-based swipes, not pen
-                if (Math.abs(info.offset.x) > 100) {
-                  if (info.offset.x < -100 && canNext) {
-                    setChapterIdx((i) => i + 1);
-                  } else if (info.offset.x > 100 && canPrev) {
-                    setChapterIdx((i) => i - 1);
-                  }
-                }
-              }}
               style={{ fontSize: `${textSize}px` }}
               className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
@@ -2377,7 +2364,78 @@ export function BibleReader() {
                 </section>
 
               </ZoomWrapper>
+            </div>
+            ) : (
+            <motion.div
+              key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
+              {...fadeIn}
+              drag={tapNavMode ? false : "x"}
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_e, info) => {
+                if (Math.abs(info.offset.x) > 100) {
+                  if (info.offset.x < -100 && canNext) {
+                    setChapterIdx((i) => i + 1);
+                  } else if (info.offset.x > 100 && canPrev) {
+                    setChapterIdx((i) => i - 1);
+                  }
+                }
+              }}
+              style={{ fontSize: `${textSize}px` }}
+              className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+            >
+              <ZoomWrapper
+                zoom={1}
+                textSpacing={1.6}
+                className="relative"
+                textAlign="left"
+                marginWidth={0}
+                canvasBackground="none"
+                studyMode={false}
+              >
+                <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                  {verses.map((v) => {
+                    const vNotes = noteMap.get(v.number) ?? [];
+                    return (
+                      <React.Fragment key={v.number}>
+                        <EnrichedVerse
+                          verse={v}
+                          highlights={highlightMap.get(v.number) ?? []}
+                          notes={vNotes}
+                          bookmark={bookmarkMap.get(v.number)}
+                          bunchItems={bunchMap.get(v.number) ?? []}
+                          bunchColorMap={bunchColorMap}
+                          bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                          mode={mode}
+                          isSelected={selectedVerses.has(v.number)}
+                          hideBunches={hideBunchRefs}
+                          onTapSelect={handleTapSelect}
+                          studyMode={false}
+                          verseAnnotation={annotationMap.get(v.number) ?? null}
+                          onAnnotationSave={handleAnnotationSave}
+                          verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                          highlightStyle={highlightStyle}
+                          previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                          onLongPressVerseNumber={user ? handleCrossRef : undefined}
+                        />
+                        <AnimatePresence>
+                          {noteInputVerse === v.number && (
+                            <NoteInputPanel
+                              verseNumber={v.number}
+                              existingContent={vNotes[0]?.note_content}
+                              existingId={vNotes[0]?.id}
+                              onSave={handleSaveNote}
+                              onCancel={() => setNoteInputVerse(null)}
+                            />
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    );
+                  })}
+                </section>
+              </ZoomWrapper>
             </motion.div>
+            )
           ) : !versionId ? (
             <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <BookOpen className="mb-4 h-12 w-12 opacity-40" />

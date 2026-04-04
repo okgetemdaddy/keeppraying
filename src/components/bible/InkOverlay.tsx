@@ -244,6 +244,7 @@ export function InkOverlay({
   /* ── Pointer handlers ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
+      console.log('[INK] pointerdown', e.pointerType, 'pressure:', e.pressure, 'button:', e.button, 'target:', (e.target as Element).tagName);
       if (e.pointerType === "pen") {
         if (e.pressure === 0) return;
         lastPenDownRef.current = Date.now();
@@ -609,7 +610,10 @@ export function InkOverlay({
         pointerEvents: "auto",
         overflow: "visible",
       }}
-      onPointerDown={handlePointerDown}
+      onPointerDown={(e) => {
+        console.log('[INK-SVG] raw pointerdown', e.pointerType, e.pressure);
+        handlePointerDown(e);
+      }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
