@@ -3036,24 +3036,7 @@ export function BibleReader() {
         />
       )}
 
-      {/* ── Canvas Setup Sheet ── */}
-      <CanvasSetupSheet
-        open={canvasSetupOpen}
-        onOpenChange={setCanvasSetupOpen}
-        bookTitle={currentBook?.title ?? ""}
-        chapterTitle={currentChapter?.id ?? ""}
-        versionAbbr={versions?.find((v) => v.id === versionId)?.localized_abbreviation ?? ""}
-        previewVerses={verses.slice(0, 3)}
-        onConfirm={(spacing) => {
-          setInkTextSpacing(spacing);
-          try { localStorage.setItem("bible_ink_spacing", String(spacing)); } catch {}
-          setStudyMode(true);
-          try { localStorage.setItem("bible_study_mode", "true"); } catch {}
-          setCanvasSetupOpen(false);
-        }}
-      />
-
-      {/* ── Canvas Creation Drawer ── */}
+      {/* ── Canvas Creation Drawer (replaces CanvasSetupSheet) ── */}
       <CanvasCreationDrawer
         open={canvasCreationOpen}
         onOpenChange={setCanvasCreationOpen}
@@ -3063,11 +3046,24 @@ export function BibleReader() {
         currentChapterIdx={chapterIdx}
         onStartSession={(config) => {
           console.log("Canvas session config:", config);
+          setActiveSessionId(config.sessionId ?? null);
+          setActiveSessionConfig(config);
           setInkTextSpacing(config.typography.lineSpacing);
           try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
           setStudyMode(true);
           try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+
+          // Show gesture overlay for first-time users
+          if (shouldShowGestureOverlay(0)) {
+            setTimeout(() => setGestureOverlayOpen(true), 600);
+          }
         }}
+      />
+
+      {/* ── Gesture Education Overlay ── */}
+      <GestureEducationOverlay
+        open={gestureOverlayOpen}
+        onDismiss={() => setGestureOverlayOpen(false)}
       />
 
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
