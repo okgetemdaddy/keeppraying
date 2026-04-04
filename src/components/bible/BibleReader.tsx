@@ -1945,6 +1945,7 @@ export function BibleReader() {
           onSuggestionsClick={() => setSuggestionDrawerOpen(true)}
           onIPadClick={() => setWaitlistDrawerOpen(true)}
           showIPad={!isIPhone}
+          hidden={focusMode}
         />
         <div className="mx-auto max-w-3xl px-4 py-2 space-y-1.5">
           {/* ── Row 1: Version · Book · Chapter ── */}
