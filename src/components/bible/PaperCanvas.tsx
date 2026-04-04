@@ -224,7 +224,6 @@ export function PaperCanvas({
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        gestureActive.current = true;
         api.stop();
 
         gestureType = "two-finger";
