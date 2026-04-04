@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { usePaperCamera } from "@/components/bible/PaperCanvasContext";
 
 import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
