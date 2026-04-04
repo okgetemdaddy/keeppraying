@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useGesture } from "@use-gesture/react";
 import type { TextAlign, CanvasBackground } from "@/components/bible/ZoomWrapper";
+import { PaperCanvasContext } from "@/components/bible/PaperCanvasContext";
 
 /* ── Constants ── */
 const PAPER_W = 1056; // 11in × 96dpi
@@ -263,7 +264,7 @@ export function PaperCanvas({
   const marginPercent = marginWidth;
 
   return (
-    <>
+    <PaperCanvasContext.Provider value={{ camera: transformState, deskRef }}>
       {/* Desk surface */}
       <div
         ref={deskRef}
@@ -330,7 +331,7 @@ export function PaperCanvas({
           )}
         </div>
       </div>
-    </>
+    </PaperCanvasContext.Provider>
   );
 }
 
