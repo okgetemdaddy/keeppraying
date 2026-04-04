@@ -460,9 +460,10 @@ export function InkOverlay({
         wordEls.forEach((el) => {
           const rect = el.getBoundingClientRect();
           const elCenterX = rect.left + rect.width / 2;
-          const elBottom = rect.bottom;
+          const elMidY = rect.top + rect.height / 2;
+          const elBottomPlusSlack = rect.bottom + rect.height;
 
-          if (elCenterX >= startX && elCenterX <= endX && Math.abs(avgY - elBottom) < rect.height * 0.8) {
+          if (elCenterX >= startX && elCenterX <= endX && avgY >= elMidY && avgY <= elBottomPlusSlack) {
             underlinedWords.push(el.getAttribute("data-word") || "");
             underlinedVerse = parseInt(el.getAttribute("data-verse") || "0", 10);
           }
