@@ -972,9 +972,17 @@ export function BibleReader() {
 
     const onTouchMove = (e: TouchEvent) => {
       if (!isTwoFinger || e.touches.length !== 2) return;
+      e.preventDefault();
       const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const deltaY = lastTwoFingerY - currentY;
-      window.scrollBy(0, deltaY);
+
+      // Find nearest scrollable ancestor, fall back to window
+      const scrollTarget = area.closest('[style*="overflow"]') || area.parentElement || window;
+      if (scrollTarget instanceof HTMLElement) {
+        scrollTarget.scrollTop += deltaY * 2.5;
+      } else {
+        window.scrollBy(0, deltaY * 2.5);
+      }
       lastTwoFingerY = currentY;
     };
 
@@ -983,7 +991,7 @@ export function BibleReader() {
     };
 
     area.addEventListener("touchstart", onTouchStart, { passive: true });
-    area.addEventListener("touchmove", onTouchMove, { passive: true });
+    area.addEventListener("touchmove", onTouchMove, { passive: false });
     area.addEventListener("touchend", onTouchEnd, { passive: true });
 
     return () => {
@@ -2305,15 +2313,24 @@ export function BibleReader() {
                         })();
                         const verseData = verses.find((v) => v.number === verseNumber);
                         if (verseData) {
-                          const textStart = verseData.text.indexOf(underlinedText);
+                          const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
+                          const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
+                          const textStart = normalizedVerse.indexOf(normalizedUnderline);
                           if (textStart >= 0) {
                             mutations.addHighlight.mutate({
                               verseNumber,
                               color: lastColor,
                               start: textStart,
-                              end: textStart + underlinedText.length,
+                              end: textStart + normalizedUnderline.length,
                             });
-                            toast.success(`Highlighted: "${underlinedText.slice(0, 30)}${underlinedText.length > 30 ? "…" : ""}"`);
+                            toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
+                          } else {
+                            // Fallback: highlight the entire verse
+                            mutations.addHighlight.mutate({
+                              verseNumber,
+                              color: lastColor,
+                            });
+                            toast.success(`Highlighted verse ${verseNumber}`);
                           }
                         }
                       }}
