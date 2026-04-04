@@ -1,78 +1,84 @@
 
 
-## Canvas Creation Drawer — Full-Screen Split-Screen Modal
+## Classical Prayers Vault Redesign + /classical Page
 
 ### Overview
-Replace the current `CanvasSetupSheet` (bottom sheet) with a premium full-screen split-screen drawer for creating isolated verse study canvases. Left pane = dark control panel, right pane = live WYSIWYG canvas preview with a draggable/resizable text bounding box.
+Three-part redesign: (1) upgrade ClassicalPrayersLibrary.tsx to a premium archival manuscript vault UI, (2) update PrayerResourcesDrawer.tsx classical tab, (3) create a new standalone /classical page with Grok-powered semantic search.
 
-### Architecture
+### 1. ClassicalPrayersLibrary.tsx — Manuscript Vault UI
 
-```text
-┌──────────────────────────────────────────────────────────┐
-│  CanvasCreationDrawer (fixed inset-0, z-[100])           │
-│ ┌────────────────┬───────────────────────────────────────┐│
-│ │ Left Pane 35%  │  Right Pane 65%                      ││
-│ │ bg-zinc-950     │  bg-zinc-900 (dark backdrop)         ││
-│ │                │                                       ││
-│ │ Verse Selector │  Scaled white canvas div              ││
-│ │ Paper Size     │  ┌─────────────────────┐              ││
-│ │ Chars/Line     │  │ Draggable/Resizable │              ││
-│ │ Line Spacing   │  │ Text Bounding Box   │              ││
-│ │                │  │ (dashed blue border) │              ││
-│ │ [Start Session]│  └─────────────────────┘              ││
-│ └────────────────┴───────────────────────────────────────┘│
-└──────────────────────────────────────────────────────────┘
+**Grid Architecture:**
+- Replace `space-y-2` list with CSS Grid: `grid grid-cols-1 md:grid-cols-2 gap-4`
+- Each card gets staggered heights via content length → masonry-mimicking effect
+- Cards use `break-inside-avoid` inside a `columns-1 md:columns-2` CSS columns layout for true masonry
+
+**Typography Upgrade:**
+- Prayer text: `font-display italic leading-loose text-[15px]` (Playfair Display serif)
+- Author/era metadata: `font-body text-xs tracking-wider uppercase text-muted-foreground`
+- Drop cap on first letter: `first-letter:text-4xl first-letter:font-display first-letter:float-left first-letter:mr-2`
+
+**Apple Pencil Hover States:**
+- Card: `hover:shadow-lg hover:border-primary/30 hover:scale-[1.01] transition-all duration-300 ease-out`
+- Subtle gradient border on hover via `hover:ring-1 hover:ring-primary/20`
+- `// TODO: iPadOS Port - Bind Apple Pencil squeeze event here to trigger AI historical context popover`
+
+**VerseLinks Integration:**
+- Import `renderWithVerseLinks` from `@/lib/renderWithVerseLinks`
+- Replace raw `{prayer.prayer_text}` and `{prayer.extended_text}` with `renderWithVerseLinks(prayer.prayer_text)` — this auto-detects Scripture references and renders them as interactive VerseLink components (which already use the Grok-powered verse-summary edge function)
+
+### 2. PrayerResourcesDrawer.tsx — Classical Tab Update
+
+- Update `PrayerCard` component: add `font-display italic` for classical variant
+- Change `line-clamp-3` to `line-clamp-4` as specified
+- Apply `renderWithVerseLinks(text)` to prayer text rendering
+- Add hover states matching the vault aesthetic
+
+### 3. New /classical Page — Standalone Classical Prayers Experience
+
+**File:** `src/pages/Classical.tsx`
+
+**Layout:**
+- Full-page premium dark/cream aesthetic with hero section
+- Hero: ornamental header "The Manuscript Vault" with decorative Scroll icon, subtitle about the archival collection
+- Search bar: prominent, centered, with placeholder "Search by author, theme, or Scripture…"
+
+**Grok-Powered Semantic Search:**
+- New edge function `supabase/functions/classical-search/index.ts`
+- Accepts `{ query: string }` — uses Grok API to understand sentiment/intent, then constructs a semantic search
+- Flow: (1) Grok interprets the query to extract keywords, themes, Scripture refs, and sentiment, (2) queries `classical_prayers` table with intelligent filtering, (3) falls back to Gemini Flash via Lovable AI Gateway if Grok fails
+- Returns ranked results with a `relevance_reason` explaining why each prayer matches
+
+**Grid:**
+- Same masonry columns layout as the library component
+- Cards are full-featured: expandable, with VerseLinks, save-to-board, labels
+- Filters: era chips (Early Church, Medieval, Reformation, Modern), label-based filtering
+
+**Route:** Add `<Route path="/classical" element={<Classical />} />` in App.tsx
+
+### 4. Edge Function: classical-search
+
 ```
+POST /classical-search
+Body: { query: string, era?: string, labels?: string[] }
 
-### New File: `src/components/bible/CanvasCreationDrawer.tsx`
-
-**Props:**
-- `open`, `onOpenChange` — visibility control
-- `bibleId` — current version ID for verse fetching
-- `books` — book index for selectors
-- `onStartSession(config)` — emits the JSON configuration
-
-**Left Pane Controls:**
-1. **Verse Selector** — Book dropdown + chapter dropdown + "from verse" / "to verse" number inputs. Fetches verse text via existing `useBibleChapterVerses` hook.
-2. **Paper Size** — Dropdown presets (Letter 8.5×11, A4, Square 8×8, Tabloid 11×17) + "Custom" option that reveals width/height sliders (4–17 inches).
-3. **Characters Per Line** — Slider (20–80), controls the text block width relative to canvas.
-4. **Line Spacing** — Slider (1.0×–3.0×, step 0.1), controls interlinear space.
-
-**Right Pane Preview:**
-- Dark neutral backdrop (`bg-zinc-900`).
-- White div sized to the exact aspect ratio of the selected paper dimensions, CSS-scaled via `transform: scale(fitScale)` to fit the pane.
-- **Text Bounding Box**: Instead of `react-rnd` (not installed), implement a lightweight custom draggable/resizable div using pointer events. The box has `border-2 border-dashed border-blue-500` when active, with 8 resize handles (corners + sides) as small solid blue squares. Dragging moves the box; dragging handles resizes it. Text reflows to fit the new width.
-- Verses render inside the box with the selected typography settings (font size derived from chars-per-line, line spacing applied).
-
-**Data Output:**
-"Start Session" button emits:
-```ts
-interface CanvasSessionConfig {
-  verses: { number: number; text: string }[];
-  verseRange: string; // e.g. "Romans 8:1-4"
-  paper: { widthIn: number; heightIn: number };
-  textBox: { x: number; y: number; width: number; height: number }; // in inches
-  typography: { charsPerLine: number; lineSpacing: number };
-}
+1. Call Grok to interpret query → extract themes, Scripture refs, sentiment
+2. Build Supabase query with intelligent OR conditions
+3. If Grok fails → fall back to Lovable AI Gateway (Gemini Flash)
+4. Return { results: ClassicalPrayer[], interpretation: string }
 ```
-
-### Mobile Handling
-On mobile (`useIsMobile()`), stack the panes vertically — controls on top (collapsible accordion sections), preview below. The preview auto-scrolls into view when settings change.
-
-### Integration: `src/components/bible/BibleReader.tsx`
-- Add new state `canvasCreationOpen` and render `CanvasCreationDrawer` alongside the existing `CanvasSetupSheet`.
-- The existing `CanvasSetupSheet` remains for the "margin" study mode variant. The new drawer is for the "extract verses" flow (triggered from a new entry point — e.g. a toolbar button or context menu action on selected verses).
-- `onStartSession` handler receives the config JSON object, stores it in state, and initializes `PaperCanvas` with the custom dimensions and text layout.
 
 ### Files
 
 | File | Action |
 |------|--------|
-| `src/components/bible/CanvasCreationDrawer.tsx` | **Create** — full-screen split-screen modal with all controls and WYSIWYG preview |
-| `src/components/bible/BibleReader.tsx` | **Edit** — add state + render the new drawer, wire up entry point |
+| `src/components/ClassicalPrayersLibrary.tsx` | **Edit** — masonry grid, serif typography, hover states, VerseLinks, TODO comments |
+| `src/components/keepreading/PrayerResourcesDrawer.tsx` | **Edit** — classical tab formatting, line-clamp-4, VerseLinks |
+| `src/pages/Classical.tsx` | **Create** — standalone /classical page with hero, Grok search, masonry grid |
+| `supabase/functions/classical-search/index.ts` | **Create** — Grok-powered semantic search with Gemini fallback |
+| `src/App.tsx` | **Edit** — add /classical route |
 
-### Technical Notes
-- Custom drag/resize implementation avoids adding `react-rnd` dependency. Uses `onPointerDown` → `onPointerMove` → `onPointerUp` pattern with `setPointerCapture` for reliable tracking.
-- Canvas coordinates stored in inches (paper-relative), converted to pixels at 96 DPI for preview rendering.
-- The existing `useBibleChapterVerses` hook handles verse fetching. The drawer composes book/chapter/verse selectors from the `books` index prop.
+### TODO Comments Placement
+- Each prayer card: `// TODO: iPadOS Port - Bind Apple Pencil squeeze event here to trigger AI historical context popover`
+- Search input: `// TODO: iPadOS Port - Support Scribble handwriting input for search`
+- Card long-press area: `// TODO: iPadOS Port - Bind long-press for quick-save context menu`
 
