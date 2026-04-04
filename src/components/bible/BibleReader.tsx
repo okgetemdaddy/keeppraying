@@ -943,20 +943,12 @@ export function BibleReader() {
       }
     };
 
-    const preventPenScroll = (e: PointerEvent) => {
-      if (e.pointerType === "pen") {
-        e.preventDefault();
-      }
-    };
-
     area.addEventListener("touchmove", preventSingleFingerScroll, { passive: false });
-    area.addEventListener("pointerdown", preventPenScroll, { passive: false });
     area.style.touchAction = "none";
     area.style.overscrollBehavior = "none";
 
     return () => {
       area.removeEventListener("touchmove", preventSingleFingerScroll);
-      area.removeEventListener("pointerdown", preventPenScroll);
       area.style.touchAction = "";
       area.style.overscrollBehavior = "";
     };
