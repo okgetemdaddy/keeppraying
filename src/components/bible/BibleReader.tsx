@@ -865,9 +865,9 @@ export function BibleReader() {
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
     try { localStorage.setItem("bible_study_variant", v); } catch {}
-    if (v === "canvas" && studyMode) { setCanvasOpen(true); setJournalOpen(false); }
-    else if (v === "journal" && studyMode) { setJournalOpen(true); setCanvasOpen(false); }
-    else { setCanvasOpen(false); setJournalOpen(false); }
+    if (v === "canvas" && studyMode) { setSessionPickerOpen(true); setJournalOpen(false); }
+    else if (v === "journal" && studyMode) { setJournalOpen(true); setActiveSession(null); }
+    else { setActiveSession(null); setJournalOpen(false); }
   }, [studyMode]);
 
   // Auto-detect Apple Pencil — only on iPads
