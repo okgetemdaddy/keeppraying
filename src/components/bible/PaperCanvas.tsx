@@ -237,11 +237,13 @@ export function PaperCanvas({
         gestureType = "zoom";
         gestureFingerCount = 2;
         gestureDead = false;
+        gestureActive.current = true;
         lastDist = getTouchDist(e.touches);
       } else if (e.touches.length === 3) {
         gestureType = "pan";
         gestureFingerCount = 3;
         gestureDead = false;
+        gestureActive.current = true;
         lastMidpoint = getMidpoint3(e.touches);
         lastAngle = getAngle3(e.touches);
         velocityBuffer.length = 0;
