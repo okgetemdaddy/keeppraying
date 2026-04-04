@@ -612,8 +612,9 @@ export function InkOverlay({
       <svg
         ref={svgRef}
         className="absolute inset-0 z-10"
-        width="100%"
-        height="100%"
+        width={canvasWidth ?? "100%"}
+        height={canvasHeight ?? "100%"}
+        viewBox={canvasWidth && canvasHeight ? `0 0 ${canvasWidth} ${canvasHeight}` : undefined}
         style={{
           pointerEvents: "none",
           cursor: "crosshair",

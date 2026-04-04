@@ -470,38 +470,6 @@ export function PaperCanvas({
         </animated.div>
       </div>
 
-      {/* Snap to center button */}
-      <button
-        onClick={() => {
-          committedX.current = 0;
-          committedY.current = 0;
-          committedRotation.current = 0;
-          committedScale.current = 1;
-          api.start({ x: 0, y: 0, rotation: 0, scale: 1, config: SNAPBACK_CONFIG });
-          onZoomChange(1);
-        }}
-        style={{
-          position: "fixed",
-          bottom: 140,
-          right: 20,
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(8px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          color: "#fff",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          zIndex: 60,
-          fontSize: 18,
-        }}
-        title="Reset view"
-      >
-        ⌂
-      </button>
     </>
   );
 }
