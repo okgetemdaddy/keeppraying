@@ -264,7 +264,6 @@ export function InkOverlay({
         return;
       }
 
-      if (e.button !== 0) return;
       e.currentTarget.setPointerCapture(e.pointerId);
       isDrawingRef.current = true;
       setSelectedStrokeId(null);

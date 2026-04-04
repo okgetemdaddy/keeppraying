@@ -949,7 +949,6 @@ export function BibleReader() {
 
     return () => {
       area.removeEventListener("touchmove", preventSingleFingerScroll);
-      area.removeEventListener("pointerdown", preventPenScroll);
       area.style.touchAction = "";
       area.style.overscrollBehavior = "";
     };
