@@ -3093,7 +3093,7 @@ export function BibleReader() {
           try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
           setStudyMode(true);
           try { localStorage.setItem("bible_study_mode", "true"); } catch {}
-          setCanvasOpen(true);
+          setActiveSession(config);
         }}
       />
 
