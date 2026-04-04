@@ -277,8 +277,6 @@ export function PaperCanvas({
             const currentScale = spring.scale.get();
             const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
             api.set({ scale: nextScale });
-            lastGestureZoom.current = nextScale;
-            onZoomChange(nextScale);
             lastDist = dist;
           }
         }
