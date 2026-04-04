@@ -352,7 +352,6 @@ export function PaperCanvas({
 
     return () => {
       clearGrace();
-      if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
       el.removeEventListener("gesturestart", prevent);
       el.removeEventListener("gesturechange", prevent);
       el.removeEventListener("touchstart", onTouchStart);
