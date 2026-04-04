@@ -2429,8 +2429,6 @@ export function BibleReader() {
               className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
               <PaperCanvas
-                zoom={inkZoom}
-                onZoomChange={handleInkZoomChange}
                 baseFontSize={textSize}
                 textSpacing={inkTextSpacing}
                 textAlign={wsTextAlign}
@@ -2928,8 +2926,6 @@ export function BibleReader() {
           onPenSizeChange={setInkPenSize}
           penGlow={inkPenGlow}
           onPenGlowChange={handleInkPenGlowChange}
-          zoom={inkZoom}
-          onZoomChange={handleInkZoomChange}
           textSpacing={inkTextSpacing}
           onTextSpacingChange={handleInkTextSpacingChange}
           onUndo={handleInkUndo}
@@ -2959,8 +2955,6 @@ export function BibleReader() {
           onPenSizeChange={setInkPenSize}
           penGlow={inkPenGlow}
           onPenGlowChange={handleInkPenGlowChange}
-          zoom={inkZoom}
-          onZoomChange={handleInkZoomChange}
           textSpacing={inkTextSpacing}
           onTextSpacingChange={handleInkTextSpacingChange}
           onUndo={handleInkUndo}
