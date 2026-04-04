@@ -241,10 +241,12 @@ export function InkOverlay({
     rafIdRef.current = requestAnimationFrame(renderLoop);
   }, []);
 
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
   /* ── Pointer handlers ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      console.log('[INK] pointerdown', e.pointerType, 'pressure:', e.pressure, 'button:', e.button, 'target:', (e.target as Element).tagName);
+      setDebugLog(prev => [...prev.slice(-8), `DOWN: type=${e.pointerType} pressure=${e.pressure.toFixed(3)} button=${e.button} target=${(e.target as Element).tagName} time=${Date.now()}`]);
       if (e.pointerType === "pen") {
         if (e.pressure === 0) return;
         lastPenDownRef.current = Date.now();
