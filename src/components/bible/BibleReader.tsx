@@ -893,7 +893,122 @@ export function BibleReader() {
     cameraRef: paperCameraRef,
   });
 
-  /**
+  // ── Implicit Reading Session (Part 4) ──
+  const [activeReadingSessionId, setActiveReadingSessionId] = useState<string | null>(null);
+  const readingInactivityRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readingStartedRef = useRef(false);
+  const READING_INACTIVITY_MS = 5 * 60 * 1000; // 5 minutes
+  const READING_START_DELAY_MS = 30_000; // 30 seconds sustained reading
+  const readingStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Telemetry hooks — one for canvas sessions, one for reading sessions
+  const canvasTelemetry = useSessionTelemetry(activeSessionId);
+  const readingTelemetry = useSessionTelemetry(activeReadingSessionId);
+
+  // ── Live elapsed timer for locked nav display ──
+  const [liveElapsed, setLiveElapsed] = useState(0);
+  const liveElapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (activeSessionId && studyMode && studyModeVariant === "margin") {
+      const startTime = Date.now();
+      liveElapsedRef.current = setInterval(() => {
+        setLiveElapsed(Math.round((Date.now() - startTime) / 1000));
+      }, 1000);
+      return () => {
+        if (liveElapsedRef.current) clearInterval(liveElapsedRef.current);
+      };
+    } else {
+      setLiveElapsed(0);
+      if (liveElapsedRef.current) clearInterval(liveElapsedRef.current);
+    }
+  }, [activeSessionId, studyMode, studyModeVariant]);
+
+  // Reset reading inactivity on interaction
+  const resetReadingInactivity = useCallback(() => {
+    if (readingInactivityRef.current) clearTimeout(readingInactivityRef.current);
+    if (!activeReadingSessionId) return;
+    readingInactivityRef.current = setTimeout(async () => {
+      // Auto-end reading session after inactivity
+      if (activeReadingSessionId) {
+        readingTelemetry.logEvent("session_end");
+        await supabase
+          .from("study_sessions")
+          .update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
+          .eq("id", activeReadingSessionId);
+        // Trigger summary generation
+        try {
+          await supabase.functions.invoke("summarize-session", {
+            body: { session_id: activeReadingSessionId },
+          });
+        } catch {}
+        setActiveReadingSessionId(null);
+        readingStartedRef.current = false;
+      }
+    }, READING_INACTIVITY_MS);
+  }, [activeReadingSessionId, readingTelemetry]);
+
+  // Start implicit reading session on first meaningful interaction
+  const ensureReadingSession = useCallback(async () => {
+    if (activeReadingSessionId || !user?.id || !bookUsfm || !currentChapter) return;
+    if (activeSessionId) return; // Don't create reading sessions during canvas sessions
+
+    const { data, error } = await supabase
+      .from("study_sessions")
+      .insert({
+        user_id: user.id,
+        book_usfm: bookUsfm,
+        chapter_id: parseInt(currentChapter.id, 10),
+        status: "active",
+        session_type: "reading",
+        paper_width_px: 0,
+        paper_height_px: 0,
+        chars_per_line: 0,
+        line_spacing: "1.6",
+        margin_style: "none",
+        font_size_px: textSize,
+        text_x: 0,
+        text_y: 0,
+        text_width_px: 0,
+      } as any)
+      .select("id")
+      .single();
+
+    if (!error && data) {
+      setActiveReadingSessionId(data.id);
+      readingStartedRef.current = true;
+    }
+  }, [activeReadingSessionId, user?.id, bookUsfm, currentChapter, activeSessionId, textSize]);
+
+  // Auto-start reading session after 30s of sustained reading
+  useEffect(() => {
+    if (!user?.id || activeReadingSessionId || activeSessionId || !hasVerses) return;
+    readingStartTimerRef.current = setTimeout(() => {
+      ensureReadingSession();
+    }, READING_START_DELAY_MS);
+    return () => {
+      if (readingStartTimerRef.current) clearTimeout(readingStartTimerRef.current);
+    };
+  }, [user?.id, bookUsfm, chapterIdx, hasVerses, activeReadingSessionId, activeSessionId]);
+
+  // End reading session on navigation away
+  useEffect(() => {
+    return () => {
+      if (activeReadingSessionId) {
+        supabase
+          .from("study_sessions")
+          .update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
+          .eq("id", activeReadingSessionId)
+          .then(() => {});
+        supabase.functions.invoke("summarize-session", {
+          body: { session_id: activeReadingSessionId },
+        }).catch(() => {});
+      }
+    };
+  }, [activeReadingSessionId]);
+
+  // iPadOS: Implicit reading sessions map to BGAppRefreshTask with CoreData sync
+
+
    * STUDY MODE GATE — entry order is strict, do not reorder.
    *
    * Tap "Study Mode"
