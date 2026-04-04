@@ -833,9 +833,13 @@ export function BibleReader() {
       setCanvasSetupOpen(true);
       return;
     }
+    if (v && studyModeVariant === "canvas") {
+      // Open canvas creation drawer for verse extraction
+      setCanvasCreationOpen(true);
+      return;
+    }
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    if (v && studyModeVariant === "canvas") setCanvasOpen(true);
     if (v && studyModeVariant === "journal") setJournalOpen(true);
     if (!v) { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyModeVariant]);
