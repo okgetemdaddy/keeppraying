@@ -84,16 +84,17 @@ const getTouchDist = (touches: TouchList) => {
   return Math.sqrt(dx * dx + dy * dy);
 };
 
-const getTouchAngle = (touches: TouchList) =>
-  Math.atan2(
-    touches[1].clientY - touches[0].clientY,
-    touches[1].clientX - touches[0].clientX
-  ) * (180 / Math.PI);
-
 const getTouchMidpoint = (touches: TouchList) => ({
   x: (touches[0].clientX + touches[1].clientX) / 2,
   y: (touches[0].clientY + touches[1].clientY) / 2,
 });
+
+/* 3-finger rotation helper — angle between finger 0 and finger 2 */
+const getAngleFromTouches3 = (touches: TouchList) =>
+  Math.atan2(
+    touches[2].clientY - touches[0].clientY,
+    touches[2].clientX - touches[0].clientX
+  ) * (180 / Math.PI);
 
 const clampVelocity = (v: number, max = MAX_VELOCITY) =>
   Math.max(-max, Math.min(max, v));
