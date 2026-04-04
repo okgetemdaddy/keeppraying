@@ -316,8 +316,10 @@ export function PaperCanvas({
         let dAngle = angle - lastAngle3;
         if (dAngle > 180) dAngle -= 360;
         if (dAngle < -180) dAngle += 360;
-        api.set({ rotation: spring.rotation.get() + dAngle });
-        lastAngle3 = angle;
+        if (Math.abs(dAngle) > 0.3) {
+          api.set({ rotation: spring.rotation.get() + dAngle });
+          lastAngle3 = angle;
+        }
       }
     };
 
