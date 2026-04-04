@@ -9,9 +9,10 @@ import {
   ResponsiveDialog as Dialog, ResponsiveDialogContent as DialogContent, ResponsiveDialogHeader as DialogHeader, ResponsiveDialogTitle as DialogTitle, ResponsiveDialogDescription as DialogDescription,
 } from "@/components/ui/responsive-dialog";
 import {
-  BookOpen, Search, Plus, Loader2, X, ChevronRight, Scroll,
+  BookOpen, Search, Plus, Loader2, X, ChevronRight, Scroll, BookText, FileText,
 } from "lucide-react";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
+import { cn } from "@/lib/utils";
 
 interface ClassicalPrayer {
   id: string;
@@ -19,7 +20,6 @@ interface ClassicalPrayer {
   author: string;
   author_era: string | null;
   prayer_text: string;
-  extended_text: string | null;
   labels: string[] | null;
   source_reference: string | null;
 }
@@ -29,6 +29,8 @@ interface ClassicalPrayersLibraryProps {
   onOpenChange: (open: boolean) => void;
   variant?: "light" | "dark";
 }
+
+type CardTab = "prayer" | "context" | "source";
 
 // TODO: iPadOS Port - Bind Apple Pencil squeeze event here to trigger AI historical context popover
 function VaultCard({
@@ -44,13 +46,15 @@ function VaultCard({
   onSave: () => void;
   saving: boolean;
 }) {
+  const [tab, setTab] = useState<CardTab>("prayer");
+
   return (
     // TODO: iPadOS Port - Bind long-press for quick-save context menu
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className="break-inside-avoid mb-4 rounded-2xl border border-border/60 bg-card overflow-hidden
-        hover:shadow-lg hover:border-primary/30 hover:scale-[1.01] hover:ring-1 hover:ring-primary/20
+        hover:shadow-xl hover:border-primary/30 hover:scale-[1.003] hover:ring-1 hover:ring-primary/10
         transition-all duration-300 ease-out"
     >
       <button
@@ -68,6 +72,11 @@ function VaultCard({
             {prayer.author}
             {prayer.author_era && <span className="opacity-60"> · {prayer.author_era}</span>}
           </p>
+          {!isExpanded && (
+            <p className="text-xs text-muted-foreground/70 mt-2 line-clamp-2 font-serif italic leading-relaxed">
+              {prayer.prayer_text.slice(0, 120)}…
+            </p>
+          )}
         </div>
         <ChevronRight
           className="w-4 h-4 text-muted-foreground/40 mt-1 transition-transform flex-shrink-0"
@@ -85,33 +94,82 @@ function VaultCard({
             className="overflow-hidden"
           >
             <div className="px-5 pb-5 space-y-3">
-              <div className="rounded-xl bg-muted/50 p-4">
-                <p className="font-display italic leading-loose text-[15px] text-foreground whitespace-pre-line first-letter:text-4xl first-letter:font-display first-letter:float-left first-letter:mr-2 first-letter:leading-none first-letter:text-primary">
-                  {renderWithVerseLinks(prayer.prayer_text)}
-                </p>
+              {/* Tab Pills */}
+              <div className="flex gap-1.5">
+                {([
+                  { key: "prayer" as CardTab, label: "Prayer", icon: Scroll },
+                  { key: "context" as CardTab, label: "Context", icon: BookText },
+                  { key: "source" as CardTab, label: "Source", icon: FileText },
+                ]).map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={cn(
+                      "text-[11px] px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-200 font-medium",
+                      tab === t.key
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <t.icon className="w-3 h-3" />
+                    {t.label}
+                  </button>
+                ))}
               </div>
 
-              {prayer.extended_text && (
-                <div className="rounded-xl bg-muted/30 p-4">
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Extended</p>
-                  <p className="font-display italic text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-                    {renderWithVerseLinks(prayer.extended_text)}
+              {/* Prayer Tab */}
+              {tab === "prayer" && (
+                <div className="rounded-xl bg-muted/50 p-4">
+                  <p className="font-serif text-base leading-8 text-foreground whitespace-pre-line first-letter:text-5xl first-letter:font-serif first-letter:float-left first-letter:mr-3 first-letter:leading-none first-letter:text-primary">
+                    {renderWithVerseLinks(prayer.prayer_text)}
                   </p>
                 </div>
               )}
 
-              {prayer.labels && prayer.labels.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {prayer.labels.map(l => (
-                    <span key={l} className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{l}</span>
-                  ))}
+              {/* Context Tab */}
+              {tab === "context" && (
+                <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+                  {prayer.author_era && (
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Historical Period</p>
+                      <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium inline-block">
+                        {prayer.author_era}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Author</p>
+                    <p className="text-sm text-foreground font-medium">{prayer.author}</p>
+                  </div>
+                  {prayer.labels && prayer.labels.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Theological Themes</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {prayer.labels.map(l => (
+                          <span key={l} className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{l}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {prayer.source_reference && (
-                <p className="text-[10px] text-muted-foreground italic">
-                  Source: {prayer.source_reference}
-                </p>
+              {/* Source Tab */}
+              {tab === "source" && (
+                <div className="rounded-xl bg-muted/50 p-4 space-y-2">
+                  {prayer.source_reference ? (
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Original Source</p>
+                      <p className="text-sm text-foreground font-mono">{prayer.source_reference}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No source reference recorded for this prayer.</p>
+                  )}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Attribution</p>
+                    <p className="text-sm text-foreground">{prayer.author}{prayer.author_era ? ` (${prayer.author_era})` : ""}</p>
+                  </div>
+                </div>
               )}
 
               <Button
@@ -186,7 +244,6 @@ export function ClassicalPrayersLibrary({ open, onOpenChange, variant = "light" 
         const { data: newCard, error } = await supabase.from("prayer_cards").insert({
           title: `${prayer.title} — ${prayer.author}`,
           prayer_text: prayer.prayer_text,
-          extended_prayer: prayer.extended_text || null,
           labels: prayer.labels || ["classical-prayer"],
           source: "admin",
           status: "approved",

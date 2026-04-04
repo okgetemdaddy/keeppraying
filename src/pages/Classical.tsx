@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SiteNav } from "@/components/SiteNav";
 import {
-  BookOpen, Search, Plus, Loader2, X, ChevronRight, Scroll, Sparkles,
+  BookOpen, Search, Plus, Loader2, X, ChevronRight, Scroll, Sparkles, BookText, FileText,
 } from "lucide-react";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { cn } from "@/lib/utils";
@@ -18,12 +18,168 @@ interface ClassicalPrayer {
   author: string;
   author_era: string | null;
   prayer_text: string;
-  extended_text: string | null;
   labels: string[] | null;
   source_reference: string | null;
 }
 
+type CardTab = "prayer" | "context" | "source";
+
 const ERA_CHIPS = ["Early Church", "Medieval", "Reformation", "Modern"] as const;
+
+function ClassicalVaultCard({
+  prayer,
+  isExpanded,
+  onToggle,
+  onSave,
+  saving,
+}: {
+  prayer: ClassicalPrayer;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  const [tab, setTab] = useState<CardTab>("prayer");
+
+  return (
+    // TODO: iPadOS Port - Bind Apple Pencil squeeze event here to trigger AI historical context popover
+    // TODO: iPadOS Port - Bind long-press for quick-save context menu
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="break-inside-avoid mb-5 rounded-2xl border border-border/60 bg-card overflow-hidden
+        hover:shadow-xl hover:border-primary/30 hover:scale-[1.003] hover:ring-1 hover:ring-primary/10
+        transition-all duration-300 ease-out"
+    >
+      <button
+        onClick={onToggle}
+        className="w-full text-left px-5 py-4 flex items-start gap-3"
+      >
+        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <Scroll className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground leading-tight font-display">{prayer.title}</p>
+          <p className="text-[11px] tracking-wider uppercase text-muted-foreground mt-1">
+            {prayer.author}
+            {prayer.author_era && <span className="opacity-60"> · {prayer.author_era}</span>}
+          </p>
+          {!isExpanded && (
+            <p className="text-xs text-muted-foreground/70 mt-2 line-clamp-2 font-serif italic leading-relaxed">
+              {prayer.prayer_text.slice(0, 120)}…
+            </p>
+          )}
+        </div>
+        <ChevronRight
+          className="w-4 h-4 text-muted-foreground/40 mt-1 transition-transform flex-shrink-0"
+          style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 space-y-3">
+              {/* Tab Pills */}
+              <div className="flex gap-1.5">
+                {([
+                  { key: "prayer" as CardTab, label: "Prayer", icon: Scroll },
+                  { key: "context" as CardTab, label: "Context", icon: BookText },
+                  { key: "source" as CardTab, label: "Source", icon: FileText },
+                ]).map(t => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={cn(
+                      "text-[11px] px-3 py-1 rounded-full flex items-center gap-1 transition-all duration-200 font-medium",
+                      tab === t.key
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    <t.icon className="w-3 h-3" />
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Prayer Tab */}
+              {tab === "prayer" && (
+                <div className="rounded-xl bg-muted/50 p-4">
+                  <p className="font-serif text-base md:text-lg leading-8 text-foreground whitespace-pre-line first-letter:text-5xl first-letter:font-serif first-letter:float-left first-letter:mr-3 first-letter:leading-none first-letter:text-primary">
+                    {renderWithVerseLinks(prayer.prayer_text)}
+                  </p>
+                </div>
+              )}
+
+              {/* Context Tab */}
+              {tab === "context" && (
+                <div className="rounded-xl bg-muted/50 p-4 space-y-3">
+                  {prayer.author_era && (
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Historical Period</p>
+                      <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium inline-block">
+                        {prayer.author_era}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Author</p>
+                    <p className="text-sm text-foreground font-medium">{prayer.author}</p>
+                  </div>
+                  {prayer.labels && prayer.labels.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Theological Themes</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {prayer.labels.map(l => (
+                          <span key={l} className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{l}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Source Tab */}
+              {tab === "source" && (
+                <div className="rounded-xl bg-muted/50 p-4 space-y-2">
+                  {prayer.source_reference ? (
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Original Source</p>
+                      <p className="text-sm text-foreground font-mono">{prayer.source_reference}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No source reference recorded for this prayer.</p>
+                  )}
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Attribution</p>
+                    <p className="text-sm text-foreground">{prayer.author}{prayer.author_era ? ` (${prayer.author_era})` : ""}</p>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                size="sm"
+                className="btn-gold rounded-xl gap-1.5 w-full"
+                onClick={onSave}
+                disabled={saving}
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                Save to My Board
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
 
 export default function Classical() {
   const { user } = useAuth();
@@ -77,7 +233,6 @@ export default function Classical() {
         setInterpretation(data.interpretation || null);
       }
     } catch {
-      // Fallback to basic ilike search
       let query = supabase.from("classical_prayers").select("*").order("author", { ascending: true });
       query = query.or(`title.ilike.%${search}%,author.ilike.%${search}%,prayer_text.ilike.%${search}%`);
       if (selectedEra) query = query.eq("author_era", selectedEra);
@@ -105,7 +260,6 @@ export default function Classical() {
         const { data: newCard, error } = await supabase.from("prayer_cards").insert({
           title: `${prayer.title} — ${prayer.author}`,
           prayer_text: prayer.prayer_text,
-          extended_prayer: prayer.extended_text || null,
           labels: prayer.labels || ["classical-prayer"],
           source: "admin",
           status: "approved",
@@ -149,7 +303,7 @@ export default function Classical() {
             <h1 className="font-display text-4xl md:text-5xl text-foreground tracking-tight mb-3">
               The Manuscript Vault
             </h1>
-            <p className="font-display italic text-muted-foreground text-lg max-w-xl mx-auto leading-relaxed">
+            <p className="font-display italic text-muted-foreground text-lg max-w-xl mx-auto leading-loose">
               A sacred archive of prayers from the saints, church fathers, and reformers — 
               spanning two millennia of communion with God.
             </p>
@@ -172,7 +326,7 @@ export default function Classical() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by author, theme, or Scripture…"
-                className="pl-10 pr-20 h-12 rounded-2xl text-base font-display"
+                className="pl-10 pr-20 h-12 rounded-2xl text-base font-display bg-card/80 backdrop-blur-sm"
               />
               {search && (
                 <button type="button" onClick={() => { setSearch(""); loadPrayers(selectedEra); }} className="absolute right-14 top-1/2 -translate-y-1/2">
@@ -244,98 +398,16 @@ export default function Classical() {
         ) : (
           <div className="columns-1 md:columns-2 lg:columns-2 gap-5">
             <AnimatePresence>
-              {prayers.map((prayer) => {
-                const isExpanded2 = expanded === prayer.id;
-                return (
-                  // TODO: iPadOS Port - Bind Apple Pencil squeeze event here to trigger AI historical context popover
-                  // TODO: iPadOS Port - Bind long-press for quick-save context menu
-                  <motion.div
-                    key={prayer.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="break-inside-avoid mb-5 rounded-2xl border border-border/60 bg-card overflow-hidden
-                      hover:shadow-lg hover:border-primary/30 hover:scale-[1.005] hover:ring-1 hover:ring-primary/20
-                      transition-all duration-300 ease-out"
-                  >
-                    <button
-                      onClick={() => setExpanded(isExpanded2 ? null : prayer.id)}
-                      className="w-full text-left px-5 py-4 flex items-start gap-3"
-                    >
-                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Scroll className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground leading-tight font-display">{prayer.title}</p>
-                        <p className="text-[11px] tracking-wider uppercase text-muted-foreground mt-1">
-                          {prayer.author}
-                          {prayer.author_era && <span className="opacity-60"> · {prayer.author_era}</span>}
-                        </p>
-                        {/* Preview snippet when collapsed */}
-                        {!isExpanded2 && (
-                          <p className="text-xs text-muted-foreground/70 mt-2 line-clamp-2 font-display italic leading-relaxed">
-                            {prayer.prayer_text.slice(0, 120)}…
-                          </p>
-                        )}
-                      </div>
-                      <ChevronRight
-                        className="w-4 h-4 text-muted-foreground/40 mt-1 transition-transform flex-shrink-0"
-                        style={{ transform: isExpanded2 ? "rotate(90deg)" : "rotate(0deg)" }}
-                      />
-                    </button>
-
-                    <AnimatePresence>
-                      {isExpanded2 && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.25 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-5 pb-5 space-y-3">
-                            <div className="rounded-xl bg-muted/50 p-4">
-                              <p className="font-display italic leading-loose text-[15px] text-foreground whitespace-pre-line first-letter:text-4xl first-letter:font-display first-letter:float-left first-letter:mr-2 first-letter:leading-none first-letter:text-primary">
-                                {renderWithVerseLinks(prayer.prayer_text)}
-                              </p>
-                            </div>
-
-                            {prayer.extended_text && (
-                              <div className="rounded-xl bg-muted/30 p-4">
-                                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">Extended</p>
-                                <p className="font-display italic text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
-                                  {renderWithVerseLinks(prayer.extended_text)}
-                                </p>
-                              </div>
-                            )}
-
-                            {prayer.labels && prayer.labels.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {prayer.labels.map(l => (
-                                  <span key={l} className="text-[10px] px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{l}</span>
-                                ))}
-                              </div>
-                            )}
-
-                            {prayer.source_reference && (
-                              <p className="text-[10px] text-muted-foreground italic">Source: {prayer.source_reference}</p>
-                            )}
-
-                            <Button
-                              size="sm"
-                              className="btn-gold rounded-xl gap-1.5 w-full"
-                              onClick={() => saveToBoard(prayer)}
-                              disabled={saving === prayer.id}
-                            >
-                              {saving === prayer.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                              Save to My Board
-                            </Button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
+              {prayers.map((prayer) => (
+                <ClassicalVaultCard
+                  key={prayer.id}
+                  prayer={prayer}
+                  isExpanded={expanded === prayer.id}
+                  onToggle={() => setExpanded(expanded === prayer.id ? null : prayer.id)}
+                  onSave={() => saveToBoard(prayer)}
+                  saving={saving === prayer.id}
+                />
+              ))}
             </AnimatePresence>
           </div>
         )}
