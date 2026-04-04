@@ -60,9 +60,10 @@ function DiamondBullet() {
 interface PremiumUpsellSheetProps {
   open: boolean;
   onClose: () => void;
+  onProceed?: () => void;
 }
 
-export function PremiumUpsellSheet({ open, onClose }: PremiumUpsellSheetProps) {
+export function PremiumUpsellSheet({ open, onClose, onProceed }: PremiumUpsellSheetProps) {
   if (!open) return null;
 
   return (
