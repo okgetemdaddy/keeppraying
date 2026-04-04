@@ -71,23 +71,31 @@ export function BibleEdgeTabs({ onSuggestionsClick, onIPadClick, showIPad, hidde
 
                   {/* Soft glimmer sweep for iPad tab */}
                   {tab.id === "ipad" && !isActive && (
-                    <motion.div
-                      className="absolute inset-0 z-[1] rounded-full pointer-events-none"
-                      style={{
-                        background: "linear-gradient(105deg, transparent 40%, rgba(251,191,36,0.15) 45%, rgba(251,191,36,0.25) 50%, rgba(251,191,36,0.15) 55%, transparent 60%)",
-                        backgroundSize: "200% 100%",
-                      }}
-                      animate={{
-                        backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%"],
-                        opacity: [1, 1, 0],
-                      }}
-                      transition={{
-                        duration: 43,
-                        times: [0, 3 / 43, 3 / 43],
-                        ease: "easeInOut",
-                        repeat: Infinity,
-                      }}
-                    />
+                    <>
+                      {/* Dimmed ambient fill — always visible */}
+                      <div
+                        className="absolute inset-0 z-[1] rounded-full pointer-events-none"
+                        style={{ background: "rgba(251,191,36,0.06)" }}
+                      />
+                      {/* Sweep animation */}
+                      <motion.div
+                        className="absolute inset-0 z-[2] rounded-full pointer-events-none"
+                        style={{
+                          background: "linear-gradient(105deg, transparent 40%, rgba(251,191,36,0.15) 45%, rgba(251,191,36,0.25) 50%, rgba(251,191,36,0.15) 55%, transparent 60%)",
+                          backgroundSize: "200% 100%",
+                        }}
+                        animate={{
+                          backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%"],
+                          opacity: [1, 1, 0],
+                        }}
+                        transition={{
+                          duration: 43,
+                          times: [0, 3 / 43, 3 / 43],
+                          ease: "easeInOut",
+                          repeat: Infinity,
+                        }}
+                      />
+                    </>
                   )}
 
                   <span className="relative z-10 flex items-center gap-1.5">
