@@ -332,6 +332,7 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
     ];
 
     const handleDismissGuest = () => {
+      try { sessionStorage.setItem("kp_guest_bible_session", "true"); } catch {}
       toast("Changes are only saved if you are signed in.", { duration: 3000 });
       onDismiss();
     };
