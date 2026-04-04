@@ -1135,9 +1135,15 @@ export function BibleReader() {
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
+  // ── Track whether the current session is freshly created (not resumed) ──
+  const isNewSessionRef = useRef(false);
+
   // ── Load ink strokes from DB on chapter change ──
   const inkAnnotationId = inkAnnotation?.id;
   useEffect(() => {
+    // Skip loading chapter-level ink when a brand-new session is active
+    if (isNewSessionRef.current) return;
+
     if (inkAnnotation) {
       const incoming = (inkAnnotation.strokes as unknown as InkStroke[]) ?? [];
       if (incoming.length === inkHistory.strokes.length) return;
