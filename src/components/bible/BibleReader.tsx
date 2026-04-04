@@ -982,13 +982,10 @@ export function BibleReader() {
       inkSaveTimer.current = setTimeout(() => {
         if (!bookUsfm || !currentChapter) return;
         const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
-        inkSaveInFlight.current = true;
         saveAnnotationMut.mutate({
           verseIds: [inkKey],
           strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
-        }, {
-          onSettled: () => { inkSaveInFlight.current = false; },
         });
       }, 500);
     },
