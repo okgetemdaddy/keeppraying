@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 import {
   ResponsiveSheet as Sheet,
   ResponsiveSheetContent as SheetContent,
@@ -325,9 +326,14 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
       { icon: PenTool, text: "Journal alongside Scripture" },
     ];
 
+    const handleDismissGuest = () => {
+      toast("Changes are only saved if you are signed in.", { duration: 3000 });
+      onDismiss();
+    };
+
     if (isMobile) {
       return (
-        <Sheet open={selectedVerses.length > 0} onOpenChange={(open) => { if (!open) onDismiss(); }}>
+        <Sheet open={selectedVerses.length > 0} onOpenChange={(open) => { if (!open) handleDismissGuest(); }}>
           <SheetContent side="bottom" className="rounded-t-2xl pb-8 px-6">
             <SheetHeader>
               <SheetTitle className="text-base">You're discovering something beautiful ✦</SheetTitle>
@@ -351,25 +357,28 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
       );
     }
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 8 }}
-        transition={{ duration: 0.15 }}
-        className="fixed z-50 rounded-xl border border-border bg-card px-5 py-4 shadow-2xl max-w-sm"
-        style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
-      >
-        <p className="font-medium text-sm text-foreground mb-2">You're discovering something beautiful ✦</p>
-        <ul className="space-y-1.5 mb-3">
-          {benefits.map((b) => (
-            <li key={b.text} className="flex items-center gap-2 text-xs text-muted-foreground">
-              <b.icon className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-              {b.text}
-            </li>
-          ))}
-        </ul>
-        <AuthGateButton onDismiss={onDismiss} />
-      </motion.div>
+      <>
+        <div className="fixed inset-0 z-40" onClick={handleDismissGuest} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 8 }}
+          transition={{ duration: 0.15 }}
+          className="fixed z-50 rounded-xl border border-border bg-card px-5 py-4 shadow-2xl max-w-sm"
+          style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
+        >
+          <p className="font-medium text-sm text-foreground mb-2">You're discovering something beautiful ✦</p>
+          <ul className="space-y-1.5 mb-3">
+            {benefits.map((b) => (
+              <li key={b.text} className="flex items-center gap-2 text-xs text-muted-foreground">
+                <b.icon className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                {b.text}
+              </li>
+            ))}
+          </ul>
+          <AuthGateButton onDismiss={onDismiss} />
+        </motion.div>
+      </>
     );
   }
 
