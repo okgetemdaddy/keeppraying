@@ -66,6 +66,7 @@ export interface PaperCanvasProps {
   textAlign: TextAlign;
   marginWidth: number;
   canvasBackground: CanvasBackground;
+  textBoxConfig?: { x: number; y: number; width: number; height: number };
   overlay?: React.ReactNode;
   children: React.ReactNode;
   /** Optional external ref — kept in sync so parent (e.g. heartbeat) can read live camera state */
