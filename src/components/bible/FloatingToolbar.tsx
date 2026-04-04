@@ -320,7 +320,7 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
   if (!isAuthenticated) {
     const benefits = [
       { icon: Palette, text: "Highlight in multiple colors" },
-      { icon: Circle, text: "Circle words for AI cross-references" },
+      { icon: Circle, text: "Circle words for detailed cross-references" },
       { icon: Layers, text: "Save Verse Bunches for topical study" },
       { icon: PenTool, text: "Journal alongside Scripture" },
     ];
