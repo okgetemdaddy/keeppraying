@@ -378,11 +378,18 @@ export function InkOverlay({
 
           // 5+ words or multiple verses → verse selection (existing behavior)
           if (onCircleSelect) {
-            const xs = currentPoints.map((p) => p.x);
-            const ys = currentPoints.map((p) => p.y);
-            const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length) * zoom;
-            const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length) * zoom;
-            onCircleSelect(uniqueVerses, { x: centerX, y: centerY });
+            const svgEl = svgRef.current!;
+            const ctmC = svgEl.getScreenCTM();
+            if (ctmC) {
+              const xs = currentPoints.map((p) => p.x);
+              const ys = currentPoints.map((p) => p.y);
+              const avgSvgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const avgSvgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+              const pt = svgEl.createSVGPoint();
+              pt.x = avgSvgX; pt.y = avgSvgY;
+              const screen = pt.matrixTransform(ctmC);
+              onCircleSelect(uniqueVerses, { x: screen.x, y: screen.y });
+            }
             pointsBufferRef.current = [];
             return;
           }
