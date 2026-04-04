@@ -181,11 +181,13 @@ export default function PrayerAssist() {
         }
       }
 
-      // Track guest usage
+      // Track guest usage — set limited state before clearing loading
       if (!user) {
         const count = parseInt(localStorage.getItem(GUEST_STORAGE_KEY) || "0", 10) + 1;
         localStorage.setItem(GUEST_STORAGE_KEY, String(count));
-        if (count >= 1) setGuestLimited(true);
+        if (count >= 1) {
+          setGuestLimited(true);
+        }
       }
 
       if (user) {
