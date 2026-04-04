@@ -1905,7 +1905,13 @@ export function BibleReader() {
     [mutations.removeHighlight],
   );
 
-  const isInPaperCanvas = studyMode && studyModeVariant === "margin";
+  const viewMode: "reading" | "margin" | "canvas" | "journal" =
+    activeSession ? "canvas" :
+    studyMode && studyModeVariant === "margin" ? "margin" :
+    studyMode && studyModeVariant === "journal" ? "journal" :
+    "reading";
+
+  const isInPaperCanvas = viewMode === "margin";
 
   // Set data attribute on <html> so KeepReadingNav can get heavy blur in study mode
   useEffect(() => {
