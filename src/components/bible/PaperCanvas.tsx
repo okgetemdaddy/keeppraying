@@ -373,7 +373,7 @@ export function PaperCanvas({
           const delta = -dy * 0.003;
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
           api.set({ scale: nextScale });
-          lastGestureZoom.current = nextScale;
+          internalZoomUpdate.current = true;
           onZoomChange(nextScale);
         } else {
           const targetY = spring.y.get() - dy * 2.5;
