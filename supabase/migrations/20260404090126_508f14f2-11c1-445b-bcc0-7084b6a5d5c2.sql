@@ -1,0 +1,1 @@
+ALTER TABLE classical_prayers DROP COLUMN extended_text;

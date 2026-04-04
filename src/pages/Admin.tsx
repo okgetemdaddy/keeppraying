@@ -1664,17 +1664,28 @@ function FeedbackAdminTab() {
 function ClassicalPrayersAdminTab() {
   interface ClassicalPrayer {
     id: string; title: string; author: string; author_era: string | null;
-    prayer_text: string; extended_text: string | null; labels: string[] | null;
+    prayer_text: string; labels: string[] | null;
     source_reference: string | null; created_at: string;
   }
 
+  interface ParsedMdPrayer {
+    title: string; author: string; era: string; source: string; labels: string; text: string;
+  }
+
+  const { user } = useAuth();
   const [prayers, setPrayers] = useState<ClassicalPrayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", author: "", author_era: "", prayer_text: "", extended_text: "", labels: "", source_reference: "" });
+  const [form, setForm] = useState({ title: "", author: "", author_era: "", prayer_text: "", labels: "", source_reference: "" });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  // MD Import state
+  const [showMdImport, setShowMdImport] = useState(false);
+  const [mdText, setMdText] = useState("");
+  const [parsedPrayers, setParsedPrayers] = useState<ParsedMdPrayer[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -1686,7 +1697,7 @@ function ClassicalPrayersAdminTab() {
   useEffect(() => { load(); }, []);
 
   const resetForm = () => {
-    setForm({ title: "", author: "", author_era: "", prayer_text: "", extended_text: "", labels: "", source_reference: "" });
+    setForm({ title: "", author: "", author_era: "", prayer_text: "", labels: "", source_reference: "" });
     setEditId(null);
     setShowForm(false);
   };
@@ -1695,7 +1706,7 @@ function ClassicalPrayersAdminTab() {
     setEditId(p.id);
     setForm({
       title: p.title, author: p.author, author_era: p.author_era || "",
-      prayer_text: p.prayer_text, extended_text: p.extended_text || "",
+      prayer_text: p.prayer_text,
       labels: (p.labels || []).join(", "), source_reference: p.source_reference || "",
     });
     setShowForm(true);
@@ -1713,7 +1724,6 @@ function ClassicalPrayersAdminTab() {
       author: form.author.trim(),
       author_era: form.author_era.trim() || null,
       prayer_text: form.prayer_text.trim(),
-      extended_text: form.extended_text.trim() || null,
       labels: labelsArr.length ? labelsArr : null,
       source_reference: form.source_reference.trim() || null,
     };
@@ -1725,7 +1735,7 @@ function ClassicalPrayersAdminTab() {
     } else {
       const { error } = await supabase.from("classical_prayers").insert({
         ...payload,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
+        created_by: user?.id,
       });
       if (error) { toast({ title: "Save failed", variant: "destructive" }); setSaving(false); return; }
       toast({ title: "Classical prayer added 📜" });
@@ -1743,6 +1753,74 @@ function ClassicalPrayersAdminTab() {
     load();
   };
 
+  // --- Markdown Parser ---
+  const parseMd = (md: string): ParsedMdPrayer[] => {
+    const blocks = md.split(/^## /gm).filter(b => b.trim());
+    return blocks.map(block => {
+      const lines = block.split("\n");
+      const title = lines[0].trim();
+      let author = "", era = "", source = "", labels = "";
+      const textLines: string[] = [];
+      let pastMeta = false;
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!pastMeta) {
+          const authorMatch = line.match(/^\*\*Author:\*\*\s*(.+)/i);
+          const eraMatch = line.match(/^\*\*Era:\*\*\s*(.+)/i);
+          const sourceMatch = line.match(/^\*\*Source:\*\*\s*(.+)/i);
+          const labelsMatch = line.match(/^\*\*Labels:\*\*\s*(.+)/i);
+          if (authorMatch) { author = authorMatch[1].trim(); continue; }
+          if (eraMatch) { era = eraMatch[1].trim(); continue; }
+          if (sourceMatch) { source = sourceMatch[1].trim(); continue; }
+          if (labelsMatch) { labels = labelsMatch[1].trim(); continue; }
+          if (line.trim() === "") continue;
+          pastMeta = true;
+        }
+        textLines.push(line);
+      }
+
+      return { title, author, era, source, labels, text: textLines.join("\n").trim() };
+    }).filter(p => p.title && p.text);
+  };
+
+  const handleParseMd = () => {
+    const result = parseMd(mdText);
+    setParsedPrayers(result);
+    if (result.length === 0) {
+      toast({ title: "No prayers found — check the format", variant: "destructive" });
+    }
+  };
+
+  const handleBulkImport = async () => {
+    if (!parsedPrayers.length || !user) return;
+    setImporting(true);
+    let success = 0;
+    let failed = 0;
+
+    for (const p of parsedPrayers) {
+      const labelsArr = p.labels ? p.labels.split(",").map(l => l.trim().toLowerCase().replace(/\s+/g, "-")).filter(Boolean) : [];
+      const { error } = await supabase.from("classical_prayers").insert({
+        title: p.title,
+        author: p.author || "Unknown",
+        author_era: p.era || null,
+        prayer_text: p.text,
+        labels: labelsArr.length ? labelsArr : null,
+        source_reference: p.source || null,
+        created_by: user.id,
+      });
+      if (error) failed++;
+      else success++;
+    }
+
+    toast({ title: `Imported ${success} prayer${success !== 1 ? "s" : ""}${failed ? `, ${failed} failed` : ""} 📜` });
+    setImporting(false);
+    setShowMdImport(false);
+    setMdText("");
+    setParsedPrayers([]);
+    load();
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -1752,12 +1830,66 @@ function ClassicalPrayersAdminTab() {
             Upload timeless prayers from church fathers — {prayers.length} in the collection
           </p>
         </div>
-        <GoldButton onClick={() => { resetForm(); setShowForm(true); }}>
-          <PlusCircle className="w-4 h-4" /> Add Classical Prayer
-        </GoldButton>
+        <div className="flex gap-2">
+          <GoldButton onClick={() => { setShowMdImport(!showMdImport); setShowForm(false); }}>
+            <ScrollText className="w-4 h-4" /> Bulk Import MD
+          </GoldButton>
+          <GoldButton onClick={() => { resetForm(); setShowForm(true); setShowMdImport(false); }}>
+            <PlusCircle className="w-4 h-4" /> Add Classical Prayer
+          </GoldButton>
+        </div>
       </div>
 
-      {/* Form */}
+      {/* MD Bulk Import */}
+      <AnimatePresence>
+        {showMdImport && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+            <GuardianCard>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Paste Markdown</label>
+                  <DarkTextarea
+                    value={mdText}
+                    onChange={e => setMdText(e.target.value)}
+                    rows={8}
+                    placeholder={`## Prayer Title\n**Author:** St. Augustine\n**Era:** 4th Century\n**Source:** Confessions\n**Labels:** devotion, grace\n\nPrayer text here…`}
+                  />
+                </div>
+                <div className="flex gap-2 items-center">
+                  <GoldButton onClick={handleParseMd} disabled={!mdText.trim()}>
+                    <Search className="w-4 h-4" /> Parse
+                  </GoldButton>
+                  {parsedPrayers.length > 0 && (
+                    <GoldButton onClick={handleBulkImport} disabled={importing}>
+                      {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
+                      Import {parsedPrayers.length} Prayer{parsedPrayers.length !== 1 ? "s" : ""}
+                    </GoldButton>
+                  )}
+                  <DarkOutlineButton onClick={() => { setShowMdImport(false); setMdText(""); setParsedPrayers([]); }}>
+                    <XCircle className="w-4 h-4" /> Cancel
+                  </DarkOutlineButton>
+                </div>
+                {parsedPrayers.length > 0 && (
+                  <div className="space-y-2 mt-2 max-h-60 overflow-y-auto">
+                    <p className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "hsl(42 85% 58%)" }}>
+                      Preview — Found {parsedPrayers.length} prayers
+                    </p>
+                    {parsedPrayers.map((p, i) => (
+                      <div key={i} className="text-xs p-2 rounded-lg" style={{ background: "hsl(220 25% 14%)", color: "hsl(38 20% 72%)" }}>
+                        <span className="font-semibold" style={{ color: "hsl(38 28% 90%)" }}>{p.title}</span>
+                        {p.author && <span> — {p.author}</span>}
+                        {p.era && <span className="opacity-60"> · {p.era}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </GuardianCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Single Prayer Form */}
       <AnimatePresence>
         {showForm && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
@@ -1786,10 +1918,6 @@ function ClassicalPrayersAdminTab() {
                 <div>
                   <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Prayer Text *</label>
                   <DarkTextarea value={form.prayer_text} onChange={e => setForm(f => ({ ...f, prayer_text: e.target.value }))} rows={5} placeholder="The full prayer text…" />
-                </div>
-                <div>
-                  <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Extended Text / Commentary</label>
-                  <DarkTextarea value={form.extended_text} onChange={e => setForm(f => ({ ...f, extended_text: e.target.value }))} rows={3} placeholder="Optional extended version or commentary…" />
                 </div>
                 <div>
                   <label className="text-[10px] font-medium uppercase tracking-wider mb-1 block" style={{ color: "hsl(38 14% 50%)" }}>Labels (comma-separated)</label>
