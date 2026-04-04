@@ -20,6 +20,7 @@ const STAGGER = {
 
 export default function KeepReadingLanding() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<"google" | "apple" | null>(null);
 
   const handleOAuth = async (provider: "google" | "apple") => {
