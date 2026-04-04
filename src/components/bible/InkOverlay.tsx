@@ -543,6 +543,21 @@ export function InkOverlay({
     return () => window.removeEventListener("keydown", handler);
   }, [onUndo]);
 
+  /* ── Suppress touch events from Apple Pencil during drawing ── */
+  useEffect(() => {
+    const suppress = (e: TouchEvent) => {
+      if (isDrawingRef.current) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("touchstart", suppress, { passive: false });
+    document.addEventListener("touchmove", suppress, { passive: false });
+    return () => {
+      document.removeEventListener("touchstart", suppress);
+      document.removeEventListener("touchmove", suppress);
+    };
+  }, []);
+
   /* ── Rendered committed strokes ── */
   const renderedStrokes = useMemo(
     () =>
