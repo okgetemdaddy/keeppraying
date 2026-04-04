@@ -116,7 +116,7 @@ export function KeepReadingNav({ onOpenDrawer }: KeepReadingNavProps) {
             </button>
           )}
 
-          <Link to="/" className="flex items-center gap-2 min-w-0">
+          <a href="https://www.keepread.ing" className="flex items-center gap-2 min-w-0">
             <AnimatePresence mode="wait">
               {currentSaying ? (
                 <motion.span
@@ -154,7 +154,7 @@ export function KeepReadingNav({ onOpenDrawer }: KeepReadingNavProps) {
                 </motion.span>
               )}
             </AnimatePresence>
-          </Link>
+          </a>
         </div>
 
         {/* Right: auth area */}

@@ -752,6 +752,7 @@ export function BibleReader() {
 
   // ── iPad Study Mode (handwritten annotations) ──
   const [studyMode, setStudyMode] = useState(() => {
+    if (!user) return false;
     try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
   });
   const [studyModeVariant, setStudyModeVariant] = useState<StudyModeVariant>(() => {
