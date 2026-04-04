@@ -264,7 +264,7 @@ export function PaperCanvas({
   const marginPercent = marginWidth;
 
   return (
-    <>
+    <PaperCanvasContext.Provider value={{ camera: transformState, deskRef }}>
       {/* Desk surface */}
       <div
         ref={deskRef}
