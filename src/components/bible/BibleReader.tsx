@@ -880,10 +880,14 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ink_spacing", String(v)); } catch {}
   }, []);
 
+  // Shared camera ref — owned here so heartbeat (outside PaperCanvas tree) can read live values
+  const paperCameraRef = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
+
   // Session heartbeat for study_sessions persistence
   useStudySessionHeartbeat({
     sessionId: activeSessionId,
     timerMinutes: activeSessionConfig?.timerMinutes,
+    cameraRef: paperCameraRef,
   });
 
   /**
