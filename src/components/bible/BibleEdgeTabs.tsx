@@ -6,6 +6,7 @@ interface Props {
   onSuggestionsClick: () => void;
   onIPadClick: () => void;
   showIPad: boolean;
+  hidden?: boolean;
 }
 
 const tabs = [
