@@ -137,28 +137,33 @@ export function PaperCanvas({
     return () => observer.disconnect();
   }, []);
 
-  /* ── Committed value refs — the source of truth after gestures ── */
+  /* ── Committed value refs — shadowed continuously via spring onChange ── */
   const committedScale = useRef(zoom);
   const committedRotation = useRef(0);
   const committedX = useRef(0);
   const committedY = useRef(0);
 
-  const [spring, api] = useSpring(() => ({
-    x: committedX.current,
-    y: committedY.current,
-    rotation: committedRotation.current,
-    scale: committedScale.current,
-    config: SPRING_CONFIG,
-  }));
-
   /* ── Gesture-active guard ── */
   const gestureActive = useRef(false);
 
-  /* ── Sync incoming zoom prop from external sources (toolbar slider) ── */
+  const [spring, api] = useSpring(() => ({
+    x: 0,
+    y: 0,
+    rotation: 0,
+    scale: zoom,
+    config: SPRING_CONFIG,
+    onChange: {
+      x: (val: number) => { committedX.current = val; },
+      y: (val: number) => { committedY.current = val; },
+      scale: (val: number) => { committedScale.current = val; },
+      rotation: (val: number) => { committedRotation.current = val; },
+    },
+  }));
+
+  /* ── Sync incoming zoom prop from toolbar slider ONLY when not gesturing ── */
   useEffect(() => {
-    if (!gestureActive.current && Math.abs(zoom - committedScale.current) > 0.001) {
-      committedScale.current = zoom;
-      api.set({ scale: zoom });
+    if (!gestureActive.current) {
+      api.start({ scale: zoom });
     }
   }, [zoom, api]);
 
@@ -169,7 +174,10 @@ export function PaperCanvas({
     zoomChangeTimer.current = setTimeout(() => onZoomChange(val), 32);
   };
 
-  /* ── Unified 2-finger touch gesture system with intent locking ── */
+  /* ── Touch gesture system ──
+     2 fingers: pan OR zoom (intent locked)
+     3 fingers: rotate only
+  ── */
   useEffect(() => {
     const el = deskRef.current;
     if (!el) return;
@@ -178,18 +186,17 @@ export function PaperCanvas({
     el.addEventListener("gesturestart", prevent, { passive: false });
     el.addEventListener("gesturechange", prevent, { passive: false });
 
-    let intent: "none" | "pan" | "zoom" | "rotate" = "none";
+    let intent: "none" | "pan" | "zoom" = "none";
+    let gestureType: "none" | "two-finger" | "rotate" = "none";
     let accumulatedPan = 0;
     let accumulatedZoom = 0;
-    let accumulatedRotation = 0;
 
     let initialDist = 0;
-    let initialAngle = 0;
     let initialMidpoint = { x: 0, y: 0 };
 
     let lastDist = 0;
-    let lastAngle = 0;
     let lastMidpoint = { x: 0, y: 0 };
+    let lastAngle3 = 0;
 
     const velocityBuffer: { x: number; y: number; t: number }[] = [];
 
@@ -200,19 +207,9 @@ export function PaperCanvas({
       graceTimer = null;
     };
 
-    const commitValues = () => {
-      committedX.current = spring.x.get();
-      committedY.current = spring.y.get();
-      committedRotation.current = spring.rotation.get();
-      committedScale.current = spring.scale.get();
-    };
-
     const applyPanMomentum = (vx: number, vy: number) => {
       const speed = Math.sqrt(vx * vx + vy * vy);
-      if (speed < MIN_VELOCITY) {
-        commitValues();
-        return;
-      }
+      if (speed < MIN_VELOCITY) return;
 
       const cvx = clampVelocity(vx);
       const cvy = clampVelocity(vy);
@@ -229,102 +226,102 @@ export function PaperCanvas({
         x: bx.outOfBounds ? bx.edge : targetX,
         y: by.outOfBounds ? by.edge : targetY,
         config: bx.outOfBounds || by.outOfBounds ? SNAPBACK_CONFIG : SPRING_CONFIG,
-        onRest: () => commitValues(),
       });
     };
 
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 2) return;
+      if (e.touches.length === 2) {
+        gestureActive.current = true;
+        api.stop();
 
-      gestureActive.current = true;
-      api.stop();
+        gestureType = "two-finger";
+        initialDist = getTouchDist(e.touches);
+        initialMidpoint = getTouchMidpoint(e.touches);
 
-      initialDist = getTouchDist(e.touches);
-      initialAngle = getTouchAngle(e.touches);
-      initialMidpoint = getTouchMidpoint(e.touches);
+        lastDist = initialDist;
+        lastMidpoint = initialMidpoint;
 
-      lastDist = initialDist;
-      lastAngle = initialAngle;
-      lastMidpoint = initialMidpoint;
+        intent = "none";
+        accumulatedPan = 0;
+        accumulatedZoom = 0;
+        velocityBuffer.length = 0;
+        clearGrace();
+      } else if (e.touches.length === 3) {
+        gestureActive.current = true;
+        api.stop();
 
-      intent = "none";
-      accumulatedPan = 0;
-      accumulatedZoom = 0;
-      accumulatedRotation = 0;
-      velocityBuffer.length = 0;
-
-      clearGrace();
+        gestureType = "rotate";
+        lastAngle3 = getAngleFromTouches3(e.touches);
+        clearGrace();
+      }
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (e.touches.length !== 2) return;
-      e.preventDefault();
+      /* ── 2-finger: pan or zoom ── */
+      if (e.touches.length === 2 && gestureType === "two-finger") {
+        e.preventDefault();
 
-      const dist = getTouchDist(e.touches);
-      const angle = getTouchAngle(e.touches);
-      const midpoint = getTouchMidpoint(e.touches);
+        const dist = getTouchDist(e.touches);
+        const midpoint = getTouchMidpoint(e.touches);
 
-      const distDelta = Math.abs(dist - initialDist);
-      let angleDelta = Math.abs(angle - initialAngle);
-      if (angleDelta > 180) angleDelta = 360 - angleDelta;
-      const panDelta = Math.hypot(
-        midpoint.x - initialMidpoint.x,
-        midpoint.y - initialMidpoint.y
-      );
+        const distDelta = Math.abs(dist - initialDist);
+        const panDelta = Math.hypot(
+          midpoint.x - initialMidpoint.x,
+          midpoint.y - initialMidpoint.y
+        );
 
-      accumulatedZoom = distDelta;
-      accumulatedRotation = angleDelta;
-      accumulatedPan = panDelta;
+        accumulatedZoom = distDelta;
+        accumulatedPan = panDelta;
 
-      /* Lock intent based on first threshold crossed */
-      if (intent === "none") {
-        if (accumulatedZoom > ZOOM_THRESHOLD) intent = "zoom";
-        else if (accumulatedRotation > ROTATE_THRESHOLD) intent = "rotate";
-        else if (accumulatedPan > PAN_THRESHOLD) intent = "pan";
+        /* Lock intent based on first threshold crossed */
+        if (intent === "none") {
+          if (accumulatedZoom > ZOOM_THRESHOLD) intent = "zoom";
+          else if (accumulatedPan > PAN_THRESHOLD) intent = "pan";
+        }
+
+        if (intent === "zoom") {
+          const ratio = dist / lastDist;
+          const currentScale = spring.scale.get();
+          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
+          api.set({ scale: nextScale });
+          notifyZoomChange(nextScale);
+        }
+
+        if (intent === "pan") {
+          const dx = midpoint.x - lastMidpoint.x;
+          const dy = midpoint.y - lastMidpoint.y;
+          const rawX = spring.x.get() + dx;
+          const rawY = spring.y.get() + dy;
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const bx = rubberBand(rawX, vw, true);
+          const by = rubberBand(rawY, vh, true);
+          api.set({ x: bx.val, y: by.val });
+
+          const now = performance.now();
+          velocityBuffer.push({ x: midpoint.x, y: midpoint.y, t: now });
+          if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
+        }
+
+        lastDist = dist;
+        lastMidpoint = midpoint;
       }
 
-      /* Execute locked intent */
-      if (intent === "zoom") {
-        const ratio = dist / lastDist;
-        const currentScale = spring.scale.get();
-        const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
-        api.set({ scale: nextScale });
-        notifyZoomChange(nextScale);
-      }
-
-      if (intent === "pan") {
-        const dx = midpoint.x - lastMidpoint.x;
-        const dy = midpoint.y - lastMidpoint.y;
-        const rawX = spring.x.get() + dx;
-        const rawY = spring.y.get() + dy;
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        const bx = rubberBand(rawX, vw, true);
-        const by = rubberBand(rawY, vh, true);
-        api.set({ x: bx.val, y: by.val });
-
-        const now = performance.now();
-        velocityBuffer.push({ x: midpoint.x, y: midpoint.y, t: now });
-        if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
-      }
-
-      if (intent === "rotate") {
-        let dAngle = angle - lastAngle;
+      /* ── 3-finger: rotate only ── */
+      if (e.touches.length === 3 && gestureType === "rotate") {
+        e.preventDefault();
+        const angle = getAngleFromTouches3(e.touches);
+        let dAngle = angle - lastAngle3;
         if (dAngle > 180) dAngle -= 360;
         if (dAngle < -180) dAngle += 360;
         api.set({ rotation: spring.rotation.get() + dAngle });
+        lastAngle3 = angle;
       }
-
-      lastDist = dist;
-      lastAngle = angle;
-      lastMidpoint = midpoint;
     };
 
     const onTouchEnd = () => {
-      /* Commit current spring values to refs so re-renders don't reset */
-      commitValues();
-
-      if (intent === "pan" && velocityBuffer.length >= 2) {
+      /* Pan momentum for 2-finger pan */
+      if (gestureType === "two-finger" && intent === "pan" && velocityBuffer.length >= 2) {
         const first = velocityBuffer[0];
         const last = velocityBuffer[velocityBuffer.length - 1];
         const dt = (last.t - first.t) / 1000;
@@ -340,17 +337,22 @@ export function PaperCanvas({
       }
 
       /* Sync zoom to React state */
-      if (intent === "zoom") {
-        onZoomChange(committedScale.current);
+      if (gestureType === "two-finger" && intent === "zoom") {
+        onZoomChange(spring.scale.get());
       }
 
       /* Reset tracking — NOT spring values */
+      gestureType = "none";
       intent = "none";
       accumulatedPan = 0;
       accumulatedZoom = 0;
-      accumulatedRotation = 0;
       velocityBuffer.length = 0;
-      gestureActive.current = false;
+
+      /* Delay clearing gestureActive so React re-render from onZoomChange
+         doesn't trigger the zoom sync useEffect */
+      requestAnimationFrame(() => {
+        gestureActive.current = false;
+      });
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: false });
