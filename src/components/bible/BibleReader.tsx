@@ -958,6 +958,7 @@ export function BibleReader() {
   // ── Resume handler ──
   const handleResumeSession = useCallback(() => {
     if (!existingSession) return;
+    isNewSessionRef.current = false;
     setShowResumeOrNew(false);
 
     // Build config from session
