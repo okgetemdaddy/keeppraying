@@ -963,12 +963,13 @@ export function BibleReader() {
 
   // ── Load ink strokes from DB on chapter change ──
   const inkAnnotationId = inkAnnotation?.id;
-  const inkSaveInFlight = useRef(false);
   useEffect(() => {
-    if (inkSaveInFlight.current) return; // Skip — this is our own save echoing back
     if (inkAnnotation) {
-      inkHistory.replaceStrokes((inkAnnotation.strokes as unknown as InkStroke[]) ?? []);
+      const incoming = (inkAnnotation.strokes as unknown as InkStroke[]) ?? [];
+      if (incoming.length === inkHistory.strokes.length) return;
+      inkHistory.replaceStrokes(incoming);
     } else {
+      if (inkHistory.strokes.length === 0) return;
       inkHistory.replaceStrokes([]);
     }
   }, [inkAnnotation]);
@@ -981,13 +982,10 @@ export function BibleReader() {
       inkSaveTimer.current = setTimeout(() => {
         if (!bookUsfm || !currentChapter) return;
         const inkKey = `${bookUsfm}.${currentChapter.id}.ink`;
-        inkSaveInFlight.current = true;
         saveAnnotationMut.mutate({
           verseIds: [inkKey],
           strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
-        }, {
-          onSettled: () => { inkSaveInFlight.current = false; },
         });
       }, 500);
     },

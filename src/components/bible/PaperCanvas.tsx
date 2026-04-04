@@ -1,5 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
-import { useSpring, animated, to } from "@react-spring/web";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useGesture } from "@use-gesture/react";
 import type { TextAlign, CanvasBackground } from "@/components/bible/ZoomWrapper";
 
@@ -8,7 +7,6 @@ const PAPER_W = 1056; // 11in × 96dpi
 const PAPER_H = 1632; // 17in × 96dpi
 const MIN_SCALE = 0.3;
 const MAX_SCALE = 5;
-const SPRING_CONFIG = { tension: 170, friction: 26 };
 
 /* ── Intent locking thresholds (2-finger: pan/zoom only) ── */
 const ZOOM_THRESHOLD = 15;    // px finger distance change
@@ -81,6 +79,7 @@ export function PaperCanvas({
   children,
 }: PaperCanvasProps) {
   const deskRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<HTMLDivElement>(null);
 
   const [isDark, setIsDark] = useState(false);
 
@@ -95,25 +94,15 @@ export function PaperCanvas({
     return () => observer.disconnect();
   }, []);
 
-  /* ── Committed value refs — shadowed continuously via spring onChange ── */
-  const committedScale = useRef(1);
-  const committedRotation = useRef(0);
-  const committedX = useRef(0);
-  const committedY = useRef(0);
+  /* ── Transform state — lives in a ref, applied directly to DOM ── */
+  const transformState = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
 
-  const [spring, api] = useSpring(() => ({
-    x: 0,
-    y: 0,
-    rotation: 0,
-    scale: 1,
-    config: SPRING_CONFIG,
-    onChange: {
-      x: (val: number) => { committedX.current = val; },
-      y: (val: number) => { committedY.current = val; },
-      scale: (val: number) => { committedScale.current = val; },
-      rotation: (val: number) => { committedRotation.current = val; },
-    },
-  }));
+  const applyTransform = useCallback(() => {
+    const el = paperRef.current;
+    if (!el) return;
+    const { x, y, scale, rotation } = transformState.current;
+    el.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${rotation}deg) scale(${scale})`;
+  }, []);
 
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)
@@ -143,7 +132,6 @@ export function PaperCanvas({
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         gestureStarted = true;
-        api.stop();
 
         gestureType = "two-finger";
         initialDist = getTouchDist(e.touches);
@@ -157,7 +145,6 @@ export function PaperCanvas({
         accumulatedZoom = 0;
       } else if (e.touches.length === 3) {
         gestureStarted = true;
-        api.stop();
 
         gestureType = "rotate";
         lastAngle3 = getAngleFromTouches3(e.touches);
@@ -190,9 +177,9 @@ export function PaperCanvas({
         if (intent === "zoom") {
           const ratio = dist / lastDist;
           if (Math.abs(ratio - 1.0) > 0.008) {
-            const currentScale = spring.scale.get();
-            const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
-            api.set({ scale: nextScale });
+            const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, transformState.current.scale * ratio));
+            transformState.current.scale = nextScale;
+            applyTransform();
             lastDist = dist;
           }
         }
@@ -200,10 +187,9 @@ export function PaperCanvas({
         if (intent === "pan") {
           const dx = midpoint.x - lastMidpoint.x;
           const dy = midpoint.y - lastMidpoint.y;
-          api.set({
-            x: spring.x.get() + dx,
-            y: spring.y.get() + dy,
-          });
+          transformState.current.x += dx;
+          transformState.current.y += dy;
+          applyTransform();
         }
 
         if (intent !== "zoom") lastDist = dist;
@@ -218,7 +204,8 @@ export function PaperCanvas({
         if (dAngle > 180) dAngle -= 360;
         if (dAngle < -180) dAngle += 360;
         if (Math.abs(dAngle) > 0.3) {
-          api.set({ rotation: spring.rotation.get() + dAngle });
+          transformState.current.rotation += dAngle;
+          applyTransform();
           lastAngle3 = angle;
         }
       }
@@ -226,7 +213,7 @@ export function PaperCanvas({
 
     const onTouchEnd = (e: TouchEvent) => {
       if (!gestureStarted) return;
-      if (e.touches.length > 0) return; // still fingers on screen
+      if (e.touches.length > 0) return;
       gestureStarted = false;
       gestureType = "none";
       intent = "none";
@@ -247,7 +234,7 @@ export function PaperCanvas({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [api]);
+  }, [applyTransform]);
 
   /* ── Desktop: wheel for pan, ctrl+wheel for zoom ── */
   useGesture(
@@ -255,12 +242,12 @@ export function PaperCanvas({
       onWheel: ({ delta: [, dy], event, ctrlKey, metaKey }) => {
         if (ctrlKey || metaKey) {
           event.preventDefault();
-          const currentScale = spring.scale.get();
           const delta = -dy * 0.003;
-          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
-          api.set({ scale: nextScale });
+          transformState.current.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, transformState.current.scale + delta));
+          applyTransform();
         } else {
-          api.set({ y: spring.y.get() - dy * 2.5 });
+          transformState.current.y -= dy * 2.5;
+          applyTransform();
         }
       },
     },
@@ -289,13 +276,11 @@ export function PaperCanvas({
           zIndex: 1,
         }}
       >
-        {/* Paper page */}
-        <animated.div
+        {/* Paper page — transform applied imperatively via ref */}
+        <div
+          ref={paperRef}
           style={{
-            transform: to(
-              [spring.x, spring.y, spring.rotation, spring.scale],
-              (x, y, r, s) => `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${r}deg) scale(${s})`
-            ),
+            transform: "translate3d(calc(-50% + 0px), calc(-50% + 0px), 0) rotate(0deg) scale(1)",
             transformOrigin: "center center",
             position: "absolute",
             top: "50%",
@@ -343,9 +328,8 @@ export function PaperCanvas({
               {overlay}
             </div>
           )}
-        </animated.div>
+        </div>
       </div>
-
     </>
   );
 }
