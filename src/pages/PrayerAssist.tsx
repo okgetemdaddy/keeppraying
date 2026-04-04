@@ -173,7 +173,7 @@ export default function PrayerAssist() {
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/prayer-assist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
+        body: JSON.stringify({ messages: [...messages, userMsg].filter(m => m.role !== "signup-nudge") }),
       });
 
       if (!resp.ok) {
