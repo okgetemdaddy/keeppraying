@@ -77,12 +77,15 @@ export function BibleEdgeTabs({ onSuggestionsClick, onIPadClick, showIPad, hidde
                         background: "linear-gradient(105deg, transparent 40%, rgba(251,191,36,0.15) 45%, rgba(251,191,36,0.25) 50%, rgba(251,191,36,0.15) 55%, transparent 60%)",
                         backgroundSize: "200% 100%",
                       }}
-                      animate={{ backgroundPosition: ["200% 0%", "-200% 0%"] }}
+                      animate={{
+                        backgroundPosition: ["200% 0%", "-200% 0%", "-200% 0%"],
+                        opacity: [1, 1, 0],
+                      }}
                       transition={{
-                        duration: 3,
+                        duration: 43,
+                        times: [0, 3 / 43, 3 / 43],
                         ease: "easeInOut",
                         repeat: Infinity,
-                        repeatDelay: 4,
                       }}
                     />
                   )}
