@@ -829,21 +829,40 @@ export function BibleReader() {
   }, []);
 
   const handleToggleStudyMode = useCallback((v: boolean) => {
-    if (v && studyModeVariant === "margin") {
-      // Open setup sheet instead of immediately entering study mode
+    if (v) {
+      // Always show session picker first — user picks resume or new
+      setSessionPickerOpen(true);
+      return;
+    }
+    setStudyMode(false);
+    try { localStorage.setItem("bible_study_mode", "false"); } catch {}
+    setCanvasOpen(false);
+    setJournalOpen(false);
+  }, []);
+
+  const handleSessionPickerNewSession = useCallback(() => {
+    if (studyModeVariant === "margin") {
       setCanvasSetupOpen(true);
-      return;
-    }
-    if (v && studyModeVariant === "canvas") {
-      // Open canvas creation drawer for verse extraction
+    } else if (studyModeVariant === "canvas") {
       setCanvasCreationOpen(true);
-      return;
+    } else {
+      // journal — activate directly
+      setStudyMode(true);
+      try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+      setJournalOpen(true);
     }
-    setStudyMode(v);
-    try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    if (v && studyModeVariant === "journal") setJournalOpen(true);
-    if (!v) { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyModeVariant]);
+
+  const handleResumeSession = useCallback((session: SavedSession) => {
+    setStudyModeVariant("canvas");
+    try { localStorage.setItem("bible_study_variant", "canvas"); } catch {}
+    setStudyMode(true);
+    try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+    setCanvasOpen(true);
+    setJournalOpen(false);
+    // The session config can be used to initialize PaperCanvas in the future
+  }, []);
+
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
     try { localStorage.setItem("bible_study_variant", v); } catch {}
@@ -859,16 +878,17 @@ export function BibleReader() {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
         if (!studyMode) {
-          handleToggleStudyMode(true);
-          toast("🍎 Apple Pencil detected — Study Mode enabled", {
-            description: "Write directly on the page alongside your verses",
+          // Show session picker instead of auto-enabling study mode
+          setSessionPickerOpen(true);
+          toast("🍎 Apple Pencil detected", {
+            description: "Choose a canvas session to start studying",
           });
         }
       }
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [isIPad, pencilDetected, studyMode, handleToggleStudyMode]);
+  }, [isIPad, pencilDetected, studyMode]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
