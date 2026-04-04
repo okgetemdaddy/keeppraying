@@ -1,41 +1,39 @@
 
 
-## Two Fixes in BibleReader.tsx
+## Fix: PaperCanvas Text Column Width from Session Config
 
-### FIX 1: `.single()` → `.maybeSingle()`
+### Problem
+`PaperCanvas.tsx` hardcodes `maxWidth: 936px` with fixed padding on the text column. The `CanvasCreationDrawer` calculates precise text box position and dimensions from `charsPerLine`, but these values are ignored at render time — line breaks won't match the preview.
 
-**File:** `src/components/bible/BibleReader.tsx` (line 926)
+### Changes
 
-Change `.single()` to `.maybeSingle()` in the resume-check query inside `handleStudyModeEntry`. The existing `if (session)` null check already handles the no-session case — this just prevents Supabase from throwing PGRST116 when zero rows match.
+**1. `src/components/bible/PaperCanvas.tsx`**
 
-### FIX 2: Pass camera ref to heartbeat
+- Add optional `textBoxConfig` to `PaperCanvasProps`:
+  ```ts
+  textBoxConfig?: { x: number; y: number; width: number; height: number };
+  ```
+- In the text column div (lines 308–324), branch on `textBoxConfig`:
+  - **When provided**: use `position: absolute`, `left/top/width/maxHeight` from the config, no margin/padding overrides
+  - **When absent**: keep existing hardcoded layout (backward compat)
 
-**Problem:** `PaperCanvas` owns `transformState` internally (line 99 of PaperCanvas.tsx) and exposes it via `PaperCanvasContext`. But `useStudySessionHeartbeat` is called at the `BibleReader` level — **outside** the context provider's subtree. So we can't just call `usePaperCamera()`.
+**2. `src/components/bible/BibleReader.tsx`**
 
-**Solution:** Add an optional `cameraRef` prop to `PaperCanvas` so BibleReader can pass in a ref it owns:
+- Where `<PaperCanvas>` is rendered (~line 2606), pass `textBoxConfig` when `activeSessionConfig?.textBox` exists:
+  ```tsx
+  textBoxConfig={activeSessionConfig?.textBox ? {
+    x: activeSessionConfig.textBox.x * 96,
+    y: activeSessionConfig.textBox.y * 96,
+    width: activeSessionConfig.textBox.width * 96,
+    height: activeSessionConfig.textBox.height * 96,
+  } : undefined}
+  ```
 
-1. **BibleReader.tsx**: Create a `useRef` for the camera state:
-   ```ts
-   const paperCameraRef = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
-   ```
-   Pass it to both `PaperCanvas` and `useStudySessionHeartbeat`:
-   ```ts
-   useStudySessionHeartbeat({
-     sessionId: activeSessionId,
-     timerMinutes: activeSessionConfig?.timerMinutes,
-     cameraRef: paperCameraRef,
-   });
-   ```
-   ```tsx
-   <PaperCanvas cameraRef={paperCameraRef} ... />
-   ```
-
-2. **PaperCanvas.tsx**: Accept optional `cameraRef` prop. When provided, sync it with the internal `transformState` — after every `applyTransform()` call, copy the current values to `cameraRef.current`. Also use it as the value in the context provider so resume-session restore works through the same ref.
+  The `* 96` converts from inches (stored in config) to pixels (96 DPI canvas).
 
 ### Files
-
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | `.maybeSingle()` fix + create `paperCameraRef` + wire to heartbeat and PaperCanvas |
-| `src/components/bible/PaperCanvas.tsx` | Accept `cameraRef` prop, sync with internal transform state |
+| `src/components/bible/PaperCanvas.tsx` | Add `textBoxConfig` prop, conditionally render absolute-positioned text column |
+| `src/components/bible/BibleReader.tsx` | Pass `textBoxConfig` from `activeSessionConfig.textBox` to `PaperCanvas` |
 
