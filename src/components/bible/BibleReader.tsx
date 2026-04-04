@@ -2128,14 +2128,116 @@ export function BibleReader() {
           </div>
         </div>
       </div>
+      )}
+
+      {/* ── Floating nav button + overlay for paper canvas study mode ── */}
+      {isInPaperCanvas && !studyNavOpen && (
+        <button
+          onClick={() => setStudyNavOpen(true)}
+          className="fixed top-3 left-3 z-[70] w-9 h-9 rounded-full flex items-center justify-center cursor-pointer border border-border/20 shadow-lg"
+          style={{
+            background: "rgba(0,0,0,0.4)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            color: "#fff",
+          }}
+          title="Show navigation"
+        >
+          <BookOpen className="h-4 w-4" />
+        </button>
+      )}
+
+      {isInPaperCanvas && studyNavOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[75]"
+            onClick={() => setStudyNavOpen(false)}
+          />
+          {/* Slide-down nav overlay */}
+          <div
+            className="fixed top-0 left-0 right-0 z-[80] border-b border-border shadow-lg"
+            style={{
+              background: "color-mix(in srgb, var(--background) 92%, transparent)",
+              backdropFilter: "blur(24px) saturate(1.4)",
+              WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+              padding: "8px 16px",
+            }}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-foreground">
+                {currentBook?.title} {currentChapter?.title}
+              </span>
+              <button
+                onClick={() => setStudyNavOpen(false)}
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select
+                value={versionId?.toString()}
+                onValueChange={(v) => {
+                  setVersionId(Number(v));
+                  setBookUsfm(undefined);
+                  setChapterIdx(0);
+                  setStudyNavOpen(false);
+                }}
+              >
+                <SelectTrigger className="w-[130px] text-xs sm:text-sm">
+                  <SelectValue placeholder={versionsLoading ? "Loading…" : "Version"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {versions?.map((v) => (
+                    <SelectItem key={v.id} value={v.id.toString()}>
+                      {v.id === 110 ? "For Kids" : v.localized_abbreviation}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={bookUsfm}
+                onValueChange={(v) => { setBookUsfm(v); setChapterIdx(0); setStudyNavOpen(false); }}
+                disabled={!index}
+              >
+                <SelectTrigger className="w-[140px] sm:w-[170px] text-xs sm:text-sm">
+                  <SelectValue placeholder={indexLoading ? "Loading…" : "Book"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {index?.books?.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={chapterIdx.toString()}
+                onValueChange={(v) => { setChapterIdx(Number(v)); setStudyNavOpen(false); }}
+                disabled={!currentBook}
+              >
+                <SelectTrigger className="w-[80px] text-xs sm:text-sm">
+                  <SelectValue placeholder="Ch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currentBook?.chapters?.map((ch, i) => (
+                    <SelectItem key={ch.id} value={i.toString()}>{ch.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Reading Area ── */}
       <div ref={readingAreaRef} className={`relative py-8 sm:py-12 ${
-        studyMode && studyModeVariant === "margin"
+        isInPaperCanvas
           ? "w-full px-0"
           : "mx-auto max-w-3xl px-5 sm:px-8"
       }`}>
-        {currentBook && currentChapter && (
+        {currentBook && currentChapter && !isInPaperCanvas && (
           <motion.header
             {...fadeIn}
             className={`mb-8 text-center ${studyMode ? 'pointer-events-none backdrop-blur-md bg-background/80 dark:bg-background/70 -mx-5 sm:-mx-8 px-5 sm:px-8 py-4 rounded-b-2xl sticky top-[88px] z-20' : ''}`}
