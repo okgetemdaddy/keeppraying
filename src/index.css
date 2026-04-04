@@ -405,3 +405,10 @@
     100% { opacity: 0; transform: scale(1.5); }
   }
 }
+
+/* ── Paper Canvas study mode: heavy frosted glass on KeepReadingNav ── */
+html[data-paper-canvas] nav.sticky {
+  backdrop-filter: blur(24px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.4) !important;
+  background: color-mix(in srgb, hsl(var(--background)) 92%, transparent) !important;
+}
