@@ -764,6 +764,25 @@ export function BibleReader() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeSessionConfig, setActiveSessionConfig] = useState<CanvasSessionConfig | null>(null);
   const [gestureOverlayOpen, setGestureOverlayOpen] = useState(false);
+  const [showPremiumUpsell, setShowPremiumUpsell] = useState(false);
+  const [showResumeOrNew, setShowResumeOrNew] = useState(false);
+  const [existingSession, setExistingSession] = useState<StudySession | null>(null);
+  const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>("free");
+
+  // ── Fetch user subscription tier ──
+  useEffect(() => {
+    if (!user) { setUserSubscriptionTier("free"); return; }
+    supabase
+      .from("profiles")
+      .select("subscription_tier")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data && (data as any).subscription_tier) {
+          setUserSubscriptionTier((data as any).subscription_tier);
+        }
+      });
+  }, [user]);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
   const [inkZoom, setInkZoom] = useState(() => {
