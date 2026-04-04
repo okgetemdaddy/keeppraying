@@ -1,81 +1,44 @@
 
+Goal
+- Fix the remaining snap-back by making the spring state survive React re-renders.
+- Move rotation back to 3 fingers, with 2 fingers handling only pan/zoom intent locking.
 
-## Rework PaperCanvas to 2-Finger Intent-Locked Gestures
+Implementation
+1. `src/components/bible/PaperCanvas.tsx` — make the spring authoritative
+- Keep `committedX`, `committedY`, `committedScale`, `committedRotation`, and `gestureActive`.
+- Initialize the spring once, then continuously mirror `x/y/scale/rotation` into those refs via spring `onChange` callbacks so the refs always shadow the live spring.
+- Replace the current prop sync with a single `useEffect(() => { if (!gestureActive.current) api.start({ scale: zoom }) }, [zoom])`.
+- Remove any other prop-driven writes that can overwrite the live spring during re-renders.
 
-### Summary
+2. Rework touch input
+- Single finger: no transform gesture handling.
+- Two fingers: intent locking between only `pan` and `zoom`.
+  - Zoom locks when finger-distance change exceeds 15px.
+  - Pan locks when midpoint movement exceeds 12px.
+  - Remove rotation entirely from the 2-finger path.
+- Three fingers: rotation only.
+  - Add a `getAngleFromTouches3()` helper using the first and third touches.
+  - On 3-finger move, update only `rotation` with `api.set`.
 
-Replace the current 2-finger zoom + 3-finger pan system with a unified 2-finger gesture system using dominant intent locking (like Apple Maps/Photos). Single finger does nothing on the desk surface.
+3. Fix release behavior
+- On touch start, set `gestureActive.current = true`.
+- On touch move, use `api.set` only for live gesture updates.
+- On touch end:
+  - Never reset `x`, `y`, `scale`, or `rotation`.
+  - Keep pan momentum only for 2-finger pan, using the existing velocity cap and grace period.
+  - For zoom, commit the final value with `onZoomChange(spring.scale.get())`.
+  - Clear `gestureActive` inside `requestAnimationFrame` after release so the React update from `onZoomChange` cannot immediately overwrite the spring with a stale prop.
+  - For 3-finger rotation, stop in place with no momentum.
 
-### Changes — `src/components/bible/PaperCanvas.tsx`
+4. Preserve explicit reset + existing desktop behavior
+- Keep the snap-to-center button as the only code path that resets to `x:0, y:0, rotation:0, scale:1`.
+- Keep desktop wheel behavior as-is; just let the new spring-shadow ref model handle persistence instead of manual commit timing.
 
-**1. Add committed value refs** (after line 125):
-```ts
-const committedScale = useRef(zoom);
-const committedRotation = useRef(0);
-const committedX = useRef(0);
-const committedY = useRef(0);
-```
-
-Update spring initializer to use refs. Update the zoom sync `useEffect` to compare against `committedScale.current`.
-
-**2. Replace the entire touch gesture effect** (lines 144-388):
-
-Delete all 3-finger code (`getMidpoint3`, `getAngle3`, `gestureFingerCount`, the `=== 3` branches). Replace with a unified 2-finger system:
-
-- **Helpers**: `getTouchDist` (keep), add `getTouchAngle` (2-finger), `getTouchMidpoint` (2-finger)
-- **Intent locking state**: `intent: 'none' | 'pan' | 'zoom' | 'rotate'`, plus `accumulatedPan/Zoom/Rotation` counters and `initialDist/Angle/Midpoint`
-- **Thresholds**: zoom > 15px dist delta, rotate > 8° angle delta, pan > 12px midpoint delta
-
-**touchstart (2 fingers)**:
-- Set `gestureActive.current = true`
-- Record `initialDist`, `initialAngle`, `initialMidpoint`
-- Reset intent and accumulators
-- Stop any active spring animation
-
-**touchmove (2 fingers)** — intent locking:
-- Accumulate deltas for each axis
-- Lock intent when first threshold is crossed
-- Execute only the locked intent:
-  - **zoom**: `api.set({ scale })` + `notifyZoomChange`
-  - **pan**: `api.set({ x, y })` with rubber-banding
-  - **rotate**: `api.set({ rotation })`
-- Update `lastDist/lastAngle/lastMidpoint` for next frame
-- Buffer velocity for pan momentum
-
-**touchend**:
-- Commit all spring values to refs (`committedX/Y/Rotation/Scale`)
-- For pan intent: apply momentum with grace period (keep existing momentum logic)
-- For zoom/rotate: just stop, no momentum
-- Sync zoom to React: `onZoomChange(committedScale.current)` if zoom changed
-- Reset gesture tracking state, set `gestureActive.current = false`
-
-**3. Update snap-to-center button** (line 498-502):
-- Reset all committed refs to 0/1
-- Call `onZoomChange(1)`
-
-**4. Update desktop wheel handler** (lines 390-417):
-- Set `gestureActive.current = true` during zoom changes, update `committedScale.current`
-- Update `committedY.current` during vertical pan
-
-### Intent locking thresholds
-
-| Intent | Threshold | Rationale |
-|--------|-----------|-----------|
-| Zoom | 15px finger distance change | Matches Apple's pinch sensitivity |
-| Rotate | 8° angle change | Prevents accidental rotation during pan |
-| Pan | 12px midpoint movement | Slightly above dead zone, quick lock |
-
-### What stays the same
-- Rubber-banding helpers
-- Spring configs
-- MarginCanvas component
-- Paper dimensions and styling
-- Desktop wheel handlers (minor ref updates)
-- Snap-to-center button (minor ref updates)
-
-### Files to edit
-
-| File | Change |
-|------|--------|
-| `src/components/bible/PaperCanvas.tsx` | Full gesture system rewrite |
-
+Technical details
+- File to edit: `src/components/bible/PaperCanvas.tsx`
+- No `BibleReader` changes are needed in this pass; the nav overlay controls are already present.
+- Success criteria:
+  - Pan/zoom/rotation no longer jump back after finger lift.
+  - 2-finger interaction feels stable because it only decides between pan and zoom.
+  - 3-finger rotation works independently and stays where released.
+  - Toolbar slider still updates zoom correctly.
