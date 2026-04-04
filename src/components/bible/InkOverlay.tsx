@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { toast } from "sonner";
+
 import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
 import type { Point } from "./HandwritingEngine";
@@ -360,22 +360,36 @@ export function InkOverlay({
           // 1-4 words from single verse → word study
           if (enclosedWords.length <= 4 && uniqueVerses.length === 1 && onWordCircle) {
             const words = enclosedWords.map((w) => w.word).join(" ");
-            const xs = currentPoints.map((p) => p.x);
-            const ys = currentPoints.map((p) => p.y);
-            const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length) * zoom;
-            const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length) * zoom;
-            onWordCircle(words, uniqueVerses[0], { x: centerX, y: centerY });
+            const svgEl = svgRef.current!;
+            const ctmW = svgEl.getScreenCTM();
+            if (ctmW) {
+              const xs = currentPoints.map((p) => p.x);
+              const ys = currentPoints.map((p) => p.y);
+              const avgSvgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const avgSvgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+              const pt = svgEl.createSVGPoint();
+              pt.x = avgSvgX; pt.y = avgSvgY;
+              const screen = pt.matrixTransform(ctmW);
+              onWordCircle(words, uniqueVerses[0], { x: screen.x, y: screen.y });
+            }
             pointsBufferRef.current = [];
             return;
           }
 
           // 5+ words or multiple verses → verse selection (existing behavior)
           if (onCircleSelect) {
-            const xs = currentPoints.map((p) => p.x);
-            const ys = currentPoints.map((p) => p.y);
-            const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length) * zoom;
-            const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length) * zoom;
-            onCircleSelect(uniqueVerses, { x: centerX, y: centerY });
+            const svgEl = svgRef.current!;
+            const ctmC = svgEl.getScreenCTM();
+            if (ctmC) {
+              const xs = currentPoints.map((p) => p.x);
+              const ys = currentPoints.map((p) => p.y);
+              const avgSvgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const avgSvgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+              const pt = svgEl.createSVGPoint();
+              pt.x = avgSvgX; pt.y = avgSvgY;
+              const screen = pt.matrixTransform(ctmC);
+              onCircleSelect(uniqueVerses, { x: screen.x, y: screen.y });
+            }
             pointsBufferRef.current = [];
             return;
           }
@@ -385,11 +399,18 @@ export function InkOverlay({
         if (onCircleSelect) {
           const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
           if (matched.length > 0) {
-            const xs = currentPoints.map((p) => p.x / zoom);
-            const ys = currentPoints.map((p) => p.y / zoom);
-            const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length);
-            const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length);
-            onCircleSelect(matched, { x: centerX, y: centerY });
+            const svgEl = svgRef.current!;
+            const ctmF = svgEl.getScreenCTM();
+            if (ctmF) {
+              const xs = currentPoints.map((p) => p.x);
+              const ys = currentPoints.map((p) => p.y);
+              const avgSvgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const avgSvgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+              const pt = svgEl.createSVGPoint();
+              pt.x = avgSvgX; pt.y = avgSvgY;
+              const screen = pt.matrixTransform(ctmF);
+              onCircleSelect(matched, { x: screen.x, y: screen.y });
+            }
             pointsBufferRef.current = [];
             return;
           }
@@ -415,37 +436,44 @@ export function InkOverlay({
     }
 
     /* ── Underline gesture detection ── */
-    const underlineDetected = isUnderlineGesture(currentPoints);
-    toast(`DEBUG gesture: underline=${underlineDetected} points=${currentPoints.length}`);
+    if (onUnderlineGesture && isUnderlineGesture(currentPoints) && svgRef.current) {
+      const svg = svgRef.current;
+      const ctm = svg.getScreenCTM();
 
-    if (onUnderlineGesture && underlineDetected && svgRef.current) {
-      const svgRect = svgRef.current.getBoundingClientRect();
-      const startX = Math.min(...currentPoints.map((p) => p.x)) * zoom + svgRect.left;
-      const endX = Math.max(...currentPoints.map((p) => p.x)) * zoom + svgRect.left;
-      const avgY = (currentPoints.reduce((s, p) => s + p.y, 0) / currentPoints.length) * zoom + svgRect.top;
+      if (ctm) {
+        const screenPoints = currentPoints.map(p => {
+          const pt = svg.createSVGPoint();
+          pt.x = p.x;
+          pt.y = p.y;
+          const screen = pt.matrixTransform(ctm);
+          return { x: screen.x, y: screen.y };
+        });
 
-      const wordEls = document.querySelectorAll("[data-word]");
-      const underlinedWords: string[] = [];
-      let underlinedVerse = 0;
+        const startX = Math.min(...screenPoints.map(p => p.x));
+        const endX = Math.max(...screenPoints.map(p => p.x));
+        const avgY = screenPoints.reduce((s, p) => s + p.y, 0) / screenPoints.length;
 
-      wordEls.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const elCenterX = rect.left + rect.width / 2;
-        const elBottom = rect.bottom;
+        const wordEls = document.querySelectorAll("[data-word]");
+        const underlinedWords: string[] = [];
+        let underlinedVerse = 0;
 
-        if (elCenterX >= startX && elCenterX <= endX && Math.abs(avgY - elBottom) < rect.height * 0.5) {
-          underlinedWords.push(el.getAttribute("data-word") || "");
-          underlinedVerse = parseInt(el.getAttribute("data-verse") || "0", 10);
+        wordEls.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const elCenterX = rect.left + rect.width / 2;
+          const elBottom = rect.bottom;
+
+          if (elCenterX >= startX && elCenterX <= endX && Math.abs(avgY - elBottom) < rect.height * 0.8) {
+            underlinedWords.push(el.getAttribute("data-word") || "");
+            underlinedVerse = parseInt(el.getAttribute("data-verse") || "0", 10);
+          }
+        });
+
+        if (underlinedWords.length > 0 && underlinedVerse > 0) {
+          onUnderlineGesture(underlinedVerse, underlinedWords.join(" "));
+          if (navigator.vibrate) navigator.vibrate(10);
+          pointsBufferRef.current = [];
+          return;
         }
-      });
-
-      toast(`DEBUG words found: ${underlinedWords.length} verse=${underlinedVerse} text="${underlinedWords.join(' ').slice(0, 30)}"`);
-
-      if (underlinedWords.length > 0 && underlinedVerse > 0) {
-        onUnderlineGesture(underlinedVerse, underlinedWords.join(" "));
-        if (navigator.vibrate) navigator.vibrate(10);
-        pointsBufferRef.current = [];
-        return;
       }
     }
 
@@ -460,22 +488,28 @@ export function InkOverlay({
 
     let closestVerse: number | null = null;
     let minDist = Infinity;
-    const svgRect = svgRef.current?.getBoundingClientRect();
 
-    if (svgRect) {
-      document.querySelectorAll("[data-verse]").forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const strokeCenterX = ((bbox.minX + bbox.maxX) / 2) * zoom + svgRect.left;
-        const strokeCenterY = ((bbox.minY + bbox.maxY) / 2) * zoom + svgRect.top;
-        const dist = Math.hypot(centerX - strokeCenterX, centerY - strokeCenterY);
-        if (dist < minDist) {
-          minDist = dist;
-          const vNum = parseInt(el.getAttribute("data-verse") ?? "", 10);
-          if (!isNaN(vNum)) closestVerse = vNum;
-        }
-      });
+    if (svgRef.current) {
+      const svgEl = svgRef.current;
+      const ctmV = svgEl.getScreenCTM();
+      if (ctmV) {
+        const pt = svgEl.createSVGPoint();
+        pt.x = (bbox.minX + bbox.maxX) / 2;
+        pt.y = (bbox.minY + bbox.maxY) / 2;
+        const screenCenter = pt.matrixTransform(ctmV);
+
+        document.querySelectorAll("[data-verse]").forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const dist = Math.hypot(centerX - screenCenter.x, centerY - screenCenter.y);
+          if (dist < minDist) {
+            minDist = dist;
+            const vNum = parseInt(el.getAttribute("data-verse") ?? "", 10);
+            if (!isNaN(vNum)) closestVerse = vNum;
+          }
+        });
+      }
     }
 
     /* ── Stroke compression ── */
