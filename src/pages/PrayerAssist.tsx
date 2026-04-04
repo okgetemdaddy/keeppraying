@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSearchParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Sparkles, BookOpen, Heart, Loader2, LogIn } from "lucide-react";
+import { Send, Sparkles, BookOpen, Heart, Loader2, LogIn, Mic, MicOff, Save, AudioLines, Flame, Users } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
 import { SiteNav } from "@/components/SiteNav";
 import PrayerCardLink from "@/components/PrayerCardLink";
