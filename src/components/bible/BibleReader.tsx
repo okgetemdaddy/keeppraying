@@ -2313,15 +2313,24 @@ export function BibleReader() {
                         })();
                         const verseData = verses.find((v) => v.number === verseNumber);
                         if (verseData) {
-                          const textStart = verseData.text.indexOf(underlinedText);
+                          const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
+                          const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
+                          const textStart = normalizedVerse.indexOf(normalizedUnderline);
                           if (textStart >= 0) {
                             mutations.addHighlight.mutate({
                               verseNumber,
                               color: lastColor,
                               start: textStart,
-                              end: textStart + underlinedText.length,
+                              end: textStart + normalizedUnderline.length,
                             });
-                            toast.success(`Highlighted: "${underlinedText.slice(0, 30)}${underlinedText.length > 30 ? "…" : ""}"`);
+                            toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
+                          } else {
+                            // Fallback: highlight the entire verse
+                            mutations.addHighlight.mutate({
+                              verseNumber,
+                              color: lastColor,
+                            });
+                            toast.success(`Highlighted verse ${verseNumber}`);
                           }
                         }
                       }}
