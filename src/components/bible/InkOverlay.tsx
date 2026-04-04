@@ -260,7 +260,8 @@ export function InkOverlay({
         }
       } else if (e.pointerType === "touch") {
         if (Date.now() - lastPenDownRef.current < TOUCH_LOCKOUT_MS) return;
-        if (!fingerDrawing) return; // finger taps pass through to HTML below
+        if (!fingerDrawing) return; // touch passes through for scrolling
+        if (!e.isPrimary) return; // Only first finger draws — ignore second, third, etc.
         e.preventDefault();
         e.stopPropagation();
       } else {
