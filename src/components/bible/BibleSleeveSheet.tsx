@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { SleeveWaitlistInput } from "@/components/bible/iPadWaitlistDrawer";
 import { SessionCards } from "@/components/bible/SessionCards";
-import { PenTool, Layers, BookOpen, Image as ImageIcon } from "lucide-react";
+import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
@@ -202,6 +202,14 @@ interface BibleSleeveSheetProps {
   /** Hardware-detected iPhone flag — gates tap-nav toggle */
   isIPhone?: boolean;
 
+  /* clear edits */
+  chapterEditCount?: number;
+  todayEditCount?: number;
+  totalEditCount?: number;
+  onClearChapter?: () => void;
+  onClearToday?: () => void;
+  onClearAll?: () => void;
+
   /** Tap-to-navigate mode (disables swipe chapters) */
   tapNavMode?: boolean;
   onToggleTapNav?: (v: boolean) => void;
@@ -267,6 +275,12 @@ export function BibleSleeveSheet({
   onHighlightStyleChange,
   studyArtifacts = [],
   onNavigateToArtifact,
+  chapterEditCount = 0,
+  todayEditCount = 0,
+  totalEditCount = 0,
+  onClearChapter,
+  onClearToday,
+  onClearAll,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -887,6 +901,72 @@ export function BibleSleeveSheet({
                 <span className="ml-auto text-xs text-muted-foreground">30 days</span>
               </button>
             </section>
+
+            {/* ── Clear Edits ── */}
+            {(onClearChapter || onClearToday || onClearAll) && (
+              <>
+                <div className="h-px bg-border" />
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors">
+                      <Eraser className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">Clear Edits</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto transition-transform duration-200" />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-3 pb-3 space-y-2">
+                    <p className="text-[0.65rem] text-muted-foreground leading-relaxed mb-2">
+                      Remove highlights, bookmarks & notes. Items go to Trash for 30-day recovery.
+                    </p>
+                    {onClearChapter && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-between text-xs"
+                        onClick={() => {
+                          if (window.confirm(`Clear ${chapterEditCount} edit${chapterEditCount !== 1 ? "s" : ""} from this chapter? They'll go to your Trash Bin.`)) {
+                            onClearChapter();
+                          }
+                        }}
+                      >
+                        <span>This Chapter</span>
+                        <span className="text-muted-foreground tabular-nums">{chapterEditCount}</span>
+                      </Button>
+                    )}
+                    {onClearToday && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-between text-xs"
+                        onClick={() => {
+                          if (window.confirm(`Clear ${todayEditCount} edit${todayEditCount !== 1 ? "s" : ""} made today? They'll go to your Trash Bin.`)) {
+                            onClearToday();
+                          }
+                        }}
+                      >
+                        <span>Today's Edits</span>
+                        <span className="text-muted-foreground tabular-nums">{todayEditCount}</span>
+                      </Button>
+                    )}
+                    {onClearAll && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-between text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                        onClick={() => {
+                          if (window.confirm(`⚠️ Clear ALL ${totalEditCount} edits across your entire Bible? This cannot be undone after 30 days.`)) {
+                            onClearAll();
+                          }
+                        }}
+                      >
+                        <span>Whole Bible</span>
+                        <span className="tabular-nums">{totalEditCount}</span>
+                      </Button>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              </>
+            )}
 
             {/* ── iPad Waitlist Signup ── */}
             <div className="h-px bg-border" />

@@ -482,6 +482,107 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     },
   });
 
+  /* ── BULK CLEAR: Chapter ── */
+  const clearChapterEdits = useMutation({
+    mutationFn: async (params: { bookUsfm: string; chapterNumber: number }) => {
+      if (!user) throw new Error("Not authenticated");
+      const uid = user.id;
+      const tables = [
+        { table: "user_highlights", type: "highlight" },
+        { table: "user_bookmarks", type: "bookmark" },
+        { table: "user_notes", type: "note" },
+      ] as const;
+      let count = 0;
+      for (const t of tables) {
+        const { data: rows } = await supabase
+          .from(t.table as any)
+          .select("*")
+          .eq("user_id", uid)
+          .eq("book_usfm", params.bookUsfm)
+          .eq("chapter_number", params.chapterNumber);
+        if (!rows?.length) continue;
+        for (const r of rows) await trashItem(uid, t.type, (r as any).id, r as any);
+        const ids = rows.map((r: any) => r.id);
+        await supabase.from(t.table as any).delete().in("id", ids);
+        count += ids.length;
+      }
+      return count;
+    },
+    onSuccess: (count) => {
+      toast.success(`Cleared ${count} edit${count !== 1 ? "s" : ""} from this chapter`);
+      qc.invalidateQueries({ queryKey: ["bible"] });
+      qc.invalidateQueries({ queryKey: ["trash_bin"] });
+    },
+    onError: () => toast.error("Failed to clear chapter edits"),
+  });
+
+  /* ── BULK CLEAR: Today ── */
+  const clearTodayEdits = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const uid = user.id;
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const tables = [
+        { table: "user_highlights", type: "highlight" },
+        { table: "user_bookmarks", type: "bookmark" },
+        { table: "user_notes", type: "note" },
+      ] as const;
+      let count = 0;
+      for (const t of tables) {
+        const { data: rows } = await supabase
+          .from(t.table as any)
+          .select("*")
+          .eq("user_id", uid)
+          .gte("created_at", todayStart.toISOString());
+        if (!rows?.length) continue;
+        for (const r of rows) await trashItem(uid, t.type, (r as any).id, r as any);
+        const ids = rows.map((r: any) => r.id);
+        await supabase.from(t.table as any).delete().in("id", ids);
+        count += ids.length;
+      }
+      return count;
+    },
+    onSuccess: (count) => {
+      toast.success(`Cleared ${count} edit${count !== 1 ? "s" : ""} from today`);
+      qc.invalidateQueries({ queryKey: ["bible"] });
+      qc.invalidateQueries({ queryKey: ["trash_bin"] });
+    },
+    onError: () => toast.error("Failed to clear today's edits"),
+  });
+
+  /* ── BULK CLEAR: All ── */
+  const clearAllEdits = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const uid = user.id;
+      const tables = [
+        { table: "user_highlights", type: "highlight" },
+        { table: "user_bookmarks", type: "bookmark" },
+        { table: "user_notes", type: "note" },
+      ] as const;
+      let count = 0;
+      for (const t of tables) {
+        const { data: rows } = await supabase
+          .from(t.table as any)
+          .select("*")
+          .eq("user_id", uid);
+        if (!rows?.length) continue;
+        for (const r of rows) await trashItem(uid, t.type, (r as any).id, r as any);
+        const ids = rows.map((r: any) => r.id);
+        await supabase.from(t.table as any).delete().in("id", ids);
+        count += ids.length;
+      }
+      return count;
+    },
+    onSuccess: (count) => {
+      toast.success(`Cleared ${count} edit${count !== 1 ? "s" : ""} from your entire Bible`);
+      qc.invalidateQueries({ queryKey: ["bible"] });
+      qc.invalidateQueries({ queryKey: ["trash_bin"] });
+    },
+    onError: () => toast.error("Failed to clear all edits"),
+  });
+
   return {
     addHighlight,
     removeHighlight,
@@ -491,5 +592,8 @@ export function useBibleMutations(ref: ScriptureRef | null) {
     createBunch,
     addToBunch,
     deleteBunch,
+    clearChapterEdits,
+    clearTodayEdits,
+    clearAllEdits,
   };
 }

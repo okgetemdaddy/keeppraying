@@ -3057,6 +3057,12 @@ export function BibleReader() {
         notes={chapterData?.notes ?? []}
         currentBook={currentBook?.title}
         currentChapter={currentChapter?.title}
+        chapterEditCount={(chapterData?.highlights?.length ?? 0) + (chapterData?.bookmarks?.length ?? 0) + (chapterData?.notes?.length ?? 0)}
+        onClearChapter={() => {
+          if (scriptureRef) mutations.clearChapterEdits.mutate({ bookUsfm: scriptureRef.bookUsfm, chapterNumber: scriptureRef.chapterNumber });
+        }}
+        onClearToday={() => mutations.clearTodayEdits.mutate()}
+        onClearAll={() => mutations.clearAllEdits.mutate()}
         bunches={bunches ?? []}
         onNavigateToBunch={(b) => { setSleeveOpen(false); handleNavigateToBunch(b); }}
         onSetActiveBunch={handleSetActiveBunch}
