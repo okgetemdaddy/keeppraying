@@ -146,6 +146,13 @@ export function PaperCanvas({
   /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
   const lastGestureZoom = useRef(zoom);
 
+  /* ── Debug tick for live panel ── */
+  const [debugTick, setDebugTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setDebugTick(t => t + 1), 100);
+    return () => clearInterval(id);
+  }, []);
+
   const [spring, api] = useSpring(() => ({
     x: 0,
     y: 0,
@@ -466,6 +473,23 @@ export function PaperCanvas({
         </animated.div>
       </div>
 
+      {/* Debug panel */}
+      <div style={{
+        position: 'fixed', top: 12, right: 12, zIndex: 9999,
+        background: 'rgba(0,0,0,0.85)', color: '#0f0',
+        fontFamily: 'monospace', fontSize: 11,
+        padding: 10, borderRadius: 8,
+        pointerEvents: 'none', minWidth: 220,
+      }}>
+        <div>tick {debugTick}</div>
+        <div>prop zoom: {zoom.toFixed(3)}</div>
+        <div>spring scale: {spring.scale.get().toFixed(3)}</div>
+        <div>lastGesture: {lastGestureZoom.current.toFixed(3)}</div>
+        <div>committed: {committedScale.current.toFixed(3)}</div>
+        <div>spring x: {spring.x.get().toFixed(1)}</div>
+        <div>spring y: {spring.y.get().toFixed(1)}</div>
+        <div>rotation: {spring.rotation.get().toFixed(1)}</div>
+      </div>
     </>
   );
 }
