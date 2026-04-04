@@ -1876,6 +1876,18 @@ export function BibleReader() {
     [mutations.removeHighlight],
   );
 
+  const isInPaperCanvas = studyMode && studyModeVariant === "margin";
+
+  // Set data attribute on <html> so KeepReadingNav can get heavy blur in study mode
+  useEffect(() => {
+    if (isInPaperCanvas) {
+      document.documentElement.setAttribute("data-paper-canvas", "true");
+    } else {
+      document.documentElement.removeAttribute("data-paper-canvas");
+    }
+    return () => { document.documentElement.removeAttribute("data-paper-canvas"); };
+  }, [isInPaperCanvas]);
+
   return (
     <article className={`min-h-screen bg-background transition-colors duration-300 ${premiumDark ? 'bible-dark' : ''} ${premiumDark && oledMode ? 'bible-oled' : ''}`}>
       {/* ── Verse Bunch strip (saved bunches) ── */}
