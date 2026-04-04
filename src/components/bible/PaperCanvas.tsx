@@ -385,7 +385,7 @@ export function PaperCanvas({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onZoomChange, api, spring.x, spring.y, spring.rotation, spring.scale]);
+  }, [onZoomChange, api]);
 
   /* ── Desktop: wheel for pan, ctrl+wheel for zoom ── */
   useGesture(
