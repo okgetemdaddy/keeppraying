@@ -156,6 +156,7 @@ export function PaperCanvas({
         accumulatedPan = 0;
         accumulatedZoom = 0;
       } else if (e.touches.length === 3) {
+        gestureStarted = true;
         api.stop();
 
         gestureType = "rotate";
