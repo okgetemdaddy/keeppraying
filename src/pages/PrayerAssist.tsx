@@ -280,7 +280,7 @@ export default function PrayerAssist() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                 {suggestions.map(s => (
-                  <button key={s} onClick={() => send(s)} disabled={showGuestBanner} className="prayer-card p-4 text-left text-sm text-foreground hover:border-primary/40 border border-transparent transition-all rounded-2xl group disabled:opacity-50">
+                  <button key={s} onClick={() => send(s)} disabled={guestLimited} className="prayer-card p-4 text-left text-sm text-foreground hover:border-primary/40 border border-transparent transition-all rounded-2xl group disabled:opacity-50">
                     <div className="flex items-start gap-2">
                       <div className="mt-0.5 text-primary"><BookOpen className="w-4 h-4" /></div>
                       <span>{s}</span>
