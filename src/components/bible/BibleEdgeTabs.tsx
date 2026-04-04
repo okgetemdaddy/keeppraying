@@ -50,7 +50,7 @@ export function BibleEdgeTabs({ onSuggestionsClick, onIPadClick, showIPad, hidde
                 <motion.button
                   key={tab.id}
                   onClick={() => handleClick(tab.id)}
-                  className={`relative flex items-center gap-2 px-4 py-1.5 text-[0.6rem] font-semibold tracking-wider rounded-full transition-colors duration-200 cursor-pointer whitespace-nowrap ${
+                  className={`relative flex items-center gap-2 px-4 py-1.5 text-[0.6rem] font-semibold tracking-wider rounded-full transition-colors duration-200 cursor-pointer whitespace-nowrap overflow-hidden ${
                     isActive
                       ? "text-amber-200"
                       : "text-slate-300 hover:text-slate-100"
@@ -68,6 +68,24 @@ export function BibleEdgeTabs({ onSuggestionsClick, onIPadClick, showIPad, hidde
                       />
                     )}
                   </AnimatePresence>
+
+                  {/* Soft glimmer sweep for iPad tab */}
+                  {tab.id === "ipad" && !isActive && (
+                    <motion.div
+                      className="absolute inset-0 z-[1] rounded-full pointer-events-none"
+                      style={{
+                        background: "linear-gradient(105deg, transparent 40%, rgba(251,191,36,0.15) 45%, rgba(251,191,36,0.25) 50%, rgba(251,191,36,0.15) 55%, transparent 60%)",
+                        backgroundSize: "200% 100%",
+                      }}
+                      animate={{ backgroundPosition: ["200% 0%", "-200% 0%"] }}
+                      transition={{
+                        duration: 3,
+                        ease: "easeInOut",
+                        repeat: Infinity,
+                        repeatDelay: 4,
+                      }}
+                    />
+                  )}
 
                   <span className="relative z-10 flex items-center gap-1.5">
                     <span className={isActive ? "text-amber-400" : "text-amber-400/70"}>
