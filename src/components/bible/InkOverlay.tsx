@@ -45,11 +45,8 @@ interface InkOverlayProps {
   isDark?: boolean;
   onCircleSelect?: (verseNumbers: number[], hullCenter?: { x: number; y: number }) => void;
   onPencilFirstContact?: () => void;
-  /** Callback when a circle encloses 1-4 words from a single verse */
   onWordCircle?: (words: string, verseNumber: number, anchorPoint: { x: number; y: number }) => void;
-  /** Callback when an underline gesture is detected over text */
   onUnderlineGesture?: (verseNumber: number, underlinedText: string) => void;
-  /** Callback when an X gesture is detected — bbox is in SVG coordinates */
   onXGesture?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
 }
 
@@ -93,11 +90,9 @@ function isXGesture(
   const xRange = maxX - minX;
   const yRange = maxY - minY;
 
-  // Must be big enough and roughly square-ish
   if (xRange < 20 || yRange < 20) return nope;
   if (xRange / yRange > 4 || yRange / xRange > 4) return nope;
 
-  // Find the sharpest direction reversal point (vertex of the X)
   let bestReversal = -1;
   let bestIdx = Math.floor(points.length / 2);
   for (let i = 2; i < points.length - 2; i++) {
@@ -105,7 +100,6 @@ function isXGesture(
     const dy1 = points[i].y - points[i - 2].y;
     const dx2 = points[i + 2].x - points[i].x;
     const dy2 = points[i + 2].y - points[i].y;
-    // Dot product of direction vectors — most negative = sharpest reversal
     const dot = dx1 * dx2 + dy1 * dy2;
     const mag = Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2)) || 1;
     const cosAngle = dot / mag;
@@ -115,13 +109,11 @@ function isXGesture(
     }
   }
 
-  // Must have a sharp reversal (cos < -0.15 means angle > ~99°)
   if (bestReversal > -0.15) return nope;
 
   const seg1 = points.slice(0, bestIdx + 1);
   const seg2 = points.slice(bestIdx);
 
-  // Each segment should span most of the bbox
   const seg1xRange = Math.max(...seg1.map((p) => p.x)) - Math.min(...seg1.map((p) => p.x));
   const seg1yRange = Math.max(...seg1.map((p) => p.y)) - Math.min(...seg1.map((p) => p.y));
   const seg2xRange = Math.max(...seg2.map((p) => p.x)) - Math.min(...seg2.map((p) => p.x));
@@ -158,27 +150,6 @@ export function InkOverlay({
   const pointsBufferRef = useRef<Point[]>([]);
   const isDrawingRef = useRef(false);
   const rafIdRef = useRef<number>(0);
-
-  // ── Dynamic canvas sizing via ResizeObserver ──
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
-
-  useEffect(() => {
-    const svg = svgRef.current;
-    const parent = svg?.parentElement;
-    if (!parent) return;
-
-    const updateSize = () => {
-      setCanvasSize({
-        width: parent.scrollWidth,
-        height: parent.scrollHeight,
-      });
-    };
-
-    updateSize();
-    const observer = new ResizeObserver(updateSize);
-    observer.observe(parent);
-    return () => observer.disconnect();
-  }, [zoom]);
 
   // Hover preview state
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
@@ -242,79 +213,8 @@ export function InkOverlay({
     rafIdRef.current = requestAnimationFrame(renderLoop);
   }, []);
 
-  /* ── Pointer handlers ── */
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
-      if (e.pointerType === "pen") {
-        // No pressure check — Apple Pencil Pro reports pressure=0 on pointerdown
-        // in iPadOS Safari. Real pressure arrives on first pointermove.
-        // Hover is distinguished by pointerdown never firing during hover.
-        lastPenDownRef.current = Date.now();
-        // Pen events: capture and prevent passthrough
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!firstContactFiredRef.current && onPencilFirstContact) {
-          firstContactFiredRef.current = true;
-          onPencilFirstContact();
-        }
-      } else if (e.pointerType === "touch") {
-        if (Date.now() - lastPenDownRef.current < TOUCH_LOCKOUT_MS) return;
-        if (!fingerDrawing) return; // touch passes through for scrolling
-        if (!e.isPrimary) return; // Only first finger draws — ignore second, third, etc.
-        e.preventDefault();
-        e.stopPropagation();
-      } else {
-        return;
-      }
-
-      e.currentTarget.setPointerCapture(e.pointerId);
-      isDrawingRef.current = true;
-      setSelectedStrokeId(null);
-      setHoverPos(null);
-
-      const [x, y] = getTransformedPoint(e.clientX, e.clientY);
-      pointsBufferRef.current = [{ x, y, pressure: e.pressure ?? 0.5, tiltX: e.tiltX, tiltY: e.tiltY }];
-
-      if (livePathRef.current) {
-        livePathRef.current.style.display = "none";
-        livePathRef.current.removeAttribute("d");
-      }
-
-      cancelAnimationFrame(rafIdRef.current);
-      rafIdRef.current = requestAnimationFrame(renderLoop);
-    },
-    [getTransformedPoint, fingerDrawing, renderLoop, onPencilFirstContact],
-  );
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
-      if (e.pointerType === "pen" && e.pressure === 0 && !isDrawingRef.current) {
-        const [x, y] = getTransformedPoint(e.clientX, e.clientY);
-        setHoverPos({ x, y });
-        return;
-      }
-
-      if (!isDrawingRef.current) return;
-      if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
-
-      setHoverPos(null);
-
-      const coalesced = (e.nativeEvent as PointerEvent).getCoalescedEvents?.() ?? [e.nativeEvent as PointerEvent];
-      for (const ce of coalesced) {
-        const [cx, cy] = getTransformedPoint(ce.clientX, ce.clientY);
-        pointsBufferRef.current.push({
-          x: cx, y: cy,
-          pressure: ce.pressure ?? 0.5,
-          tiltX: ce.tiltX,
-          tiltY: ce.tiltY,
-        });
-      }
-    },
-    [getTransformedPoint, fingerDrawing],
-  );
-
-  const handlePointerUp = useCallback(() => {
+  /* ── Finalize stroke (gesture detection + commit) ── */
+  const finalizeStroke = useCallback(() => {
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
     cancelAnimationFrame(rafIdRef.current);
@@ -336,7 +236,6 @@ export function InkOverlay({
       if (hull.length >= 3) {
         const svgRect = svgRef.current.getBoundingClientRect();
 
-        // Word-level hit testing
         const wordElements = document.querySelectorAll("[data-word]");
         const enclosedWords: Array<{ word: string; verse: number; element: Element }> = [];
 
@@ -358,7 +257,6 @@ export function InkOverlay({
         if (enclosedWords.length > 0) {
           const uniqueVerses = [...new Set(enclosedWords.map((w) => w.verse))];
 
-          // 1-4 words from single verse → word study
           if (enclosedWords.length <= 4 && uniqueVerses.length === 1 && onWordCircle) {
             const words = enclosedWords.map((w) => w.word).join(" ");
             const svgEl = svgRef.current!;
@@ -377,7 +275,6 @@ export function InkOverlay({
             return;
           }
 
-          // 5+ words or multiple verses → verse selection (existing behavior)
           if (onCircleSelect) {
             const svgEl = svgRef.current!;
             const ctmC = svgEl.getScreenCTM();
@@ -396,7 +293,6 @@ export function InkOverlay({
           }
         }
 
-        // Fallback: verse-level detection (original behavior for when no data-word spans exist)
         if (onCircleSelect) {
           const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
           if (matched.length > 0) {
@@ -419,16 +315,14 @@ export function InkOverlay({
       }
     }
 
-    /* ── X-gesture detection (delete highlights & ink) ── */
+    /* ── X-gesture detection ── */
     if (onXGesture && !isClosedLoop(currentPoints)) {
       const xResult = isXGesture(currentPoints);
       if (xResult.detected) {
         const centerX = (xResult.bbox.minX + xResult.bbox.maxX) / 2;
         const centerY = (xResult.bbox.minY + xResult.bbox.maxY) / 2;
-        // Flash red × at center
         setXFlash({ x: centerX, y: centerY });
         setTimeout(() => setXFlash(null), 400);
-        // Haptic double-tap
         if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
         onXGesture(xResult.bbox);
         pointsBufferRef.current = [];
@@ -533,38 +427,109 @@ export function InkOverlay({
     const newStroke: InkStroke = {
       id: `ink-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       points: compressedPoints,
-      color: penColor,
-      size: penSize,
+      color: penColorRef.current,
+      size: penSizeRef.current,
       linkedVerse: closestVerse,
-      glow: penGlow ?? null,
+      glow: penGlowRef.current,
     };
 
     onStrokeComplete(newStroke);
     pointsBufferRef.current = [];
-  }, [penColor, penSize, penGlow, zoom, onStrokeComplete, onCircleSelect, onWordCircle, onUnderlineGesture, onXGesture]);
+  }, [zoom, onStrokeComplete, onCircleSelect, onWordCircle, onUnderlineGesture, onXGesture]);
 
-  const handlePointerCancel = useCallback(() => {
-    isDrawingRef.current = false;
-    cancelAnimationFrame(rafIdRef.current);
-    pointsBufferRef.current = [];
-    if (livePathRef.current) {
-      livePathRef.current.style.display = "none";
-      livePathRef.current.removeAttribute("d");
-    }
-  }, []);
+  /* ── Window-level pointer capture ── */
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType === "pen") {
+        e.preventDefault();
+        lastPenDownRef.current = Date.now();
 
-  const handlePointerLeave = useCallback(() => {
-    setHoverPos(null);
-    if (isDrawingRef.current) {
-      handlePointerUp();
-    }
-  }, [handlePointerUp]);
+        if (!firstContactFiredRef.current && onPencilFirstContact) {
+          firstContactFiredRef.current = true;
+          onPencilFirstContact();
+        }
+      } else if (e.pointerType === "touch") {
+        if (Date.now() - lastPenDownRef.current < TOUCH_LOCKOUT_MS) return;
+        if (!fingerDrawing) return;
+        if (!e.isPrimary) return;
+        e.preventDefault();
+      } else {
+        return;
+      }
+
+      isDrawingRef.current = true;
+      setSelectedStrokeId(null);
+      setHoverPos(null);
+
+      const [x, y] = getTransformedPoint(e.clientX, e.clientY);
+      pointsBufferRef.current = [{ x, y, pressure: e.pressure || 0.5, tiltX: e.tiltX, tiltY: e.tiltY }];
+
+      if (livePathRef.current) {
+        livePathRef.current.style.display = "none";
+        livePathRef.current.removeAttribute("d");
+      }
+
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = requestAnimationFrame(renderLoop);
+    };
+
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType === "pen" && e.pressure === 0 && !isDrawingRef.current) {
+        const [x, y] = getTransformedPoint(e.clientX, e.clientY);
+        setHoverPos({ x, y });
+        return;
+      }
+
+      if (!isDrawingRef.current) return;
+      if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
+
+      setHoverPos(null);
+
+      const coalesced = e.getCoalescedEvents?.() ?? [e];
+      for (const ce of coalesced) {
+        const [cx, cy] = getTransformedPoint(ce.clientX, ce.clientY);
+        pointsBufferRef.current.push({
+          x: cx, y: cy,
+          pressure: ce.pressure ?? 0.5,
+          tiltX: ce.tiltX,
+          tiltY: ce.tiltY,
+        });
+      }
+    };
+
+    const onUp = (e: PointerEvent) => {
+      if (!isDrawingRef.current) return;
+      if (e.pointerType !== "pen" && !(e.pointerType === "touch" && fingerDrawing)) return;
+      finalizeStroke();
+    };
+
+    const onCancel = () => {
+      isDrawingRef.current = false;
+      cancelAnimationFrame(rafIdRef.current);
+      pointsBufferRef.current = [];
+      if (livePathRef.current) {
+        livePathRef.current.style.display = "none";
+        livePathRef.current.removeAttribute("d");
+      }
+    };
+
+    window.addEventListener("pointerdown", onDown, { passive: false });
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+    };
+  }, [fingerDrawing, getTransformedPoint, renderLoop, finalizeStroke, onPencilFirstContact]);
 
   /* ── Cleanup RAF on unmount ── */
   useEffect(() => {
     return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
-
 
   /* ── Keyboard undo ── */
   useEffect(() => {
@@ -588,64 +553,41 @@ export function InkOverlay({
         );
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
-        const isSelected = selectedStrokeId === s.id;
         const isSepia = s.color === SEPIA_COLOR;
         const isNeon = !!s.glow;
         const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
-        const appliedFilter = isSelected
-          ? undefined
-          : isNeon
-            ? `url(#${neonFilterId})`
-            : bleedFilter;
+        const appliedFilter = isNeon
+          ? `url(#${neonFilterId})`
+          : bleedFilter;
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSepia ? 0.6 : isSelected ? 0.5 : 0.98}
+            opacity={isSepia ? 0.6 : 0.98}
             filter={appliedFilter}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedStrokeId(isSelected ? null : s.id);
-            }}
-            className="cursor-pointer"
             style={{
               mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
-              filter: isSelected ? "drop-shadow(0 0 4px hsl(var(--primary)))" : undefined,
             }}
           />
         );
       }),
-    [strokes, selectedStrokeId, isDark],
+    [strokes, isDark],
   );
-
-  // Compute SVG dimensions — use dynamic canvas size or fallback to 100%
-  const svgWidth = canvasSize.width || "100%";
-  const svgHeight = canvasSize.height || "100%";
-  const viewBox = canvasSize.width && canvasSize.height
-    ? `0 0 ${canvasSize.width} ${canvasSize.height}`
-    : undefined;
 
   return (
       <svg
         ref={svgRef}
         className="absolute inset-0 z-10"
-        width={svgWidth}
-        height={svgHeight}
-        viewBox={viewBox}
+        width="100%"
+        height="100%"
         style={{
-          touchAction: "pan-y",
-          cursor: isDrawingRef.current ? "none" : "crosshair",
-          pointerEvents: "auto",
+          pointerEvents: "none",
+          cursor: "crosshair",
           overflow: "visible",
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerLeave}
-        onPointerCancel={handlePointerCancel}
       >
         <defs>
           <filter id="ink-bleed">
