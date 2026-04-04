@@ -143,8 +143,8 @@ export function PaperCanvas({
   const committedX = useRef(0);
   const committedY = useRef(0);
 
-  /* ── Gesture-active guard ── */
-  const gestureActive = useRef(false);
+  /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
+  const lastGestureZoom = useRef(zoom);
 
   const [spring, api] = useSpring(() => ({
     x: 0,
@@ -160,19 +160,12 @@ export function PaperCanvas({
     },
   }));
 
-  /* ── Sync incoming zoom prop from toolbar slider ONLY when not gesturing ── */
+  /* ── Sync incoming zoom prop from toolbar slider — skip if it matches our last gesture ── */
   useEffect(() => {
-    if (!gestureActive.current) {
-      api.start({ scale: zoom });
+    if (Math.abs(zoom - lastGestureZoom.current) > 0.001) {
+      api.set({ scale: zoom });
     }
   }, [zoom, api]);
-
-  /* ── Debounced onZoomChange ── */
-  const zoomChangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const notifyZoomChange = (val: number) => {
-    if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
-    zoomChangeTimer.current = setTimeout(() => onZoomChange(val), 32);
-  };
 
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)
