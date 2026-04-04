@@ -127,8 +127,11 @@ export default function PrayerAssist() {
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
 
-    // Guest limit check
-    if (!user && guestLimited) return;
+    // Guest limit check — show graceful message instead of silent failure
+    if (!user && guestLimited) {
+      toast({ title: "Continue your journey ✦", description: "Sign up free to keep exploring Scripture together." });
+      return;
+    }
 
     const userMsg: Message = { role: "user", content: text };
     setMessages(prev => [...prev, userMsg]);
