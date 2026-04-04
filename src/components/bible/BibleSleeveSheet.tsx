@@ -902,6 +902,72 @@ export function BibleSleeveSheet({
               </button>
             </section>
 
+            {/* ── Clear Edits ── */}
+            {(onClearChapter || onClearToday || onClearAll) && (
+              <>
+                <div className="h-px bg-border" />
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <button className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors">
+                      <Eraser className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">Clear Edits</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto transition-transform duration-200" />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-3 pb-3 space-y-2">
+                    <p className="text-[0.65rem] text-muted-foreground leading-relaxed mb-2">
+                      Remove highlights, bookmarks & notes. Items go to Trash for 30-day recovery.
+                    </p>
+                    {onClearChapter && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-between text-xs"
+                        onClick={() => {
+                          if (window.confirm(`Clear ${chapterEditCount} edit${chapterEditCount !== 1 ? "s" : ""} from this chapter? They'll go to your Trash Bin.`)) {
+                            onClearChapter();
+                          }
+                        }}
+                      >
+                        <span>This Chapter</span>
+                        <span className="text-muted-foreground tabular-nums">{chapterEditCount}</span>
+                      </Button>
+                    )}
+                    {onClearToday && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-between text-xs"
+                        onClick={() => {
+                          if (window.confirm(`Clear ${todayEditCount} edit${todayEditCount !== 1 ? "s" : ""} made today? They'll go to your Trash Bin.`)) {
+                            onClearToday();
+                          }
+                        }}
+                      >
+                        <span>Today's Edits</span>
+                        <span className="text-muted-foreground tabular-nums">{todayEditCount}</span>
+                      </Button>
+                    )}
+                    {onClearAll && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-between text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                        onClick={() => {
+                          if (window.confirm(`⚠️ Clear ALL ${totalEditCount} edits across your entire Bible? This cannot be undone after 30 days.`)) {
+                            onClearAll();
+                          }
+                        }}
+                      >
+                        <span>Whole Bible</span>
+                        <span className="tabular-nums">{totalEditCount}</span>
+                      </Button>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              </>
+            )}
+
             {/* ── iPad Waitlist Signup ── */}
             <div className="h-px bg-border" />
             <section className="pb-2">
