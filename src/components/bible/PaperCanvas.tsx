@@ -143,9 +143,8 @@ export function PaperCanvas({
   const committedX = useRef(0);
   const committedY = useRef(0);
 
-  /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
-  const lastGestureZoom = useRef(zoom);
-
+  /* ── One-shot flag: when true, the next zoom prop echo is from our own gesture/wheel commit ── */
+  const internalZoomUpdate = useRef(false);
 
   const [spring, api] = useSpring(() => ({
     x: 0,
@@ -161,11 +160,12 @@ export function PaperCanvas({
     },
   }));
 
-  /* ── Sync incoming zoom prop from toolbar slider — skip if it matches our last gesture ── */
+  /* ── Sync incoming zoom prop (toolbar/external) — skip echo from our own commit ── */
   useEffect(() => {
-    if (Math.abs(zoom - lastGestureZoom.current) > 0.001) {
+    if (!internalZoomUpdate.current) {
       api.set({ scale: zoom });
     }
+    internalZoomUpdate.current = false;
   }, [zoom, api]);
 
   /* ── Touch gesture system ──
@@ -277,8 +277,6 @@ export function PaperCanvas({
             const currentScale = spring.scale.get();
             const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
             api.set({ scale: nextScale });
-            lastGestureZoom.current = nextScale;
-            onZoomChange(nextScale);
             lastDist = dist;
           }
         }
@@ -334,10 +332,10 @@ export function PaperCanvas({
         }
       }
 
-      /* Sync zoom to React state */
+      /* Sync zoom to React state — only place touch zoom commits */
       if (gestureType === "two-finger" && intent === "zoom") {
         const finalScale = spring.scale.get();
-        lastGestureZoom.current = finalScale;
+        internalZoomUpdate.current = true;
         onZoomChange(finalScale);
       }
 
@@ -375,7 +373,7 @@ export function PaperCanvas({
           const delta = -dy * 0.003;
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
           api.set({ scale: nextScale });
-          lastGestureZoom.current = nextScale;
+          internalZoomUpdate.current = true;
           onZoomChange(nextScale);
         } else {
           const targetY = spring.y.get() - dy * 2.5;
