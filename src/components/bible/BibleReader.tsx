@@ -858,10 +858,16 @@ export function BibleReader() {
     try { localStorage.setItem("bible_ink_spacing", String(v)); } catch {}
   }, []);
 
+  // Session heartbeat for study_sessions persistence
+  useStudySessionHeartbeat({
+    sessionId: activeSessionId,
+    timerMinutes: activeSessionConfig?.timerMinutes,
+  });
+
   const handleToggleStudyMode = useCallback((v: boolean) => {
     if (v && studyModeVariant === "margin") {
-      // Open setup sheet instead of immediately entering study mode
-      setCanvasSetupOpen(true);
+      // Open canvas creation drawer for margin study mode too
+      setCanvasCreationOpen(true);
       return;
     }
     if (v && studyModeVariant === "canvas") {
