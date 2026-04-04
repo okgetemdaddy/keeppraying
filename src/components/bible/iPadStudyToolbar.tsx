@@ -4,7 +4,7 @@ import {
   Undo2,
   Redo2,
   Eraser,
-  ZoomIn,
+  
   ChevronLeft,
   ChevronRight,
   Mic,

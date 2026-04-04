@@ -3,7 +3,7 @@ import {
   Undo2,
   Redo2,
   Eraser,
-  ZoomIn,
+  
   Mic,
   Trash2,
   MoreHorizontal,
