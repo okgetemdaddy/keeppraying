@@ -308,7 +308,19 @@ export function PaperCanvas({
           <MarginCanvas background={canvasBackground} />
 
           <div
-            style={{
+            style={textBoxConfig ? {
+              position: "absolute",
+              left: textBoxConfig.x,
+              top: textBoxConfig.y,
+              width: textBoxConfig.width,
+              maxHeight: textBoxConfig.height,
+              fontSize: `${fontSize}px`,
+              lineHeight: `${lineHeight}px`,
+              textAlign: textAlign,
+              overflow: "hidden",
+              zIndex: 2,
+              color: isDark ? "#E8E4DF" : "#1A1A1A",
+            } : {
               maxWidth: "936px",
               margin: "0 auto",
               padding: "80px 60px 100px",
