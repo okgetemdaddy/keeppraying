@@ -825,9 +825,13 @@ export function BibleReader() {
   }, []);
 
   const handleToggleStudyMode = useCallback((v: boolean) => {
+    if (v && studyModeVariant === "margin") {
+      // Open setup sheet instead of immediately entering study mode
+      setCanvasSetupOpen(true);
+      return;
+    }
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    // If turning on with canvas variant, open canvas
     if (v && studyModeVariant === "canvas") setCanvasOpen(true);
     if (v && studyModeVariant === "journal") setJournalOpen(true);
     if (!v) { setCanvasOpen(false); setJournalOpen(false); }
