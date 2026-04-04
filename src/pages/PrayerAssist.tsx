@@ -215,8 +215,9 @@ export default function PrayerAssist() {
       if (!user) {
         const count = parseInt(localStorage.getItem(GUEST_STORAGE_KEY) || "0", 10) + 1;
         localStorage.setItem(GUEST_STORAGE_KEY, String(count));
-        if (count >= 1) {
+        if (count >= 3) {
           setGuestLimited(true);
+          setMessages(prev => [...prev, { role: "signup-nudge", content: "" }]);
         }
       }
 
