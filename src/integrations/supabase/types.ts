@@ -333,6 +333,53 @@ export type Database = {
         }
         Relationships: []
       }
+      bible_watch_logs: {
+        Row: {
+          book_usfm: string
+          chapter_id: number
+          event_type: string
+          id: string
+          logged_at: string
+          seconds_read: number
+          session_id: string | null
+          user_id: string
+          verse_end: number | null
+          verse_start: number | null
+        }
+        Insert: {
+          book_usfm: string
+          chapter_id: number
+          event_type?: string
+          id?: string
+          logged_at?: string
+          seconds_read?: number
+          session_id?: string | null
+          user_id: string
+          verse_end?: number | null
+          verse_start?: number | null
+        }
+        Update: {
+          book_usfm?: string
+          chapter_id?: number
+          event_type?: string
+          id?: string
+          logged_at?: string
+          seconds_read?: number
+          session_id?: string | null
+          user_id?: string
+          verse_end?: number | null
+          verse_start?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_watch_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author_id: string | null
@@ -2030,6 +2077,93 @@ export type Database = {
           title?: string
           user_id?: string
           version_id?: number
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          book_usfm: string
+          camera_rotation: number
+          camera_scale: number
+          camera_x: number
+          camera_y: number
+          chapter_id: number
+          chars_per_line: number
+          completed_at: string | null
+          created_at: string
+          elapsed_seconds: number
+          font_size_px: number
+          id: string
+          last_active_at: string
+          line_spacing: string
+          margin_style: string
+          paper_height_px: number
+          paper_width_px: number
+          started_at: string
+          status: string
+          text_width_px: number
+          text_x: number
+          text_y: number
+          thumbnail_url: string | null
+          user_id: string
+          verse_end: number | null
+          verse_start: number | null
+        }
+        Insert: {
+          book_usfm: string
+          camera_rotation?: number
+          camera_scale?: number
+          camera_x?: number
+          camera_y?: number
+          chapter_id: number
+          chars_per_line?: number
+          completed_at?: string | null
+          created_at?: string
+          elapsed_seconds?: number
+          font_size_px?: number
+          id?: string
+          last_active_at?: string
+          line_spacing?: string
+          margin_style?: string
+          paper_height_px?: number
+          paper_width_px?: number
+          started_at?: string
+          status?: string
+          text_width_px?: number
+          text_x?: number
+          text_y?: number
+          thumbnail_url?: string | null
+          user_id: string
+          verse_end?: number | null
+          verse_start?: number | null
+        }
+        Update: {
+          book_usfm?: string
+          camera_rotation?: number
+          camera_scale?: number
+          camera_x?: number
+          camera_y?: number
+          chapter_id?: number
+          chars_per_line?: number
+          completed_at?: string | null
+          created_at?: string
+          elapsed_seconds?: number
+          font_size_px?: number
+          id?: string
+          last_active_at?: string
+          line_spacing?: string
+          margin_style?: string
+          paper_height_px?: number
+          paper_width_px?: number
+          started_at?: string
+          status?: string
+          text_width_px?: number
+          text_x?: number
+          text_y?: number
+          thumbnail_url?: string | null
+          user_id?: string
+          verse_end?: number | null
+          verse_start?: number | null
         }
         Relationships: []
       }
