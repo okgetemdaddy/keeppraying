@@ -9,45 +9,10 @@ const PAPER_H = 1632; // 17in × 96dpi
 const MIN_SCALE = 0.3;
 const MAX_SCALE = 5;
 const SPRING_CONFIG = { tension: 170, friction: 26 };
-const SNAPBACK_CONFIG = { tension: 120, friction: 20 };
-const VELOCITY_BUFFER_SIZE = 5;
-const MAX_VELOCITY = 400;
-const MIN_VELOCITY = 50;
-const MOMENTUM_FACTOR = 100;
-const GRACE_MS = 180;
-const BOUNDARY_FRACTION = 0.6;
-const OVERSCROLL_RESISTANCE = 0.3;
 
 /* ── Intent locking thresholds (2-finger: pan/zoom only) ── */
 const ZOOM_THRESHOLD = 15;    // px finger distance change
 const PAN_THRESHOLD = 12;     // px midpoint movement
-
-/* ── Rubber-banding helper ── */
-const rubberBand = (
-  pos: number,
-  viewportSize: number,
-  resist: boolean
-): { val: number; edge: number; outOfBounds: boolean } => {
-  const maxOffset = viewportSize * BOUNDARY_FRACTION;
-  const minOffset = -maxOffset;
-  if (pos > maxOffset) {
-    const overshoot = pos - maxOffset;
-    return {
-      val: resist ? maxOffset + overshoot * OVERSCROLL_RESISTANCE : maxOffset,
-      edge: maxOffset,
-      outOfBounds: true,
-    };
-  }
-  if (pos < minOffset) {
-    const overshoot = pos - minOffset;
-    return {
-      val: resist ? minOffset + overshoot * OVERSCROLL_RESISTANCE : minOffset,
-      edge: minOffset,
-      outOfBounds: true,
-    };
-  }
-  return { val: pos, edge: pos, outOfBounds: false };
-};
 
 /* ── SVG pattern backgrounds ── */
 function MarginCanvas({ background }: { background: CanvasBackground }) {
@@ -96,12 +61,7 @@ const getAngleFromTouches3 = (touches: TouchList) =>
     touches[2].clientX - touches[0].clientX
   ) * (180 / Math.PI);
 
-const clampVelocity = (v: number, max = MAX_VELOCITY) =>
-  Math.max(-max, Math.min(max, v));
-
 export interface PaperCanvasProps {
-  zoom: number;
-  onZoomChange: (zoom: number) => void;
   baseFontSize: number;
   textSpacing: number;
   textAlign: TextAlign;
@@ -112,8 +72,6 @@ export interface PaperCanvasProps {
 }
 
 export function PaperCanvas({
-  zoom,
-  onZoomChange,
   baseFontSize,
   textSpacing,
   textAlign,
@@ -138,19 +96,16 @@ export function PaperCanvas({
   }, []);
 
   /* ── Committed value refs — shadowed continuously via spring onChange ── */
-  const committedScale = useRef(zoom);
+  const committedScale = useRef(1);
   const committedRotation = useRef(0);
   const committedX = useRef(0);
   const committedY = useRef(0);
-
-  /* ── One-shot flag: when true, the next zoom prop echo is from our own gesture/wheel commit ── */
-  const internalZoomUpdate = useRef(false);
 
   const [spring, api] = useSpring(() => ({
     x: 0,
     y: 0,
     rotation: 0,
-    scale: zoom,
+    scale: 1,
     config: SPRING_CONFIG,
     onChange: {
       x: (val: number) => { committedX.current = val; },
@@ -159,14 +114,6 @@ export function PaperCanvas({
       rotation: (val: number) => { committedRotation.current = val; },
     },
   }));
-
-  /* ── Sync incoming zoom prop (toolbar/external) — skip echo from our own commit ── */
-  useEffect(() => {
-    if (!internalZoomUpdate.current) {
-      api.set({ scale: zoom });
-    }
-    internalZoomUpdate.current = false;
-  }, [zoom, api]);
 
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)
@@ -192,37 +139,6 @@ export function PaperCanvas({
     let lastMidpoint = { x: 0, y: 0 };
     let lastAngle3 = 0;
 
-    const velocityBuffer: { x: number; y: number; t: number }[] = [];
-
-    let graceTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const clearGrace = () => {
-      if (graceTimer) clearTimeout(graceTimer);
-      graceTimer = null;
-    };
-
-    const applyPanMomentum = (vx: number, vy: number) => {
-      const speed = Math.sqrt(vx * vx + vy * vy);
-      if (speed < MIN_VELOCITY) return;
-
-      const cvx = clampVelocity(vx);
-      const cvy = clampVelocity(vy);
-      const scale = MOMENTUM_FACTOR / 1000;
-      const targetX = spring.x.get() + cvx * scale * MOMENTUM_FACTOR;
-      const targetY = spring.y.get() + cvy * scale * MOMENTUM_FACTOR;
-
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const bx = rubberBand(targetX, vw, false);
-      const by = rubberBand(targetY, vh, false);
-
-      api.start({
-        x: bx.outOfBounds ? bx.edge : targetX,
-        y: by.outOfBounds ? by.edge : targetY,
-        config: bx.outOfBounds || by.outOfBounds ? SNAPBACK_CONFIG : SPRING_CONFIG,
-      });
-    };
-
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
         api.stop();
@@ -237,14 +153,11 @@ export function PaperCanvas({
         intent = "none";
         accumulatedPan = 0;
         accumulatedZoom = 0;
-        velocityBuffer.length = 0;
-        clearGrace();
       } else if (e.touches.length === 3) {
         api.stop();
 
         gestureType = "rotate";
         lastAngle3 = getAngleFromTouches3(e.touches);
-        clearGrace();
       }
     };
 
@@ -284,17 +197,10 @@ export function PaperCanvas({
         if (intent === "pan") {
           const dx = midpoint.x - lastMidpoint.x;
           const dy = midpoint.y - lastMidpoint.y;
-          const rawX = spring.x.get() + dx;
-          const rawY = spring.y.get() + dy;
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
-          const bx = rubberBand(rawX, vw, true);
-          const by = rubberBand(rawY, vh, true);
-          api.set({ x: bx.val, y: by.val });
-
-          const now = performance.now();
-          velocityBuffer.push({ x: midpoint.x, y: midpoint.y, t: now });
-          if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
+          api.set({
+            x: spring.x.get() + dx,
+            y: spring.y.get() + dy,
+          });
         }
 
         if (intent !== "zoom") lastDist = dist;
@@ -316,35 +222,11 @@ export function PaperCanvas({
     };
 
     const onTouchEnd = () => {
-      /* Pan momentum for 2-finger pan */
-      if (gestureType === "two-finger" && intent === "pan" && velocityBuffer.length >= 2) {
-        const first = velocityBuffer[0];
-        const last = velocityBuffer[velocityBuffer.length - 1];
-        const dt = (last.t - first.t) / 1000;
-        if (dt > 0.01) {
-          const vx = clampVelocity((last.x - first.x) / dt);
-          const vy = clampVelocity((last.y - first.y) / dt);
-
-          graceTimer = setTimeout(() => {
-            applyPanMomentum(vx, vy);
-            graceTimer = null;
-          }, GRACE_MS);
-        }
-      }
-
-      /* Sync zoom to React state — only place touch zoom commits */
-      if (gestureType === "two-finger" && intent === "zoom") {
-        const finalScale = spring.scale.get();
-        internalZoomUpdate.current = true;
-        onZoomChange(finalScale);
-      }
-
       /* Reset tracking — NOT spring values */
       gestureType = "none";
       intent = "none";
       accumulatedPan = 0;
       accumulatedZoom = 0;
-      velocityBuffer.length = 0;
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: false });
@@ -353,7 +235,6 @@ export function PaperCanvas({
     el.addEventListener("touchcancel", onTouchEnd, { passive: false });
 
     return () => {
-      clearGrace();
       el.removeEventListener("gesturestart", prevent);
       el.removeEventListener("gesturechange", prevent);
       el.removeEventListener("touchstart", onTouchStart);
@@ -361,7 +242,7 @@ export function PaperCanvas({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onZoomChange, api]);
+  }, [api]);
 
   /* ── Desktop: wheel for pan, ctrl+wheel for zoom ── */
   useGesture(
@@ -373,18 +254,8 @@ export function PaperCanvas({
           const delta = -dy * 0.003;
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
           api.set({ scale: nextScale });
-          internalZoomUpdate.current = true;
-          onZoomChange(nextScale);
         } else {
-          const targetY = spring.y.get() - dy * 2.5;
-          const vh = window.innerHeight;
-          const by = rubberBand(targetY, vh, false);
-          const finalY = by.outOfBounds ? by.edge : targetY;
-          api.start({
-            y: finalY,
-            config: by.outOfBounds ? SNAPBACK_CONFIG : SPRING_CONFIG,
-          });
-          committedY.current = finalY;
+          api.set({ y: spring.y.get() - dy * 2.5 });
         }
       },
     },

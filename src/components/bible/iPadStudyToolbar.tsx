@@ -47,8 +47,6 @@ interface IPadStudyToolbarProps {
   onPenSizeChange: (size: number) => void;
   penGlow?: string | null;
   onPenGlowChange?: (glow: string | null) => void;
-  zoom: number;
-  onZoomChange: (zoom: number) => void;
   textSpacing: number;
   onTextSpacingChange: (spacing: number) => void;
   onUndo: () => void;
