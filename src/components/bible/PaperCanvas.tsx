@@ -332,7 +332,9 @@ export function PaperCanvas({
 
       /* Sync zoom to React state */
       if (gestureType === "two-finger" && intent === "zoom") {
-        onZoomChange(spring.scale.get());
+        const finalScale = spring.scale.get();
+        lastGestureZoom.current = finalScale;
+        onZoomChange(finalScale);
       }
 
       /* Reset tracking — NOT spring values */
@@ -341,12 +343,6 @@ export function PaperCanvas({
       accumulatedPan = 0;
       accumulatedZoom = 0;
       velocityBuffer.length = 0;
-
-      /* Delay clearing gestureActive so React re-render from onZoomChange
-         doesn't trigger the zoom sync useEffect */
-      requestAnimationFrame(() => {
-        gestureActive.current = false;
-      });
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: false });
