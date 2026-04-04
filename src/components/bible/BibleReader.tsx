@@ -98,6 +98,8 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import { PaperCanvas } from "@/components/bible/PaperCanvas";
+import { CanvasSetupSheet } from "@/components/bible/CanvasSetupSheet";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
