@@ -146,12 +146,6 @@ export function PaperCanvas({
   /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
   const lastGestureZoom = useRef(zoom);
 
-  /* ── Debug tick for live panel ── */
-  const [debugTick, setDebugTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setDebugTick(t => t + 1), 100);
-    return () => clearInterval(id);
-  }, []);
 
   const [spring, api] = useSpring(() => ({
     x: 0,
@@ -279,11 +273,14 @@ export function PaperCanvas({
 
         if (intent === "zoom") {
           const ratio = dist / lastDist;
-          const currentScale = spring.scale.get();
-          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
-          api.set({ scale: nextScale });
-          lastGestureZoom.current = nextScale;
-          onZoomChange(nextScale);
+          if (Math.abs(ratio - 1.0) > 0.008) {
+            const currentScale = spring.scale.get();
+            const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
+            api.set({ scale: nextScale });
+            lastGestureZoom.current = nextScale;
+            onZoomChange(nextScale);
+            lastDist = dist;
+          }
         }
 
         if (intent === "pan") {
@@ -302,7 +299,7 @@ export function PaperCanvas({
           if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
         }
 
-        lastDist = dist;
+        if (intent !== "zoom") lastDist = dist;
         lastMidpoint = midpoint;
       }
 
@@ -313,8 +310,10 @@ export function PaperCanvas({
         let dAngle = angle - lastAngle3;
         if (dAngle > 180) dAngle -= 360;
         if (dAngle < -180) dAngle += 360;
-        api.set({ rotation: spring.rotation.get() + dAngle });
-        lastAngle3 = angle;
+        if (Math.abs(dAngle) > 0.3) {
+          api.set({ rotation: spring.rotation.get() + dAngle });
+          lastAngle3 = angle;
+        }
       }
     };
 
@@ -473,23 +472,6 @@ export function PaperCanvas({
         </animated.div>
       </div>
 
-      {/* Debug panel */}
-      <div style={{
-        position: 'fixed', top: 12, right: 12, zIndex: 9999,
-        background: 'rgba(0,0,0,0.85)', color: '#0f0',
-        fontFamily: 'monospace', fontSize: 11,
-        padding: 10, borderRadius: 8,
-        pointerEvents: 'none', minWidth: 220,
-      }}>
-        <div>tick {debugTick}</div>
-        <div>prop zoom: {zoom.toFixed(3)}</div>
-        <div>spring scale: {spring.scale.get().toFixed(3)}</div>
-        <div>lastGesture: {lastGestureZoom.current.toFixed(3)}</div>
-        <div>committed: {committedScale.current.toFixed(3)}</div>
-        <div>spring x: {spring.x.get().toFixed(1)}</div>
-        <div>spring y: {spring.y.get().toFixed(1)}</div>
-        <div>rotation: {spring.rotation.get().toFixed(1)}</div>
-      </div>
     </>
   );
 }
