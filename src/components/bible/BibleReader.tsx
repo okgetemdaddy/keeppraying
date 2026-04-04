@@ -2429,8 +2429,6 @@ export function BibleReader() {
               className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >
               <PaperCanvas
-                zoom={inkZoom}
-                onZoomChange={handleInkZoomChange}
                 baseFontSize={textSize}
                 textSpacing={inkTextSpacing}
                 textAlign={wsTextAlign}
