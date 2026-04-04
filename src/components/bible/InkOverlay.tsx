@@ -304,7 +304,7 @@ export function InkOverlay({
         }
 
         if (onCircleSelect) {
-          const matched = findVersesInsideStroke(currentPoints, svgRef.current, zoom);
+          const matched = findVersesInsideStroke(currentPoints, svgRef.current);
           if (matched.length > 0) {
             const svgEl = svgRef.current!;
             const ctmF = svgEl.getScreenCTM();
