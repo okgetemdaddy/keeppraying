@@ -275,6 +275,12 @@ export function BibleSleeveSheet({
   onHighlightStyleChange,
   studyArtifacts = [],
   onNavigateToArtifact,
+  chapterEditCount = 0,
+  todayEditCount = 0,
+  totalEditCount = 0,
+  onClearChapter,
+  onClearToday,
+  onClearAll,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
