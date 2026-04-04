@@ -2730,7 +2730,12 @@ export function BibleReader() {
                 </div>
               ) : (
                 <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                  {verses.map((v) => {
+                  {(() => {
+                    const canvasVerses = activeSessionConfig?.verses?.length
+                      ? verses.filter(v => v.number >= activeSessionConfig.verses[0].number && v.number <= activeSessionConfig.verses[activeSessionConfig.verses.length - 1].number)
+                      : verses;
+                    return canvasVerses;
+                  })().map((v) => {
                     const vNotes = noteMap.get(v.number) ?? [];
                     return (
                       <React.Fragment key={v.number}>
