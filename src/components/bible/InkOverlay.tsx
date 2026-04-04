@@ -415,7 +415,10 @@ export function InkOverlay({
     }
 
     /* ── Underline gesture detection ── */
-    if (onUnderlineGesture && isUnderlineGesture(currentPoints) && svgRef.current) {
+    const underlineDetected = isUnderlineGesture(currentPoints);
+    toast(`DEBUG gesture: underline=${underlineDetected} points=${currentPoints.length}`);
+
+    if (onUnderlineGesture && underlineDetected && svgRef.current) {
       const svgRect = svgRef.current.getBoundingClientRect();
       const startX = Math.min(...currentPoints.map((p) => p.x)) * zoom + svgRect.left;
       const endX = Math.max(...currentPoints.map((p) => p.x)) * zoom + svgRect.left;
@@ -435,6 +438,8 @@ export function InkOverlay({
           underlinedVerse = parseInt(el.getAttribute("data-verse") || "0", 10);
         }
       });
+
+      toast(`DEBUG words found: ${underlinedWords.length} verse=${underlinedVerse} text="${underlinedWords.join(' ').slice(0, 30)}"`);
 
       if (underlinedWords.length > 0 && underlinedVerse > 0) {
         onUnderlineGesture(underlinedVerse, underlinedWords.join(" "));
