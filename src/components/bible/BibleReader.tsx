@@ -1907,7 +1907,8 @@ export function BibleReader() {
         onCreateBunch={handleCreateBunchRequest}
       />
 
-      {/* ── Toolbar ── */}
+      {/* ── Toolbar (hidden in paper canvas study mode) ── */}
+      {!isInPaperCanvas && (
       <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm relative">
         {/* Edge Tabs — Suggestions & iPad Waitlist */}
         <BibleEdgeTabs
