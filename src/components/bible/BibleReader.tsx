@@ -2176,8 +2176,10 @@ export function BibleReader() {
                   setCanvasOpen(!canvasOpen);
                 } else if (studyMode && studyModeVariant === "journal") {
                   setJournalOpen(!journalOpen);
+                } else if (studyMode) {
+                  handleToggleStudyMode(false);
                 } else {
-                  handleToggleStudyMode(!studyMode);
+                  handleStudyModeEntry();
                 }
               }}
               className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
