@@ -83,10 +83,10 @@ export default function KeepReadingLanding() {
             className="flex flex-col items-center gap-4 pt-4"
           >
             <button
-              onClick={() => handleOAuth("google")}
+              onClick={() => navigate("/")}
               className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-full text-lg font-medium transition-all shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:shadow-[0_0_60px_rgba(16,185,129,0.5)] transform hover:scale-105"
             >
-              Start Studying — It's Free
+              Start Reading — It's Free
             </button>
 
             <div className="flex gap-3 mt-2">
