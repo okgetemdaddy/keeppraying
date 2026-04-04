@@ -507,7 +507,7 @@ export function SessionReviewDrawer({
   const isMobile = useIsMobile();
   const [activeClusterIdx, setActiveClusterIdx] = useState<number | null>(null);
 
-  const summary = session.session_summary as SessionSummary | null;
+  const summary = session.session_summary as unknown as SessionSummary | null;
   const clusters = useMemo(() => clusterEvents(events), [events]);
   const activeCluster =
     activeClusterIdx !== null ? clusters[activeClusterIdx] ?? null : null;
