@@ -1,49 +1,50 @@
 
 
-## Three Fixes: Zoom Snap-back, Ink Offset, Remove Snap Button
+## Add Real-Time Debug Panel to PaperCanvas
 
-### Fix 1 — Zoom snap-back (`PaperCanvas.tsx`)
+### Summary
+Add a fixed debug overlay that polls spring and ref values every 100ms, making the zoom snap-back root cause visible in real time.
 
-**Root cause**: Line 166 uses `api.start({ scale: zoom })` which creates a spring animation. When the gesture ends and `onZoomChange` updates React state, this effect fires and potentially animates to a slightly different value or overshoots due to spring physics. The `gestureActive` guard with `requestAnimationFrame` is a race condition.
+### Changes — `src/components/bible/PaperCanvas.tsx`
 
-**Fix**: Replace the `gestureActive` ref approach with a `lastGestureZoom` ref that tracks the last value set by a gesture. The sync effect compares against this ref — if the incoming `zoom` prop matches what the gesture just set, the effect is a no-op. Use `api.set` (instant) instead of `api.start` (animated).
+**1. Add debug tick state** (after line 147, near the other state):
+```ts
+const [debugTick, setDebugTick] = useState(0);
+useEffect(() => {
+  const id = setInterval(() => setDebugTick(t => t + 1), 100);
+  return () => clearInterval(id);
+}, []);
+```
 
-- Remove `gestureActive` ref (line 147)
-- Remove `requestAnimationFrame` wrapper in `onTouchEnd` (lines 353-355)
-- Remove the `notifyZoomChange` debounce timer and function (lines 171-175) — call `onZoomChange` directly
-- Add `const lastGestureZoom = useRef(zoom)`
-- Replace zoom sync effect (lines 164-168):
-  ```ts
-  useEffect(() => {
-    if (Math.abs(zoom - lastGestureZoom.current) > 0.001) {
-      api.set({ scale: zoom });
-    }
-  }, [zoom, api]);
-  ```
-- In pinch handler (line 286-287): set `lastGestureZoom.current = nextScale` before calling `onZoomChange(nextScale)` directly
-- In zoom touchend (line 341): call `onZoomChange(spring.scale.get())` and set `lastGestureZoom.current = spring.scale.get()`
-- In desktop wheel zoom (lines 385-387): set `lastGestureZoom.current = nextScale` and call `onZoomChange(nextScale)` directly
+**2. Add debug panel JSX** inside the return, as a sibling after the desk `<div>` (just before the closing `</>` fragment), reading `debugTick` to suppress the unused-var warning:
+```tsx
+<div style={{
+  position: 'fixed', top: 12, right: 12, zIndex: 9999,
+  background: 'rgba(0,0,0,0.85)', color: '#0f0',
+  fontFamily: 'monospace', fontSize: 11,
+  padding: 10, borderRadius: 8,
+  pointerEvents: 'none', minWidth: 220,
+}}>
+  <div>tick {debugTick}</div>
+  <div>prop zoom: {zoom.toFixed(3)}</div>
+  <div>spring scale: {spring.scale.get().toFixed(3)}</div>
+  <div>lastGesture: {lastGestureZoom.current.toFixed(3)}</div>
+  <div>committed: {committedScale.current.toFixed(3)}</div>
+  <div>spring x: {spring.x.get().toFixed(1)}</div>
+  <div>spring y: {spring.y.get().toFixed(1)}</div>
+  <div>rotation: {spring.rotation.get().toFixed(1)}</div>
+</div>
+```
 
-### Fix 2 — Ink offset when zoomed (`InkOverlay.tsx`)
+### What to watch for
+- **prop zoom** changes after pinch → confirms `onZoomChange` fires
+- **spring scale** diverges from prop zoom → something is overwriting the spring
+- **lastGesture** vs prop zoom → if they match, the sync effect is correctly skipped
+- **spring x/y** reset to 0 after pan → indicates the spring is being re-initialized
 
-**Root cause**: The SVG uses `width="100%" height="100%"` with no `viewBox`. When react-spring applies scale transforms to the parent, `getScreenCTM()` should account for it, but forcing a layout recalc before reading CTM ensures accuracy.
+### File to edit
 
-**Changes**:
-- Add `canvasWidth` and `canvasHeight` optional props to `InkOverlayProps`
-- Set SVG `width`, `height`, and `viewBox` from these props (fall back to `100%` / no viewBox)
-- In `getTransformedPoint`, call `svg.getBoundingClientRect()` before `svg.getScreenCTM()` to force layout recalc
-
-**In BibleReader.tsx**: Pass `canvasWidth={1056}` and `canvasHeight={1632}` to the InkOverlay rendered inside PaperCanvas.
-
-### Fix 3 — Remove snap-to-center button (`PaperCanvas.tsx`)
-
-Delete the `<button>` element at lines 484-515. Keep `SNAPBACK_CONFIG` since momentum pan uses it (line 228).
-
-### Files to edit
-
-| File | Changes |
-|------|---------|
-| `src/components/bible/PaperCanvas.tsx` | Replace zoom sync mechanism, remove snap button |
-| `src/components/bible/InkOverlay.tsx` | Add canvas dimension props, force CTM recalc |
-| `src/components/bible/BibleReader.tsx` | Pass `canvasWidth`/`canvasHeight` to InkOverlay |
+| File | Change |
+|------|--------|
+| `src/components/bible/PaperCanvas.tsx` | Add debug tick + debug panel |
 
