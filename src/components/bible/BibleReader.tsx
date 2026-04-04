@@ -2610,6 +2610,12 @@ export function BibleReader() {
               marginWidth={wsMarginWidth}
               canvasBackground={wsCanvasBackground}
               cameraRef={paperCameraRef}
+              textBoxConfig={activeSessionConfig?.textBox ? {
+                x: activeSessionConfig.textBox.x * 96,
+                y: activeSessionConfig.textBox.y * 96,
+                width: activeSessionConfig.textBox.width * 96,
+                height: activeSessionConfig.textBox.height * 96,
+              } : undefined}
               overlay={
                 <InkOverlay
                   zoom={inkZoom}
