@@ -3008,7 +3008,23 @@ export function BibleReader() {
         }}
       />
 
-      {/* ── Eraser Confirmation Dialog ── */}
+      {/* ── Canvas Creation Drawer ── */}
+      <CanvasCreationDrawer
+        open={canvasCreationOpen}
+        onOpenChange={setCanvasCreationOpen}
+        bibleId={versionId}
+        books={index?.books}
+        currentBookUsfm={bookUsfm}
+        currentChapterIdx={chapterIdx}
+        onStartSession={(config) => {
+          console.log("Canvas session config:", config);
+          setInkTextSpacing(config.typography.lineSpacing);
+          try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
+          setStudyMode(true);
+          try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+        }}
+      />
+
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
