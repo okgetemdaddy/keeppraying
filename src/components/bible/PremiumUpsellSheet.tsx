@@ -102,10 +102,12 @@ export function PremiumUpsellSheet({ open, onClose }: PremiumUpsellSheetProps) {
               </h2>
 
               {/* Sub-headline */}
-              <p className="text-sm text-center text-muted-foreground max-w-[300px] mx-auto leading-relaxed">
-                Canvas study mode is a KeepRead.ing Premium feature. Apple Pencil
+              <p className="text-sm text-center text-muted-foreground max-w-[300px] mx-auto leading-relaxed whitespace-pre-line">
+                iPad study mode is a KeepRead.ing Premium feature. Apple Pencil
                 annotation, cross-reference insights, and timed sessions — built for
-                serious students of the Word.
+                serious students of the Word.{"\n\n"}
+                Free for now.{"\n\n"}
+                Report bugs and win a lifetime membership.
               </p>
 
               {/* Feature list */}
