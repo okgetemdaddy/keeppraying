@@ -3033,6 +3033,14 @@ export function BibleReader() {
         }}
       />
 
+      {/* ── Session Picker Sheet ── */}
+      <SessionPickerSheet
+        open={sessionPickerOpen}
+        onOpenChange={setSessionPickerOpen}
+        onNewSession={handleSessionPickerNewSession}
+        onResumeSession={handleResumeSession}
+      />
+
       {/* ── Canvas Creation Drawer ── */}
       <CanvasCreationDrawer
         open={canvasCreationOpen}
@@ -3042,11 +3050,22 @@ export function BibleReader() {
         currentBookUsfm={bookUsfm}
         currentChapterIdx={chapterIdx}
         onStartSession={(config) => {
-          console.log("Canvas session config:", config);
+          // Save session for future resume
+          const session: SavedSession = {
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            verseRange: config.verseRange,
+            bookUsfm: bookUsfm ?? "",
+            chapterIdx,
+            config,
+          };
+          saveNewSession(session);
+
           setInkTextSpacing(config.typography.lineSpacing);
           try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
           setStudyMode(true);
           try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+          setCanvasOpen(true);
         }}
       />
 
