@@ -121,10 +121,13 @@ export function PaperCanvas({
     config: SPRING_CONFIG,
   }));
 
-  /* ── Sync incoming zoom prop to spring scale ── */
+  /* ── Gesture-active guard — prevents zoom sync from overriding gestures ── */
+  const gestureActive = useRef(false);
+
+  /* ── Sync incoming zoom prop to spring scale (toolbar slider only) ── */
   const zoomRef = useRef(zoom);
   useEffect(() => {
-    if (Math.abs(zoom - zoomRef.current) > 0.001) {
+    if (!gestureActive.current && Math.abs(zoom - zoomRef.current) > 0.001) {
       zoomRef.current = zoom;
       api.set({ scale: zoom });
     }
