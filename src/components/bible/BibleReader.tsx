@@ -2537,12 +2537,13 @@ export function BibleReader() {
                     }
                   }}
                   onUnderlineGesture={(verseNumber, underlinedText) => {
-                    if (!user) {
+                    if (!user && !isGuestSession) {
                       toast("Unlock this feature ✦", {
                         description: "Highlighting lets you mark and revisit meaningful passages. Create a free account to start.",
                       });
                       return;
                     }
+                    if (!user) markGuestChange();
                     const lastColor = (() => {
                       try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
                     })();
