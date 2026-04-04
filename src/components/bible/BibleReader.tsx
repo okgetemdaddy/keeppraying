@@ -2403,263 +2403,173 @@ export function BibleReader() {
 
       {/* ── Reading Area ── */}
       <div ref={readingAreaRef} className={`relative py-8 sm:py-12 ${
-        isInPaperCanvas
+        viewMode === "margin"
           ? "w-full px-0"
+          : viewMode === "canvas"
+          ? "w-full px-0 !py-0"
           : "mx-auto max-w-3xl px-5 sm:px-8"
       }`}>
-        {currentBook && currentChapter && !isInPaperCanvas && (
-          <motion.header
-            {...fadeIn}
-            className={`mb-8 text-center ${studyMode ? 'pointer-events-none backdrop-blur-md bg-background/80 dark:bg-background/70 -mx-5 sm:-mx-8 px-5 sm:px-8 py-4 rounded-b-2xl sticky top-[88px] z-20' : ''}`}
-            onContextMenu={(e) => {
-              if (studyMode) {
-                e.preventDefault();
-                setThumbnailStripOpen(true);
-              }
-            }}
-          >
-            <div className="flex items-center justify-center gap-3">
-              {tapNavMode && (
-                <button
-                  disabled={!canPrev}
-                  onClick={() => setChapterIdx((i) => i - 1)}
-                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                  aria-label="Previous chapter"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              )}
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                {currentBook.title} {currentChapter.title}
-              </h1>
-              {tapNavMode && (
-                <button
-                  disabled={!canNext}
-                  onClick={() => setChapterIdx((i) => i + 1)}
-                  className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-                  aria-label="Next chapter"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {versions?.find((v) => v.id === versionId)?.localized_title}
-            </p>
-            {studyMode && (
-              <button
-                onClick={() => setThumbnailStripOpen(true)}
-                className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
+        {viewMode === "canvas" ? (
+          /* ── CANVAS STUDIO — full takeover, standard reader unmounted ── */
+          <div className="w-full h-screen overflow-hidden bg-neutral-900">
+            <ManuscriptCanvas
+              chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
+              verses={verses.map((v) => ({ number: v.number, text: v.text }))}
+              initialStrokes={canvasInitialStrokes}
+              onSave={handleCanvasSave}
+              onClose={() => { setActiveSession(null); setStudyMode(false); try { localStorage.setItem("bible_study_mode", "false"); } catch {} }}
+              textSize={textSize}
+            />
+          </div>
+        ) : viewMode === "margin" ? (
+          /* ── PAPER CANVAS (margin study) ── */
+          <>
+            {currentBook && currentChapter && (
+              <motion.header
+                {...fadeIn}
+                className="mb-8 text-center pointer-events-none backdrop-blur-md bg-background/80 dark:bg-background/70 -mx-5 sm:-mx-8 px-5 sm:px-8 py-4 rounded-b-2xl sticky top-[88px] z-20"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setThumbnailStripOpen(true);
+                }}
               >
-                ▼ Browse chapters
-              </button>
+                <div className="flex items-center justify-center gap-3">
+                  <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                    {currentBook.title} {currentChapter.title}
+                  </h1>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {versions?.find((v) => v.id === versionId)?.localized_title}
+                </p>
+                <button
+                  onClick={() => setThumbnailStripOpen(true)}
+                  className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
+                >
+                  ▼ Browse chapters
+                </button>
+              </motion.header>
             )}
-          </motion.header>
-        )}
-
-        {/* Paper canvas mode — ALWAYS mounted to preserve spring state */}
-        {studyMode && studyModeVariant === "margin" && (
-          <div
-            key={`canvas-${bookUsfm}-${chapterIdx}`}
-            style={{ fontSize: `${textSize}px` }}
-            className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
-          >
-            <PaperCanvas
-              baseFontSize={textSize}
-              textSpacing={inkTextSpacing}
-              textAlign={wsTextAlign}
-              marginWidth={wsMarginWidth}
-              canvasBackground={wsCanvasBackground}
-              overlay={
-                <InkOverlay
-                  zoom={inkZoom}
-                  strokes={inkHistory.strokes}
-                  canvasWidth={1056}
-                  canvasHeight={1632}
-                  onStrokeComplete={handleInkStrokeComplete}
-                  onUndo={handleInkUndo}
-                  penColor={inkPenColor}
-                  penSize={inkPenSize}
-                  penGlow={inkPenGlow}
-                  fingerDrawing={inkFingerDrawing}
-                  isDark={premiumDark || document.documentElement.classList.contains("dark")}
-                  onCircleSelect={(verseNumbers, hullCenter) => {
-                    if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
-                      if (verseNumbers.length === 1 && hullCenter) {
-                        const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
-                        if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
-                          const text = range.startContainer.textContent ?? "";
-                          const offset = range.startOffset;
-                          let start = offset;
-                          let end = offset;
-                          while (start > 0 && /\w/.test(text[start - 1])) start--;
-                          while (end < text.length && /\w/.test(text[end])) end++;
-                          const word = text.slice(start, end).trim();
-                          if (word && word.length >= 2 && word.length < 40) {
-                            setReferenceBloom({
-                              x: hullCenter.x,
-                              y: hullCenter.y,
-                              word,
-                              verseNumber: verseNumbers[0],
-                            });
-                            return;
+            <div
+              key={`canvas-${bookUsfm}-${chapterIdx}`}
+              style={{ fontSize: `${textSize}px` }}
+              className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+            >
+              <PaperCanvas
+                baseFontSize={textSize}
+                textSpacing={inkTextSpacing}
+                textAlign={wsTextAlign}
+                marginWidth={wsMarginWidth}
+                canvasBackground={wsCanvasBackground}
+                overlay={
+                  <InkOverlay
+                    zoom={inkZoom}
+                    strokes={inkHistory.strokes}
+                    canvasWidth={1056}
+                    canvasHeight={1632}
+                    onStrokeComplete={handleInkStrokeComplete}
+                    onUndo={handleInkUndo}
+                    penColor={inkPenColor}
+                    penSize={inkPenSize}
+                    penGlow={inkPenGlow}
+                    fingerDrawing={inkFingerDrawing}
+                    isDark={premiumDark || document.documentElement.classList.contains("dark")}
+                    onCircleSelect={(verseNumbers, hullCenter) => {
+                      if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                        if (verseNumbers.length === 1 && hullCenter) {
+                          const range = document.caretRangeFromPoint?.(hullCenter.x, hullCenter.y);
+                          if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+                            const text = range.startContainer.textContent ?? "";
+                            const offset = range.startOffset;
+                            let start = offset;
+                            let end = offset;
+                            while (start > 0 && /\w/.test(text[start - 1])) start--;
+                            while (end < text.length && /\w/.test(text[end])) end++;
+                            const word = text.slice(start, end).trim();
+                            if (word && word.length >= 2 && word.length < 40) {
+                              setReferenceBloom({
+                                x: hullCenter.x,
+                                y: hullCenter.y,
+                                word,
+                                verseNumber: verseNumbers[0],
+                              });
+                              return;
+                            }
                           }
                         }
-                      }
-                      setCrossSelections((prev) => {
-                        const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
-                        const newSelections = verseNumbers
-                          .filter((v) => !existing.has(`${bookUsfm}.${currentChapter.id}.${v}`))
-                          .map((v) => ({
-                            versionId,
-                            bookUsfm,
-                            bookTitle: currentBook.title,
-                            chapterNumber: currentChapter.id,
-                            verseNumber: v,
-                          }));
-                        return [...prev, ...newSelections];
-                      });
-                      toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
-                    }
-                  }}
-                  onPencilFirstContact={() => {
-                    const onboarded = localStorage.getItem("pencil-onboarded");
-                    if (!onboarded) {
-                      localStorage.setItem("pencil-onboarded", "true");
-                    }
-                  }}
-                  onWordCircle={(words, verseNum, anchor) => {
-                    const verseData = verses.find((v) => v.number === verseNum);
-                    if (verseData) {
-                      setReferenceBloom({
-                        x: anchor.x,
-                        y: anchor.y,
-                        word: words,
-                        verseNumber: verseNum,
-                      });
-                    }
-                  }}
-                  onUnderlineGesture={(verseNumber, underlinedText) => {
-                    if (!user) {
-                      toast("Please sign in to highlight verses", {
-                        description: "Create a free account to save highlights and annotations",
-                      });
-                      return;
-                    }
-                    const lastColor = (() => {
-                      try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
-                    })();
-                    const verseData = verses.find((v) => v.number === verseNumber);
-                    if (verseData) {
-                      const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
-                      const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
-                      const textStart = normalizedVerse.indexOf(normalizedUnderline);
-                      if (textStart >= 0) {
-                        mutations.addHighlight.mutate({
-                          verseNumber,
-                          color: lastColor,
-                          start: textStart,
-                          end: textStart + normalizedUnderline.length,
+                        setCrossSelections((prev) => {
+                          const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
+                          const newSelections = verseNumbers
+                            .filter((v) => !existing.has(`${bookUsfm}.${currentChapter.id}.${v}`))
+                            .map((v) => ({
+                              versionId,
+                              bookUsfm,
+                              bookTitle: currentBook.title,
+                              chapterNumber: currentChapter.id,
+                              verseNumber: v,
+                            }));
+                          return [...prev, ...newSelections];
                         });
-                        toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
-                      } else {
-                        mutations.addHighlight.mutate({
-                          verseNumber,
-                          color: lastColor,
-                        });
-                        toast.success(`Highlighted verse ${verseNumber}`);
+                        toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""} by circle gesture`);
                       }
-                    }
-                  }}
-                  onXGesture={handleXGesture}
-                />
-              }
-            >
-              {isLoading ? (
-                <div style={{ padding: 40, opacity: 0.4, fontFamily: "'EB Garamond', serif", textAlign: "center" }}>
-                  Loading…
-                </div>
-              ) : (
-                <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                  {verses.map((v) => {
-                    const vNotes = noteMap.get(v.number) ?? [];
-                    return (
-                      <React.Fragment key={v.number}>
-                        <EnrichedVerse
-                          verse={v}
-                          highlights={highlightMap.get(v.number) ?? []}
-                          notes={vNotes}
-                          bookmark={bookmarkMap.get(v.number)}
-                          bunchItems={bunchMap.get(v.number) ?? []}
-                          bunchColorMap={bunchColorMap}
-                          bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                          mode={mode}
-                          isSelected={selectedVerses.has(v.number)}
-                          hideBunches={hideBunchRefs}
-                          onTapSelect={handleTapSelect}
-                          studyMode={studyMode && studyModeVariant === "margin"}
-                          verseAnnotation={annotationMap.get(v.number) ?? null}
-                          onAnnotationSave={handleAnnotationSave}
-                          verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                          highlightStyle={highlightStyle}
-                          previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
-                          onLongPressVerseNumber={user ? handleCrossRef : undefined}
-                        />
-                        <AnimatePresence>
-                          {noteInputVerse === v.number && (
-                            <NoteInputPanel
-                              verseNumber={v.number}
-                              existingContent={vNotes[0]?.note_content}
-                              existingId={vNotes[0]?.id}
-                              onSave={handleSaveNote}
-                              onCancel={() => setNoteInputVerse(null)}
-                            />
-                          )}
-                        </AnimatePresence>
-                      </React.Fragment>
-                    );
-                  })}
-                </section>
-              )}
-            </PaperCanvas>
-          </div>
-        )}
-
-        {/* Non-study mode — skeleton/content transitions via AnimatePresence */}
-        {!(studyMode && studyModeVariant === "margin") && (
-          <AnimatePresence mode="wait">
-            {isLoading ? (
-              <motion.div key="skeleton" {...fadeIn}>
-                <ReadingSkeleton />
-              </motion.div>
-            ) : hasVerses ? (
-              <motion.div
-                key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
-                {...fadeIn}
-                drag={tapNavMode ? false : "x"}
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.15}
-                onDragEnd={(_e, info) => {
-                  if (Math.abs(info.offset.x) > 100) {
-                    if (info.offset.x < -100 && canNext) {
-                      setChapterIdx((i) => i + 1);
-                    } else if (info.offset.x > 100 && canPrev) {
-                      setChapterIdx((i) => i - 1);
-                    }
-                  }
-                }}
-                style={{ fontSize: `${textSize}px` }}
-                className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+                    }}
+                    onPencilFirstContact={() => {
+                      const onboarded = localStorage.getItem("pencil-onboarded");
+                      if (!onboarded) {
+                        localStorage.setItem("pencil-onboarded", "true");
+                      }
+                    }}
+                    onWordCircle={(words, verseNum, anchor) => {
+                      const verseData = verses.find((v) => v.number === verseNum);
+                      if (verseData) {
+                        setReferenceBloom({
+                          x: anchor.x,
+                          y: anchor.y,
+                          word: words,
+                          verseNumber: verseNum,
+                        });
+                      }
+                    }}
+                    onUnderlineGesture={(verseNumber, underlinedText) => {
+                      if (!user) {
+                        toast("Please sign in to highlight verses", {
+                          description: "Create a free account to save highlights and annotations",
+                        });
+                        return;
+                      }
+                      const lastColor = (() => {
+                        try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
+                      })();
+                      const verseData = verses.find((v) => v.number === verseNumber);
+                      if (verseData) {
+                        const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
+                        const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
+                        const textStart = normalizedVerse.indexOf(normalizedUnderline);
+                        if (textStart >= 0) {
+                          mutations.addHighlight.mutate({
+                            verseNumber,
+                            color: lastColor,
+                            start: textStart,
+                            end: textStart + normalizedUnderline.length,
+                          });
+                          toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
+                        } else {
+                          mutations.addHighlight.mutate({
+                            verseNumber,
+                            color: lastColor,
+                          });
+                          toast.success(`Highlighted verse ${verseNumber}`);
+                        }
+                      }
+                    }}
+                    onXGesture={handleXGesture}
+                  />
+                }
               >
-                <ZoomWrapper
-                  zoom={1}
-                  textSpacing={1.6}
-                  className="relative"
-                  textAlign="left"
-                  marginWidth={0}
-                  canvasBackground="none"
-                  studyMode={false}
-                >
+                {isLoading ? (
+                  <div style={{ padding: 40, opacity: 0.4, fontFamily: "'EB Garamond', serif", textAlign: "center" }}>
+                    Loading…
+                  </div>
+                ) : (
                   <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
                     {verses.map((v) => {
                       const vNotes = noteMap.get(v.number) ?? [];
@@ -2677,7 +2587,7 @@ export function BibleReader() {
                             isSelected={selectedVerses.has(v.number)}
                             hideBunches={hideBunchRefs}
                             onTapSelect={handleTapSelect}
-                            studyMode={false}
+                            studyMode={studyMode && studyModeVariant === "margin"}
                             verseAnnotation={annotationMap.get(v.number) ?? null}
                             onAnnotationSave={handleAnnotationSave}
                             verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
@@ -2700,43 +2610,160 @@ export function BibleReader() {
                       );
                     })}
                   </section>
-                </ZoomWrapper>
-              </motion.div>
-            ) : !versionId ? (
-              <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <BookOpen className="mb-4 h-12 w-12 opacity-40" />
-                <p className="text-lg font-medium">Select a Bible version to begin reading</p>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        )}
+                )}
+              </PaperCanvas>
+            </div>
+          </>
+        ) : (
+          /* ── STANDARD READING MODE ── */
+          <>
+            {currentBook && currentChapter && (
+              <motion.header
+                {...fadeIn}
+                className="mb-8 text-center"
+              >
+                <div className="flex items-center justify-center gap-3">
+                  {tapNavMode && (
+                    <button
+                      disabled={!canPrev}
+                      onClick={() => setChapterIdx((i) => i - 1)}
+                      className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                      aria-label="Previous chapter"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                  )}
+                  <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
+                    {currentBook.title} {currentChapter.title}
+                  </h1>
+                  {tapNavMode && (
+                    <button
+                      disabled={!canNext}
+                      onClick={() => setChapterIdx((i) => i + 1)}
+                      className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                      aria-label="Next chapter"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {versions?.find((v) => v.id === versionId)?.localized_title}
+                </p>
+              </motion.header>
+            )}
 
-        {currentBook && totalChapters > 0 && !isInPaperCanvas && (
-          <nav className="mt-12 flex items-center justify-between border-t border-border pt-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!canPrev}
-              onClick={() => setChapterIdx((i) => i - 1)}
-              className="gap-1 text-muted-foreground hover:text-foreground"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              {chapterIdx + 1} of {totalChapters}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={!canNext}
-              onClick={() => setChapterIdx((i) => i + 1)}
-              className="gap-1 text-muted-foreground hover:text-foreground"
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </nav>
+            <AnimatePresence mode="wait">
+              {isLoading ? (
+                <motion.div key="skeleton" {...fadeIn}>
+                  <ReadingSkeleton />
+                </motion.div>
+              ) : hasVerses ? (
+                <motion.div
+                  key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
+                  {...fadeIn}
+                  drag={tapNavMode ? false : "x"}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.15}
+                  onDragEnd={(_e, info) => {
+                    if (Math.abs(info.offset.x) > 100) {
+                      if (info.offset.x < -100 && canNext) {
+                        setChapterIdx((i) => i + 1);
+                      } else if (info.offset.x > 100 && canPrev) {
+                        setChapterIdx((i) => i - 1);
+                      }
+                    }
+                  }}
+                  style={{ fontSize: `${textSize}px` }}
+                  className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+                >
+                  <ZoomWrapper
+                    zoom={1}
+                    textSpacing={1.6}
+                    className="relative"
+                    textAlign="left"
+                    marginWidth={0}
+                    canvasBackground="none"
+                    studyMode={false}
+                  >
+                    <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                      {verses.map((v) => {
+                        const vNotes = noteMap.get(v.number) ?? [];
+                        return (
+                          <React.Fragment key={v.number}>
+                            <EnrichedVerse
+                              verse={v}
+                              highlights={highlightMap.get(v.number) ?? []}
+                              notes={vNotes}
+                              bookmark={bookmarkMap.get(v.number)}
+                              bunchItems={bunchMap.get(v.number) ?? []}
+                              bunchColorMap={bunchColorMap}
+                              bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                              mode={mode}
+                              isSelected={selectedVerses.has(v.number)}
+                              hideBunches={hideBunchRefs}
+                              onTapSelect={handleTapSelect}
+                              studyMode={false}
+                              verseAnnotation={annotationMap.get(v.number) ?? null}
+                              onAnnotationSave={handleAnnotationSave}
+                              verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                              highlightStyle={highlightStyle}
+                              previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                              onLongPressVerseNumber={user ? handleCrossRef : undefined}
+                            />
+                            <AnimatePresence>
+                              {noteInputVerse === v.number && (
+                                <NoteInputPanel
+                                  verseNumber={v.number}
+                                  existingContent={vNotes[0]?.note_content}
+                                  existingId={vNotes[0]?.id}
+                                  onSave={handleSaveNote}
+                                  onCancel={() => setNoteInputVerse(null)}
+                                />
+                              )}
+                            </AnimatePresence>
+                          </React.Fragment>
+                        );
+                      })}
+                    </section>
+                  </ZoomWrapper>
+                </motion.div>
+              ) : !versionId ? (
+                <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                  <BookOpen className="mb-4 h-12 w-12 opacity-40" />
+                  <p className="text-lg font-medium">Select a Bible version to begin reading</p>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            {currentBook && totalChapters > 0 && (
+              <nav className="mt-12 flex items-center justify-between border-t border-border pt-6">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!canPrev}
+                  onClick={() => setChapterIdx((i) => i - 1)}
+                  className="gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  {chapterIdx + 1} of {totalChapters}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!canNext}
+                  onClick={() => setChapterIdx((i) => i + 1)}
+                  className="gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </nav>
+            )}
+          </>
         )}
       </div>
 
