@@ -2967,17 +2967,7 @@ export function BibleReader() {
         }}
       />
 
-      {/* ── Manuscript Canvas (Mode 2) ── */}
-      {canvasOpen && studyMode && studyModeVariant === "canvas" && (
-        <ManuscriptCanvas
-          chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
-          verses={verses.map((v) => ({ number: v.number, text: v.text }))}
-          initialStrokes={canvasInitialStrokes}
-          onSave={handleCanvasSave}
-          onClose={() => setCanvasOpen(false)}
-          textSize={textSize}
-        />
-      )}
+      {/* ManuscriptCanvas is now rendered inside the reading area ternary */}
 
       {/* ── Journal Panel (Mode 3) ── */}
       <JournalPanel
