@@ -106,7 +106,11 @@ export function PaperCanvas({
     if (!el) return;
     const { x, y, scale, rotation } = transformState.current;
     el.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${rotation}deg) scale(${scale})`;
-  }, []);
+    // Sync external ref so heartbeat/resume can read live values
+    if (cameraRef) {
+      cameraRef.current = { x, y, scale, rotation };
+    }
+  }, [cameraRef]);
 
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)

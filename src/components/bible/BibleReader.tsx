@@ -2608,6 +2608,7 @@ export function BibleReader() {
               textAlign={wsTextAlign}
               marginWidth={wsMarginWidth}
               canvasBackground={wsCanvasBackground}
+              cameraRef={paperCameraRef}
               overlay={
                 <InkOverlay
                   zoom={inkZoom}
