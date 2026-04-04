@@ -12,13 +12,16 @@ const SPRING_CONFIG = { tension: 170, friction: 26 };
 const SNAPBACK_CONFIG = { tension: 120, friction: 20 };
 const VELOCITY_BUFFER_SIZE = 5;
 const MAX_VELOCITY = 400;
-const MAX_ROT_VELOCITY = 90; // deg/s
 const MIN_VELOCITY = 50;
 const MOMENTUM_FACTOR = 100;
 const GRACE_MS = 180;
-const DEAD_ZONE_PX = 8;
 const BOUNDARY_FRACTION = 0.6;
 const OVERSCROLL_RESISTANCE = 0.3;
+
+/* ── Intent locking thresholds ── */
+const ZOOM_THRESHOLD = 15;    // px finger distance change
+const ROTATE_THRESHOLD = 8;   // degrees angle change
+const PAN_THRESHOLD = 12;     // px midpoint movement
 
 /* ── Rubber-banding helper ── */
 const rubberBand = (
@@ -75,6 +78,27 @@ function MarginCanvas({ background }: { background: CanvasBackground }) {
   );
 }
 
+/* ── Touch helpers ── */
+const getTouchDist = (touches: TouchList) => {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+const getTouchAngle = (touches: TouchList) =>
+  Math.atan2(
+    touches[1].clientY - touches[0].clientY,
+    touches[1].clientX - touches[0].clientX
+  ) * (180 / Math.PI);
+
+const getTouchMidpoint = (touches: TouchList) => ({
+  x: (touches[0].clientX + touches[1].clientX) / 2,
+  y: (touches[0].clientY + touches[1].clientY) / 2,
+});
+
+const clampVelocity = (v: number, max = MAX_VELOCITY) =>
+  Math.max(-max, Math.min(max, v));
+
 export interface PaperCanvasProps {
   zoom: number;
   onZoomChange: (zoom: number) => void;
@@ -113,35 +137,39 @@ export function PaperCanvas({
     return () => observer.disconnect();
   }, []);
 
+  /* ── Committed value refs — the source of truth after gestures ── */
+  const committedScale = useRef(zoom);
+  const committedRotation = useRef(0);
+  const committedX = useRef(0);
+  const committedY = useRef(0);
+
   const [spring, api] = useSpring(() => ({
-    x: 0,
-    y: 0,
-    rotation: 0,
-    scale: 1,
+    x: committedX.current,
+    y: committedY.current,
+    rotation: committedRotation.current,
+    scale: committedScale.current,
     config: SPRING_CONFIG,
   }));
 
-  /* ── Gesture-active guard — prevents zoom sync from overriding gestures ── */
+  /* ── Gesture-active guard ── */
   const gestureActive = useRef(false);
 
-  /* ── Sync incoming zoom prop to spring scale (toolbar slider only) ── */
-  const zoomRef = useRef(zoom);
+  /* ── Sync incoming zoom prop from external sources (toolbar slider) ── */
   useEffect(() => {
-    if (!gestureActive.current && Math.abs(zoom - zoomRef.current) > 0.001) {
-      zoomRef.current = zoom;
+    if (!gestureActive.current && Math.abs(zoom - committedScale.current) > 0.001) {
+      committedScale.current = zoom;
       api.set({ scale: zoom });
     }
   }, [zoom, api]);
 
-  /* ── Debounced onZoomChange to avoid excessive re-renders ── */
+  /* ── Debounced onZoomChange ── */
   const zoomChangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notifyZoomChange = (val: number) => {
-    zoomRef.current = val;
     if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
     zoomChangeTimer.current = setTimeout(() => onZoomChange(val), 32);
   };
 
-  /* ── Touch gesture handling ── */
+  /* ── Unified 2-finger touch gesture system with intent locking ── */
   useEffect(() => {
     const el = deskRef.current;
     if (!el) return;
@@ -150,66 +178,47 @@ export function PaperCanvas({
     el.addEventListener("gesturestart", prevent, { passive: false });
     el.addEventListener("gesturechange", prevent, { passive: false });
 
-    let gestureType: "none" | "zoom" | "pan" = "none";
-    let gestureFingerCount = 0;
-    let gestureDead = false;
-    let lastDist: number | null = null;
-    let lastMidpoint: { x: number; y: number } | null = null;
-    let lastAngle: number | null = null;
+    let intent: "none" | "pan" | "zoom" | "rotate" = "none";
+    let accumulatedPan = 0;
+    let accumulatedZoom = 0;
+    let accumulatedRotation = 0;
+
+    let initialDist = 0;
+    let initialAngle = 0;
+    let initialMidpoint = { x: 0, y: 0 };
+
+    let lastDist = 0;
+    let lastAngle = 0;
+    let lastMidpoint = { x: 0, y: 0 };
+
     const velocityBuffer: { x: number; y: number; t: number }[] = [];
-    const rotVelocityBuffer: { angle: number; t: number }[] = [];
-    let totalMovement = 0;
-    let panStartX = 0;
-    let panStartY = 0;
-    let panStartRotation = 0;
 
     let graceTimer: ReturnType<typeof setTimeout> | null = null;
-    let inGracePeriod = false;
-    let graceVx = 0;
-    let graceVy = 0;
-    let graceVr = 0;
-
-    const clampVelocity = (v: number, max = MAX_VELOCITY) =>
-      Math.max(-max, Math.min(max, v));
-
-    const getTouchDist = (touches: TouchList) => {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    };
-
-    const getMidpoint3 = (touches: TouchList) => ({
-      x: (touches[0].clientX + touches[1].clientX + touches[2].clientX) / 3,
-      y: (touches[0].clientY + touches[1].clientY + touches[2].clientY) / 3,
-    });
-
-    const getAngle3 = (touches: TouchList) => {
-      const dx = touches[2].clientX - touches[0].clientX;
-      const dy = touches[2].clientY - touches[0].clientY;
-      return Math.atan2(dy, dx) * (180 / Math.PI);
-    };
 
     const clearGrace = () => {
       if (graceTimer) clearTimeout(graceTimer);
       graceTimer = null;
-      inGracePeriod = false;
-      graceVx = 0;
-      graceVy = 0;
-      graceVr = 0;
     };
 
-    const applyMomentumWithBounds = (vx: number, vy: number, vr: number) => {
+    const commitValues = () => {
+      committedX.current = spring.x.get();
+      committedY.current = spring.y.get();
+      committedRotation.current = spring.rotation.get();
+      committedScale.current = spring.scale.get();
+    };
+
+    const applyPanMomentum = (vx: number, vy: number) => {
       const speed = Math.sqrt(vx * vx + vy * vy);
-      const rotSpeed = Math.abs(vr);
-      if (speed < MIN_VELOCITY && rotSpeed < 5) return;
+      if (speed < MIN_VELOCITY) {
+        commitValues();
+        return;
+      }
 
       const cvx = clampVelocity(vx);
       const cvy = clampVelocity(vy);
-      const cvr = clampVelocity(vr, MAX_ROT_VELOCITY);
       const scale = MOMENTUM_FACTOR / 1000;
       const targetX = spring.x.get() + cvx * scale * MOMENTUM_FACTOR;
       const targetY = spring.y.get() + cvy * scale * MOMENTUM_FACTOR;
-      const targetR = spring.rotation.get() + cvr * scale * 30;
 
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -219,155 +228,129 @@ export function PaperCanvas({
       api.start({
         x: bx.outOfBounds ? bx.edge : targetX,
         y: by.outOfBounds ? by.edge : targetY,
-        rotation: targetR,
         config: bx.outOfBounds || by.outOfBounds ? SNAPBACK_CONFIG : SPRING_CONFIG,
+        onRest: () => commitValues(),
       });
     };
 
     const onTouchStart = (e: TouchEvent) => {
-      if (inGracePeriod) {
-        if (e.touches.length === 3) {
-          clearGrace();
-        } else {
-          return;
-        }
-      }
+      if (e.touches.length !== 2) return;
 
-      if (e.touches.length === 2) {
-        gestureType = "zoom";
-        gestureFingerCount = 2;
-        gestureDead = false;
-        gestureActive.current = true;
-        lastDist = getTouchDist(e.touches);
-      } else if (e.touches.length === 3) {
-        gestureType = "pan";
-        gestureFingerCount = 3;
-        gestureDead = false;
-        gestureActive.current = true;
-        lastMidpoint = getMidpoint3(e.touches);
-        lastAngle = getAngle3(e.touches);
-        velocityBuffer.length = 0;
-        rotVelocityBuffer.length = 0;
-        totalMovement = 0;
-        panStartX = spring.x.get();
-        panStartY = spring.y.get();
-        panStartRotation = spring.rotation.get();
-        api.stop();
-      }
+      gestureActive.current = true;
+      api.stop();
+
+      initialDist = getTouchDist(e.touches);
+      initialAngle = getTouchAngle(e.touches);
+      initialMidpoint = getTouchMidpoint(e.touches);
+
+      lastDist = initialDist;
+      lastAngle = initialAngle;
+      lastMidpoint = initialMidpoint;
+
+      intent = "none";
+      accumulatedPan = 0;
+      accumulatedZoom = 0;
+      accumulatedRotation = 0;
+      velocityBuffer.length = 0;
+
+      clearGrace();
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (inGracePeriod) return;
-      if (gestureDead) return;
+      if (e.touches.length !== 2) return;
+      e.preventDefault();
 
-      if (gestureType === "zoom") {
-        if (e.touches.length !== gestureFingerCount) {
-          gestureDead = true;
-          return;
-        }
-        e.preventDefault();
-        const dist = getTouchDist(e.touches);
-        if (lastDist !== null) {
-          const ratio = dist / lastDist;
-          const currentScale = spring.scale.get();
-          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
-          api.set({ scale: nextScale });
-          notifyZoomChange(nextScale);
-        }
-        lastDist = dist;
-      } else if (gestureType === "pan") {
-        if (e.touches.length !== gestureFingerCount) {
-          gestureDead = true;
-          return;
-        }
-        e.preventDefault();
-        const mid = getMidpoint3(e.touches);
-        const angle = getAngle3(e.touches);
-        if (lastMidpoint && lastAngle !== null) {
-          const dx = mid.x - lastMidpoint.x;
-          const dy = mid.y - lastMidpoint.y;
-          let dAngle = angle - lastAngle;
-          if (dAngle > 180) dAngle -= 360;
-          if (dAngle < -180) dAngle += 360;
-          totalMovement += Math.abs(dx) + Math.abs(dy);
+      const dist = getTouchDist(e.touches);
+      const angle = getTouchAngle(e.touches);
+      const midpoint = getTouchMidpoint(e.touches);
 
-          const rawX = spring.x.get() + dx;
-          const rawY = spring.y.get() + dy;
-          const rawR = spring.rotation.get() + dAngle;
-          const vw = window.innerWidth;
-          const vh = window.innerHeight;
-          const bx = rubberBand(rawX, vw, true);
-          const by = rubberBand(rawY, vh, true);
+      const distDelta = Math.abs(dist - initialDist);
+      let angleDelta = Math.abs(angle - initialAngle);
+      if (angleDelta > 180) angleDelta = 360 - angleDelta;
+      const panDelta = Math.hypot(
+        midpoint.x - initialMidpoint.x,
+        midpoint.y - initialMidpoint.y
+      );
 
-          api.set({ x: bx.val, y: by.val, rotation: rawR });
+      accumulatedZoom = distDelta;
+      accumulatedRotation = angleDelta;
+      accumulatedPan = panDelta;
 
-          const now = performance.now();
-          velocityBuffer.push({ x: mid.x, y: mid.y, t: now });
-          if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
-          rotVelocityBuffer.push({ angle, t: now });
-          if (rotVelocityBuffer.length > VELOCITY_BUFFER_SIZE) rotVelocityBuffer.shift();
-        }
-        lastMidpoint = mid;
-        lastAngle = angle;
+      /* Lock intent based on first threshold crossed */
+      if (intent === "none") {
+        if (accumulatedZoom > ZOOM_THRESHOLD) intent = "zoom";
+        else if (accumulatedRotation > ROTATE_THRESHOLD) intent = "rotate";
+        else if (accumulatedPan > PAN_THRESHOLD) intent = "pan";
       }
+
+      /* Execute locked intent */
+      if (intent === "zoom") {
+        const ratio = dist / lastDist;
+        const currentScale = spring.scale.get();
+        const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
+        api.set({ scale: nextScale });
+        notifyZoomChange(nextScale);
+      }
+
+      if (intent === "pan") {
+        const dx = midpoint.x - lastMidpoint.x;
+        const dy = midpoint.y - lastMidpoint.y;
+        const rawX = spring.x.get() + dx;
+        const rawY = spring.y.get() + dy;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const bx = rubberBand(rawX, vw, true);
+        const by = rubberBand(rawY, vh, true);
+        api.set({ x: bx.val, y: by.val });
+
+        const now = performance.now();
+        velocityBuffer.push({ x: midpoint.x, y: midpoint.y, t: now });
+        if (velocityBuffer.length > VELOCITY_BUFFER_SIZE) velocityBuffer.shift();
+      }
+
+      if (intent === "rotate") {
+        let dAngle = angle - lastAngle;
+        if (dAngle > 180) dAngle -= 360;
+        if (dAngle < -180) dAngle += 360;
+        api.set({ rotation: spring.rotation.get() + dAngle });
+      }
+
+      lastDist = dist;
+      lastAngle = angle;
+      lastMidpoint = midpoint;
     };
 
     const onTouchEnd = () => {
-      if (inGracePeriod) return;
+      /* Commit current spring values to refs so re-renders don't reset */
+      commitValues();
 
-      if (gestureType === "pan") {
-        if (totalMovement < DEAD_ZONE_PX) {
-          api.set({ x: panStartX, y: panStartY, rotation: panStartRotation });
-          resetGestureState();
-          return;
+      if (intent === "pan" && velocityBuffer.length >= 2) {
+        const first = velocityBuffer[0];
+        const last = velocityBuffer[velocityBuffer.length - 1];
+        const dt = (last.t - first.t) / 1000;
+        if (dt > 0.01) {
+          const vx = clampVelocity((last.x - first.x) / dt);
+          const vy = clampVelocity((last.y - first.y) / dt);
+
+          graceTimer = setTimeout(() => {
+            applyPanMomentum(vx, vy);
+            graceTimer = null;
+          }, GRACE_MS);
         }
-
-        let vx = 0, vy = 0, vr = 0;
-        if (velocityBuffer.length >= 2) {
-          const first = velocityBuffer[0];
-          const last = velocityBuffer[velocityBuffer.length - 1];
-          const dt = (last.t - first.t) / 1000;
-          if (dt > 0.01) {
-            vx = clampVelocity((last.x - first.x) / dt);
-            vy = clampVelocity((last.y - first.y) / dt);
-          }
-        }
-        if (rotVelocityBuffer.length >= 2) {
-          const first = rotVelocityBuffer[0];
-          const last = rotVelocityBuffer[rotVelocityBuffer.length - 1];
-          const dt = (last.t - first.t) / 1000;
-          if (dt > 0.01) {
-            vr = clampVelocity((last.angle - first.angle) / dt, MAX_ROT_VELOCITY);
-          }
-        }
-
-        api.stop();
-        graceVx = vx;
-        graceVy = vy;
-        graceVr = vr;
-        inGracePeriod = true;
-
-        graceTimer = setTimeout(() => {
-          applyMomentumWithBounds(graceVx, graceVy, graceVr);
-          inGracePeriod = false;
-          graceTimer = null;
-        }, GRACE_MS);
       }
 
-      resetGestureState();
-    };
+      /* Sync zoom to React state */
+      if (intent === "zoom") {
+        onZoomChange(committedScale.current);
+      }
 
-    const resetGestureState = () => {
-      gestureType = "none";
-      gestureFingerCount = 0;
-      gestureDead = false;
-      gestureActive.current = false;
-      lastDist = null;
-      lastMidpoint = null;
-      lastAngle = null;
+      /* Reset tracking — NOT spring values */
+      intent = "none";
+      accumulatedPan = 0;
+      accumulatedZoom = 0;
+      accumulatedRotation = 0;
       velocityBuffer.length = 0;
-      rotVelocityBuffer.length = 0;
-      totalMovement = 0;
+      gestureActive.current = false;
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: false });
@@ -393,19 +376,24 @@ export function PaperCanvas({
       onWheel: ({ delta: [, dy], event, ctrlKey, metaKey }) => {
         if (ctrlKey || metaKey) {
           event.preventDefault();
+          gestureActive.current = true;
           const currentScale = spring.scale.get();
           const delta = -dy * 0.003;
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
           api.start({ scale: nextScale });
+          committedScale.current = nextScale;
           notifyZoomChange(nextScale);
+          gestureActive.current = false;
         } else {
           const targetY = spring.y.get() - dy * 2.5;
           const vh = window.innerHeight;
           const by = rubberBand(targetY, vh, false);
+          const finalY = by.outOfBounds ? by.edge : targetY;
           api.start({
-            y: by.outOfBounds ? by.edge : targetY,
+            y: finalY,
             config: by.outOfBounds ? SNAPBACK_CONFIG : SPRING_CONFIG,
           });
+          committedY.current = finalY;
         }
       },
     },
@@ -455,10 +443,8 @@ export function PaperCanvas({
             willChange: "transform",
           }}
         >
-          {/* Canvas background pattern */}
           <MarginCanvas background={canvasBackground} />
 
-          {/* Text column */}
           <div
             style={{
               maxWidth: "936px",
@@ -477,7 +463,6 @@ export function PaperCanvas({
             {children}
           </div>
 
-          {/* Ink overlay */}
           {overlay && (
             <div
               style={{
@@ -497,8 +482,12 @@ export function PaperCanvas({
       {/* Snap to center button */}
       <button
         onClick={() => {
+          committedX.current = 0;
+          committedY.current = 0;
+          committedRotation.current = 0;
+          committedScale.current = 1;
           api.start({ x: 0, y: 0, rotation: 0, scale: 1, config: SNAPBACK_CONFIG });
-          notifyZoomChange(1);
+          onZoomChange(1);
         }}
         style={{
           position: "fixed",
