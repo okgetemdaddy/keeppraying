@@ -292,6 +292,20 @@ function ToolbarActions({
   );
 }
 
+/* ── Auth gate CTA button ── */
+function AuthGateButton({ onDismiss }: { onDismiss: () => void }) {
+  const navigate = useNavigate();
+  return (
+    <Button
+      size="sm"
+      className="w-full rounded-xl gap-1.5"
+      onClick={() => { onDismiss(); navigate("/auth"); }}
+    >
+      Create Free Account <ArrowRight className="w-3.5 h-3.5" />
+    </Button>
+  );
+}
+
 export function FloatingToolbar(props: FloatingToolbarProps) {
   const {
     position,
