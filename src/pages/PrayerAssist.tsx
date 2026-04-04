@@ -240,7 +240,7 @@ export default function PrayerAssist() {
     }
   }, [searchParams, send]);
 
-  const showGuestBanner = !user && guestLimited;
+  
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
