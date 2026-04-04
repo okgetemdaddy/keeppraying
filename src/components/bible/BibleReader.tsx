@@ -2533,7 +2533,7 @@ export function BibleReader() {
           ) : null}
         </AnimatePresence>
 
-        {currentBook && totalChapters > 0 && (
+        {currentBook && totalChapters > 0 && !isInPaperCanvas && (
           <nav className="mt-12 flex items-center justify-between border-t border-border pt-6">
             <Button
               variant="ghost"
