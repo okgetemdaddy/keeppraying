@@ -125,7 +125,7 @@ export function ZoomWrapper({
 
       {/* Full-span overlay (e.g. InkOverlay) — covers text + margins */}
       {overlay && (
-        <div className="absolute inset-0" style={{ gridColumn: "1 / -1", gridRow: "1 / -1", touchAction: "none", WebkitUserSelect: "none", userSelect: "none" } as React.CSSProperties}>
+        <div className="absolute inset-0" style={{ gridColumn: "1 / -1", gridRow: "1 / -1", WebkitUserSelect: "none", userSelect: "none" } as React.CSSProperties}>
           {overlay}
         </div>
       )}

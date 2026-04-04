@@ -2255,7 +2255,12 @@ export function BibleReader() {
                         }
                       }}
                       onUnderlineGesture={(verseNumber, underlinedText) => {
-                        
+                        if (!user) {
+                          toast("Please sign in to highlight verses", {
+                            description: "Create a free account to save highlights and annotations",
+                          });
+                          return;
+                        }
                         const lastColor = (() => {
                           try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
                         })();
