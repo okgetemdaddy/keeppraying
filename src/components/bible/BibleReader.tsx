@@ -991,7 +991,7 @@ export function BibleReader() {
     };
 
     area.addEventListener("touchstart", onTouchStart, { passive: true });
-    area.addEventListener("touchmove", onTouchMove, { passive: true });
+    area.addEventListener("touchmove", onTouchMove, { passive: false });
     area.addEventListener("touchend", onTouchEnd, { passive: true });
 
     return () => {
