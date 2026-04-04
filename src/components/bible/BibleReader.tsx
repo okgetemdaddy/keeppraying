@@ -2246,13 +2246,7 @@ export function BibleReader() {
                 variant={studyMode ? "default" : "ghost"}
                 size="sm"
                 onClick={() => {
-                  if (studyMode && studyModeVariant === "canvas") {
-                    setCanvasOpen(!canvasOpen);
-                  } else if (studyMode && studyModeVariant === "journal") {
-                    setJournalOpen(!journalOpen);
-                  } else {
-                    handleToggleStudyMode(!studyMode);
-                  }
+                  handleToggleStudyMode(!studyMode);
                   setStudyNavOpen(false);
                 }}
                 className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
