@@ -1,39 +1,46 @@
 
 
-## Fix: PaperCanvas Text Column Width from Session Config
-
-### Problem
-`PaperCanvas.tsx` hardcodes `maxWidth: 936px` with fixed padding on the text column. The `CanvasCreationDrawer` calculates precise text box position and dimensions from `charsPerLine`, but these values are ignored at render time — line breaks won't match the preview.
+## Bypass Premium Gate for Beta
 
 ### Changes
 
-**1. `src/components/bible/PaperCanvas.tsx`**
+**1. `src/components/bible/BibleReader.tsx` (~line 917–921)**
 
-- Add optional `textBoxConfig` to `PaperCanvasProps`:
-  ```ts
-  textBoxConfig?: { x: number; y: number; width: number; height: number };
-  ```
-- In the text column div (lines 308–324), branch on `textBoxConfig`:
-  - **When provided**: use `position: absolute`, `left/top/width/maxHeight` from the config, no margin/padding overrides
-  - **When absent**: keep existing hardcoded layout (backward compat)
+Comment out the premium check in `handleStudyModeEntry` with a TODO note:
 
-**2. `src/components/bible/BibleReader.tsx`**
+```ts
+// TODO: Re-enable premium gate when admin flips billing on
+// Beta period — all study mode features are free
+// if (userSubscriptionTier !== "premium") {
+//   setShowPremiumUpsell(true);
+//   return;
+// }
+```
 
-- Where `<PaperCanvas>` is rendered (~line 2606), pass `textBoxConfig` when `activeSessionConfig?.textBox` exists:
-  ```tsx
-  textBoxConfig={activeSessionConfig?.textBox ? {
-    x: activeSessionConfig.textBox.x * 96,
-    y: activeSessionConfig.textBox.y * 96,
-    width: activeSessionConfig.textBox.width * 96,
-    height: activeSessionConfig.textBox.height * 96,
-  } : undefined}
-  ```
+**2. `src/components/bible/PremiumUpsellSheet.tsx`**
 
-  The `* 96` converts from inches (stored in config) to pixels (96 DPI canvas).
+- Add an `onProceed` callback prop alongside `onClose`
+- Change the "Unlock Premium" button to call `onProceed` (close sheet and continue into study mode) instead of showing a toast
+- Add `// TODO: Restore StoreKit 2 / Stripe gate` comment
+
+**3. `src/components/bible/BibleReader.tsx` (~line 3209)**
+
+Pass an `onProceed` callback to `PremiumUpsellSheet` that closes the sheet and re-invokes the study mode flow (calling `handleStudyModeEntry` again, which will now skip the premium check and proceed to step 3):
+
+```tsx
+<PremiumUpsellSheet
+  open={showPremiumUpsell}
+  onClose={() => setShowPremiumUpsell(false)}
+  onProceed={() => {
+    setShowPremiumUpsell(false);
+    handleStudyModeEntry();
+  }}
+/>
+```
 
 ### Files
 | File | Change |
 |------|--------|
-| `src/components/bible/PaperCanvas.tsx` | Add `textBoxConfig` prop, conditionally render absolute-positioned text column |
-| `src/components/bible/BibleReader.tsx` | Pass `textBoxConfig` from `activeSessionConfig.textBox` to `PaperCanvas` |
+| `src/components/bible/BibleReader.tsx` | Comment out premium gate; pass `onProceed` to upsell sheet |
+| `src/components/bible/PremiumUpsellSheet.tsx` | Add `onProceed` prop; wire "Unlock Premium" button to it |
 
