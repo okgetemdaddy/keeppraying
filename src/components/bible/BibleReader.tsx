@@ -592,6 +592,32 @@ export function BibleReader() {
   const [chapterIdx, setChapterIdx] = useState<number>(0);
   const [mode, setMode] = useState<ReadingMode>("verse");
   const [positionLoaded, setPositionLoaded] = useState(false);
+  const navigate = useNavigate();
+
+  // ── Guest session tracking ──
+  const guestHasChanges = useRef(false);
+  const [showGuestExitPrompt, setShowGuestExitPrompt] = useState(false);
+  const pendingNavTarget = useRef<string | null>(null);
+
+  const isGuestSession = !user && (() => {
+    try { return sessionStorage.getItem("kp_guest_bible_session") === "true"; } catch { return false; }
+  })();
+
+  const markGuestChange = useCallback(() => {
+    if (!user) guestHasChanges.current = true;
+  }, [user]);
+
+  // ── beforeunload for guest with changes ──
+  useEffect(() => {
+    if (user) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (guestHasChanges.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [user]);
 
   // ── Tap-to-navigate mode (iPhone swipe-free) ──
   const [tapNavMode, setTapNavMode] = useState<boolean>(() => {
