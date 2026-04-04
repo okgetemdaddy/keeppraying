@@ -170,25 +170,26 @@ export function InkOverlay({
   penSizeRef.current = penSize;
   penGlowRef.current = penGlow ?? null;
 
-  /* ── DOMMatrix-based coordinate normalization ── */
+  /* ── Coordinate normalization via getBoundingClientRect ──
+   * getBoundingClientRect() always reflects current visual transforms
+   * (scale, translate, rotate) applied by react-spring, unlike getScreenCTM()
+   * which can return stale values on iPadOS Safari. We map proportionally
+   * from screen space into SVG viewBox space. */
   const getTransformedPoint = useCallback(
     (clientX: number, clientY: number): [number, number] => {
       const svg = svgRef.current;
       if (!svg) return [0, 0];
-      // Force layout recalc so CTM reflects current react-spring transforms
-      svg.getBoundingClientRect();
-      const screenCTM = svg.getScreenCTM();
-      if (screenCTM) {
-        const pt = svg.createSVGPoint();
-        pt.x = clientX;
-        pt.y = clientY;
-        const transformed = pt.matrixTransform(screenCTM.inverse());
-        return [transformed.x, transformed.y];
-      }
+
       const rect = svg.getBoundingClientRect();
-      return [(clientX - rect.left), (clientY - rect.top)];
+      const svgW = canvasWidth ?? rect.width;
+      const svgH = canvasHeight ?? rect.height;
+
+      const x = ((clientX - rect.left) / rect.width) * svgW;
+      const y = ((clientY - rect.top) / rect.height) * svgH;
+
+      return [x, y];
     },
-    [],
+    [canvasWidth, canvasHeight],
   );
 
   /* ── RAF render loop ── */
