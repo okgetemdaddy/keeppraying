@@ -241,14 +241,13 @@ export function InkOverlay({
     rafIdRef.current = requestAnimationFrame(renderLoop);
   }, []);
 
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-
   /* ── Pointer handlers ── */
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      setDebugLog(prev => [...prev.slice(-8), `DOWN: type=${e.pointerType} pressure=${e.pressure.toFixed(3)} button=${e.button} target=${(e.target as Element).tagName} time=${Date.now()}`]);
       if (e.pointerType === "pen") {
-        if (e.pressure === 0) return;
+        // No pressure check — Apple Pencil Pro reports pressure=0 on pointerdown
+        // in iPadOS Safari. Real pressure arrives on first pointermove.
+        // Hover is distinguished by pointerdown never firing during hover.
         lastPenDownRef.current = Date.now();
         // Pen events: capture and prevent passthrough
         e.preventDefault();
@@ -288,9 +287,6 @@ export function InkOverlay({
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (Math.random() < 0.02) {
-        setDebugLog(prev => [...prev.slice(-8), `MOVE: type=${e.pointerType} pressure=${e.pressure.toFixed(3)} drawing=${isDrawingRef.current}`]);
-      }
       if (e.pointerType === "pen" && e.pressure === 0 && !isDrawingRef.current) {
         const [x, y] = getTransformedPoint(e.clientX, e.clientY);
         setHoverPos({ x, y });
@@ -603,7 +599,6 @@ export function InkOverlay({
     : undefined;
 
   return (
-    <>
       <svg
         ref={svgRef}
         className="absolute inset-0 z-10"
@@ -616,10 +611,7 @@ export function InkOverlay({
           pointerEvents: "auto",
           overflow: "visible",
         }}
-        onPointerDown={(e) => {
-          setDebugLog(prev => [...prev.slice(-8), `SVG-RAW: type=${e.pointerType} pressure=${e.pressure.toFixed(3)}`]);
-          handlePointerDown(e);
-        }}
+        onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
@@ -693,25 +685,5 @@ export function InkOverlay({
           </text>
         )}
       </svg>
-      <div style={{
-        position: 'fixed',
-        bottom: 80,
-        left: 10,
-        right: 10,
-        maxHeight: 180,
-        overflow: 'auto',
-        background: 'rgba(0,0,0,0.85)',
-        color: '#0f0',
-        fontFamily: 'monospace',
-        fontSize: 10,
-        padding: 8,
-        borderRadius: 8,
-        zIndex: 9999,
-        pointerEvents: 'none',
-      }}>
-        {debugLog.map((line, i) => <div key={i}>{line}</div>)}
-        {debugLog.length === 0 && <div style={{color:'#666'}}>Touch pencil to screen...</div>}
-      </div>
-    </>
   );
 }
