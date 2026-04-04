@@ -360,11 +360,18 @@ export function InkOverlay({
           // 1-4 words from single verse → word study
           if (enclosedWords.length <= 4 && uniqueVerses.length === 1 && onWordCircle) {
             const words = enclosedWords.map((w) => w.word).join(" ");
-            const xs = currentPoints.map((p) => p.x);
-            const ys = currentPoints.map((p) => p.y);
-            const centerX = svgRect.left + (xs.reduce((a, b) => a + b, 0) / xs.length) * zoom;
-            const centerY = svgRect.top + (ys.reduce((a, b) => a + b, 0) / ys.length) * zoom;
-            onWordCircle(words, uniqueVerses[0], { x: centerX, y: centerY });
+            const svgEl = svgRef.current!;
+            const ctmW = svgEl.getScreenCTM();
+            if (ctmW) {
+              const xs = currentPoints.map((p) => p.x);
+              const ys = currentPoints.map((p) => p.y);
+              const avgSvgX = xs.reduce((a, b) => a + b, 0) / xs.length;
+              const avgSvgY = ys.reduce((a, b) => a + b, 0) / ys.length;
+              const pt = svgEl.createSVGPoint();
+              pt.x = avgSvgX; pt.y = avgSvgY;
+              const screen = pt.matrixTransform(ctmW);
+              onWordCircle(words, uniqueVerses[0], { x: screen.x, y: screen.y });
+            }
             pointsBufferRef.current = [];
             return;
           }
