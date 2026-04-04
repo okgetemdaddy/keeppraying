@@ -1244,8 +1244,8 @@ export function BibleReader() {
   const handleXGesture = useCallback(
     (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => {
       if (!user) {
-        toast("Please sign in to edit highlights", {
-          description: "Create a free account to save highlights and annotations",
+        toast("Unlock this feature ✦", {
+          description: "Editing highlights lets you refine your study. Create a free account to start.",
         });
         return;
       }
@@ -2509,8 +2509,8 @@ export function BibleReader() {
                   }}
                   onUnderlineGesture={(verseNumber, underlinedText) => {
                     if (!user) {
-                      toast("Please sign in to highlight verses", {
-                        description: "Create a free account to save highlights and annotations",
+                      toast("Unlock this feature ✦", {
+                        description: "Highlighting lets you mark and revisit meaningful passages. Create a free account to start.",
                       });
                       return;
                     }

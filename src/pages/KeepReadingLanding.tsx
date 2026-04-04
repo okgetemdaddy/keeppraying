@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { PenTool, Mic, Layers, Bookmark, Apple, Mail, Loader2 } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
@@ -19,6 +20,7 @@ const STAGGER = {
 
 export default function KeepReadingLanding() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<"google" | "apple" | null>(null);
 
   const handleOAuth = async (provider: "google" | "apple") => {
@@ -81,10 +83,10 @@ export default function KeepReadingLanding() {
             className="flex flex-col items-center gap-4 pt-4"
           >
             <button
-              onClick={() => handleOAuth("google")}
+              onClick={() => navigate("/")}
               className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-full text-lg font-medium transition-all shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:shadow-[0_0_60px_rgba(16,185,129,0.5)] transform hover:scale-105"
             >
-              Start Studying — It's Free
+              Start Reading — It's Free
             </button>
 
             <div className="flex gap-3 mt-2">
@@ -231,10 +233,10 @@ export default function KeepReadingLanding() {
           </h2>
           <div className="flex flex-col items-center gap-4 pt-4">
             <button
-              onClick={() => handleOAuth("google")}
+              onClick={() => navigate("/")}
               className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-full text-lg font-medium transition-all transform hover:scale-105"
             >
-              Start Studying Now
+              Start Reading Now
             </button>
             <p className="text-zinc-500 text-sm mt-4">
               No credit card required. Syncs across all your devices.

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bookmark,
@@ -10,6 +11,11 @@ import {
   X,
   Check,
   Plus,
+  Palette,
+  Circle,
+  Layers,
+  PenTool,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -286,6 +292,20 @@ function ToolbarActions({
   );
 }
 
+/* ── Auth gate CTA button ── */
+function AuthGateButton({ onDismiss }: { onDismiss: () => void }) {
+  const navigate = useNavigate();
+  return (
+    <Button
+      size="sm"
+      className="w-full rounded-xl gap-1.5"
+      onClick={() => { onDismiss(); navigate("/auth"); }}
+    >
+      Create Free Account <ArrowRight className="w-3.5 h-3.5" />
+    </Button>
+  );
+}
+
 export function FloatingToolbar(props: FloatingToolbarProps) {
   const {
     position,
@@ -296,18 +316,36 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
   } = props;
   const isMobile = useIsMobile();
 
-  /* ── Not authenticated — show simple message ── */
+  /* ── Not authenticated — warm benefit-driven auth gate ── */
   if (!isAuthenticated) {
+    const benefits = [
+      { icon: Palette, text: "Highlight in multiple colors" },
+      { icon: Circle, text: "Circle words for AI cross-references" },
+      { icon: Layers, text: "Save Verse Bunches for topical study" },
+      { icon: PenTool, text: "Journal alongside Scripture" },
+    ];
+
     if (isMobile) {
       return (
         <Sheet open={selectedVerses.length > 0} onOpenChange={(open) => { if (!open) onDismiss(); }}>
-          <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+          <SheetContent side="bottom" className="rounded-t-2xl pb-8 px-6">
             <SheetHeader>
-              <SheetTitle className="text-base">Sign In Required</SheetTitle>
+              <SheetTitle className="text-base">You're discovering something beautiful ✦</SheetTitle>
             </SheetHeader>
-            <p className="text-sm text-muted-foreground mt-2">
-              Sign in to highlight, bookmark & take notes on KeepRead.ing.
-            </p>
+            <div className="mt-4 space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Create a free account to unlock powerful study tools:
+              </p>
+              <ul className="space-y-2.5">
+                {benefits.map((b) => (
+                  <li key={b.text} className="flex items-center gap-2.5 text-sm text-foreground/80">
+                    <b.icon className="h-4 w-4 text-primary flex-shrink-0" />
+                    {b.text}
+                  </li>
+                ))}
+              </ul>
+              <AuthGateButton onDismiss={onDismiss} />
+            </div>
           </SheetContent>
         </Sheet>
       );
@@ -318,10 +356,19 @@ export function FloatingToolbar(props: FloatingToolbarProps) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="fixed z-50 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl max-w-[calc(100vw-2rem)]"
+        className="fixed z-50 rounded-xl border border-border bg-card px-5 py-4 shadow-2xl max-w-sm"
         style={{ left: position.x, top: position.y, transform: "translateX(-50%)" }}
       >
-        <p className="text-sm text-muted-foreground">Sign in to highlight, bookmark & take notes</p>
+        <p className="font-medium text-sm text-foreground mb-2">You're discovering something beautiful ✦</p>
+        <ul className="space-y-1.5 mb-3">
+          {benefits.map((b) => (
+            <li key={b.text} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <b.icon className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              {b.text}
+            </li>
+          ))}
+        </ul>
+        <AuthGateButton onDismiss={onDismiss} />
       </motion.div>
     );
   }

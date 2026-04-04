@@ -32,7 +32,8 @@ export function KeepReadingShell() {
       <Toaster />
       <Sonner />
       <Routes>
-        <Route path="/" element={user ? <Bible /> : <KeepReadingLanding />} />
+        <Route path="/" element={<Bible />} />
+        <Route path="/welcome" element={<KeepReadingLanding />} />
         <Route path="/auth" element={<KeepReadingAuth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" replace />} />
