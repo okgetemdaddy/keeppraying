@@ -792,7 +792,7 @@ export function BibleReader() {
     let zone: "sleeve" | "pocket" | null = null;
 
     const onTouchStart = (e: TouchEvent) => {
-      if (studyMode || canvasOpen || journalOpen) return;
+      if (studyMode || !!activeSession || journalOpen) return;
       const x = e.touches[0].clientX;
       if (x < EDGE) { zone = "sleeve"; startX = x; latestX = x; }
       else if (x > window.innerWidth - EDGE) { zone = "pocket"; startX = x; latestX = x; }
