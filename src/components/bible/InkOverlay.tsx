@@ -288,6 +288,9 @@ export function InkOverlay({
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
+      if (Math.random() < 0.02) {
+        setDebugLog(prev => [...prev.slice(-8), `MOVE: type=${e.pointerType} pressure=${e.pressure.toFixed(3)} drawing=${isDrawingRef.current}`]);
+      }
       if (e.pointerType === "pen" && e.pressure === 0 && !isDrawingRef.current) {
         const [x, y] = getTransformedPoint(e.clientX, e.clientY);
         setHoverPos({ x, y });
