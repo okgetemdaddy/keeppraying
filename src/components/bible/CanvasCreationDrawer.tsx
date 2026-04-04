@@ -324,7 +324,7 @@ export function CanvasCreationDrawer({
           .insert({
             user_id: user.id,
             book_usfm: bookUsfm,
-            chapter_id: typeof selectedChapter?.id === "number" ? selectedChapter.id : chapterNum,
+            chapter_id: typeof selectedChapter?.id === "number" ? selectedChapter.id : chapterNum + 1,
             verse_start: fromVerse,
             verse_end: toVerse,
             paper_width_px: paperWPx,
