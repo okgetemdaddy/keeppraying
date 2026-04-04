@@ -7,13 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useSearchParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Sparkles, BookOpen, Heart, Loader2, LogIn } from "lucide-react";
+import { Send, Sparkles, BookOpen, Heart, Loader2, LogIn, Mic, MicOff, Save, AudioLines, Flame, Users } from "lucide-react";
 import VerseLink from "@/components/VerseLink";
 import { SiteNav } from "@/components/SiteNav";
 import PrayerCardLink from "@/components/PrayerCardLink";
 import PrayerDraftCard from "@/components/PrayerDraftCard";
 
-interface Message { role: "user" | "assistant"; content: string; }
+interface Message { role: "user" | "assistant" | "signup-nudge"; content: string; }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const GUEST_STORAGE_KEY = "kp_guest_assist_count";
@@ -113,16 +113,46 @@ export default function PrayerAssist() {
   const [searchParams] = useSearchParams();
   const autoSentRef = useRef(false);
   const [guestLimited, setGuestLimited] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Check guest limit on mount
   useEffect(() => {
     if (!user) {
       const count = parseInt(localStorage.getItem(GUEST_STORAGE_KEY) || "0", 10);
-      if (count >= 1) setGuestLimited(true);
+      if (count >= 3) setGuestLimited(true);
     }
   }, [user]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  // Voice input via Web Speech API
+  const toggleListening = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({ title: "Voice not supported", description: "Your browser doesn't support voice input.", variant: "destructive" });
+      return;
+    }
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? prev + " " + transcript : transcript);
+      setListening(false);
+    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+  }, [listening, toast]);
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
@@ -143,7 +173,7 @@ export default function PrayerAssist() {
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/prayer-assist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
+        body: JSON.stringify({ messages: [...messages, userMsg].filter(m => m.role !== "signup-nudge") }),
       });
 
       if (!resp.ok) {
@@ -185,8 +215,9 @@ export default function PrayerAssist() {
       if (!user) {
         const count = parseInt(localStorage.getItem(GUEST_STORAGE_KEY) || "0", 10) + 1;
         localStorage.setItem(GUEST_STORAGE_KEY, String(count));
-        if (count >= 1) {
+        if (count >= 3) {
           setGuestLimited(true);
+          setMessages(prev => [...prev, { role: "signup-nudge", content: "" }]);
         }
       }
 
@@ -209,7 +240,7 @@ export default function PrayerAssist() {
     }
   }, [searchParams, send]);
 
-  const showGuestBanner = !user && guestLimited;
+  
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -249,7 +280,7 @@ export default function PrayerAssist() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                 {suggestions.map(s => (
-                  <button key={s} onClick={() => send(s)} disabled={showGuestBanner} className="prayer-card p-4 text-left text-sm text-foreground hover:border-primary/40 border border-transparent transition-all rounded-2xl group disabled:opacity-50">
+                  <button key={s} onClick={() => send(s)} disabled={guestLimited} className="prayer-card p-4 text-left text-sm text-foreground hover:border-primary/40 border border-transparent transition-all rounded-2xl group disabled:opacity-50">
                     <div className="flex items-start gap-2">
                       <div className="mt-0.5 text-primary"><BookOpen className="w-4 h-4" /></div>
                       <span>{s}</span>
@@ -262,6 +293,38 @@ export default function PrayerAssist() {
           )}
 
           {messages.map((msg, i) => (
+            msg.role === "signup-nudge" ? (
+              <div key={i} className="flex justify-start animate-fade-up">
+                <div className="max-w-[90%] rounded-2xl px-5 py-5 prayer-card rounded-bl-md space-y-4">
+                  <p className="font-display text-lg font-semibold text-foreground">You're off to a beautiful start ✦</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Create a free account to unlock your full prayer journey:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { icon: Save, label: "Save & revisit prayers" },
+                      { icon: AudioLines, label: "Voice-recorded prayers" },
+                      { icon: Flame, label: "Daily prayer streaks" },
+                      { icon: Users, label: "Prayer companions" },
+                    ].map(f => (
+                      <div key={f.label} className="flex items-center gap-2 rounded-xl border border-border bg-background/50 px-3 py-2 text-xs text-foreground">
+                        <f.icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        <span>{f.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="verse-text text-xs italic text-muted-foreground">
+                    "For where two or three gather in my name, there am I with them." — <VerseLink reference="Matthew 18:20" />
+                  </p>
+                  <Button asChild className="w-full rounded-xl bg-gradient-gold text-white hover:opacity-90 shadow-gold">
+                    <Link to="/auth">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Sign Up Free
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : (
             <div key={i} className={`flex gap-3 animate-fade-up ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               {msg.role === "assistant" && (
                 <div className="w-8 h-8 rounded-full bg-gradient-gold flex-shrink-0 flex items-center justify-center shadow-gold mt-1">
@@ -278,6 +341,7 @@ export default function PrayerAssist() {
                 )}
               </div>
             </div>
+            )
           ))}
 
           {loading && (
@@ -297,39 +361,31 @@ export default function PrayerAssist() {
       {/* Input or Guest Banner — offset above mobile tab bar + safe area */}
       <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 py-4 max-w-3xl">
-          {showGuestBanner ? (
-            <div className="text-center space-y-4 py-3">
-              <p className="text-sm text-foreground/80 leading-relaxed max-w-md mx-auto">
-                We loved exploring that passage with you. ✦ Create a free account to continue your journey — save prayers, dive deeper into Scripture, and let PrayerAssist walk with you every day.
-              </p>
-              <p className="verse-text text-xs italic text-muted-foreground">
-                "For where two or three gather in my name, there am I with them." — <VerseLink reference="Matthew 18:20" />
-              </p>
-              <Button asChild className="rounded-xl bg-gradient-gold text-white hover:opacity-90 shadow-gold">
-                <Link to="/auth">
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign Up Free
-                </Link>
+          <div className="flex gap-2 items-end">
+            <Textarea
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
+              placeholder={guestLimited ? "Sign up to continue your conversation…" : "Ask for prayer guidance, Bible answers, or help crafting a prayer…"}
+              className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
+              rows={1}
+              disabled={guestLimited}
+            />
+            {!guestLimited && !user && (
+              <Button
+                type="button"
+                onClick={toggleListening}
+                variant="outline"
+                className={`h-12 w-12 p-0 rounded-xl flex-shrink-0 ${listening ? "border-primary text-primary animate-pulse" : ""}`}
+              >
+                {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
-            </div>
-          ) : (
-            <>
-              <div className="flex gap-3 items-end">
-                <Textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                  placeholder="Ask for prayer guidance, Bible answers, or help crafting a prayer…"
-                  className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
-                  rows={1}
-                />
-                <Button onClick={() => send(input)} disabled={loading || !input.trim()} className="h-12 w-12 p-0 rounded-xl flex-shrink-0 bg-foreground text-background hover:bg-foreground/90">
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-center text-xs text-muted-foreground mt-2">PrayerAssist guides your prayer journey. Always verify with Scripture.</p>
-            </>
-          )}
+            )}
+            <Button onClick={() => send(input)} disabled={loading || !input.trim() || guestLimited} className="h-12 w-12 p-0 rounded-xl flex-shrink-0 bg-foreground text-background hover:bg-foreground/90">
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-2">PrayerAssist guides your prayer journey. Always verify with Scripture.</p>
         </div>
       </div>
     </div>
