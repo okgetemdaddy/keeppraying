@@ -958,16 +958,20 @@ export function BibleReader() {
     setActiveSessionId(s.id);
     setActiveSessionConfig({
       sessionId: s.id,
-      paper: { widthPx: s.paper_width_px, heightPx: s.paper_height_px },
+      verses: [], // Will be populated from Bible data on mount
+      verseRange: s.verse_start && s.verse_end
+        ? `${s.book_usfm} ${s.chapter_id}:${s.verse_start}–${s.verse_end}`
+        : `${s.book_usfm} ${s.chapter_id}`,
+      paper: { widthIn: s.paper_width_px / 96, heightIn: s.paper_height_px / 96 },
       typography: {
         charsPerLine: s.chars_per_line,
         lineSpacing: parseFloat(s.line_spacing) || 2.4,
         fontSize: s.font_size_px,
       },
-      textBox: { x: s.text_x, y: s.text_y, widthPx: s.text_width_px },
-      marginStyle: s.margin_style as "blank" | "ruled" | "dotgrid",
+      textBox: { x: s.text_x, y: s.text_y, width: s.text_width_px, height: s.paper_height_px - s.text_y * 2 },
+      marginStyle: (s.margin_style === "dots" || s.margin_style === "lines" ? s.margin_style : "none") as "none" | "dots" | "lines",
       timerMinutes: null,
-    } as CanvasSessionConfig);
+    });
 
     setInkTextSpacing(parseFloat(s.line_spacing) || 2.4);
     try { localStorage.setItem("bible_ink_spacing", String(parseFloat(s.line_spacing) || 2.4)); } catch {}
