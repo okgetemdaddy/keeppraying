@@ -241,10 +241,20 @@ export function InkOverlay({
 
         wordElements.forEach((el) => {
           const rect = el.getBoundingClientRect();
-          const center = {
-            x: (rect.left + rect.width / 2 - svgRect.left) / zoom,
-            y: (rect.top + rect.height / 2 - svgRect.top) / zoom,
-          };
+          const screenCTM = svgRef.current?.getScreenCTM();
+          let center: { x: number; y: number };
+          if (screenCTM) {
+            const pt = svgRef.current!.createSVGPoint();
+            pt.x = rect.left + rect.width / 2;
+            pt.y = rect.top + rect.height / 2;
+            const transformed = pt.matrixTransform(screenCTM.inverse());
+            center = { x: transformed.x, y: transformed.y };
+          } else {
+            center = {
+              x: rect.left + rect.width / 2 - svgRect.left,
+              y: rect.top + rect.height / 2 - svgRect.top,
+            };
+          }
           if (pointInPolygon(center, hull)) {
             enclosedWords.push({
               word: el.getAttribute("data-word") || "",

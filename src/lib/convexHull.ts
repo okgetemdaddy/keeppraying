@@ -143,14 +143,13 @@ export function isClosedLoop(
 export function findVersesInsideStroke(
   strokePoints: Point2D[],
   svgElement: SVGSVGElement,
-  zoom: number,
 ): number[] {
   if (!isClosedLoop(strokePoints)) return [];
 
   const hull = convexHull(strokePoints);
   if (hull.length < 3) return [];
 
-  const svgRect = svgElement.getBoundingClientRect();
+  const screenCTM = svgElement.getScreenCTM();
   const matchedVerses: number[] = [];
 
   document.querySelectorAll("[data-verse]").forEach((el) => {
@@ -159,13 +158,31 @@ export function findVersesInsideStroke(
 
     const elRect = el.getBoundingClientRect();
 
-    // Convert DOM rect to SVG coordinate space
-    const svgSpaceRect = {
-      x: (elRect.left - svgRect.left) / zoom,
-      y: (elRect.top - svgRect.top) / zoom,
-      width: elRect.width / zoom,
-      height: elRect.height / zoom,
-    };
+    let svgSpaceRect: { x: number; y: number; width: number; height: number };
+
+    if (screenCTM) {
+      const inv = screenCTM.inverse();
+      const tl = svgElement.createSVGPoint();
+      tl.x = elRect.left; tl.y = elRect.top;
+      const br = svgElement.createSVGPoint();
+      br.x = elRect.right; br.y = elRect.bottom;
+      const tlT = tl.matrixTransform(inv);
+      const brT = br.matrixTransform(inv);
+      svgSpaceRect = {
+        x: tlT.x,
+        y: tlT.y,
+        width: brT.x - tlT.x,
+        height: brT.y - tlT.y,
+      };
+    } else {
+      const svgRect = svgElement.getBoundingClientRect();
+      svgSpaceRect = {
+        x: elRect.left - svgRect.left,
+        y: elRect.top - svgRect.top,
+        width: elRect.width,
+        height: elRect.height,
+      };
+    }
 
     if (rectInPolygon(svgSpaceRect, hull)) {
       matchedVerses.push(verseNum);

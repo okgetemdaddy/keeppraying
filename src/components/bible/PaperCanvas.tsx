@@ -6,8 +6,8 @@ import type { TextAlign, CanvasBackground } from "@/components/bible/ZoomWrapper
 /* ── Constants ── */
 const PAPER_W = 1056; // 11in × 96dpi
 const PAPER_H = 1632; // 17in × 96dpi
-const MIN_FONT = 14;
-const MAX_FONT = 72;
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 5;
 const SPRING_CONFIG = { tension: 170, friction: 26 };
 const SNAPBACK_CONFIG = { tension: 120, friction: 20 };
 const VELOCITY_BUFFER_SIZE = 5;
@@ -99,10 +99,6 @@ export function PaperCanvas({
   children,
 }: PaperCanvasProps) {
   const deskRef = useRef<HTMLDivElement>(null);
-  const fontSizeRef = useRef(baseFontSize * zoom);
-  fontSizeRef.current = baseFontSize * zoom;
-  const baseFontRef = useRef(baseFontSize);
-  baseFontRef.current = baseFontSize;
 
   const [isDark, setIsDark] = useState(false);
 
@@ -121,8 +117,26 @@ export function PaperCanvas({
     x: 0,
     y: 0,
     rotation: 0,
+    scale: 1,
     config: SPRING_CONFIG,
   }));
+
+  /* ── Sync incoming zoom prop to spring scale ── */
+  const zoomRef = useRef(zoom);
+  useEffect(() => {
+    if (Math.abs(zoom - zoomRef.current) > 0.001) {
+      zoomRef.current = zoom;
+      api.set({ scale: zoom });
+    }
+  }, [zoom, api]);
+
+  /* ── Debounced onZoomChange to avoid excessive re-renders ── */
+  const zoomChangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notifyZoomChange = (val: number) => {
+    zoomRef.current = val;
+    if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
+    zoomChangeTimer.current = setTimeout(() => onZoomChange(val), 32);
+  };
 
   /* ── Touch gesture handling ── */
   useEffect(() => {
@@ -249,13 +263,11 @@ export function PaperCanvas({
         e.preventDefault();
         const dist = getTouchDist(e.touches);
         if (lastDist !== null) {
-          const delta = dist - lastDist;
-          const next = Math.round(
-            Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current + delta * 0.15))
-          );
-          if (next !== Math.round(fontSizeRef.current)) {
-            onZoomChange(next / baseFontRef.current);
-          }
+          const ratio = dist / lastDist;
+          const currentScale = spring.scale.get();
+          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
+          api.set({ scale: nextScale });
+          notifyZoomChange(nextScale);
         }
         lastDist = dist;
       } else if (gestureType === "pan") {
@@ -270,7 +282,6 @@ export function PaperCanvas({
           const dx = mid.x - lastMidpoint.x;
           const dy = mid.y - lastMidpoint.y;
           let dAngle = angle - lastAngle;
-          // Normalize to [-180, 180]
           if (dAngle > 180) dAngle -= 360;
           if (dAngle < -180) dAngle += 360;
           totalMovement += Math.abs(dx) + Math.abs(dy);
@@ -360,6 +371,7 @@ export function PaperCanvas({
 
     return () => {
       clearGrace();
+      if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
       el.removeEventListener("gesturestart", prevent);
       el.removeEventListener("gesturechange", prevent);
       el.removeEventListener("touchstart", onTouchStart);
@@ -367,7 +379,7 @@ export function PaperCanvas({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onZoomChange, api, spring.x, spring.y, spring.rotation]);
+  }, [onZoomChange, api, spring.x, spring.y, spring.rotation, spring.scale]);
 
   /* ── Desktop: wheel for pan, ctrl+wheel for zoom ── */
   useGesture(
@@ -375,12 +387,11 @@ export function PaperCanvas({
       onWheel: ({ delta: [, dy], event, ctrlKey, metaKey }) => {
         if (ctrlKey || metaKey) {
           event.preventDefault();
-          const next = Math.round(
-            Math.min(MAX_FONT, Math.max(MIN_FONT, fontSizeRef.current - dy * 0.05))
-          );
-          if (next !== Math.round(fontSizeRef.current)) {
-            onZoomChange(next / baseFontRef.current);
-          }
+          const currentScale = spring.scale.get();
+          const delta = -dy * 0.003;
+          const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
+          api.start({ scale: nextScale });
+          notifyZoomChange(nextScale);
         } else {
           const targetY = spring.y.get() - dy * 2.5;
           const vh = window.innerHeight;
@@ -399,8 +410,8 @@ export function PaperCanvas({
     }
   );
 
-  const fontSize = baseFontSize * zoom;
-  const lineHeight = fontSize * textSpacing;
+  const fontSize = baseFontSize;
+  const lineHeight = baseFontSize * textSpacing;
   const marginPercent = marginWidth;
 
   return (
@@ -421,9 +432,10 @@ export function PaperCanvas({
         <animated.div
           style={{
             transform: to(
-              [spring.x, spring.y, spring.rotation],
-              (x, y, r) => `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${r}deg)`
+              [spring.x, spring.y, spring.rotation, spring.scale],
+              (x, y, r, s) => `translate3d(calc(-50% + ${x}px), calc(-50% + ${y}px), 0) rotate(${r}deg) scale(${s})`
             ),
+            transformOrigin: "center center",
             position: "absolute",
             top: "50%",
             left: "50%",
@@ -443,7 +455,7 @@ export function PaperCanvas({
           {/* Text column */}
           <div
             style={{
-              maxWidth: "55ch",
+              maxWidth: "936px",
               margin: "0 auto",
               padding: "80px 60px 100px",
               fontSize: `${fontSize}px`,
@@ -479,7 +491,8 @@ export function PaperCanvas({
       {/* Snap to center button */}
       <button
         onClick={() => {
-          api.start({ x: 0, y: 0, rotation: 0, config: SNAPBACK_CONFIG });
+          api.start({ x: 0, y: 0, rotation: 0, scale: 1, config: SNAPBACK_CONFIG });
+          notifyZoomChange(1);
         }}
         style={{
           position: "fixed",
