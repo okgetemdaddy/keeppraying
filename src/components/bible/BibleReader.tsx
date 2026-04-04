@@ -902,7 +902,9 @@ export function BibleReader() {
 
   // ── Focus mode (hide bottom nav) ──
   const [focusMode, setFocusMode] = useState(false);
+  const [studyNavOpen, setStudyNavOpen] = useState(false);
   const toggleFocusMode = useCallback(() => {
+    setStudyNavOpen(false);
     setFocusMode((prev) => {
       const next = !prev;
       window.dispatchEvent(new Event(next ? "tabbar:hide" : "tabbar:show"));
