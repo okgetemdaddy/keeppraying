@@ -958,6 +958,7 @@ export function BibleReader() {
   // ── Resume handler ──
   const handleResumeSession = useCallback(() => {
     if (!existingSession) return;
+    isNewSessionRef.current = false;
     setShowResumeOrNew(false);
 
     // Build config from session
@@ -1135,9 +1136,15 @@ export function BibleReader() {
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
+  // ── Track whether the current session is freshly created (not resumed) ──
+  const isNewSessionRef = useRef(false);
+
   // ── Load ink strokes from DB on chapter change ──
   const inkAnnotationId = inkAnnotation?.id;
   useEffect(() => {
+    // Skip loading chapter-level ink when a brand-new session is active
+    if (isNewSessionRef.current) return;
+
     if (inkAnnotation) {
       const incoming = (inkAnnotation.strokes as unknown as InkStroke[]) ?? [];
       if (incoming.length === inkHistory.strokes.length) return;
@@ -3202,6 +3209,8 @@ export function BibleReader() {
         currentChapterIdx={chapterIdx}
         onStartSession={(config) => {
           console.log("Canvas session config:", config);
+          isNewSessionRef.current = true;
+          inkHistory.replaceStrokes([]);
           setActiveSessionId(config.sessionId ?? null);
           setActiveSessionConfig(config);
           setInkTextSpacing(config.typography.lineSpacing);
