@@ -927,7 +927,7 @@ export function BibleReader() {
       .in("status", ["active", "paused"])
       .order("last_active_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (session) {
       setExistingSession(session as unknown as StudySession);
