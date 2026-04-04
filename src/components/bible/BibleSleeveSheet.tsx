@@ -202,6 +202,14 @@ interface BibleSleeveSheetProps {
   /** Hardware-detected iPhone flag — gates tap-nav toggle */
   isIPhone?: boolean;
 
+  /* clear edits */
+  chapterEditCount?: number;
+  todayEditCount?: number;
+  totalEditCount?: number;
+  onClearChapter?: () => void;
+  onClearToday?: () => void;
+  onClearAll?: () => void;
+
   /** Tap-to-navigate mode (disables swipe chapters) */
   tapNavMode?: boolean;
   onToggleTapNav?: (v: boolean) => void;
