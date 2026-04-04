@@ -129,6 +129,7 @@ export function PaperCanvas({
 
     let intent: "none" | "pan" | "zoom" = "none";
     let gestureType: "none" | "two-finger" | "rotate" = "none";
+    let gestureStarted = false;
     let accumulatedPan = 0;
     let accumulatedZoom = 0;
 
@@ -141,6 +142,7 @@ export function PaperCanvas({
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
+        gestureStarted = true;
         api.stop();
 
         gestureType = "two-finger";
@@ -154,6 +156,7 @@ export function PaperCanvas({
         accumulatedPan = 0;
         accumulatedZoom = 0;
       } else if (e.touches.length === 3) {
+        gestureStarted = true;
         api.stop();
 
         gestureType = "rotate";
@@ -221,8 +224,10 @@ export function PaperCanvas({
       }
     };
 
-    const onTouchEnd = () => {
-      /* Reset tracking — NOT spring values */
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!gestureStarted) return;
+      if (e.touches.length > 0) return; // still fingers on screen
+      gestureStarted = false;
       gestureType = "none";
       intent = "none";
       accumulatedPan = 0;
