@@ -180,9 +180,9 @@ export function InkOverlay({
         return [transformed.x, transformed.y];
       }
       const rect = svg.getBoundingClientRect();
-      return [(clientX - rect.left) / zoom, (clientY - rect.top) / zoom];
+      return [(clientX - rect.left), (clientY - rect.top)];
     },
-    [zoom],
+    [],
   );
 
   /* ── RAF render loop ── */
