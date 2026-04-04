@@ -113,6 +113,8 @@ export default function PrayerAssist() {
   const [searchParams] = useSearchParams();
   const autoSentRef = useRef(false);
   const [guestLimited, setGuestLimited] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Check guest limit on mount
   useEffect(() => {
