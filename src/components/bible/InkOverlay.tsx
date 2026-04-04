@@ -260,7 +260,8 @@ export function InkOverlay({
         }
       } else if (e.pointerType === "touch") {
         if (Date.now() - lastPenDownRef.current < TOUCH_LOCKOUT_MS) return;
-        if (!fingerDrawing) return; // finger taps pass through to HTML below
+        if (!fingerDrawing) return; // touch passes through for scrolling
+        if (!e.isPrimary) return; // Only first finger draws — ignore second, third, etc.
         e.preventDefault();
         e.stopPropagation();
       } else {
@@ -564,18 +565,6 @@ export function InkOverlay({
     return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
 
-  /* ── Global touch suppression while Pencil is active ── */
-  useEffect(() => {
-    const suppress = (ev: TouchEvent) => {
-      if (isDrawingRef.current) ev.preventDefault();
-    };
-    document.addEventListener("touchstart", suppress, { passive: false });
-    document.addEventListener("touchmove", suppress, { passive: false });
-    return () => {
-      document.removeEventListener("touchstart", suppress);
-      document.removeEventListener("touchmove", suppress);
-    };
-  }, []);
 
   /* ── Keyboard undo ── */
   useEffect(() => {
@@ -647,7 +636,7 @@ export function InkOverlay({
         height={svgHeight}
         viewBox={viewBox}
         style={{
-          touchAction: "none",
+          touchAction: "pan-y",
           cursor: isDrawingRef.current ? "none" : "crosshair",
           pointerEvents: "auto",
           overflow: "visible",
