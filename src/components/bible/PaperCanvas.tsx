@@ -331,7 +331,7 @@ export function PaperCanvas({
           )}
         </div>
       </div>
-    </>
+    </PaperCanvasContext.Provider>
   );
 }
 

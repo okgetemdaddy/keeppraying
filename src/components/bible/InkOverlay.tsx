@@ -170,27 +170,55 @@ export function InkOverlay({
   penSizeRef.current = penSize;
   penGlowRef.current = penGlow ?? null;
 
-  /* ── Coordinate normalization via getScreenCTM ──
-   * With direct DOM transforms (no react-spring), getScreenCTM() always
-   * reflects the current transform. Its inverse correctly undoes scale,
-   * translate, AND rotation to map screen coords into SVG-local space. */
+  /* ── Coordinate normalization via pure-math inverse transform ──
+   * Bypasses Safari's buggy getScreenCTM().inverse() with nested 3D
+   * rotations. Manually reverses the CSS transform chain:
+   * translate3d(x,y,0) rotate(r) scale(s) */
   const getTransformedPoint = useCallback(
     (clientX: number, clientY: number): [number, number] => {
-      const svg = svgRef.current;
-      if (!svg) return [0, 0];
-      const ctm = svg.getScreenCTM();
-      if (ctm) {
-        const pt = svg.createSVGPoint();
-        pt.x = clientX;
-        pt.y = clientY;
-        const transformed = pt.matrixTransform(ctm.inverse());
-        return [transformed.x, transformed.y];
+      if (!cameraCtx?.deskRef.current) {
+        // Fallback for non-PaperCanvas usage (ZoomWrapper mode)
+        const svg = svgRef.current;
+        if (!svg) return [0, 0];
+        const ctm = svg.getScreenCTM();
+        if (ctm) {
+          const pt = svg.createSVGPoint();
+          pt.x = clientX;
+          pt.y = clientY;
+          const transformed = pt.matrixTransform(ctm.inverse());
+          return [transformed.x, transformed.y];
+        }
+        const rect = svg.getBoundingClientRect();
+        return [clientX - rect.left, clientY - rect.top];
       }
-      // Fallback only if CTM unavailable
-      const rect = svg.getBoundingClientRect();
-      return [clientX - rect.left, clientY - rect.top];
+
+      const rect = cameraCtx.deskRef.current.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+
+      // Map screen coords to wrapper-local, centered at origin
+      let x = (clientX - rect.left) - cx;
+      let y = (clientY - rect.top) - cy;
+
+      // Reverse translate
+      x -= cameraCtx.camera.current.x;
+      y -= cameraCtx.camera.current.y;
+
+      // Reverse scale
+      x /= cameraCtx.camera.current.scale;
+      y /= cameraCtx.camera.current.scale;
+
+      // Reverse rotation
+      const rad = -cameraCtx.camera.current.rotation * (Math.PI / 180);
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      const rx = x * cos - y * sin;
+      const ry = x * sin + y * cos;
+
+      // Output is in centered coordinates matching the centered SVG viewBox
+      return [rx, ry];
     },
-    [],
+    [cameraCtx],
   );
 
   /* ── RAF render loop ── */
