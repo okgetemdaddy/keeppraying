@@ -1009,6 +1009,7 @@ export function BibleReader() {
   // iPadOS: Implicit reading sessions map to BGAppRefreshTask with CoreData sync
 
 
+  /**
    * STUDY MODE GATE — entry order is strict, do not reorder.
    *
    * Tap "Study Mode"
