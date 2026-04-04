@@ -43,6 +43,8 @@ interface InkOverlayProps {
   penGlow?: string | null;
   fingerDrawing?: boolean;
   isDark?: boolean;
+  canvasWidth?: number;
+  canvasHeight?: number;
   onCircleSelect?: (verseNumbers: number[], hullCenter?: { x: number; y: number }) => void;
   onPencilFirstContact?: () => void;
   onWordCircle?: (words: string, verseNumber: number, anchorPoint: { x: number; y: number }) => void;
@@ -135,6 +137,8 @@ export function InkOverlay({
   penGlow,
   fingerDrawing = false,
   isDark = false,
+  canvasWidth,
+  canvasHeight,
   onCircleSelect,
   onPencilFirstContact,
   onWordCircle,
@@ -171,6 +175,8 @@ export function InkOverlay({
     (clientX: number, clientY: number): [number, number] => {
       const svg = svgRef.current;
       if (!svg) return [0, 0];
+      // Force layout recalc so CTM reflects current react-spring transforms
+      svg.getBoundingClientRect();
       const screenCTM = svg.getScreenCTM();
       if (screenCTM) {
         const pt = svg.createSVGPoint();
@@ -606,8 +612,9 @@ export function InkOverlay({
       <svg
         ref={svgRef}
         className="absolute inset-0 z-10"
-        width="100%"
-        height="100%"
+        width={canvasWidth ?? "100%"}
+        height={canvasHeight ?? "100%"}
+        viewBox={canvasWidth && canvasHeight ? `0 0 ${canvasWidth} ${canvasHeight}` : undefined}
         style={{
           pointerEvents: "none",
           cursor: "crosshair",

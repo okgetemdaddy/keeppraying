@@ -143,8 +143,8 @@ export function PaperCanvas({
   const committedX = useRef(0);
   const committedY = useRef(0);
 
-  /* ── Gesture-active guard ── */
-  const gestureActive = useRef(false);
+  /* ── Last gesture zoom — prevents re-render from overwriting spring ── */
+  const lastGestureZoom = useRef(zoom);
 
   const [spring, api] = useSpring(() => ({
     x: 0,
@@ -160,19 +160,12 @@ export function PaperCanvas({
     },
   }));
 
-  /* ── Sync incoming zoom prop from toolbar slider ONLY when not gesturing ── */
+  /* ── Sync incoming zoom prop from toolbar slider — skip if it matches our last gesture ── */
   useEffect(() => {
-    if (!gestureActive.current) {
-      api.start({ scale: zoom });
+    if (Math.abs(zoom - lastGestureZoom.current) > 0.001) {
+      api.set({ scale: zoom });
     }
   }, [zoom, api]);
-
-  /* ── Debounced onZoomChange ── */
-  const zoomChangeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const notifyZoomChange = (val: number) => {
-    if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
-    zoomChangeTimer.current = setTimeout(() => onZoomChange(val), 32);
-  };
 
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)
@@ -231,7 +224,6 @@ export function PaperCanvas({
 
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 2) {
-        gestureActive.current = true;
         api.stop();
 
         gestureType = "two-finger";
@@ -247,7 +239,6 @@ export function PaperCanvas({
         velocityBuffer.length = 0;
         clearGrace();
       } else if (e.touches.length === 3) {
-        gestureActive.current = true;
         api.stop();
 
         gestureType = "rotate";
@@ -284,7 +275,8 @@ export function PaperCanvas({
           const currentScale = spring.scale.get();
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * ratio));
           api.set({ scale: nextScale });
-          notifyZoomChange(nextScale);
+          lastGestureZoom.current = nextScale;
+          onZoomChange(nextScale);
         }
 
         if (intent === "pan") {
@@ -338,7 +330,9 @@ export function PaperCanvas({
 
       /* Sync zoom to React state */
       if (gestureType === "two-finger" && intent === "zoom") {
-        onZoomChange(spring.scale.get());
+        const finalScale = spring.scale.get();
+        lastGestureZoom.current = finalScale;
+        onZoomChange(finalScale);
       }
 
       /* Reset tracking — NOT spring values */
@@ -347,12 +341,6 @@ export function PaperCanvas({
       accumulatedPan = 0;
       accumulatedZoom = 0;
       velocityBuffer.length = 0;
-
-      /* Delay clearing gestureActive so React re-render from onZoomChange
-         doesn't trigger the zoom sync useEffect */
-      requestAnimationFrame(() => {
-        gestureActive.current = false;
-      });
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: false });
@@ -362,7 +350,6 @@ export function PaperCanvas({
 
     return () => {
       clearGrace();
-      if (zoomChangeTimer.current) clearTimeout(zoomChangeTimer.current);
       el.removeEventListener("gesturestart", prevent);
       el.removeEventListener("gesturechange", prevent);
       el.removeEventListener("touchstart", onTouchStart);
@@ -378,14 +365,12 @@ export function PaperCanvas({
       onWheel: ({ delta: [, dy], event, ctrlKey, metaKey }) => {
         if (ctrlKey || metaKey) {
           event.preventDefault();
-          gestureActive.current = true;
           const currentScale = spring.scale.get();
           const delta = -dy * 0.003;
           const nextScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale + delta));
-          api.start({ scale: nextScale });
-          committedScale.current = nextScale;
-          notifyZoomChange(nextScale);
-          gestureActive.current = false;
+          api.set({ scale: nextScale });
+          lastGestureZoom.current = nextScale;
+          onZoomChange(nextScale);
         } else {
           const targetY = spring.y.get() - dy * 2.5;
           const vh = window.innerHeight;
@@ -481,38 +466,6 @@ export function PaperCanvas({
         </animated.div>
       </div>
 
-      {/* Snap to center button */}
-      <button
-        onClick={() => {
-          committedX.current = 0;
-          committedY.current = 0;
-          committedRotation.current = 0;
-          committedScale.current = 1;
-          api.start({ x: 0, y: 0, rotation: 0, scale: 1, config: SNAPBACK_CONFIG });
-          onZoomChange(1);
-        }}
-        style={{
-          position: "fixed",
-          bottom: 140,
-          right: 20,
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(8px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          color: "#fff",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          zIndex: 60,
-          fontSize: 18,
-        }}
-        title="Reset view"
-      >
-        ⌂
-      </button>
     </>
   );
 }

@@ -2440,6 +2440,8 @@ export function BibleReader() {
                   <InkOverlay
                     zoom={inkZoom}
                     strokes={inkHistory.strokes}
+                    canvasWidth={1056}
+                    canvasHeight={1632}
                     onStrokeComplete={handleInkStrokeComplete}
                     onUndo={handleInkUndo}
                     penColor={inkPenColor}
