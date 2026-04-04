@@ -3032,8 +3032,8 @@ export function BibleReader() {
           onMarginWidthChange={handleWsMarginWidth}
           canvasBackground={wsCanvasBackground}
           onCanvasBackgroundChange={handleWsCanvasBackground}
-          hideSpacing={studyModeVariant === "margin"}
-        />
+           hideSpacing={studyModeVariant === "margin"}
+          onShowGestureHelp={() => setGestureOverlayOpen(true)}
       )}
 
       {/* ── Canvas Creation Drawer (replaces CanvasSetupSheet) ── */}
