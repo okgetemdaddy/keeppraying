@@ -473,6 +473,23 @@ export function PaperCanvas({
         </animated.div>
       </div>
 
+      {/* Debug panel */}
+      <div style={{
+        position: 'fixed', top: 12, right: 12, zIndex: 9999,
+        background: 'rgba(0,0,0,0.85)', color: '#0f0',
+        fontFamily: 'monospace', fontSize: 11,
+        padding: 10, borderRadius: 8,
+        pointerEvents: 'none', minWidth: 220,
+      }}>
+        <div>tick {debugTick}</div>
+        <div>prop zoom: {zoom.toFixed(3)}</div>
+        <div>spring scale: {spring.scale.get().toFixed(3)}</div>
+        <div>lastGesture: {lastGestureZoom.current.toFixed(3)}</div>
+        <div>committed: {committedScale.current.toFixed(3)}</div>
+        <div>spring x: {spring.x.get().toFixed(1)}</div>
+        <div>spring y: {spring.y.get().toFixed(1)}</div>
+        <div>rotation: {spring.rotation.get().toFixed(1)}</div>
+      </div>
     </>
   );
 }
