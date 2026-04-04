@@ -104,6 +104,9 @@ import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
 import { GestureEducationOverlay, shouldShowGestureOverlay } from "@/components/bible/GestureEducationOverlay";
 import { useStudySessionHeartbeat } from "@/hooks/useStudySessionHeartbeat";
+import { PremiumUpsellSheet } from "@/components/bible/PremiumUpsellSheet";
+import { ResumeOrNewSheet } from "@/components/bible/ResumeOrNewSheet";
+import type { StudySession } from "@/hooks/useStudySessions";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
@@ -761,6 +764,25 @@ export function BibleReader() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeSessionConfig, setActiveSessionConfig] = useState<CanvasSessionConfig | null>(null);
   const [gestureOverlayOpen, setGestureOverlayOpen] = useState(false);
+  const [showPremiumUpsell, setShowPremiumUpsell] = useState(false);
+  const [showResumeOrNew, setShowResumeOrNew] = useState(false);
+  const [existingSession, setExistingSession] = useState<StudySession | null>(null);
+  const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>("free");
+
+  // ── Fetch user subscription tier ──
+  useEffect(() => {
+    if (!user) { setUserSubscriptionTier("free"); return; }
+    supabase
+      .from("profiles")
+      .select("subscription_tier")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data && (data as any).subscription_tier) {
+          setUserSubscriptionTier((data as any).subscription_tier);
+        }
+      });
+  }, [user]);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
   const [inkZoom, setInkZoom] = useState(() => {
@@ -864,22 +886,120 @@ export function BibleReader() {
     timerMinutes: activeSessionConfig?.timerMinutes,
   });
 
+  /**
+   * STUDY MODE GATE — entry order is strict, do not reorder.
+   *
+   * Tap "Study Mode"
+   *   → 1. Auth?        No  → /auth               (abort)
+   *   → 2. Premium?     No  → PremiumUpsell        (abort)
+   *   → 3. Session?     Yes → ResumeOrNew          (abort or continue)
+   *   → 4.              No  → CanvasCreationDrawer
+   *                               ↓
+   *                          PaperCanvas
+   *                          + GestureOverlay
+   *                          + SessionHeartbeat
+   *
+   * iPadOS port: gate steps 1-2 map to AppDelegate scene routing.
+   * Step 3 maps to SceneDelegate restoreState(_:) check against CoreData.
+   */
+  const handleStudyModeEntry = useCallback(async () => {
+    // Step 1: Auth
+    if (!user) {
+      navigate("/auth?returnTo=/bible");
+      return;
+    }
+
+    // Step 2: Premium
+    if (userSubscriptionTier !== "premium") {
+      setShowPremiumUpsell(true);
+      return;
+    }
+
+    // Step 3: Resume check
+    const { data: session } = await supabase
+      .from("study_sessions")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["active", "paused"])
+      .order("last_active_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (session) {
+      setExistingSession(session as unknown as StudySession);
+      setShowResumeOrNew(true);
+      return;
+    }
+
+    // Step 4: No existing session — open drawer directly
+    setCanvasCreationOpen(true);
+  }, [user, userSubscriptionTier, navigate]);
+
+  // Keep handleToggleStudyMode for exit-only (turning OFF study mode)
   const handleToggleStudyMode = useCallback((v: boolean) => {
-    if (v && studyModeVariant === "margin") {
-      // Open canvas creation drawer for margin study mode too
-      setCanvasCreationOpen(true);
+    if (v) {
+      // All entry goes through the gate
+      handleStudyModeEntry();
       return;
     }
-    if (v && studyModeVariant === "canvas") {
-      // Open canvas creation drawer for verse extraction
-      setCanvasCreationOpen(true);
-      return;
+    setStudyMode(false);
+    try { localStorage.setItem("bible_study_mode", "false"); } catch {}
+    setCanvasOpen(false);
+    setJournalOpen(false);
+  }, [handleStudyModeEntry]);
+
+  // ── Resume handler ──
+  const handleResumeSession = useCallback(() => {
+    if (!existingSession) return;
+    setShowResumeOrNew(false);
+
+    // Build config from session
+    const s = existingSession;
+    setActiveSessionId(s.id);
+    setActiveSessionConfig({
+      sessionId: s.id,
+      verses: [], // Will be populated from Bible data on mount
+      verseRange: s.verse_start && s.verse_end
+        ? `${s.book_usfm} ${s.chapter_id}:${s.verse_start}–${s.verse_end}`
+        : `${s.book_usfm} ${s.chapter_id}`,
+      paper: { widthIn: s.paper_width_px / 96, heightIn: s.paper_height_px / 96 },
+      typography: {
+        charsPerLine: s.chars_per_line,
+        lineSpacing: parseFloat(s.line_spacing) || 2.4,
+        fontSize: s.font_size_px,
+      },
+      textBox: { x: s.text_x, y: s.text_y, width: s.text_width_px, height: s.paper_height_px - s.text_y * 2 },
+      marginStyle: (s.margin_style === "dots" || s.margin_style === "lines" ? s.margin_style : "none") as "none" | "dots" | "lines",
+      timerMinutes: null,
+    });
+
+    setInkTextSpacing(parseFloat(s.line_spacing) || 2.4);
+    try { localStorage.setItem("bible_ink_spacing", String(parseFloat(s.line_spacing) || 2.4)); } catch {}
+    setStudyMode(true);
+    try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+
+    // Mark session active
+    supabase
+      .from("study_sessions")
+      .update({ status: "active", last_active_at: new Date().toISOString() })
+      .eq("id", s.id)
+      .then(() => {});
+  }, [existingSession]);
+
+  // ── Start New handler ──
+  const handleStartNewSession = useCallback(() => {
+    if (existingSession) {
+      // Pause existing session
+      supabase
+        .from("study_sessions")
+        .update({ status: "paused", last_active_at: new Date().toISOString() })
+        .eq("id", existingSession.id)
+        .then(() => {});
     }
-    setStudyMode(v);
-    try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    if (v && studyModeVariant === "journal") setJournalOpen(true);
-    if (!v) { setCanvasOpen(false); setJournalOpen(false); }
-  }, [studyModeVariant]);
+    setExistingSession(null);
+    setShowResumeOrNew(false);
+    setCanvasCreationOpen(true);
+  }, [existingSession]);
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
     try { localStorage.setItem("bible_study_variant", v); } catch {}
@@ -895,8 +1015,8 @@ export function BibleReader() {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
         if (!studyMode) {
-          handleToggleStudyMode(true);
-          toast("🍎 Apple Pencil detected — Study Mode enabled", {
+          handleStudyModeEntry();
+          toast("🍎 Apple Pencil detected", {
             description: "Write directly on the page alongside your verses",
           });
         }
@@ -904,7 +1024,7 @@ export function BibleReader() {
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [isIPad, pencilDetected, studyMode, handleToggleStudyMode]);
+  }, [isIPad, pencilDetected, studyMode, handleStudyModeEntry]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
@@ -2056,8 +2176,10 @@ export function BibleReader() {
                   setCanvasOpen(!canvasOpen);
                 } else if (studyMode && studyModeVariant === "journal") {
                   setJournalOpen(!journalOpen);
+                } else if (studyMode) {
+                  handleToggleStudyMode(false);
                 } else {
-                  handleToggleStudyMode(!studyMode);
+                  handleStudyModeEntry();
                 }
               }}
               className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
@@ -2295,7 +2417,11 @@ export function BibleReader() {
                 variant={studyMode ? "default" : "ghost"}
                 size="sm"
                 onClick={() => {
-                  handleToggleStudyMode(!studyMode);
+                  if (studyMode) {
+                    handleToggleStudyMode(false);
+                  } else {
+                    handleStudyModeEntry();
+                  }
                   setStudyNavOpen(false);
                 }}
                 className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
@@ -3066,6 +3192,23 @@ export function BibleReader() {
         open={gestureOverlayOpen}
         onDismiss={() => setGestureOverlayOpen(false)}
       />
+
+      {/* ── Premium Upsell Sheet ── */}
+      <PremiumUpsellSheet
+        open={showPremiumUpsell}
+        onClose={() => setShowPremiumUpsell(false)}
+      />
+
+      {/* ── Resume or New Session Sheet ── */}
+      {existingSession && (
+        <ResumeOrNewSheet
+          open={showResumeOrNew}
+          session={existingSession}
+          onResume={handleResumeSession}
+          onStartNew={handleStartNewSession}
+          onClose={() => setShowResumeOrNew(false)}
+        />
+      )}
 
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
         <AlertDialogContent>
