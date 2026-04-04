@@ -931,17 +931,13 @@ export function BibleReader() {
     crossBunchTranslation,
   );
 
-  // ── Study Mode input routing: allow native pan-y scrolling ──
+  // ── Study Mode scroll behavior ──
   useEffect(() => {
     if (!studyMode || studyModeVariant !== "margin") return;
     const area = readingAreaRef.current;
     if (!area) return;
-
-    area.style.touchAction = "pan-y";
     area.style.overscrollBehavior = "none";
-
     return () => {
-      area.style.touchAction = "";
       area.style.overscrollBehavior = "";
     };
   }, [studyMode, studyModeVariant]);
@@ -1228,6 +1224,12 @@ export function BibleReader() {
   // ── X-gesture handler: delete highlights & ink under the X ──
   const handleXGesture = useCallback(
     (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => {
+      if (!user) {
+        toast("Please sign in to edit highlights", {
+          description: "Create a free account to save highlights and annotations",
+        });
+        return;
+      }
       let highlightCount = 0;
       let strokeCount = 0;
 
@@ -2253,7 +2255,12 @@ export function BibleReader() {
                         }
                       }}
                       onUnderlineGesture={(verseNumber, underlinedText) => {
-                        
+                        if (!user) {
+                          toast("Please sign in to highlight verses", {
+                            description: "Create a free account to save highlights and annotations",
+                          });
+                          return;
+                        }
                         const lastColor = (() => {
                           try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
                         })();

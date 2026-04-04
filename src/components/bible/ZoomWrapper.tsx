@@ -92,7 +92,7 @@ export function ZoomWrapper({
         transformOrigin: "top left",
         width: zoom !== 1 ? `${100 / zoom}%` : undefined,
         willChange: zoom !== 1 ? "transform" : undefined,
-        touchAction: studyMode ? "none" : "pan-y",
+        touchAction: "pan-y",
         ["--verse-spacing" as string]: textSpacing,
         ...(hasMargin
           ? {
@@ -125,7 +125,7 @@ export function ZoomWrapper({
 
       {/* Full-span overlay (e.g. InkOverlay) — covers text + margins */}
       {overlay && (
-        <div className="absolute inset-0" style={{ gridColumn: "1 / -1", gridRow: "1 / -1", touchAction: "none", WebkitUserSelect: "none", userSelect: "none" } as React.CSSProperties}>
+        <div className="absolute inset-0" style={{ gridColumn: "1 / -1", gridRow: "1 / -1", WebkitUserSelect: "none", userSelect: "none" } as React.CSSProperties}>
           {overlay}
         </div>
       )}
