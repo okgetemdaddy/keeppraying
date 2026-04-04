@@ -2926,8 +2926,6 @@ export function BibleReader() {
           onPenSizeChange={setInkPenSize}
           penGlow={inkPenGlow}
           onPenGlowChange={handleInkPenGlowChange}
-          zoom={inkZoom}
-          onZoomChange={handleInkZoomChange}
           textSpacing={inkTextSpacing}
           onTextSpacingChange={handleInkTextSpacingChange}
           onUndo={handleInkUndo}
