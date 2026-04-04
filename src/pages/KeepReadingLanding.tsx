@@ -233,10 +233,10 @@ export default function KeepReadingLanding() {
           </h2>
           <div className="flex flex-col items-center gap-4 pt-4">
             <button
-              onClick={() => handleOAuth("google")}
+              onClick={() => navigate("/")}
               className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-4 rounded-full text-lg font-medium transition-all transform hover:scale-105"
             >
-              Start Studying Now
+              Start Reading Now
             </button>
             <p className="text-zinc-500 text-sm mt-4">
               No credit card required. Syncs across all your devices.

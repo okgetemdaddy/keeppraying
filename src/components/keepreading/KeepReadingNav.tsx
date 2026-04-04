@@ -164,8 +164,8 @@ export function KeepReadingNav({ onOpenDrawer }: KeepReadingNavProps) {
             <KRUserMenu />
           ) : (
             <Link to="/auth">
-              <Button size="sm" className="btn-gold rounded-xl gap-1.5 divine-glow px-5">
-                Get Started <ArrowRight className="w-3.5 h-3.5" />
+              <Button variant="ghost" size="sm" className="rounded-xl gap-1.5 text-foreground/70 hover:text-foreground px-4">
+                Sign In <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </Link>
           )}
