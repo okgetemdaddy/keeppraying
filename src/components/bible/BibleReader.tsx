@@ -101,6 +101,7 @@ import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasSetupSheet } from "@/components/bible/CanvasSetupSheet";
+import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
@@ -727,6 +728,7 @@ export function BibleReader() {
   const [pencilDetected, setPencilDetected] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
   const [canvasSetupOpen, setCanvasSetupOpen] = useState(false);
+  const [canvasCreationOpen, setCanvasCreationOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
@@ -831,9 +833,13 @@ export function BibleReader() {
       setCanvasSetupOpen(true);
       return;
     }
+    if (v && studyModeVariant === "canvas") {
+      // Open canvas creation drawer for verse extraction
+      setCanvasCreationOpen(true);
+      return;
+    }
     setStudyMode(v);
     try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    if (v && studyModeVariant === "canvas") setCanvasOpen(true);
     if (v && studyModeVariant === "journal") setJournalOpen(true);
     if (!v) { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyModeVariant]);
@@ -3006,7 +3012,23 @@ export function BibleReader() {
         }}
       />
 
-      {/* ── Eraser Confirmation Dialog ── */}
+      {/* ── Canvas Creation Drawer ── */}
+      <CanvasCreationDrawer
+        open={canvasCreationOpen}
+        onOpenChange={setCanvasCreationOpen}
+        bibleId={versionId}
+        books={index?.books}
+        currentBookUsfm={bookUsfm}
+        currentChapterIdx={chapterIdx}
+        onStartSession={(config) => {
+          console.log("Canvas session config:", config);
+          setInkTextSpacing(config.typography.lineSpacing);
+          try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
+          setStudyMode(true);
+          try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+        }}
+      />
+
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
