@@ -2213,22 +2213,9 @@ export function BibleReader() {
               <ReadingSkeleton />
             </motion.div>
           ) : hasVerses ? (
-            <motion.div
+            studyMode && studyModeVariant === "margin" ? (
+            <div
               key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
-              {...fadeIn}
-              drag={studyMode || tapNavMode ? false : "x"}
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.15}
-              onDragEnd={(_e, info) => {
-                // Only respond to touch-based swipes, not pen
-                if (Math.abs(info.offset.x) > 100) {
-                  if (info.offset.x < -100 && canNext) {
-                    setChapterIdx((i) => i + 1);
-                  } else if (info.offset.x > 100 && canPrev) {
-                    setChapterIdx((i) => i - 1);
-                  }
-                }
-              }}
               style={{ fontSize: `${textSize}px` }}
               className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
             >

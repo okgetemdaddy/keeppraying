@@ -609,7 +609,10 @@ export function InkOverlay({
         pointerEvents: "auto",
         overflow: "visible",
       }}
-      onPointerDown={handlePointerDown}
+      onPointerDown={(e) => {
+        console.log('[INK-SVG] raw pointerdown', e.pointerType, e.pressure);
+        handlePointerDown(e);
+      }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
