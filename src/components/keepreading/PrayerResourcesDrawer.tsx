@@ -6,17 +6,30 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 interface PrayerResourcesDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-function PrayerCard({ title, text }: { title?: string | null; text: string }) {
+function PrayerCard({ title, text, isClassical }: { title?: string | null; text: string; isClassical?: boolean }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3 space-y-1 hover:shadow-prayer transition-shadow cursor-pointer">
-      {title && <p className="text-sm font-semibold text-foreground truncate">{title}</p>}
-      <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{text}</p>
+    // TODO: iPadOS Port - Bind long-press for quick-save context menu
+    <div className={cn(
+      "rounded-xl border border-border bg-card p-3 space-y-1 hover:shadow-lg hover:ring-1 hover:ring-primary/20 transition-all duration-300 cursor-pointer",
+      isClassical && "hover:border-primary/30"
+    )}>
+      {title && <p className={cn(
+        "text-sm font-semibold text-foreground truncate",
+        isClassical && "font-display"
+      )}>{title}</p>}
+      <p className={cn(
+        "text-xs text-muted-foreground line-clamp-4 leading-relaxed",
+        isClassical && "font-display italic leading-loose"
+      )}>
+        {renderWithVerseLinks(text)}
+      </p>
     </div>
   );
 }
@@ -33,7 +46,6 @@ export function PrayerResourcesDrawer({ open, onOpenChange }: PrayerResourcesDra
   const { user } = useAuth();
   const [tab, setTab] = useState("prayers");
 
-  // User's prayer cards
   const { data: prayers } = useQuery({
     queryKey: ["kr-prayers", user?.id],
     enabled: !!user && open,
@@ -49,7 +61,6 @@ export function PrayerResourcesDrawer({ open, onOpenChange }: PrayerResourcesDra
     },
   });
 
-  // Breath prayers
   const { data: breaths } = useQuery({
     queryKey: ["kr-breaths", user?.id],
     enabled: !!user && open && tab === "breaths",
@@ -66,7 +77,6 @@ export function PrayerResourcesDrawer({ open, onOpenChange }: PrayerResourcesDra
     },
   });
 
-  // Classical prayers
   const { data: classical } = useQuery({
     queryKey: ["kr-classical"],
     enabled: open && tab === "classical",
@@ -128,7 +138,7 @@ export function PrayerResourcesDrawer({ open, onOpenChange }: PrayerResourcesDra
                 <EmptyState message="Classical prayers will appear here." />
               ) : (
                 (classical ?? []).map((p) => (
-                  <PrayerCard key={p.id} title={`${p.title} — ${p.author}`} text={p.prayer_text} />
+                  <PrayerCard key={p.id} title={`${p.title} — ${p.author}`} text={p.prayer_text} isClassical />
                 ))
               )}
             </TabsContent>
