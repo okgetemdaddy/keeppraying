@@ -1993,6 +1993,41 @@ export type Database = {
         }
         Relationships: []
       }
+      session_events: {
+        Row: {
+          created_at: string | null
+          event_type: Database["public"]["Enums"]["session_event_type"]
+          id: string
+          payload: Json | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: Database["public"]["Enums"]["session_event_type"]
+          id?: string
+          payload?: Json | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: Database["public"]["Enums"]["session_event_type"]
+          id?: string
+          payload?: Json | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "study_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_logs: {
         Row: {
           created_at: string
@@ -2102,6 +2137,8 @@ export type Database = {
           margin_style: string
           paper_height_px: number
           paper_width_px: number
+          session_summary: Json | null
+          session_type: string | null
           started_at: string
           status: string
           text_width_px: number
@@ -2130,6 +2167,8 @@ export type Database = {
           margin_style?: string
           paper_height_px?: number
           paper_width_px?: number
+          session_summary?: Json | null
+          session_type?: string | null
           started_at?: string
           status?: string
           text_width_px?: number
@@ -2158,6 +2197,8 @@ export type Database = {
           margin_style?: string
           paper_height_px?: number
           paper_width_px?: number
+          session_summary?: Json | null
+          session_type?: string | null
           started_at?: string
           status?: string
           text_width_px?: number
@@ -2867,7 +2908,21 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      session_event_type:
+        | "verse_view"
+        | "highlight_added"
+        | "highlight_removed"
+        | "note_written"
+        | "note_edited"
+        | "ink_stroke"
+        | "ink_erased"
+        | "circle_select"
+        | "cross_ref_nav"
+        | "chapter_nav"
+        | "bookmark_added"
+        | "bookmark_removed"
+        | "session_start"
+        | "session_end"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2994,6 +3049,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      session_event_type: [
+        "verse_view",
+        "highlight_added",
+        "highlight_removed",
+        "note_written",
+        "note_edited",
+        "ink_stroke",
+        "ink_erased",
+        "circle_select",
+        "cross_ref_nav",
+        "chapter_nav",
+        "bookmark_added",
+        "bookmark_removed",
+        "session_start",
+        "session_end",
+      ],
+    },
   },
 } as const

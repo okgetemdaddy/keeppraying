@@ -26,6 +26,8 @@ export interface StudySession {
   thumbnail_url: string | null;
   created_at: string;
   last_active_at: string;
+  session_summary: Record<string, unknown> | null;
+  session_type: string;
 }
 
 export function useStudySessions() {
