@@ -599,9 +599,10 @@ export function BibleReader() {
   const [showGuestExitPrompt, setShowGuestExitPrompt] = useState(false);
   const pendingNavTarget = useRef<string | null>(null);
 
-  const isGuestSession = !user && (() => {
+  const isGuestSession = useMemo(() => {
+    if (user) return false;
     try { return sessionStorage.getItem("kp_guest_bible_session") === "true"; } catch { return false; }
-  })();
+  }, [user]);
 
   const markGuestChange = useCallback(() => {
     if (!user) guestHasChanges.current = true;
