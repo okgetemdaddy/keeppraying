@@ -313,18 +313,6 @@ export function IPadStudyToolbar({
 
       {/* Secondary row: zoom + spacing + workspace */}
       <div className="flex items-center gap-3 bg-card/90 backdrop-blur-md shadow-lg border border-border rounded-2xl px-3 py-1.5 text-xs">
-        <div className="flex items-center gap-1.5">
-          <ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
-          <Slider
-            value={[zoom]}
-            min={0.3}
-            max={5}
-            step={0.1}
-            onValueChange={([v]) => onZoomChange(v)}
-            className="w-20"
-          />
-          <span className="text-[0.6rem] font-mono text-muted-foreground w-8">{Math.round(zoom * 100)}%</span>
-        </div>
 
         {!hideSpacing && (
           <>

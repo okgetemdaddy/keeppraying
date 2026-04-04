@@ -260,22 +260,6 @@ export function MobileStudyToolbar({
                 <span>{fingerDrawing ? "Finger drawing ON" : "Pencil only (tap to enable finger)"}</span>
               </button>
 
-              {/* Zoom */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Zoom</span>
-                <div className="flex items-center gap-2">
-                  <ZoomIn className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <Slider
-                    value={[zoom]}
-                    min={1}
-                    max={5}
-                    step={0.25}
-                    onValueChange={([v]) => onZoomChange(v)}
-                    className="flex-1"
-                  />
-                  <span className="text-xs font-mono text-muted-foreground w-8 text-right">{zoom.toFixed(1)}×</span>
-                </div>
-              </div>
 
               {/* Spacing */}
               <div className="flex flex-col gap-2">
