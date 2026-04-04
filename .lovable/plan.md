@@ -1,19 +1,26 @@
 
 
-## Fix: Remove Pressure Check Blocking Apple Pencil Pro
+## Two Post-Pencil Fixes + Debug Cleanup
 
-### Root Cause
-The debug overlay confirmed it: Apple Pencil Pro reports `pressure=0` on every `pointerdown` in iPadOS Safari. Real pressure only arrives on the first `pointermove`. The `if (e.pressure === 0) return;` check treats every pen contact as hover and blocks all drawing.
+### Fix 1 — Two-finger scroll in study mode (BibleReader.tsx, lines 957-994)
 
-The `/canvas` InkCanvas works because it has no pressure check — it draws on any pen `pointerdown`. The `pointerdown` event itself is proof of contact; hover only fires `pointermove`.
+Update the manual two-finger scroll `useEffect`:
+- Add `e.preventDefault()` at the top of `onTouchMove` to suppress competing scroll
+- Replace `window.scrollBy(0, deltaY)` with logic that finds the nearest scrollable ancestor via `area.closest('[style*="overflow"]')`, falling back to `area.parentElement`, then `window`
+- Apply a `* 2.5` multiplier to `deltaY` for natural-feeling scroll distance
+- Change `touchmove` listener registration from `{ passive: true }` to `{ passive: false }` so `preventDefault` works
 
-### Changes
+### Fix 2 — Underline gesture highlight matching (BibleReader.tsx, lines 2302-2319)
 
-**`src/components/bible/InkOverlay.tsx`**
+Replace the exact `indexOf` match with normalized matching:
+- Collapse whitespace in both `verseData.text` and `underlinedText` via `.replace(/\s+/g, ' ')` before comparing
+- Add a fallback: if normalized substring match still fails, highlight the entire verse and show a success toast for the verse number instead of silently failing
 
-1. **Remove the pressure gate** (line 251): Delete `if (e.pressure === 0) return;` and replace with a comment explaining why there's no pressure check.
+### Fix 3 — Remove debug overlay (InkOverlay.tsx)
 
-2. **Remove the debug overlay**: Delete the `debugLog` state (line 244), all `setDebugLog` calls in `handlePointerDown` and `handlePointerMove`, and the fixed-position debug `<div>` rendered after the SVG.
+The debug infrastructure was already removed in the previous edit (search confirms no `debugLog` references remain). No action needed here.
 
-One-line behavioral fix + cleanup of temporary debug code. No other files affected.
+### Files
+
+- `src/components/bible/BibleReader.tsx` — two edits (scroll logic + underline matching)
 
