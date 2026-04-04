@@ -13,7 +13,7 @@ import { SiteNav } from "@/components/SiteNav";
 import PrayerCardLink from "@/components/PrayerCardLink";
 import PrayerDraftCard from "@/components/PrayerDraftCard";
 
-interface Message { role: "user" | "assistant"; content: string; }
+interface Message { role: "user" | "assistant" | "signup-nudge"; content: string; }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const GUEST_STORAGE_KEY = "kp_guest_assist_count";
