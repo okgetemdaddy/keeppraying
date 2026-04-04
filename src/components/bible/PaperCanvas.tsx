@@ -80,6 +80,7 @@ export function PaperCanvas({
   canvasBackground,
   overlay,
   children,
+  cameraRef,
 }: PaperCanvasProps) {
   const deskRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
