@@ -129,6 +129,7 @@ export function PaperCanvas({
 
     let intent: "none" | "pan" | "zoom" = "none";
     let gestureType: "none" | "two-finger" | "rotate" = "none";
+    let gestureStarted = false;
     let accumulatedPan = 0;
     let accumulatedZoom = 0;
 
