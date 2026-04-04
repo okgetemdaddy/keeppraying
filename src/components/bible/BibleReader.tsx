@@ -3193,6 +3193,23 @@ export function BibleReader() {
         onDismiss={() => setGestureOverlayOpen(false)}
       />
 
+      {/* ── Premium Upsell Sheet ── */}
+      <PremiumUpsellSheet
+        open={showPremiumUpsell}
+        onClose={() => setShowPremiumUpsell(false)}
+      />
+
+      {/* ── Resume or New Session Sheet ── */}
+      {existingSession && (
+        <ResumeOrNewSheet
+          open={showResumeOrNew}
+          session={existingSession}
+          onResume={handleResumeSession}
+          onStartNew={handleStartNewSession}
+          onClose={() => setShowResumeOrNew(false)}
+        />
+      )}
+
       <AlertDialog open={eraserConfirmOpen} onOpenChange={setEraserConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
