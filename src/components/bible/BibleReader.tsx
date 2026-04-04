@@ -858,9 +858,8 @@ export function BibleReader() {
     try { localStorage.setItem("bible_study_variant", "canvas"); } catch {}
     setStudyMode(true);
     try { localStorage.setItem("bible_study_mode", "true"); } catch {}
-    setCanvasOpen(true);
+    setActiveSession(session.config);
     setJournalOpen(false);
-    // The session config can be used to initialize PaperCanvas in the future
   }, []);
 
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
