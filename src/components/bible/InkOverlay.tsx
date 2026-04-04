@@ -436,37 +436,44 @@ export function InkOverlay({
     }
 
     /* ── Underline gesture detection ── */
-    const underlineDetected = isUnderlineGesture(currentPoints);
-    toast(`DEBUG gesture: underline=${underlineDetected} points=${currentPoints.length}`);
+    if (onUnderlineGesture && isUnderlineGesture(currentPoints) && svgRef.current) {
+      const svg = svgRef.current;
+      const ctm = svg.getScreenCTM();
 
-    if (onUnderlineGesture && underlineDetected && svgRef.current) {
-      const svgRect = svgRef.current.getBoundingClientRect();
-      const startX = Math.min(...currentPoints.map((p) => p.x)) * zoom + svgRect.left;
-      const endX = Math.max(...currentPoints.map((p) => p.x)) * zoom + svgRect.left;
-      const avgY = (currentPoints.reduce((s, p) => s + p.y, 0) / currentPoints.length) * zoom + svgRect.top;
+      if (ctm) {
+        const screenPoints = currentPoints.map(p => {
+          const pt = svg.createSVGPoint();
+          pt.x = p.x;
+          pt.y = p.y;
+          const screen = pt.matrixTransform(ctm);
+          return { x: screen.x, y: screen.y };
+        });
 
-      const wordEls = document.querySelectorAll("[data-word]");
-      const underlinedWords: string[] = [];
-      let underlinedVerse = 0;
+        const startX = Math.min(...screenPoints.map(p => p.x));
+        const endX = Math.max(...screenPoints.map(p => p.x));
+        const avgY = screenPoints.reduce((s, p) => s + p.y, 0) / screenPoints.length;
 
-      wordEls.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const elCenterX = rect.left + rect.width / 2;
-        const elBottom = rect.bottom;
+        const wordEls = document.querySelectorAll("[data-word]");
+        const underlinedWords: string[] = [];
+        let underlinedVerse = 0;
 
-        if (elCenterX >= startX && elCenterX <= endX && Math.abs(avgY - elBottom) < rect.height * 0.5) {
-          underlinedWords.push(el.getAttribute("data-word") || "");
-          underlinedVerse = parseInt(el.getAttribute("data-verse") || "0", 10);
+        wordEls.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const elCenterX = rect.left + rect.width / 2;
+          const elBottom = rect.bottom;
+
+          if (elCenterX >= startX && elCenterX <= endX && Math.abs(avgY - elBottom) < rect.height * 0.8) {
+            underlinedWords.push(el.getAttribute("data-word") || "");
+            underlinedVerse = parseInt(el.getAttribute("data-verse") || "0", 10);
+          }
+        });
+
+        if (underlinedWords.length > 0 && underlinedVerse > 0) {
+          onUnderlineGesture(underlinedVerse, underlinedWords.join(" "));
+          if (navigator.vibrate) navigator.vibrate(10);
+          pointsBufferRef.current = [];
+          return;
         }
-      });
-
-      toast(`DEBUG words found: ${underlinedWords.length} verse=${underlinedVerse} text="${underlinedWords.join(' ').slice(0, 30)}"`);
-
-      if (underlinedWords.length > 0 && underlinedVerse > 0) {
-        onUnderlineGesture(underlinedVerse, underlinedWords.join(" "));
-        if (navigator.vibrate) navigator.vibrate(10);
-        pointsBufferRef.current = [];
-        return;
       }
     }
 
