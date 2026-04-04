@@ -2421,19 +2421,14 @@ export function BibleReader() {
           </motion.header>
         )}
 
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.div key="skeleton" {...fadeIn}>
-              <ReadingSkeleton />
-            </motion.div>
-          ) : hasVerses ? (
-            studyMode && studyModeVariant === "margin" ? (
-            <div
-              key={`${versionId}-${bookUsfm}-${chapterIdx}-${mode}`}
-              style={{ fontSize: `${textSize}px` }}
-              className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
-            >
-              <PaperCanvas
+        {/* Paper canvas mode — ALWAYS mounted to preserve spring state */}
+        {studyMode && studyModeVariant === "margin" ? (
+          <div
+            key={`canvas-${bookUsfm}-${chapterIdx}`}
+            style={{ fontSize: `${textSize}px` }}
+            className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
+          >
+            <PaperCanvas
                 baseFontSize={textSize}
                 textSpacing={inkTextSpacing}
                 textAlign={wsTextAlign}
