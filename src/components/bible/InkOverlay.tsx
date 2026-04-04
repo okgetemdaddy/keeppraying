@@ -686,25 +686,5 @@ export function InkOverlay({
           </text>
         )}
       </svg>
-      <div style={{
-        position: 'fixed',
-        bottom: 80,
-        left: 10,
-        right: 10,
-        maxHeight: 180,
-        overflow: 'auto',
-        background: 'rgba(0,0,0,0.85)',
-        color: '#0f0',
-        fontFamily: 'monospace',
-        fontSize: 10,
-        padding: 8,
-        borderRadius: 8,
-        zIndex: 9999,
-        pointerEvents: 'none',
-      }}>
-        {debugLog.map((line, i) => <div key={i}>{line}</div>)}
-        {debugLog.length === 0 && <div style={{color:'#666'}}>Touch pencil to screen...</div>}
-      </div>
-    </>
   );
 }
