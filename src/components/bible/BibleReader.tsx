@@ -102,6 +102,7 @@ import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasSetupSheet } from "@/components/bible/CanvasSetupSheet";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
+import { SessionPickerSheet, type SavedSession, saveNewSession } from "@/components/bible/SessionPickerSheet";
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
@@ -719,9 +720,8 @@ export function BibleReader() {
   }, []);
 
   // ── iPad Study Mode (handwritten annotations) ──
-  const [studyMode, setStudyMode] = useState(() => {
-    try { return localStorage.getItem("bible_study_mode") === "true"; } catch { return false; }
-  });
+  // Always start in reading mode — user must explicitly activate study mode
+  const [studyMode, setStudyMode] = useState(false);
   const [studyModeVariant, setStudyModeVariant] = useState<StudyModeVariant>(() => {
     try { return (localStorage.getItem("bible_study_variant") as StudyModeVariant) || "margin"; } catch { return "margin"; }
   });
@@ -730,6 +730,7 @@ export function BibleReader() {
   const [canvasSetupOpen, setCanvasSetupOpen] = useState(false);
   const [canvasCreationOpen, setCanvasCreationOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [sessionPickerOpen, setSessionPickerOpen] = useState(false);
 
   // ── Ink overlay state (iPad SVG full-page drawing) ──
   const [inkZoom, setInkZoom] = useState(() => {
@@ -828,21 +829,40 @@ export function BibleReader() {
   }, []);
 
   const handleToggleStudyMode = useCallback((v: boolean) => {
-    if (v && studyModeVariant === "margin") {
-      // Open setup sheet instead of immediately entering study mode
+    if (v) {
+      // Always show session picker first — user picks resume or new
+      setSessionPickerOpen(true);
+      return;
+    }
+    setStudyMode(false);
+    try { localStorage.setItem("bible_study_mode", "false"); } catch {}
+    setCanvasOpen(false);
+    setJournalOpen(false);
+  }, []);
+
+  const handleSessionPickerNewSession = useCallback(() => {
+    if (studyModeVariant === "margin") {
       setCanvasSetupOpen(true);
-      return;
-    }
-    if (v && studyModeVariant === "canvas") {
-      // Open canvas creation drawer for verse extraction
+    } else if (studyModeVariant === "canvas") {
       setCanvasCreationOpen(true);
-      return;
+    } else {
+      // journal — activate directly
+      setStudyMode(true);
+      try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+      setJournalOpen(true);
     }
-    setStudyMode(v);
-    try { localStorage.setItem("bible_study_mode", String(v)); } catch {}
-    if (v && studyModeVariant === "journal") setJournalOpen(true);
-    if (!v) { setCanvasOpen(false); setJournalOpen(false); }
   }, [studyModeVariant]);
+
+  const handleResumeSession = useCallback((session: SavedSession) => {
+    setStudyModeVariant("canvas");
+    try { localStorage.setItem("bible_study_variant", "canvas"); } catch {}
+    setStudyMode(true);
+    try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+    setCanvasOpen(true);
+    setJournalOpen(false);
+    // The session config can be used to initialize PaperCanvas in the future
+  }, []);
+
   const handleStudyModeVariantChange = useCallback((v: StudyModeVariant) => {
     setStudyModeVariant(v);
     try { localStorage.setItem("bible_study_variant", v); } catch {}
@@ -858,16 +878,17 @@ export function BibleReader() {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
         if (!studyMode) {
-          handleToggleStudyMode(true);
-          toast("🍎 Apple Pencil detected — Study Mode enabled", {
-            description: "Write directly on the page alongside your verses",
+          // Show session picker instead of auto-enabling study mode
+          setSessionPickerOpen(true);
+          toast("🍎 Apple Pencil detected", {
+            description: "Choose a canvas session to start studying",
           });
         }
       }
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [isIPad, pencilDetected, studyMode, handleToggleStudyMode]);
+  }, [isIPad, pencilDetected, studyMode]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
@@ -3012,6 +3033,14 @@ export function BibleReader() {
         }}
       />
 
+      {/* ── Session Picker Sheet ── */}
+      <SessionPickerSheet
+        open={sessionPickerOpen}
+        onOpenChange={setSessionPickerOpen}
+        onNewSession={handleSessionPickerNewSession}
+        onResumeSession={handleResumeSession}
+      />
+
       {/* ── Canvas Creation Drawer ── */}
       <CanvasCreationDrawer
         open={canvasCreationOpen}
@@ -3021,11 +3050,22 @@ export function BibleReader() {
         currentBookUsfm={bookUsfm}
         currentChapterIdx={chapterIdx}
         onStartSession={(config) => {
-          console.log("Canvas session config:", config);
+          // Save session for future resume
+          const session: SavedSession = {
+            id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(),
+            verseRange: config.verseRange,
+            bookUsfm: bookUsfm ?? "",
+            chapterIdx,
+            config,
+          };
+          saveNewSession(session);
+
           setInkTextSpacing(config.typography.lineSpacing);
           try { localStorage.setItem("bible_ink_spacing", String(config.typography.lineSpacing)); } catch {}
           setStudyMode(true);
           try { localStorage.setItem("bible_study_mode", "true"); } catch {}
+          setCanvasOpen(true);
         }}
       />
 
