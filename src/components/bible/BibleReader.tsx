@@ -2300,7 +2300,7 @@ export function BibleReader() {
                         }
                       }}
                       onUnderlineGesture={(verseNumber, underlinedText) => {
-                        toast(`DEBUG underline: verse=${verseNumber} text="${underlinedText.slice(0, 40)}"`);
+                        
                         const lastColor = (() => {
                           try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
                         })();

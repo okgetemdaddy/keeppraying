@@ -488,22 +488,28 @@ export function InkOverlay({
 
     let closestVerse: number | null = null;
     let minDist = Infinity;
-    const svgRect = svgRef.current?.getBoundingClientRect();
 
-    if (svgRect) {
-      document.querySelectorAll("[data-verse]").forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const strokeCenterX = ((bbox.minX + bbox.maxX) / 2) * zoom + svgRect.left;
-        const strokeCenterY = ((bbox.minY + bbox.maxY) / 2) * zoom + svgRect.top;
-        const dist = Math.hypot(centerX - strokeCenterX, centerY - strokeCenterY);
-        if (dist < minDist) {
-          minDist = dist;
-          const vNum = parseInt(el.getAttribute("data-verse") ?? "", 10);
-          if (!isNaN(vNum)) closestVerse = vNum;
-        }
-      });
+    if (svgRef.current) {
+      const svgEl = svgRef.current;
+      const ctmV = svgEl.getScreenCTM();
+      if (ctmV) {
+        const pt = svgEl.createSVGPoint();
+        pt.x = (bbox.minX + bbox.maxX) / 2;
+        pt.y = (bbox.minY + bbox.maxY) / 2;
+        const screenCenter = pt.matrixTransform(ctmV);
+
+        document.querySelectorAll("[data-verse]").forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const dist = Math.hypot(centerX - screenCenter.x, centerY - screenCenter.y);
+          if (dist < minDist) {
+            minDist = dist;
+            const vNum = parseInt(el.getAttribute("data-verse") ?? "", 10);
+            if (!isNaN(vNum)) closestVerse = vNum;
+          }
+        });
+      }
     }
 
     /* ── Stroke compression ── */
