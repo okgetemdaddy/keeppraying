@@ -1,31 +1,45 @@
 
 
-## Fix Two Study Mode Bugs
+## Fix Two Bugs: Auth Check for Gestures + Native Scrolling in Study Mode
 
-### Bug 1 — Two-finger scroll barely moves
+### 1. Restore sign-in prompt for unauthenticated gesture actions — `BibleReader.tsx`
 
-**Root cause**: `touchAction: "none"` suppresses native gesture tracking, reducing touchmove event frequency. The manual JS scroll handler was a workaround but can't match native performance.
-
-**Fix in `BibleReader.tsx`**:
-- In the "Study Mode input routing" useEffect (lines 934-955): change `area.style.touchAction = "none"` to `area.style.touchAction = "pan-y"`, and remove the `preventSingleFingerScroll` handler and its event listener entirely (single-finger blocking is already handled by InkOverlay's SVG capture).
-- Delete the entire "Manual two-finger scroll in Study Mode" useEffect (lines 957-994). With `pan-y`, the browser handles vertical scrolling natively at full speed with momentum.
-
-### Bug 2 — Underline gesture fails to find words
-
-**Root cause**: The Y comparison `Math.abs(avgY - elBottom) < rect.height * 0.8` is too restrictive. An underline stroke sits below the text, and the average Y of stroke points can be well below `elBottom`.
-
-**Fix in `InkOverlay.tsx`** (around line 460-467): Replace the Y check with a range-based comparison:
-
+**onUnderlineGesture** (line 2255): Add auth check at the top of the callback, before the highlight mutation:
 ```ts
-const elMidY = rect.top + rect.height / 2;
-const elBottomPlusSlack = rect.bottom + rect.height;
-
-if (elCenterX >= startX && elCenterX <= endX && avgY >= elMidY && avgY <= elBottomPlusSlack) {
+if (!user) {
+  toast("Please sign in to highlight verses", {
+    description: "Create a free account to save highlights and annotations"
+  });
+  return;
+}
 ```
 
-This catches underlines from mid-text to one full line height below — covering natural handwriting variation.
+**handleXGesture** (line 1229): Add the same auth check at the top of the callback body (it calls `mutations.removeHighlight.mutate` which is a Supabase write).
+
+**onCircleSelect** and **onWordCircle**: These are client-side state operations (setting selected verses, opening Reference Bloom) — no auth check needed.
+
+### 2. Fix two-finger scroll in study mode
+
+Three files, four small edits:
+
+**BibleReader.tsx** (lines 934-947): Replace the current study mode useEffect with a simpler version that only sets `overscrollBehavior`. Remove the `touchAction` override — ZoomWrapper handles that:
+```ts
+useEffect(() => {
+  if (!studyMode || studyModeVariant !== "margin") return;
+  const area = readingAreaRef.current;
+  if (!area) return;
+  area.style.overscrollBehavior = "none";
+  return () => { area.style.overscrollBehavior = ""; };
+}, [studyMode, studyModeVariant]);
+```
+
+**ZoomWrapper.tsx** line 95: Change `touchAction: studyMode ? "none" : "pan-y"` → `touchAction: "pan-y"`.
+
+**ZoomWrapper.tsx** line 128: Remove `touchAction: "none"` from the overlay wrapper div style. Keep `userSelect: "none"` and `WebkitUserSelect: "none"`.
 
 ### Files
-- `src/components/bible/BibleReader.tsx` — simplify study mode input routing, remove manual scroll handler
-- `src/components/bible/InkOverlay.tsx` — fix underline Y-axis hit-test range
+| File | Changes |
+|------|---------|
+| `src/components/bible/BibleReader.tsx` | Add auth checks to gesture callbacks; simplify study mode useEffect |
+| `src/components/bible/ZoomWrapper.tsx` | Two style prop edits |
 
