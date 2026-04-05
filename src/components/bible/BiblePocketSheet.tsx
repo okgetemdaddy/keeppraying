@@ -538,6 +538,8 @@ export function BiblePocketSheet({
   bookUsfm,
   chapterId,
   onJournalSave,
+  onDeleteJournal,
+  onShareJournal,
 }: BiblePocketSheetProps) {
   const [activeTab, setActiveTab] = useState<PocketTab>(defaultTab ?? "notes");
 
