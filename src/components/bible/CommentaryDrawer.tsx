@@ -580,6 +580,7 @@ export function CommentaryDrawer({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.06 }}
                           onClick={() => {
+                            if (navigator.vibrate) navigator.vibrate(8);
                             setSelectedHost(host);
                             setSearchQuery("");
                             setSearchResults(null);
