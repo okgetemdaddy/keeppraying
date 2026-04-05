@@ -229,6 +229,9 @@ interface BibleSleeveSheetProps {
   /* deep study */
   onTriggerDeepStudy?: () => void;
   deepStudyActive?: boolean;
+
+  /* bible sight */
+  onOpenBibleSight?: () => void;
 }
 
 export function BibleSleeveSheet({
