@@ -864,19 +864,13 @@ export function SessionDetailDashboard({
               background: "rgba(24, 24, 27, 0.40)",
               backdropFilter: "blur(64px) saturate(1.5)",
               WebkitBackdropFilter: "blur(64px) saturate(1.5)",
-              mixBlendMode: "luminosity",
+              border: "1px solid rgba(255, 255, 255, 0.06)",
             }}
             className={`relative overflow-hidden flex flex-col ${
               isMobile
                 ? "w-screen h-screen rounded-none"
                 : "w-[92vw] max-w-[1200px] h-[88vh] rounded-2xl"
             }`}
-            style={{
-              background: "rgba(24, 24, 27, 0.40)",
-              backdropFilter: "blur(64px) saturate(1.5)",
-              WebkitBackdropFilter: "blur(64px) saturate(1.5)",
-              border: "1px solid rgba(255, 255, 255, 0.06)",
-            }}
           >
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto p-5">
