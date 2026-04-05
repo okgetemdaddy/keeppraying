@@ -3457,56 +3457,105 @@ export function BibleReader() {
                     canvasBackground="none"
                     studyMode={false}
                   >
-                    {/* Dynamic layout shift for margin writing space */}
+                    {/* Dynamic layout: grid with study rail when Deep Study active on landscape */}
                     <div className={`transition-all duration-300 ease-out ${
-                      pencilDetected
-                        ? marginLayout === "left"
-                          ? "max-w-prose ml-6 md:ml-12 lg:ml-16 mr-auto px-4 pr-8"
-                          : marginLayout === "right"
-                            ? "max-w-prose mr-6 md:mr-12 lg:mr-16 ml-auto px-4 pl-8"
-                            : "max-w-prose mx-auto px-4"
+                      enrichment.active && !isMobile
+                        ? "grid grid-cols-[1fr_320px] gap-6"
                         : ""
                     }`}>
-                      <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                        {verses.map((v) => {
-                          const vNotes = noteMap.get(v.number) ?? [];
-                          return (
-                            <React.Fragment key={v.number}>
-                              <EnrichedVerse
-                                verse={v}
-                                highlights={highlightMap.get(v.number) ?? []}
-                                notes={vNotes}
-                                bookmark={bookmarkMap.get(v.number)}
-                                bunchItems={bunchMap.get(v.number) ?? []}
-                                bunchColorMap={bunchColorMap}
-                                bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                                mode={mode}
-                                isSelected={selectedVerses.has(v.number)}
-                                hideBunches={hideBunchRefs}
-                                onTapSelect={handleTapSelect}
-                                studyMode={false}
-                                verseAnnotation={annotationMap.get(v.number) ?? null}
-                                onAnnotationSave={handleAnnotationSave}
-                                verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                                highlightStyle={highlightStyle}
-                                previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
-                                onLongPressVerseNumber={user ? handleCrossRef : undefined}
-                              />
-                              <AnimatePresence>
-                                {noteInputVerse === v.number && (
-                                  <NoteInputPanel
-                                    verseNumber={v.number}
-                                    existingContent={vNotes[0]?.note_content}
-                                    existingId={vNotes[0]?.id}
-                                    onSave={handleSaveNote}
-                                    onCancel={() => setNoteInputVerse(null)}
-                                  />
-                                )}
-                              </AnimatePresence>
-                            </React.Fragment>
-                          );
-                        })}
-                      </section>
+                      {/* Text column */}
+                      <div className={`transition-all duration-300 ease-out ${
+                        pencilDetected && !enrichment.active
+                          ? marginLayout === "left"
+                            ? "max-w-prose ml-6 md:ml-12 lg:ml-16 mr-auto px-4 pr-8"
+                            : marginLayout === "right"
+                              ? "max-w-prose mr-6 md:mr-12 lg:mr-16 ml-auto px-4 pl-8"
+                              : "max-w-prose mx-auto px-4"
+                          : enrichment.active && !isMobile
+                            ? "max-w-none"
+                            : ""
+                      }`}>
+                        <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                          {verses.map((v) => {
+                            const vNotes = noteMap.get(v.number) ?? [];
+                            return (
+                              <React.Fragment key={v.number}>
+                                <EnrichedVerse
+                                  verse={v}
+                                  highlights={highlightMap.get(v.number) ?? []}
+                                  notes={vNotes}
+                                  bookmark={bookmarkMap.get(v.number)}
+                                  bunchItems={bunchMap.get(v.number) ?? []}
+                                  bunchColorMap={bunchColorMap}
+                                  bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                                  mode={mode}
+                                  isSelected={selectedVerses.has(v.number)}
+                                  hideBunches={hideBunchRefs}
+                                  onTapSelect={handleTapSelect}
+                                  studyMode={false}
+                                  verseAnnotation={annotationMap.get(v.number) ?? null}
+                                  onAnnotationSave={handleAnnotationSave}
+                                  verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                                  highlightStyle={highlightStyle}
+                                  previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                                  onLongPressVerseNumber={user ? handleCrossRef : undefined}
+                                />
+                                <AnimatePresence>
+                                  {noteInputVerse === v.number && (
+                                    <NoteInputPanel
+                                      verseNumber={v.number}
+                                      existingContent={vNotes[0]?.note_content}
+                                      existingId={vNotes[0]?.id}
+                                      onSave={handleSaveNote}
+                                      onCancel={() => setNoteInputVerse(null)}
+                                    />
+                                  )}
+                                </AnimatePresence>
+                              </React.Fragment>
+                            );
+                          })}
+                        </section>
+
+                        {/* Mobile: Deep Study cards inline below text */}
+                        {enrichment.active && isMobile && (
+                          <div className="mt-6">
+                            <AutoEnrichLayer
+                              data={enrichment.data}
+                              isLoading={enrichment.isLoading}
+                              active={enrichment.active}
+                              verses={verses.map(v => ({ number: v.number, text: v.text }))}
+                              versionId={versionId!}
+                              bookUsfm={bookUsfm!}
+                              chapterNumber={chapterNumberParsed!}
+                              onAdoptHighlight={(vn, color) => mutations.addHighlight.mutate({ verseNumber: vn, color })}
+                              onAdoptNote={(vn, content) => mutations.saveNote.mutate({ verseNumber: vn, content })}
+                              onAdoptBunch={(name, items) => mutations.createBunchWithVerses.mutate({ bunchName: name, items })}
+                              onClose={enrichment.close}
+                              isDark={premiumDark}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Desktop: Study Rail */}
+                      {enrichment.active && !isMobile && (
+                        <div className="min-w-0">
+                          <AutoEnrichLayer
+                            data={enrichment.data}
+                            isLoading={enrichment.isLoading}
+                            active={enrichment.active}
+                            verses={verses.map(v => ({ number: v.number, text: v.text }))}
+                            versionId={versionId!}
+                            bookUsfm={bookUsfm!}
+                            chapterNumber={chapterNumberParsed!}
+                            onAdoptHighlight={(vn, color) => mutations.addHighlight.mutate({ verseNumber: vn, color })}
+                            onAdoptNote={(vn, content) => mutations.saveNote.mutate({ verseNumber: vn, content })}
+                            onAdoptBunch={(name, items) => mutations.createBunchWithVerses.mutate({ bunchName: name, items })}
+                            onClose={enrichment.close}
+                            isDark={premiumDark}
+                          />
+                        </div>
+                      )}
                     </div>
                   </ZoomWrapper>
                 </div>
