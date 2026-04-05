@@ -3528,7 +3528,7 @@ export function BibleReader() {
         books={index?.books}
         currentBookUsfm={bookUsfm}
         currentChapterIdx={chapterIdx}
-        onStartSession={(config) => {
+        onStartSession={async (config) => {
           console.log("Canvas session config:", config);
           isNewSessionRef.current = true;
           inkHistory.replaceStrokes([]);
@@ -3542,6 +3542,57 @@ export function BibleReader() {
           // Show gesture overlay for first-time users
           if (shouldShowGestureOverlay(0)) {
             setTimeout(() => setGestureOverlayOpen(true), 600);
+          }
+
+          // ── Phase 1: Generate SVG text layout & store as annotation ──
+          // iPadOS: Font barrier is unnecessary — CTFont is loaded synchronously from the app bundle via UIFont(name:size:)
+          if (config.verses?.length && config.textBox) {
+            try {
+              const fontFamily = "'EB Garamond', 'Georgia', serif";
+              const fontString = `${config.typography.fontSize}px ${fontFamily}`;
+
+              // Deterministic typography safeguard — wait for web font before measurement
+              try {
+                await Promise.race([
+                  document.fonts.load(fontString),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error("Font load timeout")), 3000))
+                ]);
+                await document.fonts.ready;
+              } catch (fontErr) {
+                console.warn("Typography barrier: Proceeding with available fonts.", fontErr);
+              }
+
+              const layout = layoutBibleText({
+                verses: config.verses,
+                containerWidth: config.textBox.width * 96,
+                containerHeight: config.textBox.height * 96,
+                fontSize: config.typography.fontSize,
+                lineHeight: config.typography.fontSize * config.typography.lineSpacing,
+                fontFamily,
+                textAlign: "left",
+                isDark: premiumDark,
+              });
+
+              setSvgTextLayer(layout.svgString);
+
+              // Store SVG text layout as annotation for resume
+              if (bookUsfm && currentChapter) {
+                const svgKey = `${bookUsfm}.${currentChapter.id}.svgtext`;
+                saveAnnotationMut.mutate({
+                  verseIds: [svgKey],
+                  strokes: [],
+                  typedText: layout.svgString,
+                });
+                const wordMapKey = `${bookUsfm}.${currentChapter.id}.wordmap`;
+                saveAnnotationMut.mutate({
+                  verseIds: [wordMapKey],
+                  strokes: [],
+                  typedText: JSON.stringify(layout.wordElements),
+                });
+              }
+            } catch (layoutErr) {
+              console.warn("SVG text layout generation failed:", layoutErr);
+            }
           }
         }}
       />
