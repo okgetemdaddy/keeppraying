@@ -132,7 +132,7 @@ export function ResumeOrNewSheet({ open, session, onResume, onStartNew, onClose 
             <div className="px-6 pb-8 space-y-4">
               {/* Section label */}
               <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
-                Your Last Session
+                iPad Mode Session
               </span>
 
               {/* Session card */}
