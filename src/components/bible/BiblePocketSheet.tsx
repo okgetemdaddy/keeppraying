@@ -163,11 +163,81 @@ function NotesTab({
   );
 }
 
-function JournalTab({ sortedJournalAnnotations }: { sortedJournalAnnotations: Annotation[] }) {
+function JournalTab({
+  sortedJournalAnnotations,
+  chapterVerses,
+  versionId,
+  bookUsfm,
+  chapterId,
+  chapterTitle,
+  onJournalSave,
+}: {
+  sortedJournalAnnotations: Annotation[];
+  chapterVerses?: Verse[];
+  versionId?: number;
+  bookUsfm?: string;
+  chapterId?: string;
+  chapterTitle?: string;
+  onJournalSave?: (entry: { verseIds: string[]; strokes: any[]; typedText?: string }) => void;
+}) {
+  const chapterNum = chapterId ? parseInt(chapterId, 10) : undefined;
+  const { generate, refreshAndUpdate, isGenerating, isRefreshing } =
+    useJournalGeneration(bookUsfm, chapterNum, chapterTitle, chapterVerses, versionId);
+
+  const journalKey = bookUsfm && chapterId ? `${bookUsfm}.${chapterId}.journal` : null;
+
+  const handleBibleSight = useCallback(async () => {
+    const result = await generate();
+    if (result && journalKey && onJournalSave) {
+      onJournalSave({
+        verseIds: [journalKey],
+        strokes: [],
+        typedText: result.journal_text,
+      });
+    }
+  }, [generate, journalKey, onJournalSave]);
+
+  const handleRefresh = useCallback(async (parentId?: string) => {
+    const result = await refreshAndUpdate(parentId);
+    if (result && journalKey && onJournalSave) {
+      onJournalSave({
+        verseIds: [journalKey],
+        strokes: [],
+        typedText: result.journal_text,
+      });
+    }
+  }, [refreshAndUpdate, journalKey, onJournalSave]);
+
+  const hasVerses = (chapterVerses?.length ?? 0) > 0;
+
   return (
     <ScrollArea className="flex-1">
       <div className="p-4 space-y-3">
-        {sortedJournalAnnotations.length === 0 ? (
+        {/* Bible Sight Generation Button */}
+        {hasVerses && (
+          <div>
+            <Button
+              onClick={handleBibleSight}
+              disabled={isGenerating}
+              className="w-full gap-2 rounded-xl bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-500/20 font-medium text-sm h-10 transition-all"
+              variant="ghost"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Bible Sight is reflecting…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  ✦ Bible Sight
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {sortedJournalAnnotations.length === 0 && !hasVerses ? (
           <div className="text-center py-12">
             <BookMarked className="h-10 w-10 mx-auto text-neutral-600 mb-3" />
             <p className="text-sm text-neutral-100 font-medium">No journal entries yet</p>
@@ -175,32 +245,52 @@ function JournalTab({ sortedJournalAnnotations }: { sortedJournalAnnotations: An
               Open the Journal tool to write reflections for this chapter
             </p>
           </div>
+        ) : sortedJournalAnnotations.length === 0 ? (
+          <div className="text-center py-6">
+            <BookMarked className="h-8 w-8 mx-auto text-neutral-600 mb-2" />
+            <p className="text-sm text-neutral-300 font-medium">No entries yet</p>
+            <p className="text-[0.65rem] text-neutral-500 mt-1">
+              Tap ✦ Bible Sight above to generate your first reflection
+            </p>
+          </div>
         ) : (
           sortedJournalAnnotations.map((ann) => (
-            <div key={ann.id} className="rounded-2xl border border-neutral-700 bg-neutral-800/50 p-3 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <BookMarked className="h-3.5 w-3.5 text-amber-400" />
-                <span className="text-[0.6rem] text-neutral-500 flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {new Date(ann.updated_at).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </div>
-              {(ann as any).typed_text && (
-                <p className="text-xs text-neutral-200 line-clamp-4 leading-relaxed">
-                  {(ann as any).typed_text}
-                </p>
-              )}
-              <div className="flex flex-wrap gap-1">
-                {ann.verse_ids.map((vid) => (
-                  <span key={vid} className="text-[0.55rem] bg-amber-400/10 text-amber-400 rounded-md px-1.5 py-0.5 font-medium">
-                    {vid}
+            <div key={ann.id} className="relative">
+              <div className="rounded-2xl border border-neutral-700 bg-neutral-800/50 p-3 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <BookMarked className="h-3.5 w-3.5 text-amber-400" />
+                  <span className="text-[0.6rem] text-neutral-500 flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {new Date(ann.updated_at).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
-                ))}
+                </div>
+                {(ann as any).typed_text && (
+                  <p className="text-xs text-neutral-200 line-clamp-4 leading-relaxed">
+                    {(ann as any).typed_text}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-1">
+                  {ann.verse_ids.map((vid) => (
+                    <span key={vid} className="text-[0.55rem] bg-amber-400/10 text-amber-400 rounded-md px-1.5 py-0.5 font-medium">
+                      {vid}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {/* Refresh & update link */}
+              <div className="mt-1 px-1">
+                <button
+                  onClick={() => handleRefresh(ann.id)}
+                  disabled={isRefreshing}
+                  className="text-[0.6rem] font-medium text-amber-600/40 hover:text-amber-600/70 transition-colors disabled:opacity-50"
+                >
+                  {isRefreshing ? "reflecting…" : "refresh & update"}
+                </button>
               </div>
             </div>
           ))
