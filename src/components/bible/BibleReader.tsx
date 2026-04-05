@@ -1897,12 +1897,16 @@ export function BibleReader() {
   }, [versionId, bookUsfm, currentChapter, currentBook]);
 
   // ── Toolbar action handlers ──
+  // Unified telemetry accessor — prefer canvas session, fall back to reading session
+  const currentLogEvent = activeSessionId ? canvasTelemetry.logEvent : readingTelemetry.logEvent;
+
   const handleHighlight = useCallback(
     (color: string, verseNumber: number, start?: number, end?: number) => {
       markGuestChange();
       mutations.addHighlight.mutate({ verseNumber, color, start, end });
+      currentLogEvent('highlight_added', { verse_number: verseNumber, color, text_snippet: '' });
     },
-    [mutations.addHighlight, markGuestChange],
+    [mutations.addHighlight, markGuestChange, currentLogEvent],
   );
 
   const handleToggleBookmark = useCallback(
