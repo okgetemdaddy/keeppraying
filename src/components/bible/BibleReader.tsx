@@ -106,6 +106,14 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import {
+  StudioToolbar,
+  GhostToolbar,
+  SqueezeRadialMenu,
+  InkFilterDefs,
+} from '@/components/bible/toolbar';
+import { usePencilTools } from '@/hooks/usePencilTools';
+import { useApplePencilSqueeze, useApplePencilDoubleTap } from '@/hooks/useApplePencilSqueeze';
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
 import { GestureEducationOverlay, shouldShowGestureOverlay } from "@/components/bible/GestureEducationOverlay";
@@ -806,17 +814,27 @@ export function BibleReader() {
   const [inkTextSpacing, setInkTextSpacing] = useState(() => {
     try { return parseFloat(localStorage.getItem("bible_ink_spacing") ?? "2.8"); } catch { return 2.8; }
   });
-  const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
-  const [inkPenSize, setInkPenSize] = useState(8);
-  const [inkPenGlow, setInkPenGlow] = useState<string | null>(() => {
-    try { return localStorage.getItem("bible_pen_glow") || null; } catch { return null; }
-  });
-  const handleInkPenGlowChange = useCallback((v: string | null) => {
-    setInkPenGlow(v);
-    try { if (v) localStorage.setItem("bible_pen_glow", v); else localStorage.removeItem("bible_pen_glow"); } catch {}
-  }, []);
-  const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
+  // ── Pencil Tools Zustand store (replaces inline ink state) ──
+  // iPadOS: Map to PKToolPicker state via UIPencilInteraction delegate
+  const pencilTools = usePencilTools();
+  const inkPenColor = pencilTools.color;
+  const inkPenSize = pencilTools.size;
+  const inkPenGlow: string | null = null; // Legacy — glow now handled by brush filters
+  const inkFingerDrawing = false; // Legacy — finger drawing disabled on iPad by default
+  const setInkPenColor = pencilTools.setColor;
+  const setInkPenSize = pencilTools.setSize;
+  const handleInkPenGlowChange = useCallback((_v: string | null) => {}, []);
+  const setInkFingerDrawing = useCallback((_v: boolean) => {}, []);
   const inkHistory = useInkHistory();
+
+  // ── Apple Pencil Pro hardware gesture hooks ──
+  // iPadOS: Replace with UIPencilInteraction delegate methods
+  useApplePencilSqueeze((x, y) => {
+    pencilTools.toggleSqueezeMenu(x, y);
+  });
+  useApplePencilDoubleTap(() => {
+    pencilTools.toggleLastTool();
+  });
 
   // ── Margin annotation layer state (Apple Pencil in default reading view) ──
   // iPadOS: Margin mode maps to PKCanvasView glass overlay with pencilOnly input policy
@@ -3782,36 +3800,20 @@ export function BibleReader() {
           onCanvasBackgroundChange={handleWsCanvasBackground}
         />
       )}
-      {studyMode && studyModeVariant === "margin" && isIPad && (
-        <IPadStudyToolbar
-          penColor={inkPenColor}
-          onPenColorChange={setInkPenColor}
-          penSize={inkPenSize}
-          onPenSizeChange={setInkPenSize}
-          penGlow={inkPenGlow}
-          onPenGlowChange={handleInkPenGlowChange}
-          textSpacing={inkTextSpacing}
-          onTextSpacingChange={handleInkTextSpacingChange}
+      {/* ── Dual Toolbar System (iPad) ── */}
+      {/* iPadOS: Replace with native UIToolbar + UIPencilInteraction */}
+      <InkFilterDefs standalone />
+      <SqueezeRadialMenu />
+      {isInPaperCanvas && activeSessionConfig && isIPad && (
+        <StudioToolbar
           onUndo={handleInkUndo}
           onRedo={handleInkRedo}
-          onClear={handleInkClearRequest}
           canUndo={inkHistory.canUndo}
           canRedo={inkHistory.canRedo}
-          fingerDrawing={inkFingerDrawing}
-          onFingerDrawingChange={setInkFingerDrawing}
-          isDark={premiumDark || document.documentElement.classList.contains("dark")}
-          onOpenTrash={() => setInkTrashOpen(true)}
-          onOpenVoice={() => setVoiceOverlayActive(true)}
-          hasTrashItems={inkHistory.trashBin.length > 0}
-          textAlign={wsTextAlign}
-          onTextAlignChange={handleWsTextAlign}
-          marginWidth={wsMarginWidth}
-          onMarginWidthChange={handleWsMarginWidth}
-          canvasBackground={wsCanvasBackground}
-          onCanvasBackgroundChange={handleWsCanvasBackground}
-          hideSpacing={studyModeVariant === "margin"}
-          onShowGestureHelp={() => setGestureOverlayOpen(true)}
         />
+      )}
+      {pencilDetected && !isInPaperCanvas && isIPad && (
+        <GhostToolbar />
       )}
 
       {/* ── Canvas Creation Drawer (replaces CanvasSetupSheet) ── */}
