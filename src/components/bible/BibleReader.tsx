@@ -717,6 +717,7 @@ export function BibleReader() {
   // ── Bible Sight conversational drawer ──
   const bibleSightOpen = searchParams.get("sight") === "1";
   const setBibleSightOpen = useCallback((v: boolean) => setDrawerParam("sight", v), [setDrawerParam]);
+  const [bibleSightContext, setBibleSightContext] = useState<{ author: string; excerpt: string } | null>(null);
 
   // ── Commentary Library drawer ──
   const commentaryOpen = searchParams.get("commentary") === "1";

@@ -461,20 +461,33 @@ export function AutoEnrichLayer({
             </Button>
           </div>
 
-          {/* Secondary loading shimmer */}
+          {/* Secondary pass divider + loading shimmer */}
           {isLoadingMore && (
-            <div className="space-y-4 animate-pulse mt-4">
-              <div className="rounded-2xl border border-border/20 bg-muted/10 p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-20 bg-cyan-500/10 rounded-full" />
-                  <div className="h-3 w-24 bg-muted/30 rounded" />
+            <div className="mt-6 space-y-4">
+              {/* Olive-branch divider between passes */}
+              <div className="flex items-center gap-3 py-2">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent to-cyan-400/30" />
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/15">
+                  <Sparkles className="h-3 w-3 text-cyan-400 animate-pulse" />
+                  <span className="text-[0.6rem] font-semibold text-cyan-400 tracking-wide">
+                    Deeper insights arriving…
+                  </span>
                 </div>
-                <div className="h-3 w-full bg-muted/20 rounded" />
-                <div className="h-3 w-4/5 bg-muted/20 rounded" />
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent to-cyan-400/30" />
               </div>
-              <p className="text-center text-[0.65rem] text-muted-foreground italic">
-                Deeper insights loading…
-              </p>
+
+              {/* Cyan-tinted secondary skeletons */}
+              {[1, 2].map((i) => (
+                <div key={i} className="rounded-2xl border border-cyan-500/15 bg-cyan-500/5 p-4 space-y-2 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-20 bg-cyan-500/15 rounded-full" />
+                    <div className="h-3 w-24 bg-cyan-500/10 rounded" />
+                  </div>
+                  <div className="h-3 w-full bg-cyan-500/8 rounded" />
+                  <div className="h-3 w-4/5 bg-cyan-500/8 rounded" />
+                  <div className="h-3 w-3/5 bg-cyan-500/8 rounded" />
+                </div>
+              ))}
             </div>
           )}
         </div>
