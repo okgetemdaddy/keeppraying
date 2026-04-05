@@ -399,7 +399,8 @@ export function AutoEnrichLayer({
       {isLoading && <EnrichmentSkeleton />}
 
       {data && (
-        <div className="space-y-4">
+        <div className="@container">
+        <div className="grid grid-cols-1 @[480px]:grid-cols-2 gap-4">
           {/* Structural brackets + cards */}
           {data.cards.map((card, idx) => {
             const bunch = cardBunchMap.get(card.id);
