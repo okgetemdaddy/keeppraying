@@ -2656,23 +2656,25 @@ export function BibleReader() {
                 <PanelLeft className="h-4 w-4" />
               </Button>
 
-              {/* Study Mode toggle */}
-              <Button
-                variant={studyMode ? "default" : "ghost"}
-                size="sm"
-                onClick={() => {
-                  if (studyMode) {
-                    handleToggleStudyMode(false);
-                  } else {
-                    handleStudyModeEntry();
-                  }
-                  setStudyNavOpen(false);
-                }}
-                className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
-              >
-                <PixarLampIPadIcon className="!h-full !w-full" />
-              </Button>
+              {/* Study Mode toggle — iPad-only */}
+              {isIPad && (
+                <Button
+                  variant={studyMode ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    if (studyMode) {
+                      handleToggleStudyMode(false);
+                    } else {
+                      handleStudyModeEntry();
+                    }
+                    setStudyNavOpen(false);
+                  }}
+                  className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  title={studyMode ? "Exit Study Mode" : "iPad Study Mode"}
+                >
+                  <PixarLampIPadIcon className="!h-full !w-full" />
+                </Button>
+              )}
 
               {/* Export Canvas */}
               {studyMode && (
