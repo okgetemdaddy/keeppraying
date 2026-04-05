@@ -47,6 +47,18 @@ export function useSessionTelemetry(sessionId: string | null) {
   const flushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const verseViewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastVerseViewRef = useRef<string | null>(null);
+  const accessTokenRef = useRef<string | null>(null);
+
+  // Keep access token current for sendBeacon usage
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      accessTokenRef.current = data.session?.access_token ?? null;
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      accessTokenRef.current = session?.access_token ?? null;
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const flush = useCallback(async () => {
     if (bufferRef.current.length === 0) return;
@@ -71,6 +83,68 @@ export function useSessionTelemetry(sessionId: string | null) {
       flush();
     };
   }, [sessionId, flush]);
+
+  // Ghost session handling — flush via sendBeacon on tab close / navigate away
+  useEffect(() => {
+    if (!sessionId || !user?.id) return;
+
+    const beaconFlush = () => {
+      const batch = [...bufferRef.current];
+      bufferRef.current = [];
+
+      // Append a session_end event
+      batch.push({
+        session_id: sessionId,
+        user_id: user.id,
+        event_type: "session_end" as SessionEventType,
+        payload: { reason: "browser_closed" },
+      });
+
+      const token = accessTokenRef.current;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!token || !anonKey) return;
+
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/session_events`;
+      const blob = new Blob([JSON.stringify(batch)], { type: "application/json" });
+
+      // sendBeacon cannot set custom headers, so we encode them in the URL isn't possible.
+      // Instead we use fetch with keepalive which supports headers and works during unload.
+      try {
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey,
+            Authorization: `Bearer ${token}`,
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify(batch),
+          keepalive: true,
+        });
+      } catch {
+        // Last resort: sendBeacon (no auth headers, will likely 401 but worth trying)
+        navigator.sendBeacon(url, blob);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        beaconFlush();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      beaconFlush();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [sessionId, user?.id]);
 
   const logEvent = useCallback(
     (eventType: SessionEventType, payload: Record<string, unknown> = {}) => {
