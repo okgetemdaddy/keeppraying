@@ -125,6 +125,7 @@ import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip"
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { useBookAnnotations } from "@/hooks/useBookAnnotations";
 import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
