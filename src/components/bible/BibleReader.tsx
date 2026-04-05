@@ -1445,6 +1445,10 @@ export function BibleReader() {
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
+  // ── Book-wide annotations for thumbnail drawer ──
+  const { chapterAnnotations: bookAnnotations, invalidateChapter } = useBookAnnotations(bookUsfm);
+  const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Load saved SVG text layout from annotations (for session resume) ──
   useEffect(() => {
     if (!chapterAnnotations || !activeSessionId) return;
