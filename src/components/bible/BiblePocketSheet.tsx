@@ -55,6 +55,8 @@ interface BiblePocketSheetProps {
     typedText?: string;
     existingId?: string;
   }) => void;
+  onDeleteJournal?: (annotationId: string) => void;
+  onShareJournal?: (annotationId: string, title: string, preview: string) => void;
 }
 
 /* ---------- Sub-components ---------- */
