@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const LENSES = [
@@ -42,8 +42,8 @@ function pickLensPair(excludeLens?: string): [string, string] {
   return [shuffled[0], shuffled[1]];
 }
 
-function buildSystemPrompt(primaryLens: string, secondaryLens: string): string {
-  return `You are a thoughtful believer who has walked with God for years but still gets surprised by Scripture every day. You are not a seminary professor lecturing — you are a fellow traveler writing in your own journal. You love Jesus deeply. You believe the Bible is the inspired, sufficient Word of God. Your theology is Protestant evangelical, Trinitarian, anchored in grace.
+function buildSystemPrompt(primaryLens: string, secondaryLens: string, scholarlyContext?: string): string {
+  let prompt = `You are a thoughtful believer who has walked with God for years but still gets surprised by Scripture every day. You are not a seminary professor lecturing — you are a fellow traveler writing in your own journal. You love Jesus deeply. You believe the Bible is the inspired, sufficient Word of God. Your theology is Protestant evangelical, Trinitarian, anchored in grace.
 
 VOICE & TONE:
 - Write in first person ("I noticed...", "This hit me today because...", "I keep coming back to...")
@@ -71,7 +71,17 @@ DOCTRINAL GUARDRAILS:
 - The Holy Spirit is active and personal
 - Human wisdom is limited; God's wisdom is infinite
 - Suffering has purpose even when we cannot see it
-- Every passage ultimately points to Christ
+- Every passage ultimately points to Christ`;
+
+  if (scholarlyContext) {
+    prompt += `
+
+SCHOLARLY CONTEXT — The following is from trusted biblical scholarship. Weave insights from this material naturally into your journal reflection. Don't cite it academically — let it inform your personal discovery:
+
+${scholarlyContext}`;
+  }
+
+  prompt += `
 
 CRITICAL: Your response must be valid JSON with this exact structure:
 {
@@ -81,6 +91,68 @@ CRITICAL: Your response must be valid JSON with this exact structure:
 }
 
 The journal_text should be the beautifully written reflection. The tags should capture the key theological themes. The summary_line should be a brief, evocative one-liner.`;
+
+  return prompt;
+}
+
+async function callModel(
+  systemPrompt: string,
+  userPrompt: string,
+  model: string,
+  apiUrl: string,
+  apiKey: string,
+): Promise<{ journalText: string; tags: string[]; summaryLine: string; modelUsed: string }> {
+  const body: any = {
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: 0.85,
+    max_tokens: 3000,
+  };
+
+  // Use json mode for Lovable AI gateway
+  if (apiUrl.includes("lovable.dev")) {
+    body.response_format = { type: "json_object" };
+    body.temperature = 0.8;
+  }
+
+  // Add reasoning for Grok
+  if (model.startsWith("grok")) {
+    body.reasoning = { effort: "medium" };
+  }
+
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error(`${model} error:`, errText);
+    throw new Error(`${model} returned ${res.status}`);
+  }
+
+  const data = await res.json();
+  const rawContent = data.choices?.[0]?.message?.content ?? "";
+
+  try {
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const parsed = JSON.parse(jsonMatch?.[0] ?? rawContent);
+    return {
+      journalText: parsed.journal_text || rawContent,
+      tags: parsed.tags || [],
+      summaryLine: parsed.summary_line || "",
+      modelUsed: model,
+    };
+  } catch {
+    return { journalText: rawContent, tags: [], summaryLine: "", modelUsed: model };
+  }
 }
 
 Deno.serve(async (req) => {
@@ -101,15 +173,11 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify JWT
     const token = authHeader.replace("Bearer ", "");
     const {
       data: { user },
       error: userError,
-    } = await createClient(
-      supabaseUrl,
-      Deno.env.get("SUPABASE_ANON_KEY")!
-    ).auth.getUser(token);
+    } = await createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!).auth.getUser(token);
 
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
@@ -127,6 +195,8 @@ Deno.serve(async (req) => {
       model_hint = "default",
       parent_entry_id,
       exclude_lens,
+      scholarly_context,
+      dual = false,
     } = body;
 
     if (!book_usfm || !chapter_number || !verses?.length) {
@@ -136,158 +206,143 @@ Deno.serve(async (req) => {
       );
     }
 
-    const [primaryLens, secondaryLens] = pickLensPair(exclude_lens);
-    const systemPrompt = buildSystemPrompt(primaryLens, secondaryLens);
-
-    // Build chapter text
     const chapterText = verses
       .map((v: { number: number; text: string }) => `${v.number}. ${v.text}`)
       .join("\n");
-
     const userPrompt = `Please write a journal entry for ${chapter_title || `${book_usfm} ${chapter_number}`}. Here is the full chapter text:\n\n${chapterText}`;
 
-    let journalText: string;
-    let tags: string[] = [];
-    let summaryLine = "";
-    let modelUsed: string;
+    const grokKey = Deno.env.get("GROK_API_KEY");
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
-    if (model_hint === "refresh") {
-      // Use Grok for refresh
-      const grokKey = Deno.env.get("GROK_API_KEY");
-      if (!grokKey) {
-        return new Response(
-          JSON.stringify({ error: "Grok API key not configured" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    if (dual && grokKey && lovableKey) {
+      // ── DUAL-MODEL: Both write journals in parallel ──
+      const [grokLens1, grokLens2] = pickLensPair(exclude_lens);
+      const [geminiLens1, geminiLens2] = pickLensPair(grokLens1);
+
+      // Fetch IVP context for Grok
+      let ivpContext: string | undefined;
+      const { data: tocRows } = await supabase
+        .from("library_toc")
+        .select("section_title, content_summary")
+        .eq("bible_book_usfm", book_usfm)
+        .lte("chapter_start", chapter_number)
+        .gte("chapter_end", chapter_number)
+        .limit(3);
+
+      if (tocRows?.length) {
+        ivpContext = tocRows
+          .map((r: any) => `### ${r.section_title || ""}\n${r.content_summary || ""}`)
+          .join("\n\n");
       }
 
-      const grokRes = await fetch("https://api.x.ai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${grokKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "grok-4-0709",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.85,
-          max_tokens: 3000,
-        }),
-      });
+      const grokPrompt = buildSystemPrompt(grokLens1, grokLens2, ivpContext);
+      const geminiPrompt = buildSystemPrompt(geminiLens1, geminiLens2, scholarly_context);
 
-      if (!grokRes.ok) {
-        const errText = await grokRes.text();
-        console.error("Grok API error:", errText);
+      const [grokResult, geminiResult] = await Promise.allSettled([
+        callModel(grokPrompt, userPrompt, "grok-4-0709", "https://api.x.ai/v1/chat/completions", grokKey),
+        callModel(geminiPrompt, userPrompt, "google/gemini-2.5-pro", "https://ai.gateway.lovable.dev/v1/chat/completions", lovableKey),
+      ]);
+
+      const results: any[] = [];
+
+      for (const [idx, settled] of [grokResult, geminiResult].entries()) {
+        if (settled.status === "fulfilled") {
+          const r = settled.value;
+          const lens = idx === 0 ? grokLens1 : geminiLens1;
+
+          const { data: entry } = await supabase
+            .from("bible_sight_entries")
+            .insert({
+              user_id: user.id,
+              book_usfm,
+              chapter_number,
+              version_id: body.version_id || 1,
+              content: r.journalText,
+              lens_used: lens,
+              model_used: r.modelUsed,
+              tags: r.tags,
+              summary_line: r.summaryLine,
+              is_refresh: false,
+              parent_entry_id: parent_entry_id || null,
+            })
+            .select("id")
+            .single();
+
+          results.push({
+            journal_text: r.journalText,
+            lens_used: lens,
+            model_used: r.modelUsed,
+            tags: r.tags,
+            summary_line: r.summaryLine,
+            entry_id: entry?.id || null,
+          });
+        } else {
+          console.error(`Model ${idx} failed:`, settled.reason);
+        }
+      }
+
+      if (results.length === 0) {
         return new Response(
-          JSON.stringify({ error: "Bible Sight refresh temporarily unavailable" }),
+          JSON.stringify({ error: "Both models failed to generate journal entries" }),
           { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const grokData = await grokRes.json();
-      const rawContent = grokData.choices?.[0]?.message?.content ?? "";
-      modelUsed = "grok-4-0709";
-
-      try {
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-        const parsed = JSON.parse(jsonMatch?.[0] ?? rawContent);
-        journalText = parsed.journal_text || rawContent;
-        tags = parsed.tags || [];
-        summaryLine = parsed.summary_line || "";
-      } catch {
-        journalText = rawContent;
-      }
-    } else {
-      // Use Lovable AI Gateway (Gemini)
-      const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-      if (!lovableKey) {
-        return new Response(
-          JSON.stringify({ error: "AI gateway not configured" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.8,
-          max_tokens: 3000,
-          response_format: { type: "json_object" },
+      // Return first result as primary, include all in entries array
+      return new Response(
+        JSON.stringify({
+          ...results[0],
+          entries: results,
         }),
-      });
-
-      if (!aiRes.ok) {
-        const errText = await aiRes.text();
-        console.error("Lovable AI error:", errText);
-        return new Response(
-          JSON.stringify({ error: "Bible Sight temporarily unavailable" }),
-          { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const aiData = await aiRes.json();
-      const rawContent = aiData.choices?.[0]?.message?.content ?? "";
-      modelUsed = "gemini-2.5-pro";
-
-      try {
-        const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-        const parsed = JSON.parse(jsonMatch?.[0] ?? rawContent);
-        journalText = parsed.journal_text || rawContent;
-        tags = parsed.tags || [];
-        summaryLine = parsed.summary_line || "";
-      } catch {
-        journalText = rawContent;
-      }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
     }
 
-    // Save to bible_sight_entries
-    const { data: entry, error: insertError } = await supabase
+    // ── SINGLE-MODEL (original behavior) ──
+    const [primaryLens, secondaryLens] = pickLensPair(exclude_lens);
+    const systemPrompt = buildSystemPrompt(primaryLens, secondaryLens, scholarly_context);
+
+    let result: { journalText: string; tags: string[]; summaryLine: string; modelUsed: string };
+
+    if (model_hint === "refresh" && grokKey) {
+      result = await callModel(systemPrompt, userPrompt, "grok-4-0709", "https://api.x.ai/v1/chat/completions", grokKey);
+    } else if (lovableKey) {
+      result = await callModel(systemPrompt, userPrompt, "google/gemini-2.5-pro", "https://ai.gateway.lovable.dev/v1/chat/completions", lovableKey);
+    } else {
+      return new Response(
+        JSON.stringify({ error: "No AI keys configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: entry } = await supabase
       .from("bible_sight_entries")
       .insert({
         user_id: user.id,
         book_usfm,
         chapter_number,
         version_id: body.version_id || 1,
-        content: journalText,
+        content: result.journalText,
         lens_used: primaryLens,
-        model_used: modelUsed,
-        tags,
-        summary_line: summaryLine,
+        model_used: result.modelUsed,
+        tags: result.tags,
+        summary_line: result.summaryLine,
         is_refresh: model_hint === "refresh",
         parent_entry_id: parent_entry_id || null,
       })
       .select("id")
       .single();
 
-    if (insertError) {
-      console.error("DB insert error:", insertError);
-    }
-
     return new Response(
       JSON.stringify({
-        journal_text: journalText,
+        journal_text: result.journalText,
         lens_used: primaryLens,
-        model_used: modelUsed,
-        tags,
-        summary_line: summaryLine,
+        model_used: result.modelUsed,
+        tags: result.tags,
+        summary_line: result.summaryLine,
         entry_id: entry?.id || null,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (err) {
     console.error("generate-journal error:", err);
