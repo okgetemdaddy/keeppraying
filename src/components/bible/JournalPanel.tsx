@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { HandwritingEngine, type StrokeData, type HandwritingEngineHandle } from "@/components/bible/HandwritingEngine";
 import type { Annotation } from "@/hooks/useAnnotations";
 import { useJournalGeneration } from "@/hooks/useJournalGeneration";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 interface Verse {
   number: number;
