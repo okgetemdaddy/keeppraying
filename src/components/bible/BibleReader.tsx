@@ -1591,8 +1591,9 @@ export function BibleReader() {
 
   // ── Disable zoom when pencil detected in default reading mode ──
   // iPadOS: Zoom disabled via UIScrollView.minimumZoomScale = 1, maximumZoomScale = 1
+  const isInCanvasStudyMode = studyMode && studyModeVariant === "margin";
   useEffect(() => {
-    if (!pencilDetected || isInPaperCanvas) return;
+    if (!pencilDetected || isInCanvasStudyMode) return;
     const el = document.documentElement;
     const prev = el.style.touchAction;
     el.style.touchAction = "pan-y";
@@ -1606,7 +1607,7 @@ export function BibleReader() {
       el.style.touchAction = prev;
       document.removeEventListener("touchstart", preventDoubleTap);
     };
-  }, [pencilDetected, isInPaperCanvas]);
+  }, [pencilDetected, isInCanvasStudyMode]);
 
   const handleVoiceTranscript = useCallback(
     (transcript: string, linkedVerse: number | null) => {
