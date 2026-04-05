@@ -21,6 +21,10 @@ interface AutoEnrichLayerProps {
   isLoading: boolean;
   active: boolean;
   verses: { number: number; text: string }[];
+  /** Scripture context for CrossBunchItem construction */
+  versionId: number;
+  bookUsfm: string;
+  chapterNumber: number;
   onAdoptHighlight: (verseNumber: number, color: string) => void;
   onAdoptNote: (verseNumber: number, content: string) => void;
   onAdoptBunch: (bunchName: string, items: CrossBunchItem[]) => void;
