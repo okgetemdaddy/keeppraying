@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
+import { USFM_BOOK_NAMES } from "@/lib/usfmBooks";
+import VerseLink from "@/components/VerseLink";
 import type {
   EnrichmentPayload,
   EnrichmentBunch,
@@ -77,6 +79,8 @@ function ExegesisCard({
   onKeepHighlights,
   kept,
   isDark,
+  bookUsfm,
+  chapterNumber,
 }: {
   card: EnrichmentCard;
   bunch?: EnrichmentBunch;
@@ -86,6 +90,8 @@ function ExegesisCard({
   onKeepHighlights: () => void;
   kept: boolean;
   isDark: boolean;
+  bookUsfm: string;
+  chapterNumber: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isMobile = useIsMobile();
@@ -95,9 +101,12 @@ function ExegesisCard({
     setExpanded(!isMobile);
   }, [isMobile]);
 
-  const anchorLabel = bunch
-    ? `vv. ${bunch.verseRange[0]}–${bunch.verseRange[1]}`
-    : `vv. ${card.anchors[0]}–${card.anchors[1]}`;
+  const bookName = USFM_BOOK_NAMES[bookUsfm] || bookUsfm;
+  const anchorStart = bunch ? bunch.verseRange[0] : card.anchors[0];
+  const anchorEnd = bunch ? bunch.verseRange[1] : card.anchors[1];
+  const anchorRef = anchorStart === anchorEnd
+    ? `${bookName} ${chapterNumber}:${anchorStart}`
+    : `${bookName} ${chapterNumber}:${anchorStart}-${anchorEnd}`;
 
   const bunchTypeColors: Record<string, string> = {
     thematic: "bg-amber-500/20 text-amber-300",
@@ -130,7 +139,7 @@ function ExegesisCard({
               </span>
             )}
             <span className="text-[0.65rem] text-muted-foreground font-mono">
-              {anchorLabel}
+              <VerseLink reference={anchorRef} className="text-[0.65rem]" />
             </span>
           </div>
           <h4 className="text-sm font-semibold text-foreground mt-1 leading-snug">
@@ -192,12 +201,7 @@ function ExegesisCard({
             {card.citations.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border/30">
                 {card.citations.map((cite, i) => (
-                  <span
-                    key={i}
-                    className="text-[0.6rem] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 transition-colors"
-                  >
-                    {cite}
-                  </span>
+                  <VerseLink key={i} reference={cite} className="text-[0.6rem]" />
                 ))}
               </div>
             )}
@@ -209,7 +213,7 @@ function ExegesisCard({
                   <div key={i} className="flex items-center gap-1.5 text-[0.6rem] text-muted-foreground">
                     <span className="font-mono">v.{ref.from}</span>
                     <span className="text-primary/60">→</span>
-                    <span className="text-primary/80">{ref.to}</span>
+                    <VerseLink reference={ref.to} className="text-[0.6rem]" />
                     <span className="italic">({ref.type})</span>
                   </div>
                 ))}
@@ -434,6 +438,8 @@ export function AutoEnrichLayer({
                   onKeepHighlights={() => handleKeepHighlights(card)}
                   kept={isKept}
                   isDark={isDark}
+                  bookUsfm={bookUsfm}
+                  chapterNumber={chapterNumber}
                 />
               </motion.div>
             );
