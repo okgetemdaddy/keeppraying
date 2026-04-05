@@ -37,6 +37,7 @@ export function KeepReadingShell() {
         <Route path="/welcome" element={<KeepReadingLanding />} />
         <Route path="/auth" element={<KeepReadingAuth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/help" element={<Help />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

@@ -216,6 +216,7 @@ function AppShell() {
         <Route path="/bible" element={<Bible />} />
         <Route path="/classical" element={<Classical />} />
         <Route path="/canvas" element={<BibleCanvas />} />
+        <Route path="/help" element={<Help />} />
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="/shared-prayer/:token" element={<SharedPrayerLanding />} />
         <Route path="/reset-password" element={<ResetPassword />} />

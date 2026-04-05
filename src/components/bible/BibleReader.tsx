@@ -4005,6 +4005,7 @@ export function BibleReader() {
           bookTitle={currentBook?.title}
           chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
           onNavigate={(idx) => setChapterIdx(idx)}
+          chapterAnnotations={bookAnnotations}
         />
       )}
 
