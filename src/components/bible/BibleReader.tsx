@@ -3368,7 +3368,7 @@ export function BibleReader() {
                             toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
                           } else {
                             mutations.addHighlight.mutate({ verseNumber, color: lastColor });
-                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'margin_pencil_underline' });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'margin_mode' });
                             toast.success(`Highlighted verse ${verseNumber}`);
                           }
                         }
