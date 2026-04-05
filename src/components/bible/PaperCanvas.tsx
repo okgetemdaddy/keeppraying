@@ -353,6 +353,25 @@ export function PaperCanvas({
             {children}
           </div>
 
+          {/* Phase 1: SVG text layer — rendered alongside DOM text for visual validation */}
+          {svgTextLayer && textBoxConfig && (
+            <svg
+              style={{
+                position: "absolute",
+                left: textBoxConfig.x,
+                top: textBoxConfig.y,
+                width: textBoxConfig.width,
+                height: textBoxConfig.height,
+                pointerEvents: "none",
+                zIndex: 2,
+                overflow: "visible",
+              }}
+              viewBox={`0 0 ${textBoxConfig.width} ${textBoxConfig.height}`}
+              xmlns="http://www.w3.org/2000/svg"
+              dangerouslySetInnerHTML={{ __html: svgTextLayer }}
+            />
+          )}
+
           {overlay && (
             <div
               style={{
