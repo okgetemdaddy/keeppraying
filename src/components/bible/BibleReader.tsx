@@ -1834,6 +1834,15 @@ export function BibleReader() {
 
   const mutations = useBibleMutations(scriptureRef);
 
+  // ── Deep Study (AutoEnrich) ──
+  const chapterNumberParsed = currentChapter ? parseInt(currentChapter.id, 10) : undefined;
+  const enrichment = useChapterEnrichment(
+    bookUsfm,
+    chapterNumberParsed,
+    versionId,
+    verses.length > 0 ? verses.map(v => ({ number: v.number, text: v.text })) : undefined
+  );
+
   // ── Bunch color map: bunch_id → index for stable coloring ──
   const bunchColorMap = useMemo(() => {
     const map = new Map<string, number>();
