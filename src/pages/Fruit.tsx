@@ -72,7 +72,7 @@ export default function Fruit() {
 }
 
 /* ── WSJ-style markdown component overrides ── */
-const wsjSerif = "'EB Garamond', 'Georgia', 'Times New Roman', serif";
+const wsjSerif = "'Inter', 'Helvetica Neue', 'Arial', sans-serif";
 
 const wsjComponents: Components = {
   h1: ({ children }) => (
