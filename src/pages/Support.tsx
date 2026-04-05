@@ -482,6 +482,29 @@ export default function Support() {
             </CardContent>
           </Card>
         </motion.section>
+
+        {/* ── Study Sessions Explainer ── */}
+        <motion.section
+          id="sessions"
+          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          className="scroll-mt-24"
+        >
+          <Card className="border-border/60">
+            <CardContent className="p-6 md:p-10 space-y-4">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground font-serif">Study Sessions</h2>
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
+                KeepRead.ing automatically tracks your Bible study sessions — every highlight,
+                note, and annotation is grouped into a timeline you can review later.
+                Sessions help you see the progression of your study and revisit past insights.
+              </p>
+              <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
+                In iPad Study Mode, sessions are focused on specific passages you choose.
+                In reading mode, sessions start automatically and track your journey across chapters.
+              </p>
+              {/* TODO: Expand with screenshots, video walkthrough, and FAQ */}
+            </CardContent>
+          </Card>
+        </motion.section>
       </div>
     </div>
   );
