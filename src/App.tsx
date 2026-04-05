@@ -33,6 +33,7 @@ import InviteLanding from "./pages/InviteLanding";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
 import Bible from "./pages/Bible";
+import Fruit from "./pages/Fruit";
 import BibleCanvas from "./pages/BibleCanvas";
 import SharedPrayerLanding from "./pages/SharedPrayerLanding";
 import Profile from "./pages/Profile";
@@ -214,6 +215,7 @@ function AppShell() {
         <Route path="/support" element={<Support />} />
         <Route path="/breathe" element={<Breathe />} />
         <Route path="/bible" element={<Bible />} />
+        <Route path="/Fruit" element={<Fruit />} />
         <Route path="/classical" element={<Classical />} />
         <Route path="/canvas" element={<BibleCanvas />} />
         <Route path="/help" element={<Help />} />

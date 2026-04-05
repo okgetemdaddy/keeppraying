@@ -1351,6 +1351,33 @@ export type Database = {
         }
         Relationships: []
       }
+      fruit_reports: {
+        Row: {
+          chat_log: Json | null
+          created_at: string
+          id: string
+          model_used: string
+          report_content: string
+          user_id: string
+        }
+        Insert: {
+          chat_log?: Json | null
+          created_at?: string
+          id?: string
+          model_used: string
+          report_content: string
+          user_id: string
+        }
+        Update: {
+          chat_log?: Json | null
+          created_at?: string
+          id?: string
+          model_used?: string
+          report_content?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invite_tokens: {
         Row: {
           created_at: string
