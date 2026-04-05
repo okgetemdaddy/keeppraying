@@ -139,7 +139,7 @@ function ExegesisCard({
               </span>
             )}
             <span className="text-[0.65rem] text-muted-foreground font-mono">
-              {anchorLabel}
+              <VerseLink reference={anchorRef} className="text-[0.65rem]" />
             </span>
           </div>
           <h4 className="text-sm font-semibold text-foreground mt-1 leading-snug">
