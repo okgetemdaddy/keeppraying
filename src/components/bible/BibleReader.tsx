@@ -3311,56 +3311,157 @@ export function BibleReader() {
                 style={{ fontSize: `${textSize}px` }}
                 className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
               >
-                <ZoomWrapper
-                  zoom={1}
-                  textSpacing={1.6}
+                {/* iPadOS: Scroll container maps to UIScrollView with touch-action: pan-y for pencil coexistence */}
+                <div
+                  ref={readingScrollRef}
                   className="relative"
-                  textAlign="left"
-                  marginWidth={0}
-                  canvasBackground="none"
-                  studyMode={false}
+                  style={{
+                    touchAction: pencilDetected ? "pan-y" : undefined,
+                    ...(pencilDetected && marginGrid === "dots" ? {
+                      backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    } : pencilDetected && marginGrid === "lines" ? {
+                      backgroundImage: `linear-gradient(transparent ${textSize * 1.9 - 1}px, rgba(255,255,255,0.04) ${textSize * 1.9}px)`,
+                      backgroundSize: `100% ${textSize * 1.9}px`,
+                      // The backgroundPosition offset aligns ruled lines to the font's baseline.
+                      // 1.2em approximates the ascender height of EB Garamond at standard line-height.
+                      // If the font changes, this offset must be recalibrated.
+                      // iPadOS: Baseline alignment is automatic via NSParagraphStyle.baselineOffset
+                      backgroundPosition: "0 calc(1.2em - 2px)",
+                    } : {}),
+                  }}
                 >
-                  <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                    {verses.map((v) => {
-                      const vNotes = noteMap.get(v.number) ?? [];
-                      return (
-                        <React.Fragment key={v.number}>
-                          <EnrichedVerse
-                            verse={v}
-                            highlights={highlightMap.get(v.number) ?? []}
-                            notes={vNotes}
-                            bookmark={bookmarkMap.get(v.number)}
-                            bunchItems={bunchMap.get(v.number) ?? []}
-                            bunchColorMap={bunchColorMap}
-                            bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                            mode={mode}
-                            isSelected={selectedVerses.has(v.number)}
-                            hideBunches={hideBunchRefs}
-                            onTapSelect={handleTapSelect}
-                            studyMode={false}
-                            verseAnnotation={annotationMap.get(v.number) ?? null}
-                            onAnnotationSave={handleAnnotationSave}
-                            verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                            highlightStyle={highlightStyle}
-                            previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
-                            onLongPressVerseNumber={user ? handleCrossRef : undefined}
-                          />
-                          <AnimatePresence>
-                            {noteInputVerse === v.number && (
-                              <NoteInputPanel
-                                verseNumber={v.number}
-                                existingContent={vNotes[0]?.note_content}
-                                existingId={vNotes[0]?.id}
-                                onSave={handleSaveNote}
-                                onCancel={() => setNoteInputVerse(null)}
+                  {/* Margin annotation layer — Apple Pencil only */}
+                  {pencilDetected && !isInPaperCanvas && (
+                    <MarginAnnotationLayer
+                      active={pencilDetected}
+                      strokes={marginStrokes}
+                      onStrokeComplete={handleMarginStrokeComplete}
+                      onUnderlineGesture={(verseNumber, underlinedText) => {
+                        if (!user && !isGuestSession) {
+                          toast("Unlock this feature ✦", {
+                            description: "Highlighting lets you mark and revisit meaningful passages. Create a free account to start.",
+                          });
+                          return;
+                        }
+                        if (!user) markGuestChange();
+                        const lastColor = (() => {
+                          try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
+                        })();
+                        const verseData = verses.find((v) => v.number === verseNumber);
+                        if (verseData) {
+                          const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
+                          const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
+                          const textStart = normalizedVerse.indexOf(normalizedUnderline);
+                          if (textStart >= 0) {
+                            mutations.addHighlight.mutate({
+                              verseNumber,
+                              color: lastColor,
+                              start: textStart,
+                              end: textStart + normalizedUnderline.length,
+                            });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, text_snippet: normalizedUnderline?.slice(0, 60), source: 'margin_pencil_underline' });
+                            toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
+                          } else {
+                            mutations.addHighlight.mutate({ verseNumber, color: lastColor });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'margin_pencil_underline' });
+                            toast.success(`Highlighted verse ${verseNumber}`);
+                          }
+                        }
+                      }}
+                      onCircleSelect={(verseNumbers, hullCenter) => {
+                        if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                          setCrossSelections((prev) => {
+                            const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
+                            const newSelections = verseNumbers
+                              .filter((v) => !existing.has(`${bookUsfm}.${currentChapter!.id}.${v}`))
+                              .map((v) => ({
+                                versionId: versionId!,
+                                bookUsfm: bookUsfm!,
+                                bookTitle: currentBook!.title,
+                                chapterNumber: currentChapter!.id,
+                                verseNumber: v,
+                              }));
+                            return [...prev, ...newSelections];
+                          });
+                          toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""}`);
+                        }
+                      }}
+                      onWordCircle={(words, verseNum, anchor) => {
+                        const verseData = verses.find((v) => v.number === verseNum);
+                        if (verseData) {
+                          setReferenceBloom({ x: anchor.x, y: anchor.y, word: words, verseNumber: verseNum });
+                        }
+                      }}
+                      onXGesture={handleMarginXGesture}
+                      penColor={inkPenColor}
+                      penSize={inkPenSize}
+                      scrollContainerRef={readingScrollRef}
+                    />
+                  )}
+
+                  <ZoomWrapper
+                    zoom={1}
+                    textSpacing={1.6}
+                    className="relative"
+                    textAlign="left"
+                    marginWidth={0}
+                    canvasBackground="none"
+                    studyMode={false}
+                  >
+                    {/* Dynamic layout shift for margin writing space */}
+                    <div className={`transition-all duration-300 ease-out ${
+                      pencilDetected
+                        ? marginLayout === "left"
+                          ? "max-w-prose ml-6 md:ml-12 lg:ml-16 mr-auto px-4 pr-8"
+                          : marginLayout === "right"
+                            ? "max-w-prose mr-6 md:mr-12 lg:mr-16 ml-auto px-4 pl-8"
+                            : "max-w-prose mx-auto px-4"
+                        : ""
+                    }`}>
+                      <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                        {verses.map((v) => {
+                          const vNotes = noteMap.get(v.number) ?? [];
+                          return (
+                            <React.Fragment key={v.number}>
+                              <EnrichedVerse
+                                verse={v}
+                                highlights={highlightMap.get(v.number) ?? []}
+                                notes={vNotes}
+                                bookmark={bookmarkMap.get(v.number)}
+                                bunchItems={bunchMap.get(v.number) ?? []}
+                                bunchColorMap={bunchColorMap}
+                                bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                                mode={mode}
+                                isSelected={selectedVerses.has(v.number)}
+                                hideBunches={hideBunchRefs}
+                                onTapSelect={handleTapSelect}
+                                studyMode={false}
+                                verseAnnotation={annotationMap.get(v.number) ?? null}
+                                onAnnotationSave={handleAnnotationSave}
+                                verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                                highlightStyle={highlightStyle}
+                                previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                                onLongPressVerseNumber={user ? handleCrossRef : undefined}
                               />
-                            )}
-                          </AnimatePresence>
-                        </React.Fragment>
-                      );
-                    })}
-                  </section>
-                </ZoomWrapper>
+                              <AnimatePresence>
+                                {noteInputVerse === v.number && (
+                                  <NoteInputPanel
+                                    verseNumber={v.number}
+                                    existingContent={vNotes[0]?.note_content}
+                                    existingId={vNotes[0]?.id}
+                                    onSave={handleSaveNote}
+                                    onCancel={() => setNoteInputVerse(null)}
+                                  />
+                                )}
+                              </AnimatePresence>
+                            </React.Fragment>
+                          );
+                        })}
+                      </section>
+                    </div>
+                  </ZoomWrapper>
+                </div>
               </motion.div>
             ) : !versionId ? (
               <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
