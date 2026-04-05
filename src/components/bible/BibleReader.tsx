@@ -141,6 +141,8 @@ import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
 import { MarginAnnotationLayer, type MarginInkStroke } from "@/components/bible/MarginAnnotationLayer";
+import { AutoEnrichLayer } from "@/components/bible/AutoEnrichLayer";
+import { useChapterEnrichment } from "@/hooks/useChapterEnrichment";
 import { layoutBibleText } from "@/lib/svgTextLayout";
 
 type ReadingMode = "verse" | "paragraph";
