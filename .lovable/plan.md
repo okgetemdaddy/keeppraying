@@ -1,54 +1,23 @@
 
 
-## Fix: Make Bible Sight Accessible From the Bible Pocket (All Devices)
+## Auto-VerseLink in Journal Entries
 
-### The Problem
+### What Changes
 
-Right now, Bible Sight journal generation is **only reachable** through the JournalPanel, which requires:
-1. Being on an iPad (study mode is iPad-gated)
-2. Entering Study Mode
-3. Switching to "journal" variant
-4. Opening the journal panel
+When displaying journal entry text in `JournalPanel.tsx` (and `BiblePocketSheet.tsx`), any scripture reference (e.g. "John 3:16", "Psalm 23:1-4") found in the text is automatically rendered as an interactive `<VerseLink>` component — giving users hover summaries on desktop and bottom-sheet summaries on mobile.
 
-Additionally, the `chapterVerses` and `versionId` props are **never passed** to `JournalPanel` from `BibleReader.tsx`, so even if you reach the panel, the "✦ Bible Sight" button is hidden (it checks `chapterVerses?.length`).
+This applies to:
+- The **preview text** shown on entry cards in the "Previous Entries" list (line 286-288)
+- The **"refresh & update"** generated entries displayed in the pocket
 
-### The Fix (2 changes)
+The existing `renderWithVerseLinks()` utility from `src/lib/renderWithVerseLinks.tsx` already does exactly this — it regex-matches verse references and wraps them in `<VerseLink>`. We just need to use it instead of raw text rendering.
 
-**1. Wire missing props in `BibleReader.tsx`** (line ~3760)
-
-Pass `chapterVerses` and `versionId` to the existing `<JournalPanel>`:
-
-```tsx
-<JournalPanel
-  ...existing props...
-  chapterVerses={verses.map(v => ({ number: v.number, text: v.text }))}
-  versionId={versionId}
-/>
-```
-
-**2. Add Bible Sight entry point to the Bible Pocket (all devices)**
-
-In `BiblePocketSheet.tsx`, add a Bible Sight generation button to the **Journal tab** so users on any device (desktop, mobile, iPad) can generate entries without needing study mode. This mirrors the same `useJournalGeneration` hook call already in JournalPanel.
-
-The Journal tab in Bible Pocket will show:
-- Existing journal entries list (already there)
-- A `✦ Bible Sight` button at the top when the user has no entries for this chapter, or a muted button at the bottom otherwise
-- Generated text opens the JournalPanel with the content pre-filled
-
-This requires passing `chapterVerses`, `versionId`, `bookUsfm`, and `chapterId` props down to `BiblePocketSheet` from `BibleReader`.
-
-### Files Modified
+### Changes
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | Pass `chapterVerses`, `versionId`, `bookUsfm`, `chapterId` to both `JournalPanel` and `BiblePocketSheet` |
-| `src/components/bible/BiblePocketSheet.tsx` | Accept new props, add Bible Sight button to Journal tab, wire `useJournalGeneration` hook |
+| `src/components/bible/JournalPanel.tsx` | Import `renderWithVerseLinks`, replace `{(entry as any).typed_text}` plain text rendering on line 287 with `renderWithVerseLinks((entry as any).typed_text)` |
+| `src/components/bible/BiblePocketSheet.tsx` | Same treatment for any journal entry text previews rendered in the Journal and Search tabs |
 
-### How to Access (After Fix)
-
-1. Open any chapter (e.g., Ruth 1)
-2. Tap the **Bible Pocket** icon (panel-right icon in toolbar, works on all devices)
-3. Switch to the **Journal** tab
-4. Tap **✦ Bible Sight** — generates a journal entry for this chapter
-5. Entry auto-saves and appears in the list with a "refresh & update" link below it
+Two lines of actual change. The `renderWithVerseLinks` utility and `VerseLink` component already handle all the interaction, tooltip fetching, and mobile bottom-sheet behavior.
 
