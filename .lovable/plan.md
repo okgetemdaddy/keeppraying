@@ -1,26 +1,61 @@
 
 
-## Gate iPad Study Mode to iPad-Only
+## Fix: Pencil Detection Flow + "iPad Mode Session" Label
 
 ### Problem
-The Study Mode button and entry flow are currently visible and accessible on all devices (phone, desktop, iPad). They should only be available on actual iPads.
+Two issues:
 
-### Changes — `src/components/bible/BibleReader.tsx`
+1. **The Pencil Detected onboarding sheet was never built.** The pencil detection `useEffect` (line 1106–1121) still has the old behavior: it directly calls `handleStudyModeEntry()` and shows a toast. This immediately triggers the Resume/New session flow, skipping the onboarding sheet entirely.
 
-**1. Guard `handleStudyModeEntry` (line ~989)**
-Add `isIPad` check as the very first gate, before auth:
+2. **The ResumeOrNewSheet says "Your Last Session"** (line 134) — should say **"iPad Mode Session"**.
+
+### Changes
+
+#### 1. Create `src/components/bible/PencilDetectedSheet.tsx`
+
+The onboarding sheet from the earlier approved plan. Framer Motion bottom sheet with:
+- Drag handle, minimal SVG pencil-tip illustration
+- "Apple Pencil Detected" headline (EB Garamond, amber/gold)
+- Body text about iPad Study Mode features
+- 3 feature rows with ✦ markers (Focused Passages, Pressure-Sensitive Ink, Premium Art Tools with "Soon" badge)
+- Primary CTA: amber gradient "Try iPad Study Mode" → sets localStorage `kr_pencil_onboard_shown`, calls `onTryStudyMode`
+- Secondary CTA: "Maybe Later" → sets localStorage, calls `onDismiss`
+- Fine print: "Access Study Mode anytime from the pen icon in the toolbar"
+
+#### 2. Update pencil detection `useEffect` in `BibleReader.tsx` (line 1105–1121)
+
+Replace the current block that calls `handleStudyModeEntry()` + toast with:
+
 ```ts
-if (!isIPad) return;
+if (e.pointerType === "pen" && !pencilDetected) {
+  setPencilDetected(true);
+  if (!studyMode && !localStorage.getItem("kr_pencil_onboard_shown")) {
+    setPencilOnboardOpen(true);
+  }
+}
 ```
 
-**2. Hide Study Mode button in sticky toolbar (line ~2382–2400)**
-Wrap the Study Mode `<Button>` with `{isIPad && ( ... )}` so it doesn't render on non-iPad devices.
+- No `handleStudyModeEntry()` call
+- No toast
+- Only opens the onboarding sheet
 
-**3. Hide Study Mode button in slide-down nav (line ~2654–2670)**
-Same `{isIPad && ( ... )}` conditional wrap around the second Study Mode toggle button.
+Add state: `pencilOnboardOpen` (boolean).
 
-**4. Guard pencil detection useEffect (line ~1100–1118)**
-The existing `isIPad` check is already there but only gates the pencil detection — confirm no fallthrough. The `handleStudyModeEntry` call inside is already protected by the new guard in step 1.
+Add two handlers:
+- `handlePencilOnboardDismiss`: close sheet, set localStorage — does NOT enter study mode
+- `handlePencilTryStudyMode`: close sheet, set localStorage, THEN call `handleStudyModeEntry()`
 
-No other files need changes — `handleStudyModeEntry` is the single entry point and the two buttons are the only UI triggers.
+Render `<PencilDetectedSheet>` in the JSX near the other sheets.
+
+#### 3. Update `ResumeOrNewSheet.tsx` label (line 134)
+
+Change `"Your Last Session"` → `"iPad Mode Session"`
+
+### Files
+
+| File | Change |
+|------|--------|
+| `src/components/bible/PencilDetectedSheet.tsx` | New — onboarding sheet |
+| `src/components/bible/BibleReader.tsx` | Fix pencil detection useEffect, add state + handlers, render PencilDetectedSheet |
+| `src/components/bible/ResumeOrNewSheet.tsx` | Label change: "iPad Mode Session" |
 
