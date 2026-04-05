@@ -378,10 +378,13 @@ export function BibleSleeveSheet({
           <div className="space-y-5 pb-8">
 
             {/* ── Recent Sessions ── */}
-            <SessionCards onResume={(session) => {
-              onOpenChange(false);
-              console.log("Resume session:", session.id);
-            }} />
+            <SessionCards
+              onResume={(session) => {
+                onOpenChange(false);
+                console.log("Resume session:", session.id);
+              }}
+              onReview={handleOpenReview}
+            />
 
             {/* ── Appearance ── */}
             <Collapsible open={isOpen(SECTION_IDS.appearance)}>
