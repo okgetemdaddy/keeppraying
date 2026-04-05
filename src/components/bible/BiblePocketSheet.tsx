@@ -11,6 +11,7 @@ import { useJournalGeneration } from "@/hooks/useJournalGeneration";
 import type { Annotation } from "@/hooks/useAnnotations";
 import type { InkStroke } from "./InkOverlay";
 import { HowToGuide } from "./HowToGuide";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 type PocketTab = "notes" | "guide" | "journal" | "search";
 
