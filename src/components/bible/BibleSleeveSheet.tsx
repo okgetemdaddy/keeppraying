@@ -232,6 +232,9 @@ interface BibleSleeveSheetProps {
 
   /* bible sight */
   onOpenBibleSight?: () => void;
+
+  /* commentary library */
+  onOpenCommentary?: () => void;
 }
 
 export function BibleSleeveSheet({
@@ -295,6 +298,7 @@ export function BibleSleeveSheet({
   onTriggerDeepStudy,
   deepStudyActive = false,
   onOpenBibleSight,
+  onOpenCommentary,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -978,6 +982,23 @@ export function BibleSleeveSheet({
                     <div className="min-w-0">
                       <span className="text-sm font-medium text-foreground">Bible Sight</span>
                       <p className="text-[0.6rem] text-muted-foreground">Go deeper with guidance</p>
+                    </div>
+                  </button>
+                )}
+
+                {/* Commentary Library entry point */}
+                {onOpenCommentary && (
+                  <button
+                    onClick={() => {
+                      onOpenCommentary();
+                      onOpenChange(false);
+                    }}
+                    className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
+                  >
+                    <Layers className="h-4 w-4 text-amber-500/80" />
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-foreground">Commentary</span>
+                      <p className="text-[0.6rem] text-muted-foreground">6 classical commentaries</p>
                     </div>
                   </button>
                 )}

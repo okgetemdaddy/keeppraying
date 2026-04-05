@@ -317,7 +317,31 @@ serve(async (req: Request) => {
 
       // Fetch IVP context
       const ivpContext = await fetchIVPContext(supabaseAdmin, book_usfm, chapter_number);
-      const systemPrompt = buildPrimarySystemPrompt(ivpContext || undefined);
+
+      // Fetch commentary context from ingested commentaries
+      let commentaryContext = "";
+      try {
+        const { data: commentaryChunks } = await supabaseAdmin
+          .from("library_chunks")
+          .select("book_title, author, content")
+          .eq("bible_book_usfm", book_usfm)
+          .eq("chapter_number", chapter_number)
+          .not("author", "is", null)
+          .limit(8);
+
+        if (commentaryChunks?.length) {
+          commentaryContext = "\n\nCLASSICAL COMMENTARY CONTEXT — Use these insights from trusted commentators to enrich your analysis:\n\n" +
+            commentaryChunks.map((c: any) =>
+              `### ${c.author} (${c.book_title})\n${c.content.slice(0, 600)}`
+            ).join("\n\n");
+        }
+      } catch (e) {
+        console.warn("Commentary fetch error:", e);
+      }
+
+      const systemPrompt = buildPrimarySystemPrompt(
+        (ivpContext || "") + commentaryContext || undefined
+      );
 
       if (grokKey) {
         modelId = "grok-4-0709";

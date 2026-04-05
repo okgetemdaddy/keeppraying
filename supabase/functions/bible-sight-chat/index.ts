@@ -69,7 +69,7 @@ serve(async (req) => {
       });
     }
 
-    // Fetch IVP context for this chapter
+    // Fetch ALL scholarly context for this chapter (IVP + classical commentaries)
     let libraryContext = "";
 
     const { data: tocEntries } = await supabase
@@ -78,14 +78,43 @@ serve(async (req) => {
       .eq("bible_book_usfm", book_usfm)
       .lte("chapter_start", chapter_number)
       .gte("chapter_end", chapter_number)
-      .limit(5);
+      .limit(15);
 
     if (tocEntries?.length) {
-      libraryContext += "IVP Commentary context for this chapter:\n";
+      // Group by author for cleaner context
+      const byAuthor: Record<string, typeof tocEntries> = {};
       for (const entry of tocEntries) {
-        libraryContext += `- ${entry.book_title} (${entry.author}): ${entry.section_title ?? ""} — ${entry.content_summary ?? ""}\n`;
+        const key = entry.author ?? entry.book_title;
+        if (!byAuthor[key]) byAuthor[key] = [];
+        byAuthor[key].push(entry);
       }
-      libraryContext += "\n";
+      for (const [authorKey, entries] of Object.entries(byAuthor)) {
+        libraryContext += `${authorKey}:\n`;
+        for (const entry of entries) {
+          libraryContext += `- ${entry.section_title ?? ""}: ${entry.content_summary ?? ""}\n`;
+        }
+        libraryContext += "\n";
+      }
+    }
+
+    // Fetch deterministic chapter-level commentary chunks
+    try {
+      const { data: commentaryChunks } = await supabase
+        .from("library_chunks")
+        .select("book_title, author, content")
+        .eq("bible_book_usfm", book_usfm)
+        .eq("chapter_number", chapter_number)
+        .not("author", "is", null)
+        .limit(6);
+
+      if (commentaryChunks?.length) {
+        libraryContext += "\nClassical Commentary excerpts:\n";
+        for (const chunk of commentaryChunks) {
+          libraryContext += `- ${chunk.author} (${chunk.book_title}): "${chunk.content.slice(0, 400)}..."\n`;
+        }
+      }
+    } catch (e) {
+      console.error("Commentary chunk fetch error:", e);
     }
 
     // Get the latest user message for topical search
