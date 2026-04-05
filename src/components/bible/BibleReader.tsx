@@ -3810,6 +3810,16 @@ export function BibleReader() {
         }}
         onTriggerDeepStudy={enrichment.trigger}
         deepStudyActive={enrichment.active}
+        onOpenBibleSight={() => setBibleSightOpen(true)}
+      />
+
+      {/* ── Bible Sight Conversational Drawer ── */}
+      <BibleSightDrawer
+        open={bibleSightOpen}
+        onOpenChange={setBibleSightOpen}
+        bookUsfm={bookUsfm ?? "GEN"}
+        chapterNumber={chapterIdx + 1}
+        onTriggerDeepStudy={enrichment.trigger}
       />
 
       {/* ── Manuscript Canvas (Mode 2) ── */}
