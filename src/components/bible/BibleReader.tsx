@@ -2852,18 +2852,20 @@ export function BibleReader() {
                       const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
                       const textStart = normalizedVerse.indexOf(normalizedUnderline);
                       if (textStart >= 0) {
-                        mutations.addHighlight.mutate({
+                      mutations.addHighlight.mutate({
                           verseNumber,
                           color: lastColor,
                           start: textStart,
                           end: textStart + normalizedUnderline.length,
                         });
+                        currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, text_snippet: normalizedUnderline?.slice(0, 60), source: 'pencil_underline' });
                         toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
                       } else {
                         mutations.addHighlight.mutate({
                           verseNumber,
                           color: lastColor,
                         });
+                        currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'pencil_underline' });
                         toast.success(`Highlighted verse ${verseNumber}`);
                       }
                     }

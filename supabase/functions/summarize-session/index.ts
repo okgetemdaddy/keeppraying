@@ -1,3 +1,9 @@
+// Deploy: npx supabase functions deploy summarize-session --no-verify-jwt
+// Set secret: npx supabase secrets set GROK_API_KEY=your-key-here
+// Test: curl -X POST https://your-project.supabase.co/functions/v1/summarize-session \
+//   -H "Authorization: Bearer USER_JWT" \
+//   -H "Content-Type: application/json" \
+//   -d '{"session_id": "uuid-here"}'
 // TODO: Abstract AI provider into a pluggable interface — swap Grok for Claude or other models without touching the client
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 

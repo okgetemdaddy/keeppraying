@@ -74,7 +74,11 @@ export function SessionCards({ onResume, onReview }: SessionCardsProps) {
                   <Clock className="h-3 w-3" />
                   {formatElapsed(s.elapsed_seconds)}
                 </span>
-                <span className="flex items-center gap-0.5 text-[0.65rem] font-medium text-primary group-hover:underline">
+                <span
+                  role="button"
+                  onClick={(e) => { e.stopPropagation(); onResume(s); }}
+                  className="flex items-center gap-0.5 text-[0.65rem] font-medium text-primary group-hover:underline hover:text-primary/80 transition-colors"
+                >
                   <Play className="h-2.5 w-2.5" />
                   Resume
                 </span>
