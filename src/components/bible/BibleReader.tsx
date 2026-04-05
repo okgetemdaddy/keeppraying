@@ -2621,15 +2621,6 @@ export function BibleReader() {
                 </button>
               </div>
             </div>
-            {/* "What are sessions?" link below locked nav indicator */}
-            {(activeSessionId || activeReadingSessionId) && (
-              <button
-                onClick={() => navigate("/support#sessions")}
-                className="text-[0.6rem] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-border"
-              >
-                What are sessions?
-              </button>
-            )}
             {/* Nav selectors — hidden when canvas session is locked */}
             {!(isInPaperCanvas && activeSessionConfig) && (
             <div className="flex items-center gap-2">
