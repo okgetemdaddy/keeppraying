@@ -3389,6 +3389,7 @@ export function BibleReader() {
                             return [...prev, ...newSelections];
                           });
                           toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""}`);
+                          currentLogEvent('circle_select', { verse_numbers: verseNumbers, source: 'margin_mode' });
                         }
                       }}
                       onWordCircle={(words, verseNum, anchor) => {
