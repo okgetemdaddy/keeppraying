@@ -102,10 +102,12 @@ export function BibleSearchDialog({
   const noteResults = remoteResults.filter((r): r is SearchResultNote => r.type === "note");
   const bunchResults = remoteResults.filter((r): r is SearchResultBunch => r.type === "bunch");
   const aiResults = remoteResults.filter((r): r is SearchResultAI => r.type === "ai");
+  const sessionResults = remoteResults.filter((r): r is SearchResultSession => r.type === "session" && r.entryType === "study_session");
+  const journalResults = remoteResults.filter((r): r is SearchResultSession => r.type === "session" && r.entryType === "journal");
 
   const hasQuery = query.trim().length > 0;
   const hasAnyResults =
-    localResults.length > 0 || noteResults.length > 0 || bunchResults.length > 0 || aiResults.length > 0;
+    localResults.length > 0 || noteResults.length > 0 || bunchResults.length > 0 || aiResults.length > 0 || sessionResults.length > 0 || journalResults.length > 0;
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
