@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const sheetSpring = { type: "spring" as const, damping: 30, stiffness: 300, mass: 0.8 };
