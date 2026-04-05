@@ -814,17 +814,27 @@ export function BibleReader() {
   const [inkTextSpacing, setInkTextSpacing] = useState(() => {
     try { return parseFloat(localStorage.getItem("bible_ink_spacing") ?? "2.8"); } catch { return 2.8; }
   });
-  const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
-  const [inkPenSize, setInkPenSize] = useState(8);
-  const [inkPenGlow, setInkPenGlow] = useState<string | null>(() => {
-    try { return localStorage.getItem("bible_pen_glow") || null; } catch { return null; }
-  });
-  const handleInkPenGlowChange = useCallback((v: string | null) => {
-    setInkPenGlow(v);
-    try { if (v) localStorage.setItem("bible_pen_glow", v); else localStorage.removeItem("bible_pen_glow"); } catch {}
-  }, []);
-  const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
+  // ── Pencil Tools Zustand store (replaces inline ink state) ──
+  // iPadOS: Map to PKToolPicker state via UIPencilInteraction delegate
+  const pencilTools = usePencilTools();
+  const inkPenColor = pencilTools.color;
+  const inkPenSize = pencilTools.size;
+  const inkPenGlow: string | null = null; // Legacy — glow now handled by brush filters
+  const inkFingerDrawing = false; // Legacy — finger drawing disabled on iPad by default
+  const setInkPenColor = pencilTools.setColor;
+  const setInkPenSize = pencilTools.setSize;
+  const handleInkPenGlowChange = useCallback((_v: string | null) => {}, []);
+  const setInkFingerDrawing = useCallback((_v: boolean) => {}, []);
   const inkHistory = useInkHistory();
+
+  // ── Apple Pencil Pro hardware gesture hooks ──
+  // iPadOS: Replace with UIPencilInteraction delegate methods
+  useApplePencilSqueeze((x, y) => {
+    pencilTools.toggleSqueezeMenu(x, y);
+  });
+  useApplePencilDoubleTap(() => {
+    pencilTools.toggleLastTool();
+  });
 
   // ── Margin annotation layer state (Apple Pencil in default reading view) ──
   // iPadOS: Margin mode maps to PKCanvasView glass overlay with pencilOnly input policy
