@@ -3802,6 +3802,8 @@ export function BibleReader() {
           setBookUsfm(artifact.book_usfm);
           setChapterIdx(artifact.chapter_number - 1);
         }}
+        onTriggerDeepStudy={enrichment.trigger}
+        deepStudyActive={enrichment.active}
       />
 
       {/* ── Manuscript Canvas (Mode 2) ── */}
