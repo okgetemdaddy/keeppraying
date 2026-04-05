@@ -343,7 +343,7 @@ export function AutoEnrichLayer({
     data.bunches.forEach((bunch) => {
       const items: CrossBunchItem[] = [];
       for (let v = bunch.verseRange[0]; v <= bunch.verseRange[1]; v++) {
-        items.push({ verseNumber: v });
+        items.push({ verseNumber: v, versionId, bookUsfm, chapterNumber });
       }
       onAdoptBunch(bunch.label, items);
     });
