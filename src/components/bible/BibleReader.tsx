@@ -3529,7 +3529,7 @@ export function BibleReader() {
                               chapterNumber={chapterNumberParsed!}
                               onAdoptHighlight={(vn, color) => mutations.addHighlight.mutate({ verseNumber: vn, color })}
                               onAdoptNote={(vn, content) => mutations.saveNote.mutate({ verseNumber: vn, content })}
-                              onAdoptBunch={(name, items) => mutations.createBunchWithVerses.mutate({ bunchName: name, items })}
+                              onAdoptBunch={(name, items) => mutations.createBunch.mutate({ bunchName: name, items })}
                               onClose={enrichment.close}
                               isDark={premiumDark}
                             />
