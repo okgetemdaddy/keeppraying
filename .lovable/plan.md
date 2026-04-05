@@ -1,62 +1,50 @@
 
 
-## Add "End Session" Button + "What are sessions?" Link
+## Remove "End Session" UI + Wire Intelligent Session Endings + Sleeve Enhancements
 
-### Overview
-Add a prominent glassmorphic "End Session" button visible in all nav states when a session is active, plus a subtle "What are sessions?" link. Add a sessions explainer section to the Support page.
+### Part 1: Remove "End Session" from BibleReader.tsx
 
----
+**Delete `handleEndSession` callback** (lines 973–1014) — the entire function and its iPadOS comment.
 
-### File Changes
+**Delete 4 "End Session" button blocks + "What are sessions?" links:**
+- Sticky toolbar block (lines 2559–2592)
+- Locked canvas nav End Session button (lines 2665–2687)
+- Locked canvas nav standalone End Session button (lines 2695–2719)
+- Locked canvas nav "What are sessions?" link (lines 2728–2736)
+- Slide-down nav block (lines 2850–2883)
 
-#### 1. `src/components/bible/BibleReader.tsx`
+### Part 2: Wire intelligent session endings
 
-**New `handleEndSession` callback** (near line ~970, after `handleLingerEndSession`):
-- Determines active session ID (`activeSessionId ?? activeReadingSessionId`)
-- Updates `study_sessions` status to `complete` with timestamps
-- Logs `session_end` event with `{ reason: "user_explicit" }`
-- Fire-and-forget calls `summarize-session` edge function
-- If canvas session: exits study mode, clears `activeSessionId`, `activeSessionConfig`, localStorage
-- If reading session: clears `activeReadingSessionId`
-- Shows `toast.success("Session saved ✦", { description: "..." })`
-- iPadOS comment about UIBarButtonItem mapping
+**Update `handleToggleStudyMode`** (line 1073–1083) to complete the canvas session on exit:
+- When `v === false` and `activeSessionId` exists: update `study_sessions` to `complete`, fire `summarize-session` in background, log `session_end` event, clear `activeSessionId` / `activeSessionConfig`
+- Add iPadOS comment about `sceneDidEnterBackground`
 
-**End Session button in locked canvas nav** (line ~2586, after elapsed timer span):
-- Add the red glassmorphic `motion.button` with hover handlers inside the existing flex row, before the close button
+**Verify `handleLingerEndSession`** (line 955) already handles idle timeout for reading sessions — it does. Keep as-is.
 
-**End Session button in sticky toolbar Row 2** (line ~2514, after reading mode toggle, before Bible Pocket button):
-- Conditionally render when `activeSessionId || activeReadingSessionId` is truthy
-- Same red glassmorphic `motion.button` style
+**Add navigation-away cleanup** — a `useEffect` with cleanup that completes `activeReadingSessionId` on unmount, fires `summarize-session`, with iPadOS comment about `applicationWillResignActive`.
 
-**End Session button in slide-down nav secondary toolbar** (line ~2700, after focus mode button):
-- Same conditional + same styled button
+**Add stale session cleanup on mount** — a `useEffect` that runs once when `user` is available, queries `study_sessions` for `active`/`paused` reading sessions with `last_active_at` older than 10 minutes, batch-completes them, and fires summaries. iPadOS comment about `applicationDidBecomeActive`.
 
-**"What are sessions?" link** — rendered below each End Session button placement:
-- `<button onClick={() => navigate("/support#sessions")}>`
-- Tiny text: `text-[0.6rem] text-zinc-500 hover:text-zinc-300 underline underline-offset-2 decoration-zinc-700`
-- In the locked nav: second row below the indicator
-- In sticky toolbar: inline next to End Session button
-- In slide-down nav: below End Session button
+### Part 3: Enhance SessionCards in Bible Sleeve
 
-#### 2. `src/pages/Support.tsx`
+**Update `SessionCards.tsx`:**
+- Show ALL sessions (not just non-complete) — show recent completed ones too
+- Add session type badge: amber "Canvas Study" pill for canvas, sky "Reading" pill for reading
+- Add AI summary preview: if `session_summary` exists, show `study_arc` as italic muted subtitle
+- Add empty state with book icon and explanatory text
+- Add "What are sessions?" link below the cards (navigates to `/support#sessions`)
 
-Add a `<section id="sessions">` block at the bottom of the page (before closing tags) with:
-- "Study Sessions" heading (serif)
-- Two paragraphs explaining automatic session tracking and iPad vs reading modes
-- `{/* TODO: Expand with screenshots, video walkthrough, and FAQ */}`
+### Part 4: Upgrade Support page sessions section
 
-**Scroll-to-anchor**: Add a `useEffect` that checks `location.hash === "#sessions"` and scrolls the element into view on mount.
+**Replace the basic sessions section** (lines 486–504 in Support.tsx) with the richer three-card layout: Reading Sessions, Canvas Study Sessions, AI-Powered Summaries — each in a styled card with amber headings and zinc descriptions. Add privacy note at the bottom.
 
 ---
 
-### Technical Details
+### Files
 
-| Aspect | Detail |
-|--------|--------|
-| Button style | Red glassmorphic: `rgba(220,38,38,0.15)` gradient bg, `rgba(220,38,38,0.3)` border, `#f87171` text, `backdrop-blur(12px)`, `rounded-full`, `text-xs font-semibold` |
-| Animation | `framer-motion` `whileTap={{ scale: 0.97 }}` |
-| Hover | Inline style manipulation via `onMouseEnter`/`onMouseLeave` |
-| Session end flow | DB update → telemetry log → background AI summary → state cleanup → toast |
-| Help link target | `/support#sessions` (reuses existing Support page) |
-| Files changed | `BibleReader.tsx`, `Support.tsx` |
+| File | Action |
+|------|--------|
+| `src/components/bible/BibleReader.tsx` | Remove `handleEndSession` + all End Session UI, update `handleToggleStudyMode`, add stale cleanup + nav-away cleanup effects |
+| `src/components/bible/SessionCards.tsx` | Add type badges, summary preview, empty state, "What are sessions?" link |
+| `src/pages/Support.tsx` | Replace sessions section with richer explainer |
 
