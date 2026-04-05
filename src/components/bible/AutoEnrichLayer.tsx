@@ -386,18 +386,6 @@ export function AutoEnrichLayer({
           {blendLevel === "full" ? "Full" : blendLevel === "light" ? "Light" : "Off"}
         </button>
 
-        {/* Keep All */}
-        {data && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleKeepAll}
-            className="text-xs h-7 text-amber-400 hover:text-amber-300"
-          >
-            <CheckCheck className="h-3.5 w-3.5 mr-1" />
-            Keep All
-          </Button>
-        )}
 
         <button
           onClick={onClose}
