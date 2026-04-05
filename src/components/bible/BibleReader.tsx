@@ -1066,13 +1066,30 @@ export function BibleReader() {
     isNewSessionRef.current = false;
     setShowResumeOrNew(false);
 
-    // Build config from session
     const s = existingSession;
+
+    // Navigate to the session's book and chapter FIRST
+    if (s.book_usfm && s.book_usfm !== bookUsfm) {
+      setBookUsfm(s.book_usfm);
+    }
+    // chapter_id from the session is 1-indexed, chapterIdx is 0-indexed
+    const targetChapterIdx = (s.chapter_id ?? 1) - 1;
+    if (targetChapterIdx !== chapterIdx) {
+      setChapterIdx(Math.max(0, targetChapterIdx));
+    }
+
+    // Build session config — populate verses from verse range so canvas filter works
+    const sessionVerses = s.verse_start && s.verse_end
+      ? Array.from(
+          { length: s.verse_end - s.verse_start + 1 },
+          (_, i) => ({ number: s.verse_start + i, text: "" })
+        )
+      : [];
+
     setActiveSessionId(s.id);
     setActiveSessionConfig({
       sessionId: s.id,
-      verses: [], // Will be populated from Bible data on mount
-      // TODO: Multi-book sessions — track last_book_usfm and last_chapter_id on session row
+      verses: sessionVerses,
       verseRange: (() => {
         const bookTitle = index?.books?.find(b => b.id === s.book_usfm)?.title ?? s.book_usfm;
         return s.verse_start && s.verse_end
@@ -1090,6 +1107,16 @@ export function BibleReader() {
       timerMinutes: null,
     });
 
+    // Restore camera position from session
+    if (paperCameraRef.current) {
+      paperCameraRef.current = {
+        x: s.camera_x ?? 0,
+        y: s.camera_y ?? 0,
+        scale: s.camera_scale ?? 1,
+        rotation: s.camera_rotation ?? 0,
+      };
+    }
+
     setInkTextSpacing(parseFloat(s.line_spacing) || 2.4);
     try { localStorage.setItem("bible_ink_spacing", String(parseFloat(s.line_spacing) || 2.4)); } catch {}
     setStudyMode(true);
@@ -1101,7 +1128,7 @@ export function BibleReader() {
       .update({ status: "active", last_active_at: new Date().toISOString() })
       .eq("id", s.id)
       .then(() => {});
-  }, [existingSession]);
+  }, [existingSession, bookUsfm, chapterIdx, index]);
 
   // ── Start New handler ──
   const handleStartNewSession = useCallback(() => {

@@ -71,6 +71,9 @@ export interface PaperCanvasProps {
   children: React.ReactNode;
   /** Optional external ref — kept in sync so parent (e.g. heartbeat) can read live camera state */
   cameraRef?: React.MutableRefObject<{ x: number; y: number; scale: number; rotation: number }>;
+  /** Phase 1: SVG text layer rendered alongside DOM text for validation */
+  // iPadOS: SVG text layer maps to CATextLayer with CTFramesetter for native rendering
+  svgTextLayer?: string;
 }
 
 export function PaperCanvas({
