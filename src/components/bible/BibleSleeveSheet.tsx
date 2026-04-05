@@ -291,6 +291,44 @@ export function BibleSleeveSheet({
   const [trashOpen, setTrashOpen] = useState(false);
   const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Session Review Drawer state ──
+  const [reviewSession, setReviewSession] = useState<StudySession | null>(null);
+  const [reviewEvents, setReviewEvents] = useState<SessionEvent[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const reviewCacheRef = useRef<string | null>(null);
+
+  const handleOpenReview = useCallback(async (session: StudySession) => {
+    setReviewSession(session);
+
+    // Skip fetch if we already have data for this session
+    if (reviewCacheRef.current === session.id && reviewEvents.length > 0) return;
+
+    setReviewLoading(true);
+    const { data: events } = await supabase
+      .from("session_events")
+      .select("*")
+      .eq("session_id", session.id)
+      .order("created_at", { ascending: true });
+
+    setReviewEvents((events ?? []) as unknown as SessionEvent[]);
+    reviewCacheRef.current = session.id;
+    setReviewLoading(false);
+
+    // Auto-trigger AI summary if not yet generated
+    if (!session.session_summary && events?.length) {
+      try {
+        const { data } = await supabase.functions.invoke("summarize-session", {
+          body: { session_id: session.id },
+        });
+        if (data) {
+          setReviewSession(prev => prev ? { ...prev, session_summary: data } : null);
+        }
+      } catch (e) {
+        console.error("Summary generation failed:", e);
+      }
+    }
+  }, [reviewEvents.length]);
+
   // Collapsed sections
   const [collapsed, setCollapsed] = useState<Set<string>>(loadCollapsed);
   const toggleSection = useCallback((id: string) => {
