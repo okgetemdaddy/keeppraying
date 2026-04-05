@@ -987,6 +987,9 @@ export function BibleReader() {
    * Step 3 maps to SceneDelegate restoreState(_:) check against CoreData.
    */
   const handleStudyModeEntry = useCallback(async () => {
+    // iPad-only — hardware gate before any other checks
+    if (!isIPad) return;
+
     // Step 1: Auth
     if (!user) {
       navigate("/auth?returnTo=/bible");
