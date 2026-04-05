@@ -1929,8 +1929,9 @@ export function BibleReader() {
     (verseNumber: number) => {
       setCrossRefVerse(verseNumber);
       setCrossRefOpen(true);
+      currentLogEvent('cross_ref_nav', { from_verse: verseNumber });
     },
-    [],
+    [currentLogEvent],
   );
 
   const handleSaveNote = useCallback(
