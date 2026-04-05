@@ -31,6 +31,7 @@ import WelcomeMessagesTab from "@/components/admin/WelcomeMessagesTab";
 import AudioCacheTab from "@/components/admin/AudioCacheTab";
 import SermonCacheTab from "@/components/admin/SermonCacheTab";
 import WaitlistTab from "@/components/admin/WaitlistTab";
+import BibleSightAdminTab from "@/components/admin/BibleSightAdminTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
