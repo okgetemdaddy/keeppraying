@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Search, BookOpen, StickyNote, Package, Sparkles, Clock, X } from "lucide-react";
+import { Search, BookOpen, StickyNote, Package, Sparkles, Clock, X, Eye, ScrollText } from "lucide-react";
 import {
   CommandDialog,
   Command,
@@ -20,6 +20,7 @@ import {
   type SearchResultNote,
   type SearchResultBunch,
   type SearchResultAI,
+  type SearchResultSession,
 } from "@/hooks/useBibleSearch";
 import { USFM_NAMES } from "@/lib/bibleReferenceParser";
 
