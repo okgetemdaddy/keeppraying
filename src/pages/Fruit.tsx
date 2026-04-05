@@ -88,7 +88,7 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
     queryFn: async () => {
       const { data } = await supabase
         .from("fruit_reports")
-        .select("id, model_used, created_at, chat_log")
+        .select("id, model_used, created_at, chat_log, report_content")
         .eq("model_used", model)
         .order("created_at", { ascending: false })
         .limit(50);
