@@ -574,10 +574,11 @@ export function MarginAnnotationLayer({
             </feComponentTransfer>
           </filter>
         </defs>
+        <InkFilterDefs standalone={false} />
         {renderedStrokes}
         <path
           ref={livePathRef}
-          fill={penColor}
+          fill={effectiveColor}
           stroke="none"
           opacity={0.7}
           style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
