@@ -1,62 +1,31 @@
 
 
-## Fix: Bible Sight Drawer Not Opening
+## Fix: Bible Sight Auto-Closing on `[GENERATE_STUDY]`
 
-### Root Cause
+### Problem
 
-The URL-based drawer state persistence introduced a **race condition**. When you click "Bible Sight" in the Sleeve, two `setSearchParams` calls fire back-to-back:
+When the AI model includes a `[GENERATE_STUDY]` marker in its response, the drawer automatically:
+1. Sets `generatingStudy = true` (shows a loading spinner)
+2. After 1.5s, calls `onTriggerDeepStudy()` to start a Deep Study
+3. Calls `onOpenChange(false)` to close Bible Sight
 
-1. `onOpenBibleSight()` → sets `?sight=1`
-2. `onOpenChange(false)` → removes `?sleeve`
-
-React Router's `setSearchParams` does not reliably queue functional updates like React's `setState`. The second call reads stale `searchParams` (the current URL, without `sight=1`), so it **overwrites** the first call. Result: `sleeve` gets removed, but `sight=1` is never actually applied — the drawer never opens.
-
-The same bug affects the "Commentary" and "Deep Study" buttons in the Sleeve.
+This is unwanted — the chat should simply continue and the user should decide when to leave.
 
 ### Fix
 
-**File: `src/components/bible/BibleReader.tsx`**
+**File: `src/components/bible/BibleSightDrawer.tsx`**
 
-Replace the individual `onOpenBibleSight` and `onOpenCommentary` callbacks with versions that set **both** params in a single `setSearchParams` call (open the target drawer AND close the sleeve atomically):
+- Remove the entire `[GENERATE_STUDY]` auto-trigger block (lines 153–187). The marker text will just be stripped from the displayed content so it doesn't show as raw text, but no drawer closing or Deep Study triggering will occur.
+- Remove the `generatingStudy` state and all UI referencing it (the "Generating your study session…" spinner block and the `disabled` checks on the input).
+- Keep the chat log save logic — move it to run on every assistant response (or keep it only for `[GENERATE_STUDY]` tagged responses as a save-point, but without closing).
 
-```typescript
-onOpenBibleSight={() => {
-  setSearchParams(prev => {
-    const next = new URLSearchParams(prev);
-    next.set("sight", "1");
-    next.delete("sleeve");
-    return next;
-  }, { replace: true });
-}}
+### Result
 
-onOpenCommentary={() => {
-  setSearchParams(prev => {
-    const next = new URLSearchParams(prev);
-    next.set("commentary", "1");
-    next.delete("sleeve");
-    return next;
-  }, { replace: true });
-}}
-```
-
-Then update the `BibleSleeveSheet` click handlers for Bible Sight and Commentary to call **only** `onOpenBibleSight()` / `onOpenCommentary()` without the separate `onOpenChange(false)` — since the sleeve closure is now bundled into the callback.
-
-**File: `src/components/bible/BibleSleeveSheet.tsx`**
-
-Change the Bible Sight button handler (line ~975-978):
-```typescript
-onClick={() => {
-  onOpenBibleSight();
-  // No separate onOpenChange(false) — sleeve close is handled atomically
-}}
-```
-
-Same pattern for the Commentary button (line ~992-994).
+Bible Sight stays open. The user can keep chatting. No automatic Deep Study launch. The `[GENERATE_STUDY]` marker is silently stripped from display text and the chat log is saved, but nothing else happens.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | Combine drawer-open + sleeve-close into single `setSearchParams` calls |
-| `src/components/bible/BibleSleeveSheet.tsx` | Remove redundant `onOpenChange(false)` after Bible Sight / Commentary clicks |
+| `src/components/bible/BibleSightDrawer.tsx` | Remove auto-close/auto-trigger logic; strip `[GENERATE_STUDY]` from display only; remove `generatingStudy` state and its UI |
 
