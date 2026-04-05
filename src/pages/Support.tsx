@@ -490,18 +490,46 @@ export default function Support() {
           className="scroll-mt-24"
         >
           <Card className="border-border/60">
-            <CardContent className="p-6 md:p-10 space-y-4">
+            <CardContent className="p-6 md:p-10 space-y-6">
               <h2 className="text-xl md:text-2xl font-bold text-foreground font-serif">Study Sessions</h2>
               <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-                KeepRead.ing automatically tracks your Bible study sessions — every highlight,
-                note, and annotation is grouped into a timeline you can review later.
-                Sessions help you see the progression of your study and revisit past insights.
+                KeepRead.ing quietly tracks your Bible study in the background. Every time
+                you read, highlight, or take notes, the app groups your activity into a
+                session — a snapshot of that study sitting.
               </p>
-              <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-                In iPad Study Mode, sessions are focused on specific passages you choose.
-                In reading mode, sessions start automatically and track your journey across chapters.
+
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <h3 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">Reading Sessions</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Start automatically when you begin reading or annotating. End when you
+                    leave or after a period of inactivity. You never have to think about them.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <h3 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">Canvas Study Sessions</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Created when you enter iPad Study Mode and choose specific verses to study
+                    on a focused canvas. These sessions save your ink, highlights, and canvas
+                    state so you can resume exactly where you left off.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                  <h3 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-1">Intelligent Summaries</h3>
+                  <p className="text-xs text-muted-foreground">
+                    After each session, KeepRead.ing generates an intelligent summary of your
+                    study — the themes you explored, the connections you made, and the verses
+                    that captured your attention. Find these in your Bible Sleeve under Recent Sessions.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground/60 italic">
+                Sessions are private and stored securely. Only you can see your study history.
               </p>
-              {/* TODO: Expand with screenshots, video walkthrough, and FAQ */}
+              {/* TODO: Add screenshots, video walkthrough, FAQ accordion */}
             </CardContent>
           </Card>
         </motion.section>
