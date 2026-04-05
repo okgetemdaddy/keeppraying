@@ -35,7 +35,6 @@ export function BibleSightDrawer({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [generatingStudy, setGeneratingStudy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,10 +51,6 @@ export function BibleSightDrawer({
   useEffect(() => {
     if (open && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
-    }
-    // Reset when closed
-    if (!open) {
-      setGeneratingStudy(false);
     }
   }, [open]);
 
@@ -149,7 +144,7 @@ export function BibleSightDrawer({
         }
       }
 
-      // Check for study generation marker
+      // Strip [GENERATE_STUDY] marker from display and save chat log
       if (assistantContent.includes("[GENERATE_STUDY]")) {
         const cleanContent = assistantContent.replace(/\[GENERATE_STUDY\]/g, "").trim();
         const finalMessages = newMessages.concat([{ role: "assistant" as const, content: cleanContent }]);
@@ -178,12 +173,6 @@ export function BibleSightDrawer({
         } catch (e) {
           console.error("Failed to save chat log:", e);
         }
-
-        setGeneratingStudy(true);
-        setTimeout(() => {
-          onTriggerDeepStudy?.();
-          onOpenChange(false);
-        }, 1500);
       }
     } catch (e) {
       console.error("Bible Sight error:", e);
@@ -197,7 +186,7 @@ export function BibleSightDrawer({
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, messages, user, bookUsfm, chapterNumber, onTriggerDeepStudy, onOpenChange]);
+  }, [input, isLoading, messages, user, bookUsfm, chapterNumber, onOpenChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -299,20 +288,6 @@ export function BibleSightDrawer({
             </div>
           )}
 
-          {/* Study generation transition */}
-          {generatingStudy && (
-            <div className="flex justify-center py-4">
-              <div className="bg-amber-500/10 dark:bg-amber-500/20 rounded-2xl px-6 py-4 text-center border border-amber-500/20 space-y-2">
-                <Loader2 className="h-5 w-5 animate-spin text-amber-500 mx-auto" />
-                <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                  Generating your study session...
-                </p>
-                <p className="text-[0.6rem] text-muted-foreground">
-                  KeepRead.ing — I do this for HIS glory
-                </p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Input area */}
@@ -329,13 +304,13 @@ export function BibleSightDrawer({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="What would you like to go deeper into?"
-                disabled={isLoading || generatingStudy}
+                disabled={isLoading}
                 className="flex-1 rounded-xl bg-muted/30 dark:bg-[#2C2C2E] border-border/50"
               />
               <Button
                 size="icon"
                 onClick={handleSend}
-                disabled={!input.trim() || isLoading || generatingStudy}
+                disabled={!input.trim() || isLoading}
                 className="h-10 w-10 rounded-xl shrink-0"
               >
                 <Send className="h-4 w-4" />
