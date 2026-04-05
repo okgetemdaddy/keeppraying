@@ -176,6 +176,8 @@ function JournalTab({
   chapterId,
   chapterTitle,
   onJournalSave,
+  onDeleteJournal,
+  onShareJournal,
 }: {
   sortedJournalAnnotations: Annotation[];
   chapterVerses?: Verse[];
@@ -184,7 +186,10 @@ function JournalTab({
   chapterId?: string;
   chapterTitle?: string;
   onJournalSave?: (entry: { verseIds: string[]; strokes: any[]; typedText?: string }) => void;
+  onDeleteJournal?: (id: string) => void;
+  onShareJournal?: (id: string, title: string, preview: string) => void;
 }) {
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const chapterNum = chapterId ? parseInt(chapterId, 10) : undefined;
   const { generate, refreshAndUpdate, isGenerating, isRefreshing } =
     useJournalGeneration(bookUsfm, chapterNum, chapterTitle, chapterVerses, versionId);
