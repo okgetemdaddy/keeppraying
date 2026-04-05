@@ -1,41 +1,52 @@
 
 
-## Fix & Build: Ghost Session Handling + Minimap Generator
+## Multi-Model Fan-Out for summarize-session Edge Function
 
-Two pieces need building. The `summarize-session` edge function already exists and matches the spec — no changes needed there.
+### Architecture
 
-### Part 1: Ghost Session Handling — `sendBeacon` on Tab Close
+```text
+Session Events
+    ├──→ Gemini 2.5 Pro  (theological lens)    ──┐
+    ├──→ GPT-5 Nano      (statistical lens)     ──┤  via Lovable AI Gateway
+    ├──→ GPT-5 Mini      (behavioral lens)      ──┤
+    │                                              │
+    │    Promise.allSettled (parallel)              │
+    │                                              ▼
+    └──→ Grok 4 (synthesis) ← all 3 outputs + raw events  (via api.x.ai)
+             │
+             ▼
+         Final SessionSummary → study_sessions.session_summary
+```
 
-**File:** `src/hooks/useSessionTelemetry.ts` (Edit)
+### Key Design Decision: API Routing
 
-Add a new `useEffect` that listens to `visibilitychange` and `beforeunload` to flush buffered events via `navigator.sendBeacon` when the tab closes.
+GPT-5 Nano, GPT-5 Mini, and Gemini 2.5 Pro all route through the **Lovable AI Gateway** (`https://ai.gateway.lovable.dev/v1/chat/completions`) using the existing `LOVABLE_API_KEY`. This avoids needing separate OpenAI or Google API keys. Only the Grok 4 synthesis call uses the existing `GROK_API_KEY` via `api.x.ai`.
 
-Key implementation details:
-- Track the current Supabase access token in a ref, updated via `supabase.auth.onAuthStateChange`
-- On `visibilitychange === 'hidden'`, drain the buffer + append a `session_end` event with `{ reason: 'browser_closed' }`
-- POST directly to the Supabase REST API (`/rest/v1/session_events`) with `apikey`, `Authorization`, and `Prefer: return=minimal` headers via `sendBeacon`
-- `beforeunload` calls the same handler as belt-and-suspenders
-- Add iPadOS comment per spec
+No new secrets needed — `LOVABLE_API_KEY` and `GROK_API_KEY` are both already configured.
 
-### Part 2: `summarize-session` Edge Function
+### File 1: `supabase/functions/summarize-session/index.ts` (Rewrite)
 
-Already exists at `supabase/functions/summarize-session/index.ts` with JWT verification, Grok integration, fallback summary, and session_summary write-back. No changes needed.
+- Keep existing auth, ownership verification, event fetching, and fallback logic
+- Replace single Grok call (lines 110-177) with:
+  - Three parallel fan-out functions calling Lovable AI Gateway with different models/system prompts
+  - `Promise.allSettled` to run all three in parallel
+  - Grok 4 synthesis call that receives all three analyses + raw session data
+  - Graceful degradation: if fan-out models fail, synthesis works with what's available; if synthesis fails, use best individual analysis; if everything fails, use existing `buildFallbackSummary`
+- Update `SessionSummary` interface to include optional `model_contributions` and `_raw_analyses` fields
+- Update CORS headers to include newer Supabase client headers
 
-### Part 3: SVG Minimap Generator
+### File 2: `src/components/bible/SessionDetailDashboard.tsx` (Edit)
 
-**File:** `src/lib/minimap.ts` (Create)
-
-Pure TypeScript utility — zero React imports, zero DOM APIs. Exports:
-- `MinimapStroke` and `MinimapHighlight` interfaces
-- `generateChapterMinimap(strokes, highlights, containerWidth, containerHeight)` returning a raw SVG string
-
-Three-layer rendering: abstract text lines (gray rects), highlight rects (30% opacity), ink stroke paths. Returns `""` when no annotations exist. ViewBox matches original container for automatic browser scaling.
+- Update `SessionSummary` interface to add `model_contributions` and `_raw_analyses`
+- Add collapsible "Model Perspectives" section inside `AISynthesisModule` (after tags), shown only when `model_contributions` exists
+- Uses existing `Collapsible` component and `ChevronDown` icon (already imported)
+- Color-coded labels: amber for theological, sky for statistical, emerald for behavioral
 
 ### Summary
 
-| Item | Status | Action |
-|------|--------|--------|
-| Ghost session `sendBeacon` | Missing | Add `useEffect` + token ref to `useSessionTelemetry.ts` |
-| `summarize-session` edge function | Already exists | None |
-| `src/lib/minimap.ts` | Missing | Create new file |
+| Item | Action |
+|------|--------|
+| `summarize-session/index.ts` | Rewrite AI section with 3-model fan-out + Grok synthesis |
+| `SessionDetailDashboard.tsx` | Add model perspectives collapsible to Module 2 |
+| New secrets | None needed |
 
