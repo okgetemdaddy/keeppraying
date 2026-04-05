@@ -5,7 +5,7 @@ import { SessionDetailDashboard } from "@/components/bible/SessionDetailDashboar
 import { supabase } from "@/integrations/supabase/client";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { SessionEvent } from "@/hooks/useSessionTelemetry";
-import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser } from "lucide-react";
+import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser, Sparkles } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
