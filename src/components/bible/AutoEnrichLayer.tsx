@@ -439,6 +439,20 @@ export function AutoEnrichLayer({
             );
           })}
         </div>
+
+          {/* Keep All — bottom of content */}
+          <div className="flex justify-center pt-4 pb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleKeepAll}
+              className="text-xs h-8 text-amber-400 hover:text-amber-300"
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
+              Keep All
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* Empty state */}
