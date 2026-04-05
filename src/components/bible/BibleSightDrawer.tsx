@@ -17,6 +17,7 @@ interface BibleSightDrawerProps {
   bookUsfm: string;
   chapterNumber: number;
   onTriggerDeepStudy?: () => void;
+  initialContext?: { author: string; excerpt: string } | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
