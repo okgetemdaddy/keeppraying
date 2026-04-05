@@ -2734,40 +2734,6 @@ export function BibleReader() {
                 {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
 
-              {/* End Session — slide-down nav */}
-              {(activeSessionId || activeReadingSessionId) && (
-                <div className="flex items-center gap-2">
-                  <motion.button
-                    onClick={() => { handleEndSession(); setStudyNavOpen(false); }}
-                    whileTap={{ scale: 0.97 }}
-                    className="relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))",
-                      border: "1px solid rgba(220, 38, 38, 0.3)",
-                      color: "#f87171",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      boxShadow: "0 2px 8px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.12))";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))";
-                    }}
-                  >
-                    End Session
-                  </motion.button>
-                  <button
-                    onClick={() => { navigate("/support#sessions"); setStudyNavOpen(false); }}
-                    className="text-[0.6rem] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-border"
-                  >
-                    What are sessions?
-                  </button>
-                </div>
-              )}
 
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
