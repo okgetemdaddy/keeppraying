@@ -365,9 +365,14 @@ export default function PrayerAssist() {
             <Textarea
               value={input}
               onChange={e => setInput(e.target.value)}
+              onInput={e => {
+                const t = e.currentTarget;
+                t.style.height = "auto";
+                t.style.height = `${Math.min(t.scrollHeight, 128)}px`;
+              }}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
               placeholder={guestLimited ? "Sign up to continue your conversation…" : "Ask for prayer guidance, Bible answers, or help crafting a prayer…"}
-              className="flex-1 resize-none rounded-2xl min-h-[48px] max-h-32 text-sm"
+              className="flex-1 resize-none overflow-hidden rounded-2xl min-h-[48px] max-h-32 text-sm"
               rows={1}
               disabled={guestLimited}
             />

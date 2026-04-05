@@ -3,7 +3,7 @@ import { X, BookOpen, Send, Loader2 } from "lucide-react";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { useAuth } from "@/contexts/AuthContext";
 import { USFM_BOOK_NAMES } from "@/lib/usfmBooks";
@@ -36,7 +36,8 @@ export function BibleSightDrawer({
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [kbOffset, setKbOffset] = useState(0);
 
   const bookName = USFM_BOOK_NAMES[bookUsfm] ?? bookUsfm;
 
@@ -52,6 +53,19 @@ export function BibleSightDrawer({
     if (open && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
+  }, [open]);
+
+  // Keyboard-aware padding via visualViewport
+  useEffect(() => {
+    if (!open) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const offset = window.innerHeight - vv.height;
+      setKbOffset(offset > 50 ? offset : 0);
+    };
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
   }, [open]);
 
   // Handle initialContext from Commentary "Go Deeper" handoff
@@ -197,7 +211,7 @@ export function BibleSightDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[80vh] max-h-[80vh] bg-background dark:bg-[#1C1C1E] flex flex-col">
+      <DrawerContent className="h-[100dvh] max-h-[100dvh] bg-background dark:bg-[#1C1C1E] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
           <div className="flex items-center gap-2">
@@ -291,21 +305,30 @@ export function BibleSightDrawer({
         </div>
 
         {/* Input area */}
-        <div className="border-t border-border/50 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div
+          className="border-t border-border/50 px-5 py-4 transition-[padding] duration-150"
+          style={{ paddingBottom: kbOffset > 0 ? `${kbOffset}px` : "max(1rem, env(safe-area-inset-bottom))" }}
+        >
           {!user ? (
             <p className="text-sm text-muted-foreground text-center italic">
               Sign in to use Bible Sight
             </p>
           ) : (
-            <div className="flex items-center gap-2">
-              <Input
+            <div className="flex items-end gap-2">
+              <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onInput={(e) => {
+                  const t = e.currentTarget;
+                  t.style.height = "auto";
+                  t.style.height = `${Math.min(t.scrollHeight, 160)}px`;
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder="What would you like to go deeper into?"
                 disabled={isLoading}
-                className="flex-1 rounded-xl bg-muted/30 dark:bg-[#2C2C2E] border-border/50"
+                rows={1}
+                className="flex-1 resize-none overflow-hidden rounded-xl bg-muted/30 dark:bg-[#2C2C2E] border border-border/50 px-3 py-2.5 text-sm leading-relaxed placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[44px] max-h-[160px]"
               />
               <Button
                 size="icon"
