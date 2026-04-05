@@ -816,6 +816,32 @@ export function BibleReader() {
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
   const inkHistory = useInkHistory();
 
+  // ── Margin annotation layer state (Apple Pencil in default reading view) ──
+  // iPadOS: Margin mode maps to PKCanvasView glass overlay with pencilOnly input policy
+  type MarginLayout = 'center' | 'left' | 'right';
+  type MarginGrid = 'none' | 'dots' | 'lines';
+  const [marginLayout, setMarginLayout] = useState<MarginLayout>(() => {
+    try { return (localStorage.getItem("kr_margin_layout") as MarginLayout) || "center"; } catch { return "center"; }
+  });
+  const [marginGrid, setMarginGrid] = useState<MarginGrid>(() => {
+    try { return (localStorage.getItem("kr_margin_grid") as MarginGrid) || "none"; } catch { return "none"; }
+  });
+  const [marginStrokes, setMarginStrokes] = useState<MarginInkStroke[]>([]);
+  const readingScrollRef = useRef<HTMLDivElement>(null);
+  const marginSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMarginLayoutChange = useCallback((v: MarginLayout) => {
+    setMarginLayout(v);
+    try { localStorage.setItem("kr_margin_layout", v); } catch {}
+  }, []);
+  const handleMarginGridCycle = useCallback(() => {
+    setMarginGrid((prev) => {
+      const next = prev === "none" ? "dots" : prev === "dots" ? "lines" : "none";
+      try { localStorage.setItem("kr_margin_grid", next); } catch {}
+      return next;
+    });
+  }, []);
+
   // ── Workspace spatial settings ──
   const [wsTextAlign, setWsTextAlign] = useState<TextAlign>(() => {
     try { return (localStorage.getItem("bible_ws_align") as TextAlign) || "left"; } catch { return "left"; }
