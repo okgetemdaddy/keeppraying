@@ -294,6 +294,7 @@ export function BibleSleeveSheet({
   onClearAll,
   onTriggerDeepStudy,
   deepStudyActive = false,
+  onOpenBibleSight,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
