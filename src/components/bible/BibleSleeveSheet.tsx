@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { SleeveWaitlistInput } from "@/components/bible/iPadWaitlistDrawer";
 import { SessionCards } from "@/components/bible/SessionCards";
-import { SessionReviewDrawer } from "@/components/bible/SessionReviewDrawer";
+import { SessionDetailDashboard } from "@/components/bible/SessionDetailDashboard";
 import { supabase } from "@/integrations/supabase/client";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { SessionEvent } from "@/hooks/useSessionTelemetry";
