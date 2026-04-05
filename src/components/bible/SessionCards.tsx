@@ -48,7 +48,7 @@ export function SessionCards({ onResume, onReview }: SessionCardsProps) {
           return (
             <button
               key={s.id}
-              onClick={() => onResume(s)}
+              onClick={() => onReview?.(s)}
               className="flex-shrink-0 w-40 h-[200px] rounded-2xl border border-border bg-card shadow-md hover:shadow-lg transition-shadow flex flex-col overflow-hidden group"
             >
               {/* Top: thumbnail placeholder */}
