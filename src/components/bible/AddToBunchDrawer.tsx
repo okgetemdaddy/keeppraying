@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package } from "lucide-react";
+import { Package, X } from "lucide-react";
 import {
   ResponsiveSheet as Sheet,
   ResponsiveSheetContent as SheetContent,
