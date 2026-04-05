@@ -837,6 +837,10 @@ export function BibleReader() {
   const [pocketOpen, setPocketOpen] = useState(false);
   const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
   const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
+  const [showLingerToast, setShowLingerToast] = useState(false);
+  const lingerToastRef = useRef<HTMLDivElement>(null);
+  const activeReadingSessionRef = useRef<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
 
   // ── Edge-swipe gestures: open Sleeve (left) & Pocket (right) ──
   const isTouch = useIsTouch();
