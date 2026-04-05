@@ -25,6 +25,11 @@ interface SearchResult {
   tags?: string[];
 }
 
+interface Verse {
+  number: number;
+  text: string;
+}
+
 interface BiblePocketSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -36,6 +41,17 @@ interface BiblePocketSheetProps {
   onExportCanvas?: () => void;
   defaultTab?: PocketTab;
   onNavigateToChapter?: (bookUsfm: string, chapter: number) => void;
+  chapterVerses?: Verse[];
+  versionId?: number;
+  bookUsfm?: string;
+  chapterId?: string;
+  onJournalSave?: (entry: {
+    verseIds: string[];
+    strokes: any[];
+    svg?: string;
+    typedText?: string;
+    existingId?: string;
+  }) => void;
 }
 
 /* ---------- Sub-components ---------- */
