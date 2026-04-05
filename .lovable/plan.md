@@ -1,54 +1,54 @@
 
 
-## Updated Plan: Auto-Labeling + Journal Search
+## Fix: Make Bible Sight Accessible From the Bible Pocket (All Devices)
 
-Two additions to the approved Bible Sight plan:
+### The Problem
 
-### 1. Auto-Label All Generated Journal Entries
+Right now, Bible Sight journal generation is **only reachable** through the JournalPanel, which requires:
+1. Being on an iPad (study mode is iPad-gated)
+2. Entering Study Mode
+3. Switching to "journal" variant
+4. Opening the journal panel
 
-Every journal entry created by Bible Sight gets metadata columns stored in the `bible_sight_entries` table (already planned). These labels are **never shown to the user** — they exist purely for admin search and the Bible Pocket search tab.
+Additionally, the `chapterVerses` and `versionId` props are **never passed** to `JournalPanel` from `BibleReader.tsx`, so even if you reach the panel, the "✦ Bible Sight" button is hidden (it checks `chapterVerses?.length`).
 
-**Labels auto-generated per entry** (set by the `generate-journal` edge function alongside the content):
+### The Fix (2 changes)
 
-| Field | Source | Example |
-|-------|--------|---------|
-| `lens_used` | Already planned | "worry_and_peace" |
-| `tags` | Extracted by the LLM in the same call (add to output schema) | `["repentance", "baptism", "john-the-baptist", "metanoia"]` |
-| `book_usfm` / `chapter_number` | Already planned | "MAT" / 3 |
-| `summary_line` | One-line summary from LLM | "Finding peace through John's call to repentance" |
+**1. Wire missing props in `BibleReader.tsx`** (line ~3760)
 
-The `generate-journal` edge function prompt adds one extra instruction: "Also output a `tags` array (3-6 lowercase theological/topical keywords) and a `summary_line` (one sentence, max 80 chars)."
+Pass `chapterVerses` and `versionId` to the existing `<JournalPanel>`:
 
-**Migration change**: Add `tags text[]` and `summary_line text` columns to the planned `bible_sight_entries` table.
+```tsx
+<JournalPanel
+  ...existing props...
+  chapterVerses={verses.map(v => ({ number: v.number, text: v.text }))}
+  versionId={versionId}
+/>
+```
 
-### 2. Bible Pocket — New "Search" Tab
+**2. Add Bible Sight entry point to the Bible Pocket (all devices)**
 
-Add a 4th tab to `BiblePocketSheet.tsx`:
+In `BiblePocketSheet.tsx`, add a Bible Sight generation button to the **Journal tab** so users on any device (desktop, mobile, iPad) can generate entries without needing study mode. This mirrors the same `useJournalGeneration` hook call already in JournalPanel.
 
-- **Tab**: `"search"` with a `Search` icon
-- **UI**: Search input at top, results below
-- Searches the user's own `bible_sight_entries` by full-text match on `content`, `tags`, and `summary_line`
-- Also searches user's manual journal annotations (`annotations` table where `verse_ids` ends with `.journal`)
-- Results show: chapter name, summary line (if Bible Sight), date, truncated preview
-- Tapping a result navigates to that chapter and opens the journal panel with that entry loaded
-- User content remains private — query is always filtered by `user_id = auth.uid()`
+The Journal tab in Bible Pocket will show:
+- Existing journal entries list (already there)
+- A `✦ Bible Sight` button at the top when the user has no entries for this chapter, or a muted button at the bottom otherwise
+- Generated text opens the JournalPanel with the content pre-filled
 
-### 3. Admin Portal — Bible Sight Tab Enhancement
+This requires passing `chapterVerses`, `versionId`, `bookUsfm`, and `chapterId` props down to `BiblePocketSheet` from `BibleReader`.
 
-The already-planned `BibleSightAdminTab` gains search capabilities:
-
-- Full-text search across all users' Bible Sight entries (admin RLS policy)
-- Filter by: tags, lens, model, book, date range
-- Shows anonymized stats (no user content exposed in default view — admin must click "View Entry" to see content, respecting the principle that user content is private but admin has oversight access)
-
-### Files Summary (additions to existing plan)
+### Files Modified
 
 | File | Change |
 |------|--------|
-| Migration | Add `tags text[]` and `summary_line text` to `bible_sight_entries` |
-| `generate-journal/index.ts` | Add `tags` + `summary_line` to LLM output schema |
-| `BiblePocketSheet.tsx` | Add `"search"` tab to `PocketTab` union, new search UI |
-| `BibleSightAdminTab.tsx` | Add search/filter capabilities |
+| `src/components/bible/BibleReader.tsx` | Pass `chapterVerses`, `versionId`, `bookUsfm`, `chapterId` to both `JournalPanel` and `BiblePocketSheet` |
+| `src/components/bible/BiblePocketSheet.tsx` | Accept new props, add Bible Sight button to Journal tab, wire `useJournalGeneration` hook |
 
-Everything else from the previously approved plan remains unchanged.
+### How to Access (After Fix)
+
+1. Open any chapter (e.g., Ruth 1)
+2. Tap the **Bible Pocket** icon (panel-right icon in toolbar, works on all devices)
+3. Switch to the **Journal** tab
+4. Tap **✦ Bible Sight** — generates a journal entry for this chapter
+5. Entry auto-saves and appears in the list with a "refresh & update" link below it
 
