@@ -17,6 +17,7 @@ interface BibleSightDrawerProps {
   bookUsfm: string;
   chapterNumber: number;
   onTriggerDeepStudy?: () => void;
+  initialContext?: { author: string; excerpt: string } | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -28,6 +29,7 @@ export function BibleSightDrawer({
   bookUsfm,
   chapterNumber,
   onTriggerDeepStudy,
+  initialContext,
 }: BibleSightDrawerProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -56,6 +58,17 @@ export function BibleSightDrawer({
       setGeneratingStudy(false);
     }
   }, [open]);
+
+  // Handle initialContext from Commentary "Go Deeper" handoff
+  useEffect(() => {
+    if (open && initialContext && messages.length === 0) {
+      const greeting: ChatMessage = {
+        role: "assistant",
+        content: `Praise God you want to go deeper! 🙏 I see you were reading **${initialContext.author}**'s commentary on **${bookName} ${chapterNumber}**.\n\nIs there anything in particular you'd like to explore — or would you like to see what Bible Sight can see?`,
+      };
+      setMessages([greeting]);
+    }
+  }, [open, initialContext]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
