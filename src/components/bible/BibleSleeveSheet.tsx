@@ -5,7 +5,9 @@ import { SessionDetailDashboard } from "@/components/bible/SessionDetailDashboar
 import { supabase } from "@/integrations/supabase/client";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { SessionEvent } from "@/hooks/useSessionTelemetry";
-import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser, Sparkles } from "lucide-react";
+import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser } from "lucide-react";
+import { BibleSightIcon } from "@/components/bible/BibleSightIcon";
+import { DeepStudyIcon } from "@/components/bible/DeepStudyIcon";
 import {
   ArrowLeft,
   Highlighter,
@@ -959,7 +961,7 @@ export function BibleSleeveSheet({
                   }}
                   className={`flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors ${deepStudyActive ? "bg-amber-500/10" : ""}`}
                 >
-                  <Sparkles className={`h-4 w-4 ${deepStudyActive ? "text-amber-400" : "text-muted-foreground"}`} />
+                  <DeepStudyIcon size={16} className={deepStudyActive ? "text-amber-400" : "text-muted-foreground"} />
                   <div className="min-w-0">
                     <span className="text-sm font-medium text-foreground">Deep Study</span>
                     <p className="text-[0.6rem] text-muted-foreground">Current chapter</p>
@@ -977,7 +979,7 @@ export function BibleSleeveSheet({
                     }}
                     className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
                   >
-                    <Eye className="h-4 w-4 text-amber-500" />
+                    <BibleSightIcon size={16} className="text-amber-500" />
                     <div className="min-w-0">
                       <span className="text-sm font-medium text-foreground">Bible Sight</span>
                       <p className="text-[0.6rem] text-muted-foreground">Go deeper with guidance</p>
