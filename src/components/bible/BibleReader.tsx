@@ -29,6 +29,7 @@ import {
   AlignCenter,
   AlignRight,
   Grid3X3,
+  ChevronDown,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
