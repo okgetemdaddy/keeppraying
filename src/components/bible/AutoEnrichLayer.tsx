@@ -460,6 +460,23 @@ export function AutoEnrichLayer({
               Keep All
             </Button>
           </div>
+
+          {/* Secondary loading shimmer */}
+          {isLoadingMore && (
+            <div className="space-y-4 animate-pulse mt-4">
+              <div className="rounded-2xl border border-border/20 bg-muted/10 p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-20 bg-cyan-500/10 rounded-full" />
+                  <div className="h-3 w-24 bg-muted/30 rounded" />
+                </div>
+                <div className="h-3 w-full bg-muted/20 rounded" />
+                <div className="h-3 w-4/5 bg-muted/20 rounded" />
+              </div>
+              <p className="text-center text-[0.65rem] text-muted-foreground italic">
+                Deeper insights loading…
+              </p>
+            </div>
+          )}
         </div>
       )}
 
