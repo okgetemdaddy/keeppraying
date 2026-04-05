@@ -3544,6 +3544,7 @@ export function BibleReader() {
                           <AutoEnrichLayer
                             data={enrichment.data}
                             isLoading={enrichment.isLoading}
+                            isLoadingMore={enrichment.isLoadingMore}
                             active={enrichment.active}
                             verses={verses.map(v => ({ number: v.number, text: v.text }))}
                             versionId={versionId!}
