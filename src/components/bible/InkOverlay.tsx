@@ -55,6 +55,7 @@ interface InkOverlayProps {
   onXGesture?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
 }
 
+// Default stroke options — used as fallback when store isn't providing brush-specific options
 const STROKE_OPTIONS = {
   thinning: 0.5,
   smoothing: 0.5,
