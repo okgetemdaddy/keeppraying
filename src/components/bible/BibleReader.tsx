@@ -2454,17 +2454,43 @@ export function BibleReader() {
               padding: "8px 16px",
             }}
           >
+            {/* iPadOS: Locked nav maps to UINavigationItem with backButtonDisplayMode = .minimal and custom titleView showing verse range + elapsed timer */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-foreground">
-                {currentBook?.title} {currentChapter?.title}
-              </span>
+              {isInPaperCanvas && activeSessionConfig ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <Lock className="h-3.5 w-3.5 text-amber-500/70 shrink-0" />
+                  <span className="font-serif text-sm text-foreground tracking-wide truncate">
+                    {activeSessionConfig.verseRange}
+                  </span>
+                  <span className="text-muted-foreground/50 text-xs">·</span>
+                  <span className="text-xs text-muted-foreground">Session Active</span>
+                  <span className="text-muted-foreground/50 text-xs">·</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {(() => {
+                      const m = Math.floor(liveElapsed / 60);
+                      const s = liveElapsed % 60;
+                      const h = Math.floor(m / 60);
+                      const rm = m % 60;
+                      return h > 0
+                        ? `${h}:${String(rm).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+                        : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+                    })()}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm font-semibold text-foreground">
+                  {currentBook?.title} {currentChapter?.title}
+                </span>
+              )}
               <button
                 onClick={() => setStudyNavOpen(false)}
-                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
+            {/* Nav selectors — hidden when canvas session is locked */}
+            {!(isInPaperCanvas && activeSessionConfig) && (
             <div className="flex items-center gap-2">
               <Select
                 value={versionId?.toString()}
@@ -2517,6 +2543,7 @@ export function BibleReader() {
                 </SelectContent>
               </Select>
             </div>
+            )}
 
             {/* ── Secondary toolbar controls ── */}
             <div className="flex items-center gap-2 mt-2 pb-1 flex-wrap">
