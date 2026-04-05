@@ -1,25 +1,28 @@
 
 
-## Deep Study Layout Adjustments
+## Make All Verse References Interactive VerseLinks in Deep Study Cards
 
-Three changes to how the study rail renders:
+Three areas in `AutoEnrichLayer.tsx` currently render verse references as plain text. They need to become interactive `VerseLink` components.
 
-### 1. Move "Keep All" to bottom of content
+### Changes (single file: `src/components/bible/AutoEnrichLayer.tsx`)
 
-In `AutoEnrichLayer.tsx`, remove the "Keep All" button from the top HUD bar (lines 389-399) and add it as a bottom bar after the cards list (after line 452, before the empty state). Same styling but positioned at the end of the scrollable content.
+**1. Citations footer (lines 192–202)** — Currently renders `card.citations` as plain `<span>` pills. Replace each with `<VerseLink reference={cite} />`. The VerseLink already renders as a styled pill with BookMarked icon, so remove the manual pill styling and let VerseLink handle it.
 
-### 2. Two-column card grid when space allows
+**2. Cross-ref connections (lines 206–216)** — `ref.to` is a scripture reference string (e.g. "Isaiah 40:3") rendered as plain text. Replace with `<VerseLink reference={ref.to} />`.
 
-In `AutoEnrichLayer.tsx`, change the cards container (line 414, currently `space-y-4`) to use a responsive grid: `grid grid-cols-1 xl:grid-cols-2 gap-4`. This gives two columns on wide viewports (the 320px rail won't hit `xl`, but when the rail is wider or text is smaller, it will). We'll use a container-query approach or a simpler media query: since the study rail lives inside a grid column, we use CSS `@container` or just check `min-width` via a wrapper. Simplest: make the cards wrapper use `columns-1 xl:columns-2` or use `grid grid-cols-1 @[480px]:grid-cols-2 gap-4` with Tailwind container queries on the parent.
+**3. Anchor label (line 98–100)** — The `anchorLabel` like "vv. 1–4" shown in the card header. This refers to verses in the current chapter. Construct a full reference string (e.g. "Matthew 3:1-4" from `bookUsfm` + `chapterNumber` + anchors) and render as a `VerseLink`. This requires passing `bookUsfm` and `chapterNumber` as props into `ExegesisCard`.
 
-### 3. Shift Bible text to 30% from left
+### New props for ExegesisCard
 
-In `BibleReader.tsx` line 3463, change the grid template from `grid-cols-[1fr_320px]` to `grid-cols-[30%_1fr]` so the text column starts at 30% from the left edge and the study rail gets the remaining ~70%. The text column class (line 3475 `max-w-none`) stays as-is.
+Add `bookUsfm: string` and `chapterNumber: number` so it can construct full references like `"Genesis 1:1-4"` from the anchor range.
+
+### Book name mapping
+
+Need a small `usfmToName` map (e.g. `{ GEN: "Genesis", MAT: "Matthew", ... }`) to convert USFM codes to human-readable book names for VerseLink references. Add this as a const inside the file or import from an existing utility if one exists.
 
 ### Files
 
 | File | Change |
 |------|--------|
-| `src/components/bible/AutoEnrichLayer.tsx` | Move "Keep All" below cards; add two-column grid with container query |
-| `src/components/bible/BibleReader.tsx` | Change grid template to `grid-cols-[30%_1fr]` |
+| `src/components/bible/AutoEnrichLayer.tsx` | Replace plain-text verse references with VerseLink in citations, cross-refs, and anchor labels; add book name mapping; pass bookUsfm/chapterNumber to ExegesisCard |
 
