@@ -118,6 +118,18 @@ export function PaperCanvas({
     }
   }, [cameraRef]);
 
+  // Restore camera position on mount if cameraRef has non-default values (session resume)
+  useEffect(() => {
+    if (cameraRef?.current) {
+      const { x, y, scale, rotation } = cameraRef.current;
+      if (x !== 0 || y !== 0 || scale !== 1 || rotation !== 0) {
+        transformState.current = { x, y, scale, rotation };
+        applyTransform();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)
      3 fingers: rotate only
