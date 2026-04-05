@@ -895,6 +895,9 @@ export function BibleReader() {
   // Shared camera ref — owned here so heartbeat (outside PaperCanvas tree) can read live values
   const paperCameraRef = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
 
+  // Phase 1: SVG text layer for canvas sessions (rendered alongside DOM text for validation)
+  const [svgTextLayer, setSvgTextLayer] = useState<string | null>(null);
+
   // Session heartbeat for study_sessions persistence
   useStudySessionHeartbeat({
     sessionId: activeSessionId,
