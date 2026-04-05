@@ -1569,7 +1569,7 @@ export function BibleReader() {
       readingTelemetry.logEvent('ink_stroke', {
         annotation_key: marginInkKey,
         stroke_count: marginStrokes.length + 1,
-        source: 'margin_pencil',
+        source: 'margin_mode',
       });
     },
     [scheduleMarginInkSave, readingTelemetry, marginInkKey, marginStrokes.length],
@@ -1584,9 +1584,13 @@ export function BibleReader() {
       });
       if (strokeIds.length > 0) {
         toast.success(`Erased ${strokeIds.length} stroke${strokeIds.length > 1 ? "s" : ""}`);
+        readingTelemetry.logEvent('ink_erased', {
+          source: 'margin_mode',
+          erased_count: strokeIds.length,
+        });
       }
     },
-    [scheduleMarginInkSave],
+    [scheduleMarginInkSave, readingTelemetry],
   );
 
   // ── Disable zoom when pencil detected in default reading mode ──
@@ -3360,11 +3364,11 @@ export function BibleReader() {
                               start: textStart,
                               end: textStart + normalizedUnderline.length,
                             });
-                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, text_snippet: normalizedUnderline?.slice(0, 60), source: 'margin_pencil_underline' });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, text_snippet: normalizedUnderline?.slice(0, 60), source: 'margin_mode' });
                             toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
                           } else {
                             mutations.addHighlight.mutate({ verseNumber, color: lastColor });
-                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'margin_pencil_underline' });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'margin_mode' });
                             toast.success(`Highlighted verse ${verseNumber}`);
                           }
                         }
@@ -3385,6 +3389,7 @@ export function BibleReader() {
                             return [...prev, ...newSelections];
                           });
                           toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""}`);
+                          currentLogEvent('circle_select', { verse_numbers: verseNumbers, source: 'margin_mode' });
                         }
                       }}
                       onWordCircle={(words, verseNum, anchor) => {
