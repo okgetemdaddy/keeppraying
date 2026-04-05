@@ -1525,7 +1525,89 @@ export function BibleReader() {
   }, [inkHistory, scheduleInkSave]);
 
 
-  // ── Voice annotation handler ──
+  // ── Margin ink loading from annotations ──
+  // iPadOS: Margin ink persisted via CoreData annotation store, synced to Supabase
+  const marginInkKey = bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.margin_ink` : null;
+  const marginAnnotation = useMemo(() => {
+    if (!chapterAnnotations || !marginInkKey) return null;
+    return chapterAnnotations.find((a) => a.verse_ids.includes(marginInkKey)) ?? null;
+  }, [chapterAnnotations, marginInkKey]);
+  const marginAnnotationId = marginAnnotation?.id;
+
+  useEffect(() => {
+    if (marginAnnotation) {
+      const incoming = (marginAnnotation.strokes as unknown as MarginInkStroke[]) ?? [];
+      setMarginStrokes(incoming);
+    } else {
+      setMarginStrokes([]);
+    }
+  }, [marginAnnotation]);
+
+  // ── Debounced margin ink auto-save (500ms) ──
+  const scheduleMarginInkSave = useCallback(
+    (strokesToSave: MarginInkStroke[]) => {
+      if (marginSaveTimer.current) clearTimeout(marginSaveTimer.current);
+      marginSaveTimer.current = setTimeout(() => {
+        if (!marginInkKey) return;
+        saveAnnotationMut.mutate({
+          verseIds: [marginInkKey],
+          strokes: strokesToSave as unknown as StrokeData[],
+          existingId: marginAnnotationId,
+        });
+      }, 500);
+    },
+    [marginInkKey, saveAnnotationMut, marginAnnotationId],
+  );
+
+  const handleMarginStrokeComplete = useCallback(
+    (stroke: MarginInkStroke) => {
+      setMarginStrokes((prev) => {
+        const next = [...prev, stroke];
+        scheduleMarginInkSave(next);
+        return next;
+      });
+      readingTelemetry.logEvent('ink_stroke', {
+        annotation_key: marginInkKey,
+        stroke_count: marginStrokes.length + 1,
+        source: 'margin_pencil',
+      });
+    },
+    [scheduleMarginInkSave, readingTelemetry, marginInkKey, marginStrokes.length],
+  );
+
+  const handleMarginXGesture = useCallback(
+    (strokeIds: string[]) => {
+      setMarginStrokes((prev) => {
+        const next = prev.filter((s) => !strokeIds.includes(s.id));
+        scheduleMarginInkSave(next);
+        return next;
+      });
+      if (strokeIds.length > 0) {
+        toast.success(`Erased ${strokeIds.length} stroke${strokeIds.length > 1 ? "s" : ""}`);
+      }
+    },
+    [scheduleMarginInkSave],
+  );
+
+  // ── Disable zoom when pencil detected in default reading mode ──
+  // iPadOS: Zoom disabled via UIScrollView.minimumZoomScale = 1, maximumZoomScale = 1
+  useEffect(() => {
+    if (!pencilDetected || isInPaperCanvas) return;
+    const el = document.documentElement;
+    const prev = el.style.touchAction;
+    el.style.touchAction = "pan-y";
+
+    const preventDoubleTap = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+    document.addEventListener("touchstart", preventDoubleTap, { passive: false });
+
+    return () => {
+      el.style.touchAction = prev;
+      document.removeEventListener("touchstart", preventDoubleTap);
+    };
+  }, [pencilDetected, isInPaperCanvas]);
+
   const handleVoiceTranscript = useCallback(
     (transcript: string, linkedVerse: number | null) => {
       if (!bookUsfm || !currentChapter || !user?.id) return;
