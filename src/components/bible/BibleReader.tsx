@@ -3766,6 +3766,8 @@ export function BibleReader() {
         journalAnnotations={journalAnnotations ?? []}
         onSave={handleJournalSave}
         onDelete={(id) => deleteAnnotationMut.mutate(id)}
+        chapterVerses={verses.map(v => ({ number: v.number, text: v.text }))}
+        versionId={versionId}
       />
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
