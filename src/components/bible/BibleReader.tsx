@@ -1412,6 +1412,17 @@ export function BibleReader() {
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
+  // ── Load saved SVG text layout from annotations (for session resume) ──
+  useEffect(() => {
+    if (!chapterAnnotations || !activeSessionId) return;
+    const svgAnnotation = chapterAnnotations.find(a =>
+      a.verse_ids.some(vid => vid.endsWith(".svgtext"))
+    );
+    if (svgAnnotation?.typed_text) {
+      setSvgTextLayer(svgAnnotation.typed_text);
+    }
+  }, [chapterAnnotations, activeSessionId]);
+
   // ── Track whether the current session is freshly created (not resumed) ──
   const isNewSessionRef = useRef(false);
 
