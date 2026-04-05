@@ -1569,7 +1569,7 @@ export function BibleReader() {
       readingTelemetry.logEvent('ink_stroke', {
         annotation_key: marginInkKey,
         stroke_count: marginStrokes.length + 1,
-        source: 'margin_pencil',
+        source: 'margin_mode',
       });
     },
     [scheduleMarginInkSave, readingTelemetry, marginInkKey, marginStrokes.length],
