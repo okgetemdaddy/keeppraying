@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
@@ -699,15 +699,28 @@ export function BibleReader() {
   // ── Cross-translation annotations ──
   const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
 
-  // ── Bible Sleeve sheet ──
-  const [sleeveOpen, setSleeveOpen] = useState(false);
+  // ── URL-persisted drawer state ──
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const setDrawerParam = useCallback((key: string, open: boolean) => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (open) next.set(key, "1");
+      else next.delete(key);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const sleeveOpen = searchParams.get("sleeve") === "1";
+  const setSleeveOpen = useCallback((v: boolean) => setDrawerParam("sleeve", v), [setDrawerParam]);
 
   // ── Bible Sight conversational drawer ──
-  const [bibleSightOpen, setBibleSightOpen] = useState(false);
-  const [bibleSightContext, setBibleSightContext] = useState<{ author: string; excerpt: string } | null>(null);
+  const bibleSightOpen = searchParams.get("sight") === "1";
+  const setBibleSightOpen = useCallback((v: boolean) => setDrawerParam("sight", v), [setDrawerParam]);
 
   // ── Commentary Library drawer ──
-  const [commentaryOpen, setCommentaryOpen] = useState(false);
+  const commentaryOpen = searchParams.get("commentary") === "1";
+  const setCommentaryOpen = useCallback((v: boolean) => setDrawerParam("commentary", v), [setDrawerParam]);
 
   // ── Canvas Export sheet ──
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
@@ -899,7 +912,8 @@ export function BibleReader() {
   // New iPad feature states
   const [inkTrashOpen, setInkTrashOpen] = useState(false);
   const [voiceOverlayActive, setVoiceOverlayActive] = useState(false);
-  const [pocketOpen, setPocketOpen] = useState(false);
+  const pocketOpen = searchParams.get("pocket") === "1";
+  const setPocketOpen = useCallback((v: boolean) => setDrawerParam("pocket", v), [setDrawerParam]);
   const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
   const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
   const [showLingerToast, setShowLingerToast] = useState(false);
