@@ -106,6 +106,14 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
+import {
+  StudioToolbar,
+  GhostToolbar,
+  SqueezeRadialMenu,
+  InkFilterDefs,
+} from '@/components/bible/toolbar';
+import { usePencilTools } from '@/hooks/usePencilTools';
+import { useApplePencilSqueeze, useApplePencilDoubleTap } from '@/hooks/useApplePencilSqueeze';
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
 import { GestureEducationOverlay, shouldShowGestureOverlay } from "@/components/bible/GestureEducationOverlay";
