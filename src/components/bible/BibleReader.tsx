@@ -3480,6 +3480,13 @@ export function BibleReader() {
         }}
       />
 
+      {/* ── Pencil Detected Onboarding Sheet ── */}
+      <PencilDetectedSheet
+        open={pencilOnboardOpen}
+        onTryStudyMode={handlePencilTryStudyMode}
+        onDismiss={handlePencilOnboardDismiss}
+      />
+
       {/* ── Resume or New Session Sheet ── */}
       {existingSession && (
         <ResumeOrNewSheet
