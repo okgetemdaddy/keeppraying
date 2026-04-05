@@ -1,80 +1,54 @@
 
 
-## Dual-Toolbar System Integration
+## Updated Plan: Auto-Labeling + Journal Search
 
-Drop in the 9 uploaded files (2 hooks + 5 toolbar components + barrel index) and wire them into BibleReader, InkOverlay, and MarginAnnotationLayer per the integration guide.
+Two additions to the approved Bible Sight plan:
 
-### Prerequisites
+### 1. Auto-Label All Generated Journal Entries
 
-- Install `zustand` (not currently in package.json)
+Every journal entry created by Bible Sight gets metadata columns stored in the `bible_sight_entries` table (already planned). These labels are **never shown to the user** — they exist purely for admin search and the Bible Pocket search tab.
 
-### New Files (Copy from uploads)
+**Labels auto-generated per entry** (set by the `generate-journal` edge function alongside the content):
 
-| File | Source |
+| Field | Source | Example |
+|-------|--------|---------|
+| `lens_used` | Already planned | "worry_and_peace" |
+| `tags` | Extracted by the LLM in the same call (add to output schema) | `["repentance", "baptism", "john-the-baptist", "metanoia"]` |
+| `book_usfm` / `chapter_number` | Already planned | "MAT" / 3 |
+| `summary_line` | One-line summary from LLM | "Finding peace through John's call to repentance" |
+
+The `generate-journal` edge function prompt adds one extra instruction: "Also output a `tags` array (3-6 lowercase theological/topical keywords) and a `summary_line` (one sentence, max 80 chars)."
+
+**Migration change**: Add `tags text[]` and `summary_line text` columns to the planned `bible_sight_entries` table.
+
+### 2. Bible Pocket — New "Search" Tab
+
+Add a 4th tab to `BiblePocketSheet.tsx`:
+
+- **Tab**: `"search"` with a `Search` icon
+- **UI**: Search input at top, results below
+- Searches the user's own `bible_sight_entries` by full-text match on `content`, `tags`, and `summary_line`
+- Also searches user's manual journal annotations (`annotations` table where `verse_ids` ends with `.journal`)
+- Results show: chapter name, summary line (if Bible Sight), date, truncated preview
+- Tapping a result navigates to that chapter and opens the journal panel with that entry loaded
+- User content remains private — query is always filtered by `user_id = auth.uid()`
+
+### 3. Admin Portal — Bible Sight Tab Enhancement
+
+The already-planned `BibleSightAdminTab` gains search capabilities:
+
+- Full-text search across all users' Bible Sight entries (admin RLS policy)
+- Filter by: tags, lens, model, book, date range
+- Shows anonymized stats (no user content exposed in default view — admin must click "View Entry" to see content, respecting the principle that user content is private but admin has oversight access)
+
+### Files Summary (additions to existing plan)
+
+| File | Change |
 |------|--------|
-| `src/hooks/usePencilTools.ts` | Zustand store — tool type, brush style, color, size, opacity, squeeze menu state |
-| `src/hooks/useApplePencilSqueeze.ts` | Squeeze (button=5 / bitmask 32) and double-tap detection hooks |
-| `src/components/bible/toolbar/index.ts` | Barrel exports |
-| `src/components/bible/toolbar/StudioToolbar.tsx` | Draggable floating palette for canvas sessions |
-| `src/components/bible/toolbar/GhostToolbar.tsx` | Auto-collapsing bottom pill for margin reading |
-| `src/components/bible/toolbar/SqueezeRadialMenu.tsx` | Radial tool picker at squeeze position |
-| `src/components/bible/toolbar/BentoExpansionPanel.tsx` | Brush grid + sliders popover |
-| `src/components/bible/toolbar/InkFilterDefs.tsx` | 5 SVG brush texture filters (fountain/technical/wash/marker/highlighter) |
+| Migration | Add `tags text[]` and `summary_line text` to `bible_sight_entries` |
+| `generate-journal/index.ts` | Add `tags` + `summary_line` to LLM output schema |
+| `BiblePocketSheet.tsx` | Add `"search"` tab to `PocketTab` union, new search UI |
+| `BibleSightAdminTab.tsx` | Add search/filter capabilities |
 
-### Integration: `BibleReader.tsx`
-
-1. **Remove inline ink state** (lines 809-818): `inkPenColor`, `inkPenSize`, `inkPenGlow`, `inkFingerDrawing`, and `handleInkPenGlowChange`. Replace with `const pencilTools = usePencilTools()` — destructure `color`, `size`, `opacity`, `activeTool`.
-
-2. **Add squeeze + double-tap hooks** near other hook calls:
-   ```tsx
-   useApplePencilSqueeze((x, y) => pencilTools.toggleSqueezeMenu(x, y));
-   useApplePencilDoubleTap(() => pencilTools.toggleLastTool());
-   ```
-
-3. **Replace `<IPadStudyToolbar>` block** (lines 3785-3814) with:
-   ```tsx
-   <InkFilterDefs standalone />
-   <SqueezeRadialMenu />
-   {isInPaperCanvas && activeSessionConfig && (
-     <StudioToolbar onUndo={...} onRedo={...} canUndo={...} canRedo={...} />
-   )}
-   {pencilDetected && !isInPaperCanvas && (
-     <GhostToolbar />
-   )}
-   ```
-   Keep `MobileStudyToolbar` for iPhone (lines 3756-3783) untouched.
-
-4. **Update prop pass-throughs** to `<InkOverlay>` and `<MarginAnnotationLayer>`: remove `penColor`, `penSize`, `penGlow`, `fingerDrawing` props — those components will read from the Zustand store directly.
-
-### Integration: `InkOverlay.tsx`
-
-1. Import `usePencilTools`, `getActiveFilterId`, `getBrushStrokeOptions` from the store.
-2. Read `activeTool`, `brushStyle`, `color`, `size`, `opacity` from the store instead of props.
-3. Keep `penColor`/`penSize`/`penGlow`/`fingerDrawing` in the props interface as optional fallbacks for backward compatibility, but prefer store values.
-4. Replace hardcoded `STROKE_OPTIONS` with `getBrushStrokeOptions(brushStyle, size, pressure)` at stroke generation time.
-5. Apply `getActiveFilterId()` as SVG `filter` attribute on finalized stroke paths (not during live RAF drawing).
-
-### Integration: `MarginAnnotationLayer.tsx`
-
-1. Import `usePencilTools` and read `color`, `size`, `marginRule`, `activeTool`.
-2. Keep `penColor`/`penSize` props as optional fallbacks.
-3. Use `marginRule` from store to drive the background grid pattern (dots/lines/none).
-
-### What stays unchanged
-
-- `MobileStudyToolbar` — iPhone toolbar is unaffected
-- `iPadStudyToolbar.tsx` — file stays but becomes dead code (no imports reference it)
-- `InkOverlay` gesture detection (underline, circle, X) — unchanged
-- `MarginAnnotationLayer` gesture detection — unchanged
-- Canvas/session creation flow — unchanged
-
-### Summary
-
-| File | Action |
-|------|--------|
-| `package.json` | Add `zustand` |
-| 8 uploaded files | Create in `src/hooks/` and `src/components/bible/toolbar/` |
-| `BibleReader.tsx` | Remove inline state, wire store + hooks, replace iPad toolbar |
-| `InkOverlay.tsx` | Read from store, use brush-aware stroke options + filters |
-| `MarginAnnotationLayer.tsx` | Read from store for color/size/marginRule |
+Everything else from the previously approved plan remains unchanged.
 
