@@ -155,6 +155,12 @@ export function InkOverlay({
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
   const [xFlash, setXFlash] = useState<{ x: number; y: number } | null>(null);
 
+  // ── Read from Zustand store (fallback to props for backward compat) ──
+  const store = usePencilTools();
+  const effectiveColor = store.color || penColor || "#1a1a1a";
+  const effectiveSize = store.size || penSize || 8;
+  const effectiveOpacity = store.opacity ?? 1;
+
   // ── RAF point buffer (NOT React state) ──
   const pointsBufferRef = useRef<Point[]>([]);
   const isDrawingRef = useRef(false);
@@ -167,12 +173,12 @@ export function InkOverlay({
   const lastPenDownRef = useRef<number>(0);
   const firstContactFiredRef = useRef(false);
 
-  // Stable refs for current pen settings
-  const penColorRef = useRef(penColor);
-  const penSizeRef = useRef(penSize);
+  // Stable refs for current pen settings (reads from store)
+  const penColorRef = useRef(effectiveColor);
+  const penSizeRef = useRef(effectiveSize);
   const penGlowRef = useRef(penGlow);
-  penColorRef.current = penColor;
-  penSizeRef.current = penSize;
+  penColorRef.current = effectiveColor;
+  penSizeRef.current = effectiveSize;
   penGlowRef.current = penGlow ?? null;
 
   /* ── Coordinate normalization via pure-math inverse transform ──
