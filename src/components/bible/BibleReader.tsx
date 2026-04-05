@@ -929,28 +929,43 @@ export function BibleReader() {
     }
   }, [activeSessionId, studyMode, studyModeVariant]);
 
-  // Reset reading inactivity on interaction
+  // Keep refs in sync for ghost session hook closures
+  useEffect(() => { activeReadingSessionRef.current = activeReadingSessionId; }, [activeReadingSessionId]);
+  useEffect(() => { activeSessionIdRef.current = activeSessionId; }, [activeSessionId]);
+
+  // Reset reading inactivity on interaction — shows linger toast instead of auto-ending
   const resetReadingInactivity = useCallback(() => {
     if (readingInactivityRef.current) clearTimeout(readingInactivityRef.current);
     if (!activeReadingSessionId) return;
-    readingInactivityRef.current = setTimeout(async () => {
-      // Auto-end reading session after inactivity
-      if (activeReadingSessionId) {
-        readingTelemetry.logEvent("session_end");
-        await supabase
-          .from("study_sessions")
-          .update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
-          .eq("id", activeReadingSessionId);
-        // Trigger summary generation
-        try {
-          await supabase.functions.invoke("summarize-session", {
-            body: { session_id: activeReadingSessionId },
-          });
-        } catch {}
-        setActiveReadingSessionId(null);
-        readingStartedRef.current = false;
-      }
+    setShowLingerToast(false);
+    readingInactivityRef.current = setTimeout(() => {
+      // Show idle popup instead of auto-terminating
+      setShowLingerToast(true);
     }, READING_INACTIVITY_MS);
+  }, [activeReadingSessionId]);
+
+  // Linger toast handlers
+  const handleLingerResume = useCallback(() => {
+    setShowLingerToast(false);
+    resetReadingInactivity();
+  }, [resetReadingInactivity]);
+
+  const handleLingerEndSession = useCallback(async () => {
+    setShowLingerToast(false);
+    if (activeReadingSessionId) {
+      readingTelemetry.logEvent("session_end", { reason: "idle_timeout" });
+      await supabase
+        .from("study_sessions")
+        .update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
+        .eq("id", activeReadingSessionId);
+      try {
+        await supabase.functions.invoke("summarize-session", {
+          body: { session_id: activeReadingSessionId },
+        });
+      } catch {}
+      setActiveReadingSessionId(null);
+      readingStartedRef.current = false;
+    }
   }, [activeReadingSessionId, readingTelemetry]);
 
   // ensureReadingSession, auto-start, and cleanup are declared after currentChapter/hasVerses
