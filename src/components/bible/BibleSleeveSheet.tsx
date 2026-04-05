@@ -5,7 +5,7 @@ import { SessionDetailDashboard } from "@/components/bible/SessionDetailDashboar
 import { supabase } from "@/integrations/supabase/client";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { SessionEvent } from "@/hooks/useSessionTelemetry";
-import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser } from "lucide-react";
+import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser, Sparkles } from "lucide-react";
 import {
   ArrowLeft,
   Highlighter,
@@ -225,6 +225,10 @@ interface BibleSleeveSheetProps {
   /* study artifacts */
   studyArtifacts?: StudyArtifact[];
   onNavigateToArtifact?: (artifact: StudyArtifact) => void;
+
+  /* deep study */
+  onTriggerDeepStudy?: () => void;
+  deepStudyActive?: boolean;
 }
 
 export function BibleSleeveSheet({
@@ -285,6 +289,8 @@ export function BibleSleeveSheet({
   onClearChapter,
   onClearToday,
   onClearAll,
+  onTriggerDeepStudy,
+  deepStudyActive = false,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -932,6 +938,27 @@ export function BibleSleeveSheet({
                 )}
               </CollapsibleContent>
             </Collapsible>
+
+            <div className="h-px bg-border" />
+
+            {/* ── Deep Study ── */}
+            {onTriggerDeepStudy && (
+              <section>
+                <button
+                  onClick={() => {
+                    onTriggerDeepStudy();
+                    onOpenChange(false);
+                  }}
+                  className={`flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors ${deepStudyActive ? "bg-amber-500/10" : ""}`}
+                >
+                  <Sparkles className={`h-4 w-4 ${deepStudyActive ? "text-amber-400" : "text-muted-foreground"}`} />
+                  <span className="text-sm font-medium text-foreground">Deep Study</span>
+                  {deepStudyActive && (
+                    <span className="ml-auto text-[0.6rem] font-medium text-amber-400">Active</span>
+                  )}
+                </button>
+              </section>
+            )}
 
             <div className="h-px bg-border" />
 

@@ -1033,6 +1033,39 @@ export type Database = {
         }
         Relationships: []
       }
+      enriched_chapters: {
+        Row: {
+          book_usfm: string
+          chapter_number: number
+          content_json: Json
+          created_at: string | null
+          id: string
+          model_version: string
+          updated_at: string | null
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          chapter_number: number
+          content_json: Json
+          created_at?: string | null
+          id?: string
+          model_version: string
+          updated_at?: string | null
+          version_id: number
+        }
+        Update: {
+          book_usfm?: string
+          chapter_number?: number
+          content_json?: Json
+          created_at?: string | null
+          id?: string
+          model_version?: string
+          updated_at?: string | null
+          version_id?: number
+        }
+        Relationships: []
+      }
       family_homework: {
         Row: {
           created_at: string
