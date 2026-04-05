@@ -139,11 +139,16 @@ export function MarginAnnotationLayer({
   const lastPenDownRef = useRef<number>(0);
   const [scrollContentHeight, setScrollContentHeight] = useState(2000);
 
-  // Stable refs for pen settings
-  const penColorRef = useRef(penColor);
-  const penSizeRef = useRef(penSize);
-  penColorRef.current = penColor;
-  penSizeRef.current = penSize;
+  // ── Read from Zustand store (fallback to props for backward compat) ──
+  const store = usePencilTools();
+  const effectiveColor = store.color || penColor;
+  const effectiveSize = store.size || penSize;
+
+  // Stable refs for pen settings (reads from store)
+  const penColorRef = useRef(effectiveColor);
+  const penSizeRef = useRef(effectiveSize);
+  penColorRef.current = effectiveColor;
+  penSizeRef.current = effectiveSize;
 
   // ── ResizeObserver to track scroll content height ──
   // iPadOS: Height synced to PKCanvasView frame via bridge
