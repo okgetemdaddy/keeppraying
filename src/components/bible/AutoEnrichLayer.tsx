@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
+import { USFM_BOOK_NAMES } from "@/lib/usfmBooks";
+import VerseLink from "@/components/VerseLink";
 import type {
   EnrichmentPayload,
   EnrichmentBunch,
