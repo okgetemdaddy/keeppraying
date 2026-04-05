@@ -34,6 +34,12 @@ interface SessionSummary {
     cross_referencing_pct: number;
   };
   verse_focus: string[];
+  model_contributions?: {
+    theological: string;
+    statistical: string;
+    behavioral: string;
+  } | null;
+  _raw_analyses?: Record<string, unknown> | null;
 }
 
 interface SessionDetailDashboardProps {
