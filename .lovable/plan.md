@@ -1,31 +1,42 @@
 
 
-## Fix: Bible Sight Auto-Closing on `[GENERATE_STUDY]`
+## Custom Icons & Search Placeholder Update
 
-### Problem
+### 1. Create Custom SVG Icon Components
 
-When the AI model includes a `[GENERATE_STUDY]` marker in its response, the drawer automatically:
-1. Sets `generatingStudy = true` (shows a loading spinner)
-2. After 1.5s, calls `onTriggerDeepStudy()` to start a Deep Study
-3. Calls `onOpenChange(false)` to close Bible Sight
+**New file: `src/components/bible/BibleSightIcon.tsx`**
 
-This is unwanted — the chat should simply continue and the user should decide when to leave.
+A sparkle layered in front of an open book. The open book matches the KeepPray.ing logo style — a simple, elegant open book silhouette (two fanned pages meeting at a spine). A 4-pointed sparkle sits at the upper-right area of the book.
 
-### Fix
+**New file: `src/components/bible/DeepStudyIcon.tsx`**
 
-**File: `src/components/bible/BibleSightDrawer.tsx`**
+An anchor centered over/in front of the same open book silhouette. The anchor represents depth and grounding in Scripture.
 
-- Remove the entire `[GENERATE_STUDY]` auto-trigger block (lines 153–187). The marker text will just be stripped from the displayed content so it doesn't show as raw text, but no drawer closing or Deep Study triggering will occur.
-- Remove the `generatingStudy` state and all UI referencing it (the "Generating your study session…" spinner block and the `disabled` checks on the input).
-- Keep the chat log save logic — move it to run on every assistant response (or keep it only for `[GENERATE_STUDY]` tagged responses as a save-point, but without closing).
+Both components accept standard `size`, `className`, and `color` props (matching Lucide conventions) for drop-in use anywhere icons are currently used.
 
-### Result
+### 2. Replace Lucide Icons with Custom Icons
 
-Bible Sight stays open. The user can keep chatting. No automatic Deep Study launch. The `[GENERATE_STUDY]` marker is silently stripped from display text and the chat log is saved, but nothing else happens.
+**File: `src/components/bible/BibleReader.tsx`**
+
+- Import `BibleSightIcon` and `DeepStudyIcon`
+- Replace any `Eye`/`Sparkles` icons used for Bible Sight and Deep Study toolbar buttons with the new custom components
+
+**File: `src/components/bible/BibleSleeveSheet.tsx`**
+
+- Replace the icons next to "Bible Sight" and "Deep Study" labels in the Sleeve menu with the new custom SVG components
+
+### 3. Update Search Placeholder
+
+**File: `src/components/bible/BibleReader.tsx`** (line 2718)
+
+Change placeholder from `"What can I help you find?"` to `"Where is Easter found in the Bible?"`
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleSightDrawer.tsx` | Remove auto-close/auto-trigger logic; strip `[GENERATE_STUDY]` from display only; remove `generatingStudy` state and its UI |
+| `src/components/bible/BibleSightIcon.tsx` | New — sparkle + open book SVG component |
+| `src/components/bible/DeepStudyIcon.tsx` | New — anchor + open book SVG component |
+| `src/components/bible/BibleReader.tsx` | Use new icons; update search placeholder |
+| `src/components/bible/BibleSleeveSheet.tsx` | Use new icons in Sleeve menu items |
 
