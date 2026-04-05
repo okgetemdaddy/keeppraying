@@ -3986,6 +3986,11 @@ export function BibleReader() {
               break;
           }
         }}
+        chapterVerses={verses.map(v => ({ number: v.number, text: v.text }))}
+        versionId={versionId}
+        bookUsfm={bookUsfm}
+        chapterId={currentChapter?.id}
+        onJournalSave={handleJournalSave}
       />
 
       {/* ── Canvas Export Sheet ── */}
