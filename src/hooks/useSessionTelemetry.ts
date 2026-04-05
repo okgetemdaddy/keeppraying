@@ -1,4 +1,5 @@
 // iPadOS: Replace Supabase batch insert with CoreData NSBatchInsertRequest + silent push sync
+// iPadOS: Tab close maps to sceneDidEnterBackground — use BGAppRefreshTask to flush CoreData to Supabase
 import { useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
