@@ -1028,17 +1028,37 @@ export function BibleReader() {
   }, [user, userSubscriptionTier, navigate]);
 
   // Keep handleToggleStudyMode for exit-only (turning OFF study mode)
+  // iPadOS: Session auto-completes via sceneDidEnterBackground in SceneDelegate + BGAppRefreshTask
   const handleToggleStudyMode = useCallback((v: boolean) => {
     if (v) {
       // All entry goes through the gate
       handleStudyModeEntry();
       return;
     }
+    // Ending study mode — complete the active canvas session
+    if (activeSessionId) {
+      supabase
+        .from("study_sessions")
+        .update({
+          status: "complete",
+          completed_at: new Date().toISOString(),
+          last_active_at: new Date().toISOString(),
+        })
+        .eq("id", activeSessionId)
+        .then(() => {});
+      // Trigger AI summary in background
+      supabase.functions.invoke("summarize-session", {
+        body: { session_id: activeSessionId },
+      }).catch(console.error);
+      canvasTelemetry.logEvent("session_end", { reason: "study_mode_exit" });
+      setActiveSessionId(null);
+      setActiveSessionConfig(null);
+    }
     setStudyMode(false);
     try { localStorage.setItem("bible_study_mode", "false"); } catch {}
     setCanvasOpen(false);
     setJournalOpen(false);
-  }, [handleStudyModeEntry]);
+  }, [handleStudyModeEntry, activeSessionId, canvasTelemetry]);
 
   // ── Resume handler ──
   const handleResumeSession = useCallback(() => {
