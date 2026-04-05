@@ -1584,9 +1584,13 @@ export function BibleReader() {
       });
       if (strokeIds.length > 0) {
         toast.success(`Erased ${strokeIds.length} stroke${strokeIds.length > 1 ? "s" : ""}`);
+        readingTelemetry.logEvent('ink_erased', {
+          source: 'margin_mode',
+          erased_count: strokeIds.length,
+        });
       }
     },
-    [scheduleMarginInkSave],
+    [scheduleMarginInkSave, readingTelemetry],
   );
 
   // ── Disable zoom when pencil detected in default reading mode ──
