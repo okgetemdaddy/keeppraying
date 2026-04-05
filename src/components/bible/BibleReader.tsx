@@ -2167,8 +2167,9 @@ export function BibleReader() {
   const handleRemoveHighlight = useCallback(
     (highlightId: string) => {
       mutations.removeHighlight.mutate(highlightId);
+      currentLogEvent('highlight_removed', { highlight_id: highlightId });
     },
-    [mutations.removeHighlight],
+    [mutations.removeHighlight, currentLogEvent],
   );
 
   const isInPaperCanvas = studyMode && studyModeVariant === "margin";
