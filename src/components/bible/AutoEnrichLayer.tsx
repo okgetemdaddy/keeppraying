@@ -386,18 +386,6 @@ export function AutoEnrichLayer({
           {blendLevel === "full" ? "Full" : blendLevel === "light" ? "Light" : "Off"}
         </button>
 
-        {/* Keep All */}
-        {data && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleKeepAll}
-            className="text-xs h-7 text-amber-400 hover:text-amber-300"
-          >
-            <CheckCheck className="h-3.5 w-3.5 mr-1" />
-            Keep All
-          </Button>
-        )}
 
         <button
           onClick={onClose}
@@ -411,7 +399,8 @@ export function AutoEnrichLayer({
       {isLoading && <EnrichmentSkeleton />}
 
       {data && (
-        <div className="space-y-4">
+        <div className="@container">
+        <div className="grid grid-cols-1 @[480px]:grid-cols-2 gap-4">
           {/* Structural brackets + cards */}
           {data.cards.map((card, idx) => {
             const bunch = cardBunchMap.get(card.id);
@@ -449,6 +438,20 @@ export function AutoEnrichLayer({
               </motion.div>
             );
           })}
+        </div>
+
+          {/* Keep All — bottom of content */}
+          <div className="flex justify-center pt-4 pb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleKeepAll}
+              className="text-xs h-8 text-amber-400 hover:text-amber-300"
+            >
+              <CheckCheck className="h-3.5 w-3.5 mr-1" />
+              Keep All
+            </Button>
+          </div>
         </div>
       )}
 

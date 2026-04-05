@@ -3460,7 +3460,7 @@ export function BibleReader() {
                     {/* Dynamic layout: grid with study rail when Deep Study active on landscape */}
                     <div className={`transition-all duration-300 ease-out ${
                       enrichment.active && !isMobile
-                        ? "grid grid-cols-[1fr_320px] gap-6"
+                        ? "grid grid-cols-[30%_1fr] gap-6"
                         : ""
                     }`}>
                       {/* Text column */}
