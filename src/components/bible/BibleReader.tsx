@@ -3450,16 +3450,18 @@ export function BibleReader() {
         versionId={versionId}
       />
 
-      {/* ── Chapter Thumbnail Strip ── */}
-      <ChapterThumbnailStrip
-        open={thumbnailStripOpen}
-        onClose={() => setThumbnailStripOpen(false)}
-        currentChapterIdx={chapterIdx}
-        totalChapters={totalChapters}
-        bookTitle={currentBook?.title}
-        chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
-        onNavigate={(idx) => setChapterIdx(idx)}
-      />
+      {/* ── Chapter Thumbnail Strip — hidden during canvas sessions ── */}
+      {!isInPaperCanvas && (
+        <ChapterThumbnailStrip
+          open={thumbnailStripOpen}
+          onClose={() => setThumbnailStripOpen(false)}
+          currentChapterIdx={chapterIdx}
+          totalChapters={totalChapters}
+          bookTitle={currentBook?.title}
+          chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
+          onNavigate={(idx) => setChapterIdx(idx)}
+        />
+      )}
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
