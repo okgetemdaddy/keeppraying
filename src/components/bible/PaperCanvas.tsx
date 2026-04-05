@@ -71,6 +71,9 @@ export interface PaperCanvasProps {
   children: React.ReactNode;
   /** Optional external ref — kept in sync so parent (e.g. heartbeat) can read live camera state */
   cameraRef?: React.MutableRefObject<{ x: number; y: number; scale: number; rotation: number }>;
+  /** Phase 1: SVG text layer rendered alongside DOM text for validation */
+  // iPadOS: SVG text layer maps to CATextLayer with CTFramesetter for native rendering
+  svgTextLayer?: string;
 }
 
 export function PaperCanvas({
@@ -83,6 +86,7 @@ export function PaperCanvas({
   overlay,
   children,
   cameraRef,
+  svgTextLayer,
 }: PaperCanvasProps) {
   const deskRef = useRef<HTMLDivElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
@@ -113,6 +117,18 @@ export function PaperCanvas({
       cameraRef.current = { x, y, scale, rotation };
     }
   }, [cameraRef]);
+
+  // Restore camera position on mount if cameraRef has non-default values (session resume)
+  useEffect(() => {
+    if (cameraRef?.current) {
+      const { x, y, scale, rotation } = cameraRef.current;
+      if (x !== 0 || y !== 0 || scale !== 1 || rotation !== 0) {
+        transformState.current = { x, y, scale, rotation };
+        applyTransform();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   /* ── Touch gesture system ──
      2 fingers: pan OR zoom (intent locked)
@@ -336,6 +352,25 @@ export function PaperCanvas({
           >
             {children}
           </div>
+
+          {/* Phase 1: SVG text layer — rendered alongside DOM text for visual validation */}
+          {svgTextLayer && textBoxConfig && (
+            <svg
+              style={{
+                position: "absolute",
+                left: textBoxConfig.x,
+                top: textBoxConfig.y,
+                width: textBoxConfig.width,
+                height: textBoxConfig.height,
+                pointerEvents: "none",
+                zIndex: 2,
+                overflow: "visible",
+              }}
+              viewBox={`0 0 ${textBoxConfig.width} ${textBoxConfig.height}`}
+              xmlns="http://www.w3.org/2000/svg"
+              dangerouslySetInnerHTML={{ __html: svgTextLayer }}
+            />
+          )}
 
           {overlay && (
             <div

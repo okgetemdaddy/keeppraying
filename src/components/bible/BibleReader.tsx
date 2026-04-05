@@ -126,6 +126,7 @@ import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
+import { layoutBibleText } from "@/lib/svgTextLayout";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
@@ -894,6 +895,9 @@ export function BibleReader() {
   // Shared camera ref — owned here so heartbeat (outside PaperCanvas tree) can read live values
   const paperCameraRef = useRef({ x: 0, y: 0, scale: 1, rotation: 0 });
 
+  // Phase 1: SVG text layer for canvas sessions (rendered alongside DOM text for validation)
+  const [svgTextLayer, setSvgTextLayer] = useState<string | null>(null);
+
   // Session heartbeat for study_sessions persistence
   useStudySessionHeartbeat({
     sessionId: activeSessionId,
@@ -1066,13 +1070,30 @@ export function BibleReader() {
     isNewSessionRef.current = false;
     setShowResumeOrNew(false);
 
-    // Build config from session
     const s = existingSession;
+
+    // Navigate to the session's book and chapter FIRST
+    if (s.book_usfm && s.book_usfm !== bookUsfm) {
+      setBookUsfm(s.book_usfm);
+    }
+    // chapter_id from the session is 1-indexed, chapterIdx is 0-indexed
+    const targetChapterIdx = (s.chapter_id ?? 1) - 1;
+    if (targetChapterIdx !== chapterIdx) {
+      setChapterIdx(Math.max(0, targetChapterIdx));
+    }
+
+    // Build session config — populate verses from verse range so canvas filter works
+    const sessionVerses = s.verse_start && s.verse_end
+      ? Array.from(
+          { length: s.verse_end - s.verse_start + 1 },
+          (_, i) => ({ number: s.verse_start + i, text: "" })
+        )
+      : [];
+
     setActiveSessionId(s.id);
     setActiveSessionConfig({
       sessionId: s.id,
-      verses: [], // Will be populated from Bible data on mount
-      // TODO: Multi-book sessions — track last_book_usfm and last_chapter_id on session row
+      verses: sessionVerses,
       verseRange: (() => {
         const bookTitle = index?.books?.find(b => b.id === s.book_usfm)?.title ?? s.book_usfm;
         return s.verse_start && s.verse_end
@@ -1090,6 +1111,16 @@ export function BibleReader() {
       timerMinutes: null,
     });
 
+    // Restore camera position from session
+    if (paperCameraRef.current) {
+      paperCameraRef.current = {
+        x: s.camera_x ?? 0,
+        y: s.camera_y ?? 0,
+        scale: s.camera_scale ?? 1,
+        rotation: s.camera_rotation ?? 0,
+      };
+    }
+
     setInkTextSpacing(parseFloat(s.line_spacing) || 2.4);
     try { localStorage.setItem("bible_ink_spacing", String(parseFloat(s.line_spacing) || 2.4)); } catch {}
     setStudyMode(true);
@@ -1101,7 +1132,7 @@ export function BibleReader() {
       .update({ status: "active", last_active_at: new Date().toISOString() })
       .eq("id", s.id)
       .then(() => {});
-  }, [existingSession]);
+  }, [existingSession, bookUsfm, chapterIdx]);
 
   // ── Start New handler ──
   const handleStartNewSession = useCallback(() => {
@@ -1380,6 +1411,17 @@ export function BibleReader() {
   const { data: journalAnnotations } = useJournalAnnotations(bookUsfm, currentChapter?.id);
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
+
+  // ── Load saved SVG text layout from annotations (for session resume) ──
+  useEffect(() => {
+    if (!chapterAnnotations || !activeSessionId) return;
+    const svgAnnotation = chapterAnnotations.find(a =>
+      a.verse_ids.some(vid => vid.endsWith(".svgtext"))
+    );
+    if (svgAnnotation?.typed_text) {
+      setSvgTextLayer(svgAnnotation.typed_text);
+    }
+  }, [chapterAnnotations, activeSessionId]);
 
   // ── Track whether the current session is freshly created (not resumed) ──
   const isNewSessionRef = useRef(false);
@@ -2911,6 +2953,7 @@ export function BibleReader() {
               marginWidth={wsMarginWidth}
               canvasBackground={wsCanvasBackground}
               cameraRef={paperCameraRef}
+              svgTextLayer={svgTextLayer ?? undefined}
               textBoxConfig={activeSessionConfig?.textBox ? {
                 x: activeSessionConfig.textBox.x * 96,
                 y: activeSessionConfig.textBox.y * 96,
@@ -3497,7 +3540,7 @@ export function BibleReader() {
         books={index?.books}
         currentBookUsfm={bookUsfm}
         currentChapterIdx={chapterIdx}
-        onStartSession={(config) => {
+        onStartSession={async (config) => {
           console.log("Canvas session config:", config);
           isNewSessionRef.current = true;
           inkHistory.replaceStrokes([]);
@@ -3511,6 +3554,57 @@ export function BibleReader() {
           // Show gesture overlay for first-time users
           if (shouldShowGestureOverlay(0)) {
             setTimeout(() => setGestureOverlayOpen(true), 600);
+          }
+
+          // ── Phase 1: Generate SVG text layout & store as annotation ──
+          // iPadOS: Font barrier is unnecessary — CTFont is loaded synchronously from the app bundle via UIFont(name:size:)
+          if (config.verses?.length && config.textBox) {
+            try {
+              const fontFamily = "'EB Garamond', 'Georgia', serif";
+              const fontString = `${config.typography.fontSize}px ${fontFamily}`;
+
+              // Deterministic typography safeguard — wait for web font before measurement
+              try {
+                await Promise.race([
+                  document.fonts.load(fontString),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error("Font load timeout")), 3000))
+                ]);
+                await document.fonts.ready;
+              } catch (fontErr) {
+                console.warn("Typography barrier: Proceeding with available fonts.", fontErr);
+              }
+
+              const layout = layoutBibleText({
+                verses: config.verses,
+                containerWidth: config.textBox.width * 96,
+                containerHeight: config.textBox.height * 96,
+                fontSize: config.typography.fontSize,
+                lineHeight: config.typography.fontSize * config.typography.lineSpacing,
+                fontFamily,
+                textAlign: "left",
+                isDark: premiumDark,
+              });
+
+              setSvgTextLayer(layout.svgString);
+
+              // Store SVG text layout as annotation for resume
+              if (bookUsfm && currentChapter) {
+                const svgKey = `${bookUsfm}.${currentChapter.id}.svgtext`;
+                saveAnnotationMut.mutate({
+                  verseIds: [svgKey],
+                  strokes: [],
+                  typedText: layout.svgString,
+                });
+                const wordMapKey = `${bookUsfm}.${currentChapter.id}.wordmap`;
+                saveAnnotationMut.mutate({
+                  verseIds: [wordMapKey],
+                  strokes: [],
+                  typedText: JSON.stringify(layout.wordElements),
+                });
+              }
+            } catch (layoutErr) {
+              console.warn("SVG text layout generation failed:", layoutErr);
+            }
           }
         }}
       />
