@@ -272,7 +272,7 @@ function JournalTab({
                 </div>
                 {(ann as any).typed_text && (
                   <p className="text-xs text-neutral-200 line-clamp-4 leading-relaxed">
-                    {(ann as any).typed_text}
+                    {renderWithVerseLinks((ann as any).typed_text)}
                   </p>
                 )}
                 <div className="flex flex-wrap gap-1">

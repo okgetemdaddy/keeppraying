@@ -285,7 +285,7 @@ export function JournalPanel({
                         </div>
                         {(entry as any).typed_text && (
                           <p className="text-xs text-foreground/70 line-clamp-2 mt-1 leading-relaxed">
-                            {(entry as any).typed_text}
+                            {renderWithVerseLinks((entry as any).typed_text)}
                           </p>
                         )}
                       </button>
