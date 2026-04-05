@@ -39,8 +39,14 @@ export function PencilDetectedSheet({ open, onTryStudyMode, onDismiss }: PencilD
             className="fixed bottom-0 left-0 right-0 z-50 max-h-[70vh] overflow-y-auto rounded-t-3xl bg-card border-t border-border shadow-2xl"
           >
             {/* Drag handle */}
-            <div className="flex justify-center pt-3 pb-2">
+            <div className="flex justify-center pt-3 pb-2 relative">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+              <button
+                onClick={onDismiss}
+                className="absolute right-4 top-3 h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4 text-muted-foreground" />
+              </button>
             </div>
 
             <div className="px-6 pb-8 space-y-5">
