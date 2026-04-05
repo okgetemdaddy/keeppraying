@@ -9,6 +9,7 @@ import Bible from "@/pages/Bible";
 import KeepReadingAuth from "./KeepReadingAuth";
 import ResetPassword from "@/pages/ResetPassword";
 import KeepReadingLanding from "@/pages/KeepReadingLanding";
+import Help from "@/pages/Help";
 
 /**
  * Minimal app shell for the keepread.ing domain.
@@ -36,6 +37,7 @@ export function KeepReadingShell() {
         <Route path="/welcome" element={<KeepReadingLanding />} />
         <Route path="/auth" element={<KeepReadingAuth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/help" element={<Help />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

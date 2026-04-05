@@ -52,7 +52,7 @@ export function SessionCards({ onResume, onReview }: SessionCardsProps) {
           </p>
         </div>
         <button
-          onClick={() => navigate("/support#sessions")}
+          onClick={() => navigate("/help#sessions")}
           className="text-[0.6rem] text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2 decoration-border px-1"
         >
           What are sessions?
@@ -136,7 +136,7 @@ export function SessionCards({ onResume, onReview }: SessionCardsProps) {
         })}
       </div>
       <button
-        onClick={() => navigate("/support#sessions")}
+        onClick={() => navigate("/help#sessions")}
         className="text-[0.6rem] text-muted-foreground/60 hover:text-muted-foreground transition-colors underline underline-offset-2 decoration-border px-1 mt-1"
       >
         What are sessions?

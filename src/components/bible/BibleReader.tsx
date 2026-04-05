@@ -29,6 +29,7 @@ import {
   AlignCenter,
   AlignRight,
   Grid3X3,
+  ChevronDown,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -125,6 +126,7 @@ import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip"
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
+import { useBookAnnotations } from "@/hooks/useBookAnnotations";
 import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
@@ -1443,6 +1445,10 @@ export function BibleReader() {
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
+  // ── Book-wide annotations for thumbnail drawer ──
+  const { chapterAnnotations: bookAnnotations, invalidateChapter } = useBookAnnotations(bookUsfm);
+  const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Load saved SVG text layout from annotations (for session resume) ──
   useEffect(() => {
     if (!chapterAnnotations || !activeSessionId) return;
@@ -1486,9 +1492,14 @@ export function BibleReader() {
           strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
         });
+        // Debounced thumbnail invalidation
+        if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
+        invalidateTimerRef.current = setTimeout(() => {
+          if (currentChapter) invalidateChapter(parseInt(currentChapter.id, 10));
+        }, 1500);
       }, 500);
     },
-    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId, invalidateChapter],
   );
 
   const handleInkStrokeComplete = useCallback(
@@ -3094,13 +3105,16 @@ export function BibleReader() {
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
             </p>
-            {studyMode && (
-              <button
+            {!isInPaperCanvas && (
+              <motion.button
                 onClick={() => setThumbnailStripOpen(true)}
-                className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
+                animate={{ y: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                className="mx-auto block mt-1 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Browse chapters"
               >
-                ▼ Browse chapters
-              </button>
+                <ChevronDown className="h-4 w-4" />
+              </motion.button>
             )}
           </motion.header>
         )}
@@ -3991,6 +4005,7 @@ export function BibleReader() {
           bookTitle={currentBook?.title}
           chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
           onNavigate={(idx) => setChapterIdx(idx)}
+          chapterAnnotations={bookAnnotations}
         />
       )}
 
