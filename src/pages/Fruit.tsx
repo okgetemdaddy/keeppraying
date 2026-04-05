@@ -109,8 +109,8 @@ const wsjComponents: Components = {
   ),
   p: ({ children }) => (
     <p
-      className="text-[0.9rem] leading-[1.75] text-foreground/90 mb-3 text-justify hyphens-auto"
-      style={{ fontFamily: wsjSerif }}
+      className="leading-[1.75] text-foreground/90 mb-3 text-justify hyphens-auto"
+      style={{ fontFamily: wsjSerif, fontSize: "inherit" }}
     >
       {children}
     </p>
@@ -127,16 +127,16 @@ const wsjComponents: Components = {
   ),
   li: ({ children }) => (
     <li
-      className="text-[0.85rem] leading-[1.7] text-foreground/85 pl-3 relative before:content-['■'] before:absolute before:left-[-0.25rem] before:text-[0.45rem] before:text-foreground/30 before:top-[0.55em]"
-      style={{ fontFamily: wsjSerif }}
+      className="leading-[1.7] text-foreground/85 pl-3 relative before:content-['■'] before:absolute before:left-[-0.25rem] before:text-[0.45rem] before:text-foreground/30 before:top-[0.55em]"
+      style={{ fontFamily: wsjSerif, fontSize: "inherit" }}
     >
       {children}
     </li>
   ),
   blockquote: ({ children }) => (
     <blockquote
-      className="my-4 border-l-[3px] border-foreground/20 pl-4 italic text-foreground/70 text-[0.85rem] leading-relaxed"
-      style={{ fontFamily: wsjSerif }}
+      className="my-4 border-l-[3px] border-foreground/20 pl-4 italic text-foreground/70 leading-relaxed"
+      style={{ fontFamily: wsjSerif, fontSize: "inherit" }}
     >
       {children}
     </blockquote>
