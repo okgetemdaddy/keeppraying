@@ -109,7 +109,7 @@ import { useSessionTelemetry } from "@/hooks/useSessionTelemetry";
 import { PremiumUpsellSheet } from "@/components/bible/PremiumUpsellSheet";
 import { ResumeOrNewSheet } from "@/components/bible/ResumeOrNewSheet";
 import type { StudySession } from "@/hooks/useStudySessions";
-import { Lock } from "lucide-react";
+
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";

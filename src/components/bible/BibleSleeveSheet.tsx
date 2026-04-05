@@ -1028,7 +1028,6 @@ export function BibleSleeveSheet({
       onClose={() => { setReviewSession(null); setReviewEvents([]); reviewCacheRef.current = null; }}
       session={reviewSession!}
       events={reviewEvents}
-      loading={reviewLoading}
     />
   </>
   );
