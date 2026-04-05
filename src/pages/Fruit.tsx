@@ -286,43 +286,41 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
   return (
     <div className="flex h-[calc(100vh-120px)]">
       {/* Sidebar: Past Reports */}
-      {sidebarOpen && (
-        <div className="w-64 border-r border-border flex-shrink-0 flex flex-col">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Past Reports</span>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-              {pastReports?.map((report) => (
-                <button
-                  key={report.id}
-                  onClick={() => setSelectedReportId(report.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors ${
-                    selectedReportId === report.id
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted text-muted-foreground"
-                  }`}
-                >
-                  <div className="font-medium truncate">
-                    {MODEL_LABELS[model].label} Report
-                  </div>
-                  <div className="text-[10px] opacity-70">
-                    {new Date(report.created_at).toLocaleDateString(undefined, {
-                      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
-                    })}
-                  </div>
-                </button>
-              ))}
-              {(!pastReports || pastReports.length === 0) && (
-                <p className="text-xs text-muted-foreground px-3 py-4 text-center">
-                  No reports yet. Click refresh to generate one.
-                </p>
-              )}
-            </div>
-          </ScrollArea>
+      <div className={`border-r border-border flex-shrink-0 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? "w-64" : "w-0"}`}>
+        <div className="px-4 py-3 border-b border-border flex items-center gap-2 min-w-[16rem]">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">Past Reports</span>
         </div>
-      )}
+        <ScrollArea className="flex-1 min-w-[16rem]">
+          <div className="p-2 space-y-1">
+            {pastReports?.map((report) => (
+              <button
+                key={report.id}
+                onClick={() => setSelectedReportId(report.id)}
+                className={`w-full text-left px-3 py-2 rounded-md text-xs transition-colors ${
+                  selectedReportId === report.id
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                <div className="font-medium truncate">
+                  {MODEL_LABELS[model].label} Report
+                </div>
+                <div className="text-[10px] opacity-70">
+                  {new Date(report.created_at).toLocaleDateString(undefined, {
+                    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+                  })}
+                </div>
+              </button>
+            ))}
+            {(!pastReports || pastReports.length === 0) && (
+              <p className="text-xs text-muted-foreground px-3 py-4 text-center">
+                No reports yet. Click refresh to generate one.
+              </p>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
