@@ -1942,9 +1942,10 @@ export function BibleReader() {
         content,
         existingId,
       });
+      currentLogEvent(existingId ? 'note_edited' : 'note_written', { verse_number: noteInputVerse, note_snippet: content?.slice(0, 100) });
       setNoteInputVerse(null);
     },
-    [noteInputVerse, mutations.saveNote],
+    [noteInputVerse, mutations.saveNote, currentLogEvent],
   );
 
   // ── Auto-show tooltip when 2+ cross-selections and user hasn't acknowledged ──
