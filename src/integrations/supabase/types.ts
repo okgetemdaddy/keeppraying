@@ -337,6 +337,7 @@ export type Database = {
         Row: {
           book_usfm: string
           chapter_number: number
+          chat_log: Json | null
           content: string
           created_at: string
           entry_type: string
@@ -355,6 +356,7 @@ export type Database = {
         Insert: {
           book_usfm: string
           chapter_number: number
+          chat_log?: Json | null
           content: string
           created_at?: string
           entry_type?: string
@@ -373,6 +375,7 @@ export type Database = {
         Update: {
           book_usfm?: string
           chapter_number?: number
+          chat_log?: Json | null
           content?: string
           created_at?: string
           entry_type?: string
@@ -1370,27 +1373,36 @@ export type Database = {
       library_chunks: {
         Row: {
           author: string | null
+          bible_book_usfm: string | null
           book_title: string
+          chapter_number: number | null
           content: string
           embedding: string | null
           id: string
           page_reference: string | null
+          source_url: string | null
         }
         Insert: {
           author?: string | null
+          bible_book_usfm?: string | null
           book_title: string
+          chapter_number?: number | null
           content: string
           embedding?: string | null
           id?: string
           page_reference?: string | null
+          source_url?: string | null
         }
         Update: {
           author?: string | null
+          bible_book_usfm?: string | null
           book_title?: string
+          chapter_number?: number | null
           content?: string
           embedding?: string | null
           id?: string
           page_reference?: string | null
+          source_url?: string | null
         }
         Relationships: []
       }

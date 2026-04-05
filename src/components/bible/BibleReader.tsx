@@ -139,6 +139,7 @@ import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleSightDrawer } from "@/components/bible/BibleSightDrawer";
+import { CommentaryDrawer } from "@/components/bible/CommentaryDrawer";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
 import { MarginAnnotationLayer, type MarginInkStroke } from "@/components/bible/MarginAnnotationLayer";
@@ -703,6 +704,9 @@ export function BibleReader() {
 
   // ── Bible Sight conversational drawer ──
   const [bibleSightOpen, setBibleSightOpen] = useState(false);
+
+  // ── Commentary Library drawer ──
+  const [commentaryOpen, setCommentaryOpen] = useState(false);
 
   // ── Canvas Export sheet ──
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
@@ -3811,6 +3815,7 @@ export function BibleReader() {
         onTriggerDeepStudy={enrichment.trigger}
         deepStudyActive={enrichment.active}
         onOpenBibleSight={() => setBibleSightOpen(true)}
+        onOpenCommentary={() => setCommentaryOpen(true)}
       />
 
       {/* ── Bible Sight Conversational Drawer ── */}
@@ -3822,7 +3827,13 @@ export function BibleReader() {
         onTriggerDeepStudy={enrichment.trigger}
       />
 
-      {/* ── Manuscript Canvas (Mode 2) ── */}
+      {/* ── Commentary Library Drawer ── */}
+      <CommentaryDrawer
+        open={commentaryOpen}
+        onOpenChange={setCommentaryOpen}
+        bookUsfm={bookUsfm ?? "GEN"}
+        chapterNumber={chapterIdx + 1}
+      />
       {canvasOpen && studyMode && studyModeVariant === "canvas" && (
         <ManuscriptCanvas
           chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}

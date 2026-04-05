@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, BookOpen, Sparkles, ScrollText, ArrowUpRight, MoreVertical, Trash2, Share2, Eye } from "lucide-react";
+import { X, BookOpen, Sparkles, ScrollText, ArrowUpRight, MoreVertical, Trash2, Share2, Eye, MessageCircle, ChevronDown } from "lucide-react";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -40,6 +40,9 @@ interface DeepStudyDrawerProps {
   title?: string;
   onDeleteJournal?: (id: string) => void;
   onShareJournal?: (id: string, title: string, preview: string) => void;
+  /** Private chat log — only shown to the session creator */
+  chatLog?: Array<{ role: "user" | "assistant"; content: string }>;
+  isSessionCreator?: boolean;
 }
 
 /* ── Ornamental SVG Dividers ── */
@@ -349,8 +352,11 @@ export function DeepStudyDrawer({
   title,
   onDeleteJournal,
   onShareJournal,
+  chatLog,
+  isSessionCreator = false,
 }: DeepStudyDrawerProps) {
   const [activeTab, setActiveTab] = useState<Tab>("exegesis");
+  const [chatLogOpen, setChatLogOpen] = useState(false);
   const bookName = USFM_BOOK_NAMES[bookUsfm] || bookUsfm;
   const displayTitle = title || `${bookName} ${chapterNumber}`;
 
@@ -406,6 +412,46 @@ export function DeepStudyDrawer({
               bookUsfm={bookUsfm}
               chapterNumber={chapterNumber}
             />
+          )}
+
+          {/* ── Private Chat Log (creator only) ── */}
+          {isSessionCreator && chatLog && chatLog.length > 0 && (
+            <>
+              <OliveBranchDivider />
+              <div className="rounded-2xl border border-neutral-700/50 bg-neutral-800/30 overflow-hidden">
+                <button
+                  onClick={() => setChatLogOpen((v) => !v)}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-left hover:bg-neutral-700/20 transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4 text-amber-400" />
+                  <span className="text-xs font-semibold text-neutral-300 flex-1">
+                    My Conversation
+                  </span>
+                  <span className="text-[0.6rem] text-neutral-500 mr-2">Private</span>
+                  <ChevronDown className={`h-3.5 w-3.5 text-neutral-500 transition-transform ${chatLogOpen ? "" : "-rotate-90"}`} />
+                </button>
+                {chatLogOpen && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-neutral-700/30 pt-3">
+                    {chatLog.map((msg, i) => (
+                      <div
+                        key={i}
+                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground rounded-br-md"
+                              : "bg-neutral-700/40 text-neutral-200 rounded-bl-md"
+                          }`}
+                        >
+                          {renderWithVerseLinks(msg.content)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {/* Bottom breathing room */}

@@ -139,6 +139,7 @@ export function BibleSightDrawer({
       // Check for study generation marker
       if (assistantContent.includes("[GENERATE_STUDY]")) {
         const cleanContent = assistantContent.replace(/\[GENERATE_STUDY\]/g, "").trim();
+        const finalMessages = newMessages.concat([{ role: "assistant" as const, content: cleanContent }]);
         setMessages((prev) =>
           prev.map((m, i) =>
             i === prev.length - 1 && m.role === "assistant"
@@ -146,6 +147,25 @@ export function BibleSightDrawer({
               : m
           )
         );
+
+        // Save chat log to bible_sight_entries for private access later
+        try {
+          const { supabase: sb } = await import("@/integrations/supabase/client");
+          await sb.from("bible_sight_entries").insert({
+            user_id: user.id,
+            book_usfm: bookUsfm,
+            chapter_number: chapterNumber,
+            content: cleanContent,
+            entry_type: "study_session",
+            lens_used: "bible_sight_chat",
+            model_used: "grok-4-0709",
+            chat_log: finalMessages,
+            title: `Bible Sight — ${bookName} ${chapterNumber}`,
+          });
+        } catch (e) {
+          console.error("Failed to save chat log:", e);
+        }
+
         setGeneratingStudy(true);
         setTimeout(() => {
           onTriggerDeepStudy?.();
