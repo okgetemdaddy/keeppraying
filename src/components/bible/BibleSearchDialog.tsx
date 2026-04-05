@@ -66,7 +66,6 @@ export function BibleSearchDialog({
       addRecentSearch(query);
       onOpenChange(false);
 
-      // Let dialog exit animation clear before navigating
       setTimeout(() => {
         switch (result.type) {
           case "reference":
@@ -82,6 +81,9 @@ export function BibleSearchDialog({
             break;
           case "ai":
             onNavigate(result.bookUsfm, result.chapter, result.verseStart);
+            break;
+          case "session":
+            onNavigate(result.bookUsfm, result.chapterNumber);
             break;
         }
       }, 50);
