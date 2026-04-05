@@ -9,6 +9,7 @@ import Bible from "@/pages/Bible";
 import KeepReadingAuth from "./KeepReadingAuth";
 import ResetPassword from "@/pages/ResetPassword";
 import KeepReadingLanding from "@/pages/KeepReadingLanding";
+import Help from "@/pages/Help";
 
 /**
  * Minimal app shell for the keepread.ing domain.
