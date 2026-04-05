@@ -77,6 +77,59 @@ export interface FloatingToolbarProps {
   existingBookmarkColor?: string;
 }
 
+/* ── Focus Group: consolidates Cross-Ref, Word Study, and TTS on mobile ── */
+function FocusGroup({
+  verseNumber,
+  onCrossRef,
+  onReference,
+  onDismiss,
+}: {
+  verseNumber: number;
+  onCrossRef?: (v: number) => void;
+  onReference?: (v: number, w?: string) => void;
+  onDismiss: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!expanded) {
+    return (
+      <button
+        className="flex h-10 flex-1 gap-2 rounded-lg border border-border px-3 items-center justify-center hover:bg-muted transition-colors text-foreground"
+        onClick={() => { if (navigator.vibrate) navigator.vibrate(8); setExpanded(true); }}
+      >
+        <Focus className="h-4 w-4" />
+        <span className="text-sm">Focus</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-2 w-full">
+      <p className="text-xs font-medium text-muted-foreground">Focus Tools</p>
+      <div className="grid grid-cols-2 gap-2">
+        {onReference && (
+          <button
+            className="flex h-10 gap-2 rounded-lg border border-border px-3 items-center hover:bg-muted transition-colors text-foreground"
+            onClick={() => { onReference(verseNumber); onDismiss(); }}
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="text-sm">Word Study</span>
+          </button>
+        )}
+        {onCrossRef && (
+          <button
+            className="flex h-10 gap-2 rounded-lg border border-border px-3 items-center hover:bg-muted transition-colors text-foreground"
+            onClick={() => { onCrossRef(verseNumber); onDismiss(); }}
+          >
+            <BookMarked className="h-4 w-4" />
+            <span className="text-sm">Cross-refs</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Shared actions content (used in both desktop floating + mobile sheet) ── */
 function ToolbarActions({
   selectedVerses,
