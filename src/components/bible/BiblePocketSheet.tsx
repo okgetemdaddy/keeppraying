@@ -559,7 +559,15 @@ export function BiblePocketSheet({
             onExportCanvas={onExportCanvas}
           />
         ) : activeTab === "journal" ? (
-          <JournalTab sortedJournalAnnotations={sortedJournalAnnotations} />
+          <JournalTab
+            sortedJournalAnnotations={sortedJournalAnnotations}
+            chapterVerses={chapterVerses}
+            versionId={versionId}
+            bookUsfm={bookUsfm}
+            chapterId={chapterId}
+            chapterTitle={chapterTitle}
+            onJournalSave={onJournalSave}
+          />
         ) : activeTab === "search" ? (
           <SearchTab onNavigateToChapter={onNavigateToChapter} />
         ) : (
