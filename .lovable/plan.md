@@ -1,107 +1,119 @@
 
 
-## Commentary Search, Go Deeper Integration, and Bookmarks
+## Code Audit, Bug Fixes, and /Fruit Inspector Page
 
-Three additions to the Commentary Drawer: AI-powered semantic search, a "Go Deeper" handoff to Bible Sight, and unlimited user bookmarks with an editable side panel.
+### Phase 1: Bug Fixes (Critical)
 
----
+**1. `bible-sight-chat/index.ts` — Auth method does not exist**
+Line 55 calls `supabase.auth.getClaims(token)` which is not a real Supabase JS method. This will throw at runtime, making Bible Sight chat completely non-functional.
 
-### Model Selection for Commentary Search
+Fix: Replace with the standard `getUser()` pattern used in every other edge function (e.g. `commentary-search`, `ingest-commentary`).
 
-All major frontier models (GPT-5, Gemini 2.5 Pro, Grok) have these public-domain commentaries in their training data — Matthew Henry, Barnes, Calvin, Wesley, JFB, and Keil & Delitzsch are among the most widely digitized texts on the internet and have been part of Common Crawl for over a decade. No special fine-tuned model is needed.
+**2. `ingest-commentary/index.ts` — Admin role check uses `profiles.role` instead of `has_role()`**
+Line 154-165 queries `profiles.role` directly, bypassing the security definer `has_role()` function that's the project standard (per RBAC memory). This is both a security concern and an inconsistency.
 
-**Recommended: `openai/gpt-5`** via the Lovable AI Gateway. Rationale:
-- Strongest reasoning and nuance for doctrinal precision
-- Excellent at understanding user intent ("what does Calvin say about election here?") and mapping it to the correct commentary content
-- Best at contextual disambiguation (distinguishing between commentary authors discussing similar topics)
-- The commentary search requires accuracy over speed — this is a deliberate, scholarly lookup, not a real-time chat
+Fix: Use `has_role()` RPC for admin verification, matching the project's RBAC pattern.
 
-The search flow: user types a query → edge function receives query + current book/chapter + optional author filter → GPT-5 reformulates into a precise semantic search → queries `library_chunks` via text search and embedding match → GPT-5 ranks and summarizes results with source attribution → returns ranked results to the UI.
+**3. `bible-sight-chat/index.ts` — Auth token used for library queries is anon-scoped**
+Lines 75-81 and 101-108 query `library_toc` and `library_chunks` using the user-scoped anon client, which is subject to RLS. If these tables don't have permissive read policies, the queries silently return empty. Should use a service-role client for internal library lookups.
 
----
+Fix: Create a separate service-role client for library data fetches.
 
-### 1. New Edge Function: `commentary-search`
-
-**`supabase/functions/commentary-search/index.ts`**
-
-- Accepts `{ query, book_usfm, chapter_number, author_filter? }` + auth JWT
-- Uses GPT-5 via Lovable AI Gateway to:
-  1. Understand user intent and expand the query with theological context
-  2. Generate a search strategy (exact chapter match + semantic expansion)
-- Queries `library_chunks` with deterministic filters first (`bible_book_usfm`, `chapter_number`, optional `author`), then broadens if needed
-- Uses GPT-5 to rank results by relevance and doctrinal accuracy
-- Returns `{ results: Array<{ id, content, author, book_title, page_reference, relevance_note }> }`
-- Auth-gated
+**4. Commentary Drawer — `hostAvailability` query fetches ALL rows per book**
+Line 178 selects `author, chapter_number` from `library_chunks` for an entire book with no limit, which could return thousands of rows. Add `.limit(1000)` or use a `COUNT` aggregate.
 
 ---
 
-### 2. "Go Deeper" → Bible Sight Handoff
+### Phase 2: Database Migration — `fruit_reports` table
 
-When a user is reading commentary content or viewing search results:
-
-- Add a "Go Deeper" button (amber accent, `Eye` icon) that appears:
-  - At the bottom of each commentary reading view
-  - On each search result card
-  - On selected/highlighted text via a floating action
-- Clicking "Go Deeper" closes the Commentary Drawer and opens `BibleSightDrawer` with a pre-seeded first message:
-  - Bible Sight opens already responding with something like: *"Praise God you want to go deeper! I see you were reading {author}'s commentary on {book} {chapter}. Is there anything in particular you'd like to explore — or would you like to see what Bible Sight can see?"*
-- This is achieved by passing a `initialContext` prop to `BibleSightDrawer` containing the commentary excerpt and author, which gets injected as the first assistant message
-
-**BibleReader.tsx wiring:**
-- New callback `onGoDeeper(context: { author: string, excerpt: string })` passed to `CommentaryDrawer`
-- Sets `bibleSightOpen = true` and passes context to `BibleSightDrawer`
-
----
-
-### 3. Commentary Bookmarks
-
-**Migration:** New `commentary_bookmarks` table:
+New table to persist generated reports for the /Fruit page:
 
 ```sql
-CREATE TABLE public.commentary_bookmarks (
+CREATE TABLE public.fruit_reports (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  author text NOT NULL,
-  book_usfm text NOT NULL,
-  chapter_number integer NOT NULL,
-  chunk_id uuid REFERENCES library_chunks(id) ON DELETE SET NULL,
-  excerpt text NOT NULL,
-  title text NOT NULL,
-  created_at timestamptz DEFAULT now()
+  model_used text NOT NULL,
+  report_content text NOT NULL,
+  chat_log jsonb DEFAULT '[]',
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.commentary_bookmarks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fruit_reports ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users manage own bookmarks"
-  ON public.commentary_bookmarks FOR ALL
-  TO authenticated
+CREATE POLICY "Owner manages own reports"
+  ON public.fruit_reports FOR ALL TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 ```
 
-**UI in CommentaryDrawer:**
+---
 
-- **Bookmark action**: Long-press or right-click on any commentary paragraph → "Bookmark this passage" option. Auto-generates a short title via AI (or uses first 8 words as fallback).
-- **Bookmarks side panel**: Collapsible panel on the right side of the drawer (or bottom sheet on mobile)
-  - Shows list of bookmarks grouped by date, with time and AI-generated title
-  - Long-press or right-click a bookmark title → title becomes immediately editable (inline `contentEditable`), click away to save
-  - Clicking a bookmark navigates to that commentary + chapter
-  - Delete via swipe or context menu
-- **Bookmark icon** in the Commentary Drawer header toggles the panel open/closed
-- Unlimited bookmarks per user
+### Phase 3: New Edge Function — `fruit-report`
+
+**`supabase/functions/fruit-report/index.ts`**
+
+- Accepts `{ model, chat_messages? }` + auth JWT
+- Validates user email is `jwlesley@gmail.com` (hard gate)
+- Queries the full project state:
+  - `library_chunks`: counts per author, per book
+  - `bible_sight_entries`: recent sessions and journals
+  - `commentary_bookmarks`: total count
+  - `enriched_chapters`: coverage stats
+  - `profiles`: total users
+- Constructs a comprehensive prompt asking the specified model to generate the full report (features from last 2 days, all /bible features, UX audit, mission inference, trajectory, suggestions)
+- If `chat_messages` provided, runs as a follow-up chat with the same model
+- Returns streamed response
+- Models:
+  - "home" tab: `google/gemini-3-flash-preview` (default fast model)
+  - "grok" tab: Grok 4.20 via `api.x.ai` with `grok-4.20-0309-reasoning`
+  - "gemini" tab: `google/gemini-2.5-pro` via Lovable AI Gateway
 
 ---
 
-### 4. Updated CommentaryDrawer Search UI
+### Phase 4: New Page — `/Fruit`
 
-Replace the current simple text filter with the AI-powered search:
+**`src/pages/Fruit.tsx`**
 
-- Search bar stays at top, same styling
-- On submit (Enter or search icon tap), calls `commentary-search` edge function
-- Results appear as cards below the search bar, replacing the commentary host grid temporarily
-- Each result card shows: author name, excerpt (highlighted match), relevance note from GPT-5, and a "Go Deeper" button
-- "Clear search" button returns to the 6-card host landing
-- Loading state: skeleton cards with amber shimmer
+Access-gated page (only `jwlesley@gmail.com` via `useAuth()` check — redirects others to `/bible`).
+
+**Layout:**
+- Full-height page with KeepRead.ing nav
+- Three tabs: "Fruit" (home), "Grok 4.20 Reasoning", "Gemini 2.5 Pro"
+- Each tab shares the same structure:
+
+**Tab content:**
+- **Report area**: Rendered with `react-markdown` and `renderWithVerseLinks`, warm serif typography matching Commentary Drawer design language
+- **Refresh button**: Generates a new full report from that tab's model (streamed, token-by-token)
+- **Past reports sidebar**: Collapsible list of previous generations (date + time), clickable to view
+- **Chat bar at bottom**: Interact with the specific model that created the current report (conversation stored in `fruit_reports.chat_log`)
+
+**Report prompt includes:**
+- Complete feature inventory of `/bible` (BibleReader, BibleSight, Commentary Library, Deep Study, Canvas Studio, Margin Study, Journal, Ink Overlay, Verse Bunches, Bookmarks, Cross-References, Search, TTS, Zoom, Focus Mode, etc.)
+- Features added in last 48 hours (Commentary Library, BibleSightDrawer, Commentary Search, Go Deeper handoff, Commentary Bookmarks, public study sessions, private chat logs, `ingest-commentary` function)
+- Database stats from live queries
+- UX audit: design language consistency, dark/light mode, serif vs sans choices, spacing, animation, accessibility
+- Mission/purpose inference from the product
+- Improvement suggestions with prioritization
+- Each feature title is a clickable expandable section
+
+**Feature detail sections:**
+- Clicking a feature title expands to show: description, files involved, edge functions, database tables, what could be missed or lost during pivots
+
+**"Missed or Lost" section:**
+- Cross-references conversation history (the report model is asked to identify features discussed but possibly incomplete)
+
+---
+
+### Phase 5: Route Wiring
+
+**`src/App.tsx`**: Add route for `/Fruit` (under the main `AppShell`):
+```
+<Route path="/Fruit" element={<Fruit />} />
+```
+
+Also add it to `KeepReadingShell.tsx` so it works on keepread.ing domain too.
+
+Lazy-load `Fruit` page since it's admin-only.
 
 ---
 
@@ -109,9 +121,12 @@ Replace the current simple text filter with the AI-powered search:
 
 | File | Change |
 |------|--------|
-| **Migration** | Create `commentary_bookmarks` table with RLS |
-| `supabase/functions/commentary-search/index.ts` | New: GPT-5 powered semantic search across commentary library |
-| `src/components/bible/CommentaryDrawer.tsx` | AI search integration, Go Deeper button, bookmark actions, bookmarks side panel |
-| `src/components/bible/BibleSightDrawer.tsx` | Accept `initialContext` prop for pre-seeded handoff message |
-| `src/components/bible/BibleReader.tsx` | Wire `onGoDeeper` callback between CommentaryDrawer and BibleSightDrawer |
+| `supabase/functions/bible-sight-chat/index.ts` | Fix `getClaims` → `getUser()`, add service-role client for library queries |
+| `supabase/functions/ingest-commentary/index.ts` | Use `has_role()` for admin check |
+| `src/components/bible/CommentaryDrawer.tsx` | Add limit to hostAvailability query |
+| **Migration** | Create `fruit_reports` table with RLS |
+| `supabase/functions/fruit-report/index.ts` | New: multi-model report generation + chat |
+| `src/pages/Fruit.tsx` | New: 3-tab report dashboard with chat, history, feature drill-down |
+| `src/App.tsx` | Add `/Fruit` route |
+| `src/components/keepreading/KeepReadingShell.tsx` | Add `/Fruit` route |
 
