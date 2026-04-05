@@ -1,5 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { usePaperCamera } from "@/components/bible/PaperCanvasContext";
+import { usePencilTools, getActiveFilterId, getBrushStrokeOptions } from "@/hooks/usePencilTools";
+import InkFilterDefs from "@/components/bible/toolbar/InkFilterDefs";
 
 import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
