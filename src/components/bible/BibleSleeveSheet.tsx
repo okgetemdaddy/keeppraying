@@ -1023,12 +1023,14 @@ export function BibleSleeveSheet({
       </SheetContent>
     </Sheet>
     <TrashBinSheet open={trashOpen} onOpenChange={setTrashOpen} context="bible" />
-    <SessionReviewDrawer
-      open={!!reviewSession}
-      onClose={() => { setReviewSession(null); setReviewEvents([]); reviewCacheRef.current = null; }}
-      session={reviewSession!}
-      events={reviewEvents}
-    />
+    {reviewSession && (
+      <SessionReviewDrawer
+        open={!!reviewSession}
+        onClose={() => { setReviewSession(null); setReviewEvents([]); reviewCacheRef.current = null; }}
+        session={reviewSession}
+        events={reviewEvents}
+      />
+    )}
   </>
   );
 }
