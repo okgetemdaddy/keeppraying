@@ -23,9 +23,10 @@ function formatElapsed(seconds: number): string {
 
 interface SessionCardsProps {
   onResume: (session: StudySession) => void;
+  onReview?: (session: StudySession) => void;
 }
 
-export function SessionCards({ onResume }: SessionCardsProps) {
+export function SessionCards({ onResume, onReview }: SessionCardsProps) {
   const { data: sessions, isLoading } = useStudySessions();
 
   const activeSessions = sessions?.filter((s) => s.status !== "complete") ?? [];
@@ -47,7 +48,7 @@ export function SessionCards({ onResume }: SessionCardsProps) {
           return (
             <button
               key={s.id}
-              onClick={() => onResume(s)}
+              onClick={() => onReview?.(s)}
               className="flex-shrink-0 w-40 h-[200px] rounded-2xl border border-border bg-card shadow-md hover:shadow-lg transition-shadow flex flex-col overflow-hidden group"
             >
               {/* Top: thumbnail placeholder */}
@@ -73,7 +74,11 @@ export function SessionCards({ onResume }: SessionCardsProps) {
                   <Clock className="h-3 w-3" />
                   {formatElapsed(s.elapsed_seconds)}
                 </span>
-                <span className="flex items-center gap-0.5 text-[0.65rem] font-medium text-primary group-hover:underline">
+                <span
+                  role="button"
+                  onClick={(e) => { e.stopPropagation(); onResume(s); }}
+                  className="flex items-center gap-0.5 text-[0.65rem] font-medium text-primary group-hover:underline hover:text-primary/80 transition-colors"
+                >
                   <Play className="h-2.5 w-2.5" />
                   Resume
                 </span>

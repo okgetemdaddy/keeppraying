@@ -24,6 +24,7 @@ import {
   BookMarked,
   Download,
   X,
+  Lock,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -108,7 +109,7 @@ import { useSessionTelemetry } from "@/hooks/useSessionTelemetry";
 import { PremiumUpsellSheet } from "@/components/bible/PremiumUpsellSheet";
 import { ResumeOrNewSheet } from "@/components/bible/ResumeOrNewSheet";
 import type { StudySession } from "@/hooks/useStudySessions";
-import { Lock } from "lucide-react";
+
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
 import { InkTrashSheet } from "@/components/bible/InkTrashSheet";
 import { BiblePocketSheet } from "@/components/bible/BiblePocketSheet";
@@ -1277,8 +1278,9 @@ export function BibleReader() {
     (stroke: InkStroke) => {
       inkHistory.addStroke(stroke);
       scheduleInkSave([...inkHistory.strokes, stroke]);
+      canvasTelemetry.logEvent('ink_stroke', { annotation_key: `${bookUsfm}.${chapterIdx}.ink`, stroke_count: inkHistory.strokes.length + 1 });
     },
-    [inkHistory, scheduleInkSave],
+    [inkHistory, scheduleInkSave, canvasTelemetry, bookUsfm, chapterIdx],
   );
 
   const handleInkUndo = useCallback(() => {
@@ -1896,20 +1898,25 @@ export function BibleReader() {
   }, [versionId, bookUsfm, currentChapter, currentBook]);
 
   // ── Toolbar action handlers ──
+  // Unified telemetry accessor — prefer canvas session, fall back to reading session
+  const currentLogEvent = activeSessionId ? canvasTelemetry.logEvent : readingTelemetry.logEvent;
+
   const handleHighlight = useCallback(
     (color: string, verseNumber: number, start?: number, end?: number) => {
       markGuestChange();
       mutations.addHighlight.mutate({ verseNumber, color, start, end });
+      currentLogEvent('highlight_added', { verse_number: verseNumber, color, text_snippet: '' });
     },
-    [mutations.addHighlight, markGuestChange],
+    [mutations.addHighlight, markGuestChange, currentLogEvent],
   );
 
   const handleToggleBookmark = useCallback(
     (verseNumber: number, color: string, existingId?: string) => {
       markGuestChange();
       mutations.toggleBookmark.mutate({ verseNumber, color, existingId });
+      currentLogEvent(existingId ? 'bookmark_removed' : 'bookmark_added', { verse_number: verseNumber });
     },
-    [mutations.toggleBookmark, markGuestChange],
+    [mutations.toggleBookmark, markGuestChange, currentLogEvent],
   );
 
   const handleAddNote = useCallback(
@@ -1923,8 +1930,9 @@ export function BibleReader() {
     (verseNumber: number) => {
       setCrossRefVerse(verseNumber);
       setCrossRefOpen(true);
+      currentLogEvent('cross_ref_nav', { from_verse: verseNumber });
     },
-    [],
+    [currentLogEvent],
   );
 
   const handleSaveNote = useCallback(
@@ -1935,9 +1943,10 @@ export function BibleReader() {
         content,
         existingId,
       });
+      currentLogEvent(existingId ? 'note_edited' : 'note_written', { verse_number: noteInputVerse, note_snippet: content?.slice(0, 100) });
       setNoteInputVerse(null);
     },
-    [noteInputVerse, mutations.saveNote],
+    [noteInputVerse, mutations.saveNote, currentLogEvent],
   );
 
   // ── Auto-show tooltip when 2+ cross-selections and user hasn't acknowledged ──
@@ -2159,8 +2168,9 @@ export function BibleReader() {
   const handleRemoveHighlight = useCallback(
     (highlightId: string) => {
       mutations.removeHighlight.mutate(highlightId);
+      currentLogEvent('highlight_removed', { highlight_id: highlightId });
     },
-    [mutations.removeHighlight],
+    [mutations.removeHighlight, currentLogEvent],
   );
 
   const isInPaperCanvas = studyMode && studyModeVariant === "margin";
@@ -2453,17 +2463,43 @@ export function BibleReader() {
               padding: "8px 16px",
             }}
           >
+            {/* iPadOS: Locked nav maps to UINavigationItem with backButtonDisplayMode = .minimal and custom titleView showing verse range + elapsed timer */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-foreground">
-                {currentBook?.title} {currentChapter?.title}
-              </span>
+              {isInPaperCanvas && activeSessionConfig ? (
+                <div className="flex items-center gap-2 min-w-0">
+                  <Lock className="h-3.5 w-3.5 text-amber-500/70 shrink-0" />
+                  <span className="font-serif text-sm text-foreground tracking-wide truncate">
+                    {activeSessionConfig.verseRange}
+                  </span>
+                  <span className="text-muted-foreground/50 text-xs">·</span>
+                  <span className="text-xs text-muted-foreground">Session Active</span>
+                  <span className="text-muted-foreground/50 text-xs">·</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {(() => {
+                      const m = Math.floor(liveElapsed / 60);
+                      const s = liveElapsed % 60;
+                      const h = Math.floor(m / 60);
+                      const rm = m % 60;
+                      return h > 0
+                        ? `${h}:${String(rm).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+                        : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+                    })()}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm font-semibold text-foreground">
+                  {currentBook?.title} {currentChapter?.title}
+                </span>
+              )}
               <button
                 onClick={() => setStudyNavOpen(false)}
-                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
+            {/* Nav selectors — hidden when canvas session is locked */}
+            {!(isInPaperCanvas && activeSessionConfig) && (
             <div className="flex items-center gap-2">
               <Select
                 value={versionId?.toString()}
@@ -2516,6 +2552,7 @@ export function BibleReader() {
                 </SelectContent>
               </Select>
             </div>
+            )}
 
             {/* ── Secondary toolbar controls ── */}
             <div className="flex items-center gap-2 mt-2 pb-1 flex-wrap">
@@ -2815,18 +2852,20 @@ export function BibleReader() {
                       const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
                       const textStart = normalizedVerse.indexOf(normalizedUnderline);
                       if (textStart >= 0) {
-                        mutations.addHighlight.mutate({
+                      mutations.addHighlight.mutate({
                           verseNumber,
                           color: lastColor,
                           start: textStart,
                           end: textStart + normalizedUnderline.length,
                         });
+                        currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, text_snippet: normalizedUnderline?.slice(0, 60), source: 'pencil_underline' });
                         toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
                       } else {
                         mutations.addHighlight.mutate({
                           verseNumber,
                           color: lastColor,
                         });
+                        currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'pencil_underline' });
                         toast.success(`Highlighted verse ${verseNumber}`);
                       }
                     }
@@ -3422,16 +3461,18 @@ export function BibleReader() {
         versionId={versionId}
       />
 
-      {/* ── Chapter Thumbnail Strip ── */}
-      <ChapterThumbnailStrip
-        open={thumbnailStripOpen}
-        onClose={() => setThumbnailStripOpen(false)}
-        currentChapterIdx={chapterIdx}
-        totalChapters={totalChapters}
-        bookTitle={currentBook?.title}
-        chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
-        onNavigate={(idx) => setChapterIdx(idx)}
-      />
+      {/* ── Chapter Thumbnail Strip — hidden during canvas sessions ── */}
+      {!isInPaperCanvas && (
+        <ChapterThumbnailStrip
+          open={thumbnailStripOpen}
+          onClose={() => setThumbnailStripOpen(false)}
+          currentChapterIdx={chapterIdx}
+          totalChapters={totalChapters}
+          bookTitle={currentBook?.title}
+          chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
+          onNavigate={(idx) => setChapterIdx(idx)}
+        />
+      )}
 
       {/* ── Add to Bunch Drawer ── */}
       <AddToBunchDrawer
