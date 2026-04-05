@@ -2942,6 +2942,7 @@ export function BibleReader() {
               marginWidth={wsMarginWidth}
               canvasBackground={wsCanvasBackground}
               cameraRef={paperCameraRef}
+              svgTextLayer={svgTextLayer ?? undefined}
               textBoxConfig={activeSessionConfig?.textBox ? {
                 x: activeSessionConfig.textBox.x * 96,
                 y: activeSessionConfig.textBox.y * 96,
