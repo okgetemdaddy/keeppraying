@@ -56,12 +56,25 @@ export interface SearchResultAI {
   confidence: number;
 }
 
+export interface SearchResultSession {
+  type: "session";
+  id: string;
+  title: string;
+  entryType: "journal" | "study_session";
+  bookUsfm: string;
+  chapterNumber: number;
+  summaryLine?: string;
+  tags?: string[];
+  createdAt: string;
+}
+
 export type SearchResult =
   | SearchResultReference
   | SearchResultNote
   | SearchResultBookmark
   | SearchResultBunch
-  | SearchResultAI;
+  | SearchResultAI
+  | SearchResultSession;
 
 /* ── Recent searches (localStorage) ── */
 
