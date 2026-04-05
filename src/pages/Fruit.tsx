@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 import {
   RefreshCw, Send, ChevronRight, Clock, Sparkles,
   Eye, Brain, Gem, Loader2, PanelLeftClose, PanelLeftOpen
@@ -343,13 +343,43 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
           </Button>
         </div>
 
-        {/* Report Content */}
-        <ScrollArea className="flex-1 p-6">
+        {/* Report Content — WSJ front-page style */}
+        <ScrollArea className="flex-1">
           {displayContent ? (
-            <article className="prose prose-sm dark:prose-invert max-w-none font-serif leading-relaxed">
-              <ReactMarkdown>{displayContent}</ReactMarkdown>
-              <div ref={reportEndRef} />
-            </article>
+            <div className="wsj-report px-8 py-6 max-w-5xl mx-auto">
+              {/* Masthead */}
+              <div className="text-center border-b-[3px] border-foreground pb-3 mb-1">
+                <p className="text-[0.6rem] uppercase tracking-[0.35em] text-muted-foreground mb-1">
+                  KeepRead.ing Product Intelligence
+                </p>
+                <h1
+                  className="text-3xl md:text-4xl font-black tracking-tight text-foreground"
+                  style={{ fontFamily: "'EB Garamond', 'Georgia', 'Times New Roman', serif" }}
+                >
+                  The Fruit Inspector
+                </h1>
+                <div className="flex items-center justify-center gap-4 mt-1.5 text-[0.6rem] text-muted-foreground">
+                  <span>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+                  <span>·</span>
+                  <span>{MODEL_LABELS[model].label} — {MODEL_LABELS[model].desc}</span>
+                </div>
+              </div>
+              {/* Thin double rule */}
+              <div className="border-t border-foreground/20 mb-6" />
+
+              {/* Article body — newspaper columns */}
+              <article className="wsj-body">
+                <ReactMarkdown components={wsjComponents}>{displayContent}</ReactMarkdown>
+                <div ref={reportEndRef} />
+              </article>
+
+              {/* Footer rule */}
+              <div className="mt-8 pt-3 border-t border-foreground/15 text-center">
+                <p className="text-[0.55rem] text-muted-foreground/50 italic tracking-wider uppercase">
+                  End of Report · Confidential
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-4 py-20">
               <span className="text-5xl">🍇</span>
