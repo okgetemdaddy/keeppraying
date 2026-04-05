@@ -438,6 +438,8 @@ export function AutoEnrichLayer({
                   onKeepHighlights={() => handleKeepHighlights(card)}
                   kept={isKept}
                   isDark={isDark}
+                  bookUsfm={bookUsfm}
+                  chapterNumber={chapterNumber}
                 />
               </motion.div>
             );
