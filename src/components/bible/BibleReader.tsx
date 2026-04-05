@@ -124,6 +124,7 @@ import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
+import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
@@ -836,6 +837,10 @@ export function BibleReader() {
   const [pocketOpen, setPocketOpen] = useState(false);
   const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
   const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
+  const [showLingerToast, setShowLingerToast] = useState(false);
+  const lingerToastRef = useRef<HTMLDivElement>(null);
+  const activeReadingSessionRef = useRef<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
 
   // ── Edge-swipe gestures: open Sleeve (left) & Pocket (right) ──
   const isTouch = useIsTouch();
@@ -924,28 +929,43 @@ export function BibleReader() {
     }
   }, [activeSessionId, studyMode, studyModeVariant]);
 
-  // Reset reading inactivity on interaction
+  // Keep refs in sync for ghost session hook closures
+  useEffect(() => { activeReadingSessionRef.current = activeReadingSessionId; }, [activeReadingSessionId]);
+  useEffect(() => { activeSessionIdRef.current = activeSessionId; }, [activeSessionId]);
+
+  // Reset reading inactivity on interaction — shows linger toast instead of auto-ending
   const resetReadingInactivity = useCallback(() => {
     if (readingInactivityRef.current) clearTimeout(readingInactivityRef.current);
     if (!activeReadingSessionId) return;
-    readingInactivityRef.current = setTimeout(async () => {
-      // Auto-end reading session after inactivity
-      if (activeReadingSessionId) {
-        readingTelemetry.logEvent("session_end");
-        await supabase
-          .from("study_sessions")
-          .update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
-          .eq("id", activeReadingSessionId);
-        // Trigger summary generation
-        try {
-          await supabase.functions.invoke("summarize-session", {
-            body: { session_id: activeReadingSessionId },
-          });
-        } catch {}
-        setActiveReadingSessionId(null);
-        readingStartedRef.current = false;
-      }
+    setShowLingerToast(false);
+    readingInactivityRef.current = setTimeout(() => {
+      // Show idle popup instead of auto-terminating
+      setShowLingerToast(true);
     }, READING_INACTIVITY_MS);
+  }, [activeReadingSessionId]);
+
+  // Linger toast handlers
+  const handleLingerResume = useCallback(() => {
+    setShowLingerToast(false);
+    resetReadingInactivity();
+  }, [resetReadingInactivity]);
+
+  const handleLingerEndSession = useCallback(async () => {
+    setShowLingerToast(false);
+    if (activeReadingSessionId) {
+      readingTelemetry.logEvent("session_end", { reason: "idle_timeout" });
+      await supabase
+        .from("study_sessions")
+        .update({ status: "complete", completed_at: new Date().toISOString(), last_active_at: new Date().toISOString() })
+        .eq("id", activeReadingSessionId);
+      try {
+        await supabase.functions.invoke("summarize-session", {
+          body: { session_id: activeReadingSessionId },
+        });
+      } catch {}
+      setActiveReadingSessionId(null);
+      readingStartedRef.current = false;
+    }
   }, [activeReadingSessionId, readingTelemetry]);
 
   // ensureReadingSession, auto-start, and cleanup are declared after currentChapter/hasVerses
@@ -1230,6 +1250,70 @@ export function BibleReader() {
     };
   }, [activeReadingSessionId]);
   // iPadOS: Implicit reading sessions map to BGAppRefreshTask with CoreData sync
+
+  // ── 8.1: Scroll & Touch Activity Tracking ──
+  useEffect(() => {
+    const container = readingAreaRef.current;
+    if (!container) return;
+    let lastReset = 0;
+    const THROTTLE_MS = 2000;
+    const handleActivity = () => {
+      const now = Date.now();
+      if (now - lastReset < THROTTLE_MS) return;
+      lastReset = now;
+      if (activeReadingSessionRef.current) resetReadingInactivity();
+      if (readingStartTimerRef.current) {
+        clearTimeout(readingStartTimerRef.current);
+        readingStartTimerRef.current = setTimeout(() => { ensureReadingSession(); }, READING_START_DELAY_MS);
+      }
+      if (showLingerToast) { setShowLingerToast(false); resetReadingInactivity(); }
+    };
+    container.addEventListener("scroll", handleActivity, { passive: true });
+    container.addEventListener("touchmove", handleActivity, { passive: true });
+    container.addEventListener("pointermove", handleActivity, { passive: true });
+    return () => {
+      container.removeEventListener("scroll", handleActivity);
+      container.removeEventListener("touchmove", handleActivity);
+      container.removeEventListener("pointermove", handleActivity);
+    };
+  }, [resetReadingInactivity, ensureReadingSession, showLingerToast]);
+
+  // ── 8.2: Ghost Session Hook — Tab Close / Abandonment ──
+  // iPadOS: Maps to applicationWillTerminate and sceneDidEnterBackground lifecycle hooks
+  useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !anonKey) return;
+    const flushSession = () => {
+      const sessionId = activeReadingSessionRef.current || activeSessionIdRef.current;
+      if (!sessionId || !user?.id) return;
+      const blob = new Blob([JSON.stringify({
+        session_id: sessionId,
+        user_id: user.id,
+        event_type: "session_end",
+        payload: { reason: "browser_closed" },
+      })], { type: "application/json" });
+      try { navigator.sendBeacon(`${supabaseUrl}/rest/v1/session_events?apikey=${anonKey}`, blob); } catch {}
+    };
+    const onVis = () => { if (document.visibilityState === "hidden") flushSession(); };
+    const onUnload = () => flushSession();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("beforeunload", onUnload);
+    return () => { document.removeEventListener("visibilitychange", onVis); window.removeEventListener("beforeunload", onUnload); };
+  }, [user?.id]);
+
+  // ── 8.3: Auto-dismiss linger toast on click outside ──
+  useEffect(() => {
+    if (!showLingerToast) return;
+    const handleClick = (e: MouseEvent) => {
+      if (lingerToastRef.current && !lingerToastRef.current.contains(e.target as Node)) {
+        setShowLingerToast(false);
+        resetReadingInactivity();
+      }
+    };
+    const t = setTimeout(() => document.addEventListener("click", handleClick), 100);
+    return () => { clearTimeout(t); document.removeEventListener("click", handleClick); };
+  }, [showLingerToast, resetReadingInactivity]);
 
   // ── Chapter annotations (handwriting) ──
   const { data: chapterAnnotations } = useChapterAnnotations(bookUsfm, currentChapter?.id);
@@ -3526,6 +3610,14 @@ export function BibleReader() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── 8.3: Session Linger Toast (idle popup) ── */}
+      <SessionLingerToast
+        ref={lingerToastRef}
+        visible={showLingerToast}
+        onResume={handleLingerResume}
+        onEndSession={handleLingerEndSession}
+      />
     </article>
   );
 }
