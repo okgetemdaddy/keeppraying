@@ -201,12 +201,7 @@ function ExegesisCard({
             {card.citations.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border/30">
                 {card.citations.map((cite, i) => (
-                  <span
-                    key={i}
-                    className="text-[0.6rem] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary cursor-pointer hover:bg-primary/20 transition-colors"
-                  >
-                    {cite}
-                  </span>
+                  <VerseLink key={i} reference={cite} className="text-[0.6rem]" />
                 ))}
               </div>
             )}
@@ -218,7 +213,7 @@ function ExegesisCard({
                   <div key={i} className="flex items-center gap-1.5 text-[0.6rem] text-muted-foreground">
                     <span className="font-mono">v.{ref.from}</span>
                     <span className="text-primary/60">→</span>
-                    <span className="text-primary/80">{ref.to}</span>
+                    <VerseLink reference={ref.to} className="text-[0.6rem]" />
                     <span className="italic">({ref.type})</span>
                   </div>
                 ))}
