@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { HandwritingEngine, type StrokeData, type HandwritingEngineHandle } from "@/components/bible/HandwritingEngine";
 import type { Annotation } from "@/hooks/useAnnotations";
 import { useJournalGeneration } from "@/hooks/useJournalGeneration";
+import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 
 interface Verse {
   number: number;
@@ -284,7 +285,7 @@ export function JournalPanel({
                         </div>
                         {(entry as any).typed_text && (
                           <p className="text-xs text-foreground/70 line-clamp-2 mt-1 leading-relaxed">
-                            {(entry as any).typed_text}
+                            {renderWithVerseLinks((entry as any).typed_text)}
                           </p>
                         )}
                       </button>
