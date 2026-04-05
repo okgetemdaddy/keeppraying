@@ -47,6 +47,7 @@ export interface Annotation {
   verse_ids: string[];
   strokes: StrokeData[];
   svg: string | null;
+  typed_text: string | null;
   tags: string[] | null;
   folder: string | null;
   created_at: string;
