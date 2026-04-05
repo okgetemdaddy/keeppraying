@@ -37,6 +37,7 @@ import BibleCanvas from "./pages/BibleCanvas";
 import SharedPrayerLanding from "./pages/SharedPrayerLanding";
 import Profile from "./pages/Profile";
 import Classical from "./pages/Classical";
+import Help from "./pages/Help";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
