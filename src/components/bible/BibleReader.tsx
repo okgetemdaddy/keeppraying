@@ -763,6 +763,7 @@ export function BibleReader() {
     try { return (localStorage.getItem("bible_study_variant") as StudyModeVariant) || "margin"; } catch { return "margin"; }
   });
   const [pencilDetected, setPencilDetected] = useState(false);
+  const [pencilOnboardOpen, setPencilOnboardOpen] = useState(false);
   const [canvasOpen, setCanvasOpen] = useState(false);
   const [canvasCreationOpen, setCanvasCreationOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
