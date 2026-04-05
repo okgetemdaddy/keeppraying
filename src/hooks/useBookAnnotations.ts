@@ -82,15 +82,15 @@ export function useBookAnnotations(bookUsfm: string | undefined) {
 
           // Extract strokes from the strokes JSON column
           try {
-            const strokes = row.strokes;
+            const strokes = row.strokes as unknown as Array<Record<string, unknown>>;
             if (Array.isArray(strokes)) {
               for (const stroke of strokes) {
-                // Strokes are stored as StrokeData with point arrays
-                if (stroke.points && Array.isArray(stroke.points) && stroke.points.length > 0) {
+                const pts = stroke.points as Array<{ x: number; y: number }> | undefined;
+                if (pts && Array.isArray(pts) && pts.length > 0) {
                   existing.strokes.push({
-                    pathData: pointsToPathData(stroke.points),
-                    color: stroke.color || "#ffffff",
-                    strokeWidth: stroke.size || stroke.strokeWidth || 2,
+                    pathData: pointsToPathData(pts),
+                    color: (stroke.color as string) || "#ffffff",
+                    strokeWidth: (stroke.size as number) || (stroke.strokeWidth as number) || 2,
                   });
                 }
               }
