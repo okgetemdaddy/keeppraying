@@ -490,11 +490,10 @@ export function MarginAnnotationLayer({
     return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
 
-  /* ── Rendered committed strokes ── */
+  /* ── Rendered committed strokes (brush-aware) ── */
   const renderedStrokes = useMemo(() => {
     const currentWidth = scrollContainerRef.current?.clientWidth ?? 1;
     return strokes.map((s) => {
-      // Scale x-coordinates if container width changed since capture
       const scaleFactor = s.containerWidthAtCapture > 0
         ? currentWidth / s.containerWidthAtCapture
         : 1;
@@ -502,12 +501,14 @@ export function MarginAnnotationLayer({
         ? s.points.map((p) => ({ ...p, x: p.x * scaleFactor }))
         : s.points;
 
+      const brushOpts = getBrushStrokeOptions(store.brushStyle, s.size, 0.5);
       const outline = getStroke(
         scaledPoints.map((p) => [p.x, p.y, p.pressure]),
-        { ...STROKE_OPTIONS, size: s.size },
+        { ...brushOpts, size: s.size, start: STROKE_OPTIONS.start, end: STROKE_OPTIONS.end },
       );
       const pathData = getSvgPathFromStroke(outline);
       if (!pathData) return null;
+      const brushFilterId = getActiveFilterId(store.activeTool, store.brushStyle);
       return (
         <path
           key={s.id}
@@ -515,11 +516,11 @@ export function MarginAnnotationLayer({
           fill={s.color}
           stroke="none"
           opacity={0.98}
-          filter="url(#margin-ink-bleed)"
+          filter={brushFilterId ? `url(#${brushFilterId})` : "url(#margin-ink-bleed)"}
         />
       );
     });
-  }, [strokes, scrollContainerRef]);
+  }, [strokes, scrollContainerRef, store.brushStyle, store.activeTool]);
 
   if (!active) return null;
 
