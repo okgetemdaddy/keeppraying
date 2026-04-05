@@ -970,48 +970,6 @@ export function BibleReader() {
     }
   }, [activeReadingSessionId, readingTelemetry]);
 
-  // iPadOS: "End Session" maps to a UIBarButtonItem with UIMenu confirmation action. "Learn More" opens SFSafariViewController to the help page.
-  const handleEndSession = useCallback(async () => {
-    const sessionId = activeSessionId ?? activeReadingSessionId;
-    if (!sessionId) return;
-
-    // Update session status
-    await supabase
-      .from("study_sessions")
-      .update({
-        status: "complete",
-        completed_at: new Date().toISOString(),
-        last_active_at: new Date().toISOString(),
-      })
-      .eq("id", sessionId);
-
-    // Log session_end event
-    const logEvent = activeSessionId ? canvasTelemetry.logEvent : readingTelemetry.logEvent;
-    logEvent("session_end", { reason: "user_explicit" });
-
-    // Trigger summary in background (don't await)
-    supabase.functions.invoke("summarize-session", {
-      body: { session_id: sessionId },
-    }).catch(console.error);
-
-    // If canvas session, exit study mode
-    if (activeSessionId) {
-      setStudyMode(false);
-      setActiveSessionId(null);
-      setActiveSessionConfig(null);
-      try { localStorage.setItem("bible_study_mode", "false"); } catch {}
-    }
-
-    // If reading session, just clear the session ID
-    if (activeReadingSessionId) {
-      setActiveReadingSessionId(null);
-      readingStartedRef.current = false;
-    }
-
-    toast.success("Session saved ✦", {
-      description: "Your study session has been saved to Bible Watch",
-    });
-  }, [activeSessionId, activeReadingSessionId, canvasTelemetry, readingTelemetry]);
 
   // ensureReadingSession, auto-start, and cleanup are declared after currentChapter/hasVerses
 
@@ -1070,17 +1028,37 @@ export function BibleReader() {
   }, [user, userSubscriptionTier, navigate]);
 
   // Keep handleToggleStudyMode for exit-only (turning OFF study mode)
+  // iPadOS: Session auto-completes via sceneDidEnterBackground in SceneDelegate + BGAppRefreshTask
   const handleToggleStudyMode = useCallback((v: boolean) => {
     if (v) {
       // All entry goes through the gate
       handleStudyModeEntry();
       return;
     }
+    // Ending study mode — complete the active canvas session
+    if (activeSessionId) {
+      supabase
+        .from("study_sessions")
+        .update({
+          status: "complete",
+          completed_at: new Date().toISOString(),
+          last_active_at: new Date().toISOString(),
+        })
+        .eq("id", activeSessionId)
+        .then(() => {});
+      // Trigger AI summary in background
+      supabase.functions.invoke("summarize-session", {
+        body: { session_id: activeSessionId },
+      }).catch(console.error);
+      canvasTelemetry.logEvent("session_end", { reason: "study_mode_exit" });
+      setActiveSessionId(null);
+      setActiveSessionConfig(null);
+    }
     setStudyMode(false);
     try { localStorage.setItem("bible_study_mode", "false"); } catch {}
     setCanvasOpen(false);
     setJournalOpen(false);
-  }, [handleStudyModeEntry]);
+  }, [handleStudyModeEntry, activeSessionId, canvasTelemetry]);
 
   // ── Resume handler ──
   const handleResumeSession = useCallback(() => {
@@ -1305,7 +1283,33 @@ export function BibleReader() {
       }
     };
   }, [activeReadingSessionId]);
-  // iPadOS: Implicit reading sessions map to BGAppRefreshTask with CoreData sync
+  // iPadOS: Reading session end maps to applicationWillResignActive + BGProcessingTask for summary generation
+
+  // iPadOS: Stale session cleanup runs in applicationDidBecomeActive via CoreData fetch request
+  useEffect(() => {
+    if (!user?.id) return;
+    const cleanupStaleSessions = async () => {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: stale } = await supabase
+        .from("study_sessions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("session_type", "reading")
+        .in("status", ["active", "paused"])
+        .lt("last_active_at", tenMinutesAgo);
+      if (stale?.length) {
+        const ids = stale.map(s => s.id);
+        await supabase
+          .from("study_sessions")
+          .update({ status: "complete", completed_at: new Date().toISOString() })
+          .in("id", ids);
+        ids.forEach(id => {
+          supabase.functions.invoke("summarize-session", { body: { session_id: id } }).catch(console.error);
+        });
+      }
+    };
+    cleanupStaleSessions();
+  }, [user?.id]);
 
   // ── 8.1: Scroll & Touch Activity Tracking ──
   useEffect(() => {
@@ -2556,40 +2560,6 @@ export function BibleReader() {
               </Toggle>
             </div>
 
-            {/* End Session — sticky toolbar */}
-            {(activeSessionId || activeReadingSessionId) && (
-              <div className="flex items-center gap-2">
-                <motion.button
-                  onClick={handleEndSession}
-                  whileTap={{ scale: 0.97 }}
-                  className="relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))",
-                    border: "1px solid rgba(220, 38, 38, 0.3)",
-                    color: "#f87171",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    boxShadow: "0 2px 8px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.12))";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-                    e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))";
-                  }}
-                >
-                  End Session
-                </motion.button>
-                <button
-                  onClick={() => navigate("/support#sessions")}
-                  className="text-[0.6rem] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-border"
-                >
-                  What are sessions?
-                </button>
-              </div>
-            )}
 
             {/* Bible Pocket (annotations drawer) */}
             <Button
@@ -2662,29 +2632,6 @@ export function BibleReader() {
                         : `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
                     })()}
                   </span>
-                  <motion.button
-                    onClick={handleEndSession}
-                    whileTap={{ scale: 0.97 }}
-                    className="relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide overflow-hidden shrink-0"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))",
-                      border: "1px solid rgba(220, 38, 38, 0.3)",
-                      color: "#f87171",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      boxShadow: "0 2px 8px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.12))";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))";
-                    }}
-                  >
-                    End Session
-                  </motion.button>
                 </div>
               ) : (
                 <span className="text-sm font-semibold text-foreground">
@@ -2692,31 +2639,6 @@ export function BibleReader() {
                 </span>
               )}
               <div className="flex items-center gap-2 shrink-0">
-                {!isInPaperCanvas && (activeSessionId || activeReadingSessionId) && (
-                  <motion.button
-                    onClick={handleEndSession}
-                    whileTap={{ scale: 0.97 }}
-                    className="relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))",
-                      border: "1px solid rgba(220, 38, 38, 0.3)",
-                      color: "#f87171",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      boxShadow: "0 2px 8px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.12))";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))";
-                    }}
-                  >
-                    End Session
-                  </motion.button>
-                )}
                 <button
                   onClick={() => setStudyNavOpen(false)}
                   className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
@@ -2725,15 +2647,6 @@ export function BibleReader() {
                 </button>
               </div>
             </div>
-            {/* "What are sessions?" link below locked nav indicator */}
-            {(activeSessionId || activeReadingSessionId) && (
-              <button
-                onClick={() => navigate("/support#sessions")}
-                className="text-[0.6rem] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-border"
-              >
-                What are sessions?
-              </button>
-            )}
             {/* Nav selectors — hidden when canvas session is locked */}
             {!(isInPaperCanvas && activeSessionConfig) && (
             <div className="flex items-center gap-2">
@@ -2847,40 +2760,6 @@ export function BibleReader() {
                 {focusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
 
-              {/* End Session — slide-down nav */}
-              {(activeSessionId || activeReadingSessionId) && (
-                <div className="flex items-center gap-2">
-                  <motion.button
-                    onClick={() => { handleEndSession(); setStudyNavOpen(false); }}
-                    whileTap={{ scale: 0.97 }}
-                    className="relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))",
-                      border: "1px solid rgba(220, 38, 38, 0.3)",
-                      color: "#f87171",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      boxShadow: "0 2px 8px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.12))";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))";
-                    }}
-                  >
-                    End Session
-                  </motion.button>
-                  <button
-                    onClick={() => { navigate("/support#sessions"); setStudyNavOpen(false); }}
-                    className="text-[0.6rem] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2 decoration-border"
-                  >
-                    What are sessions?
-                  </button>
-                </div>
-              )}
 
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
