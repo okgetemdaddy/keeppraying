@@ -1283,7 +1283,33 @@ export function BibleReader() {
       }
     };
   }, [activeReadingSessionId]);
-  // iPadOS: Implicit reading sessions map to BGAppRefreshTask with CoreData sync
+  // iPadOS: Reading session end maps to applicationWillResignActive + BGProcessingTask for summary generation
+
+  // iPadOS: Stale session cleanup runs in applicationDidBecomeActive via CoreData fetch request
+  useEffect(() => {
+    if (!user?.id) return;
+    const cleanupStaleSessions = async () => {
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: stale } = await supabase
+        .from("study_sessions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("session_type", "reading")
+        .in("status", ["active", "paused"])
+        .lt("last_active_at", tenMinutesAgo);
+      if (stale?.length) {
+        const ids = stale.map(s => s.id);
+        await supabase
+          .from("study_sessions")
+          .update({ status: "complete", completed_at: new Date().toISOString() })
+          .in("id", ids);
+        ids.forEach(id => {
+          supabase.functions.invoke("summarize-session", { body: { session_id: id } }).catch(console.error);
+        });
+      }
+    };
+    cleanupStaleSessions();
+  }, [user?.id]);
 
   // ── 8.1: Scroll & Touch Activity Tracking ──
   useEffect(() => {
