@@ -3610,6 +3610,14 @@ export function BibleReader() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── 8.3: Session Linger Toast (idle popup) ── */}
+      <SessionLingerToast
+        ref={lingerToastRef}
+        visible={showLingerToast}
+        onResume={handleLingerResume}
+        onEndSession={handleLingerEndSession}
+      />
     </article>
   );
 }
