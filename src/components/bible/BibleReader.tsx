@@ -1278,8 +1278,9 @@ export function BibleReader() {
     (stroke: InkStroke) => {
       inkHistory.addStroke(stroke);
       scheduleInkSave([...inkHistory.strokes, stroke]);
+      canvasTelemetry.logEvent('ink_stroke', { annotation_key: `${bookUsfm}.${chapterIdx}.ink`, stroke_count: inkHistory.strokes.length + 1 });
     },
-    [inkHistory, scheduleInkSave],
+    [inkHistory, scheduleInkSave, canvasTelemetry, bookUsfm, chapterIdx],
   );
 
   const handleInkUndo = useCallback(() => {
