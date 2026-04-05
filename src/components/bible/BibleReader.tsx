@@ -25,6 +25,10 @@ import {
   Download,
   X,
   Lock,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Grid3X3,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -126,6 +130,7 @@ import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
+import { MarginAnnotationLayer, type MarginInkStroke } from "@/components/bible/MarginAnnotationLayer";
 import { layoutBibleText } from "@/lib/svgTextLayout";
 
 type ReadingMode = "verse" | "paragraph";
@@ -811,6 +816,32 @@ export function BibleReader() {
   const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
   const inkHistory = useInkHistory();
 
+  // ── Margin annotation layer state (Apple Pencil in default reading view) ──
+  // iPadOS: Margin mode maps to PKCanvasView glass overlay with pencilOnly input policy
+  type MarginLayout = 'center' | 'left' | 'right';
+  type MarginGrid = 'none' | 'dots' | 'lines';
+  const [marginLayout, setMarginLayout] = useState<MarginLayout>(() => {
+    try { return (localStorage.getItem("kr_margin_layout") as MarginLayout) || "center"; } catch { return "center"; }
+  });
+  const [marginGrid, setMarginGrid] = useState<MarginGrid>(() => {
+    try { return (localStorage.getItem("kr_margin_grid") as MarginGrid) || "none"; } catch { return "none"; }
+  });
+  const [marginStrokes, setMarginStrokes] = useState<MarginInkStroke[]>([]);
+  const readingScrollRef = useRef<HTMLDivElement>(null);
+  const marginSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMarginLayoutChange = useCallback((v: MarginLayout) => {
+    setMarginLayout(v);
+    try { localStorage.setItem("kr_margin_layout", v); } catch {}
+  }, []);
+  const handleMarginGridCycle = useCallback(() => {
+    setMarginGrid((prev) => {
+      const next = prev === "none" ? "dots" : prev === "dots" ? "lines" : "none";
+      try { localStorage.setItem("kr_margin_grid", next); } catch {}
+      return next;
+    });
+  }, []);
+
   // ── Workspace spatial settings ──
   const [wsTextAlign, setWsTextAlign] = useState<TextAlign>(() => {
     try { return (localStorage.getItem("bible_ws_align") as TextAlign) || "left"; } catch { return "left"; }
@@ -1494,7 +1525,90 @@ export function BibleReader() {
   }, [inkHistory, scheduleInkSave]);
 
 
-  // ── Voice annotation handler ──
+  // ── Margin ink loading from annotations ──
+  // iPadOS: Margin ink persisted via CoreData annotation store, synced to Supabase
+  const marginInkKey = bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.margin_ink` : null;
+  const marginAnnotation = useMemo(() => {
+    if (!chapterAnnotations || !marginInkKey) return null;
+    return chapterAnnotations.find((a) => a.verse_ids.includes(marginInkKey)) ?? null;
+  }, [chapterAnnotations, marginInkKey]);
+  const marginAnnotationId = marginAnnotation?.id;
+
+  useEffect(() => {
+    if (marginAnnotation) {
+      const incoming = (marginAnnotation.strokes as unknown as MarginInkStroke[]) ?? [];
+      setMarginStrokes(incoming);
+    } else {
+      setMarginStrokes([]);
+    }
+  }, [marginAnnotation]);
+
+  // ── Debounced margin ink auto-save (500ms) ──
+  const scheduleMarginInkSave = useCallback(
+    (strokesToSave: MarginInkStroke[]) => {
+      if (marginSaveTimer.current) clearTimeout(marginSaveTimer.current);
+      marginSaveTimer.current = setTimeout(() => {
+        if (!marginInkKey) return;
+        saveAnnotationMut.mutate({
+          verseIds: [marginInkKey],
+          strokes: strokesToSave as unknown as StrokeData[],
+          existingId: marginAnnotationId,
+        });
+      }, 500);
+    },
+    [marginInkKey, saveAnnotationMut, marginAnnotationId],
+  );
+
+  const handleMarginStrokeComplete = useCallback(
+    (stroke: MarginInkStroke) => {
+      setMarginStrokes((prev) => {
+        const next = [...prev, stroke];
+        scheduleMarginInkSave(next);
+        return next;
+      });
+      readingTelemetry.logEvent('ink_stroke', {
+        annotation_key: marginInkKey,
+        stroke_count: marginStrokes.length + 1,
+        source: 'margin_pencil',
+      });
+    },
+    [scheduleMarginInkSave, readingTelemetry, marginInkKey, marginStrokes.length],
+  );
+
+  const handleMarginXGesture = useCallback(
+    (strokeIds: string[]) => {
+      setMarginStrokes((prev) => {
+        const next = prev.filter((s) => !strokeIds.includes(s.id));
+        scheduleMarginInkSave(next);
+        return next;
+      });
+      if (strokeIds.length > 0) {
+        toast.success(`Erased ${strokeIds.length} stroke${strokeIds.length > 1 ? "s" : ""}`);
+      }
+    },
+    [scheduleMarginInkSave],
+  );
+
+  // ── Disable zoom when pencil detected in default reading mode ──
+  // iPadOS: Zoom disabled via UIScrollView.minimumZoomScale = 1, maximumZoomScale = 1
+  const isInCanvasStudyMode = studyMode && studyModeVariant === "margin";
+  useEffect(() => {
+    if (!pencilDetected || isInCanvasStudyMode) return;
+    const el = document.documentElement;
+    const prev = el.style.touchAction;
+    el.style.touchAction = "pan-y";
+
+    const preventDoubleTap = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+    document.addEventListener("touchstart", preventDoubleTap, { passive: false });
+
+    return () => {
+      el.style.touchAction = prev;
+      document.removeEventListener("touchstart", preventDoubleTap);
+    };
+  }, [pencilDetected, isInCanvasStudyMode]);
+
   const handleVoiceTranscript = useCallback(
     (transcript: string, linkedVerse: number | null) => {
       if (!bookUsfm || !currentChapter || !user?.id) return;
@@ -2602,6 +2716,54 @@ export function BibleReader() {
               </Toggle>
             </div>
 
+            {/* ── Margin annotation controls (pencil-only) ── */}
+            {/* iPadOS: Controls map to PKToolPicker custom items */}
+            {pencilDetected && !isInPaperCanvas && (
+              <>
+                {/* Layout shift toggle: left / center / right */}
+                <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+                  <Toggle
+                    pressed={marginLayout === "left"}
+                    onPressedChange={() => handleMarginLayoutChange("left")}
+                    size="sm"
+                    className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    aria-label="Text left, margin right"
+                  >
+                    <AlignLeft className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    pressed={marginLayout === "center"}
+                    onPressedChange={() => handleMarginLayoutChange("center")}
+                    size="sm"
+                    className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    aria-label="Text centered"
+                  >
+                    <AlignCenter className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    pressed={marginLayout === "right"}
+                    onPressedChange={() => handleMarginLayoutChange("right")}
+                    size="sm"
+                    className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    aria-label="Text right, margin left"
+                  >
+                    <AlignRight className="h-3.5 w-3.5" />
+                  </Toggle>
+                </div>
+
+                {/* Grid cycle button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleMarginGridCycle}
+                  className={`h-8 w-8 p-0 ${marginGrid !== "none" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  title={`Grid: ${marginGrid}`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+
 
             {/* Bible Pocket (annotations drawer) */}
             <Button
@@ -3149,56 +3311,157 @@ export function BibleReader() {
                 style={{ fontSize: `${textSize}px` }}
                 className={`bible-reading-canvas font-body ${premiumDark ? 'bible-serif-reading' : ''}`}
               >
-                <ZoomWrapper
-                  zoom={1}
-                  textSpacing={1.6}
+                {/* iPadOS: Scroll container maps to UIScrollView with touch-action: pan-y for pencil coexistence */}
+                <div
+                  ref={readingScrollRef}
                   className="relative"
-                  textAlign="left"
-                  marginWidth={0}
-                  canvasBackground="none"
-                  studyMode={false}
+                  style={{
+                    touchAction: pencilDetected ? "pan-y" : undefined,
+                    ...(pencilDetected && marginGrid === "dots" ? {
+                      backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+                      backgroundSize: "20px 20px",
+                    } : pencilDetected && marginGrid === "lines" ? {
+                      backgroundImage: `linear-gradient(transparent ${textSize * 1.9 - 1}px, rgba(255,255,255,0.04) ${textSize * 1.9}px)`,
+                      backgroundSize: `100% ${textSize * 1.9}px`,
+                      // The backgroundPosition offset aligns ruled lines to the font's baseline.
+                      // 1.2em approximates the ascender height of EB Garamond at standard line-height.
+                      // If the font changes, this offset must be recalibrated.
+                      // iPadOS: Baseline alignment is automatic via NSParagraphStyle.baselineOffset
+                      backgroundPosition: "0 calc(1.2em - 2px)",
+                    } : {}),
+                  }}
                 >
-                  <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                    {verses.map((v) => {
-                      const vNotes = noteMap.get(v.number) ?? [];
-                      return (
-                        <React.Fragment key={v.number}>
-                          <EnrichedVerse
-                            verse={v}
-                            highlights={highlightMap.get(v.number) ?? []}
-                            notes={vNotes}
-                            bookmark={bookmarkMap.get(v.number)}
-                            bunchItems={bunchMap.get(v.number) ?? []}
-                            bunchColorMap={bunchColorMap}
-                            bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                            mode={mode}
-                            isSelected={selectedVerses.has(v.number)}
-                            hideBunches={hideBunchRefs}
-                            onTapSelect={handleTapSelect}
-                            studyMode={false}
-                            verseAnnotation={annotationMap.get(v.number) ?? null}
-                            onAnnotationSave={handleAnnotationSave}
-                            verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                            highlightStyle={highlightStyle}
-                            previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
-                            onLongPressVerseNumber={user ? handleCrossRef : undefined}
-                          />
-                          <AnimatePresence>
-                            {noteInputVerse === v.number && (
-                              <NoteInputPanel
-                                verseNumber={v.number}
-                                existingContent={vNotes[0]?.note_content}
-                                existingId={vNotes[0]?.id}
-                                onSave={handleSaveNote}
-                                onCancel={() => setNoteInputVerse(null)}
+                  {/* Margin annotation layer — Apple Pencil only */}
+                  {pencilDetected && !isInPaperCanvas && (
+                    <MarginAnnotationLayer
+                      active={pencilDetected}
+                      strokes={marginStrokes}
+                      onStrokeComplete={handleMarginStrokeComplete}
+                      onUnderlineGesture={(verseNumber, underlinedText) => {
+                        if (!user && !isGuestSession) {
+                          toast("Unlock this feature ✦", {
+                            description: "Highlighting lets you mark and revisit meaningful passages. Create a free account to start.",
+                          });
+                          return;
+                        }
+                        if (!user) markGuestChange();
+                        const lastColor = (() => {
+                          try { return localStorage.getItem("bible_last_highlight_color") || "yellow"; } catch { return "yellow"; }
+                        })();
+                        const verseData = verses.find((v) => v.number === verseNumber);
+                        if (verseData) {
+                          const normalizedVerse = verseData.text.replace(/\s+/g, ' ');
+                          const normalizedUnderline = underlinedText.replace(/\s+/g, ' ').trim();
+                          const textStart = normalizedVerse.indexOf(normalizedUnderline);
+                          if (textStart >= 0) {
+                            mutations.addHighlight.mutate({
+                              verseNumber,
+                              color: lastColor,
+                              start: textStart,
+                              end: textStart + normalizedUnderline.length,
+                            });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, text_snippet: normalizedUnderline?.slice(0, 60), source: 'margin_pencil_underline' });
+                            toast.success(`Highlighted: "${normalizedUnderline.slice(0, 30)}${normalizedUnderline.length > 30 ? "…" : ""}"`);
+                          } else {
+                            mutations.addHighlight.mutate({ verseNumber, color: lastColor });
+                            currentLogEvent('highlight_added', { verse_number: verseNumber, color: lastColor, source: 'margin_pencil_underline' });
+                            toast.success(`Highlighted verse ${verseNumber}`);
+                          }
+                        }
+                      }}
+                      onCircleSelect={(verseNumbers, hullCenter) => {
+                        if (verseNumbers.length > 0 && versionId && bookUsfm && currentChapter && currentBook) {
+                          setCrossSelections((prev) => {
+                            const existing = new Set(prev.map((s) => `${s.bookUsfm}.${s.chapterNumber}.${s.verseNumber}`));
+                            const newSelections = verseNumbers
+                              .filter((v) => !existing.has(`${bookUsfm}.${currentChapter!.id}.${v}`))
+                              .map((v) => ({
+                                versionId: versionId!,
+                                bookUsfm: bookUsfm!,
+                                bookTitle: currentBook!.title,
+                                chapterNumber: currentChapter!.id,
+                                verseNumber: v,
+                              }));
+                            return [...prev, ...newSelections];
+                          });
+                          toast.success(`✨ Selected ${verseNumbers.length} verse${verseNumbers.length > 1 ? "s" : ""}`);
+                        }
+                      }}
+                      onWordCircle={(words, verseNum, anchor) => {
+                        const verseData = verses.find((v) => v.number === verseNum);
+                        if (verseData) {
+                          setReferenceBloom({ x: anchor.x, y: anchor.y, word: words, verseNumber: verseNum });
+                        }
+                      }}
+                      onXGesture={handleMarginXGesture}
+                      penColor={inkPenColor}
+                      penSize={inkPenSize}
+                      scrollContainerRef={readingScrollRef}
+                    />
+                  )}
+
+                  <ZoomWrapper
+                    zoom={1}
+                    textSpacing={1.6}
+                    className="relative"
+                    textAlign="left"
+                    marginWidth={0}
+                    canvasBackground="none"
+                    studyMode={false}
+                  >
+                    {/* Dynamic layout shift for margin writing space */}
+                    <div className={`transition-all duration-300 ease-out ${
+                      pencilDetected
+                        ? marginLayout === "left"
+                          ? "max-w-prose ml-6 md:ml-12 lg:ml-16 mr-auto px-4 pr-8"
+                          : marginLayout === "right"
+                            ? "max-w-prose mr-6 md:mr-12 lg:mr-16 ml-auto px-4 pl-8"
+                            : "max-w-prose mx-auto px-4"
+                        : ""
+                    }`}>
+                      <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                        {verses.map((v) => {
+                          const vNotes = noteMap.get(v.number) ?? [];
+                          return (
+                            <React.Fragment key={v.number}>
+                              <EnrichedVerse
+                                verse={v}
+                                highlights={highlightMap.get(v.number) ?? []}
+                                notes={vNotes}
+                                bookmark={bookmarkMap.get(v.number)}
+                                bunchItems={bunchMap.get(v.number) ?? []}
+                                bunchColorMap={bunchColorMap}
+                                bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                                mode={mode}
+                                isSelected={selectedVerses.has(v.number)}
+                                hideBunches={hideBunchRefs}
+                                onTapSelect={handleTapSelect}
+                                studyMode={false}
+                                verseAnnotation={annotationMap.get(v.number) ?? null}
+                                onAnnotationSave={handleAnnotationSave}
+                                verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                                highlightStyle={highlightStyle}
+                                previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                                onLongPressVerseNumber={user ? handleCrossRef : undefined}
                               />
-                            )}
-                          </AnimatePresence>
-                        </React.Fragment>
-                      );
-                    })}
-                  </section>
-                </ZoomWrapper>
+                              <AnimatePresence>
+                                {noteInputVerse === v.number && (
+                                  <NoteInputPanel
+                                    verseNumber={v.number}
+                                    existingContent={vNotes[0]?.note_content}
+                                    existingId={vNotes[0]?.id}
+                                    onSave={handleSaveNote}
+                                    onCancel={() => setNoteInputVerse(null)}
+                                  />
+                                )}
+                              </AnimatePresence>
+                            </React.Fragment>
+                          );
+                        })}
+                      </section>
+                    </div>
+                  </ZoomWrapper>
+                </div>
               </motion.div>
             ) : !versionId ? (
               <motion.div {...fadeIn} className="flex flex-col items-center justify-center py-20 text-muted-foreground">
