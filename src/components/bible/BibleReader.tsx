@@ -126,6 +126,7 @@ import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
+import { layoutBibleText } from "@/lib/svgTextLayout";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
