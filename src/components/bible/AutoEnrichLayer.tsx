@@ -21,6 +21,7 @@ import type { CrossBunchItem } from "@/hooks/useBibleMutations";
 interface AutoEnrichLayerProps {
   data: EnrichmentPayload | null;
   isLoading: boolean;
+  isLoadingMore?: boolean;
   active: boolean;
   verses: { number: number; text: string }[];
   /** Scripture context for CrossBunchItem construction */
