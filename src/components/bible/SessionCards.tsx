@@ -23,9 +23,10 @@ function formatElapsed(seconds: number): string {
 
 interface SessionCardsProps {
   onResume: (session: StudySession) => void;
+  onReview?: (session: StudySession) => void;
 }
 
-export function SessionCards({ onResume }: SessionCardsProps) {
+export function SessionCards({ onResume, onReview }: SessionCardsProps) {
   const { data: sessions, isLoading } = useStudySessions();
 
   const activeSessions = sessions?.filter((s) => s.status !== "complete") ?? [];
