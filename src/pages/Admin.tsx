@@ -832,6 +832,9 @@ export default function Admin() {
               {/* ── KEEPREAD.ING WAITLIST ── */}
               {activeTab === "waitlist" && <WaitlistTab />}
 
+              {/* ── BIBLE SIGHT ── */}
+              {activeTab === "bible-sight" && <BibleSightAdminTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
