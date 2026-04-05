@@ -394,6 +394,35 @@ function AISynthesisModule({
           ))}
         </div>
       )}
+
+      {/* Model Perspectives — multi-model synthesis transparency */}
+      {summary.model_contributions && (
+        <Collapsible>
+          <CollapsibleTrigger
+            className="text-[0.65rem] hover:opacity-80 flex items-center gap-1 mt-3 transition-opacity"
+            style={{ color: "rgba(161, 161, 170, 0.7)" }}
+          >
+            <ChevronDown className="h-3 w-3" />
+            View individual model perspectives
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 space-y-2">
+            <div className="text-[0.6rem] space-y-1.5">
+              <p>
+                <span style={{ color: "rgb(251, 191, 36, 0.7)" }}>Theological:</span>{" "}
+                <span style={{ color: "rgba(161, 161, 170, 1)" }}>{summary.model_contributions.theological}</span>
+              </p>
+              <p>
+                <span style={{ color: "rgb(56, 189, 248, 0.7)" }}>Statistical:</span>{" "}
+                <span style={{ color: "rgba(161, 161, 170, 1)" }}>{summary.model_contributions.statistical}</span>
+              </p>
+              <p>
+                <span style={{ color: "rgb(52, 211, 153, 0.7)" }}>Behavioral:</span>{" "}
+                <span style={{ color: "rgba(161, 161, 170, 1)" }}>{summary.model_contributions.behavioral}</span>
+              </p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
 }
