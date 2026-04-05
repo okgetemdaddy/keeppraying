@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import ReactMarkdown, { Components } from "react-markdown";
+import { Slider } from "@/components/ui/slider";
 import {
   RefreshCw, Send, ChevronRight, Clock, Sparkles,
-  Eye, Brain, Gem, Loader2, PanelLeftClose, PanelLeftOpen
+  Eye, Brain, Gem, Loader2, PanelLeftClose, PanelLeftOpen, Type
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -198,6 +199,7 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
   const [streaming, setStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState("");
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  const [textSize, setTextSize] = useState(15);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
   const [chatStreaming, setChatStreaming] = useState(false);
@@ -453,16 +455,32 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
             <span className="font-serif font-semibold">{MODEL_LABELS[model].label}</span>
             <span className="text-xs text-muted-foreground">— {MODEL_LABELS[model].desc}</span>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={generateReport}
-            disabled={streaming}
-            className="gap-2"
-          >
-            {streaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            {streaming ? "Generating…" : "New Report"}
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 min-w-[160px]">
+              <Type className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">A</span>
+              <Slider
+                value={[textSize]}
+                min={11}
+                max={22}
+                step={1}
+                onValueChange={([v]) => setTextSize(v)}
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground font-serif">A</span>
+              <span className="text-[10px] text-muted-foreground w-5 text-right">{textSize}</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={generateReport}
+              disabled={streaming}
+              className="gap-2"
+            >
+              {streaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {streaming ? "Generating…" : "New Report"}
+            </Button>
+          </div>
         </div>
 
         {/* Report Content — WSJ front-page style */}
@@ -489,8 +507,11 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
               {/* Thin double rule */}
               <div className="border-t border-foreground/20 mb-6" />
 
-              {/* Article body — newspaper columns */}
-              <article className="wsj-body">
+              {/* Article body — newspaper columns with word wrap */}
+              <article
+                className="wsj-body columns-1 md:columns-2 gap-8 [column-rule:1px_solid_hsl(var(--foreground)/0.1)]"
+                style={{ fontSize: `${textSize}px`, wordBreak: "break-word", overflowWrap: "anywhere" }}
+              >
                 <ReactMarkdown components={wsjComponents}>{displayContent}</ReactMarkdown>
                 <div ref={reportEndRef} />
               </article>
