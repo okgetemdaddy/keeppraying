@@ -1,113 +1,107 @@
 
 
-## Bible Sight Ecosystem: Commentary Library, Public Sessions, Private Chat Logs
+## Commentary Search, Go Deeper Integration, and Bookmarks
 
-Expanding Bible Sight with a Commentary Library drawer, public study sessions with private chat logs, and ingestion of 6 open-domain commentaries.
+Three additions to the Commentary Drawer: AI-powered semantic search, a "Go Deeper" handoff to Bible Sight, and unlimited user bookmarks with an editable side panel.
 
 ---
 
-### Phase 1: Database — Commentary Infrastructure
+### Model Selection for Commentary Search
 
-**Migration:** Add `bible_book_usfm`, `chapter_number`, and `source_url` columns to `library_chunks` with an index for deterministic chapter-level lookups. This allows commentary content to be fetched by exact chapter in addition to semantic search.
+All major frontier models (GPT-5, Gemini 2.5 Pro, Grok) have these public-domain commentaries in their training data — Matthew Henry, Barnes, Calvin, Wesley, JFB, and Keil & Delitzsch are among the most widely digitized texts on the internet and have been part of Common Crawl for over a decade. No special fine-tuned model is needed.
+
+**Recommended: `openai/gpt-5`** via the Lovable AI Gateway. Rationale:
+- Strongest reasoning and nuance for doctrinal precision
+- Excellent at understanding user intent ("what does Calvin say about election here?") and mapping it to the correct commentary content
+- Best at contextual disambiguation (distinguishing between commentary authors discussing similar topics)
+- The commentary search requires accuracy over speed — this is a deliberate, scholarly lookup, not a real-time chat
+
+The search flow: user types a query → edge function receives query + current book/chapter + optional author filter → GPT-5 reformulates into a precise semantic search → queries `library_chunks` via text search and embedding match → GPT-5 ranks and summarizes results with source attribution → returns ranked results to the UI.
+
+---
+
+### 1. New Edge Function: `commentary-search`
+
+**`supabase/functions/commentary-search/index.ts`**
+
+- Accepts `{ query, book_usfm, chapter_number, author_filter? }` + auth JWT
+- Uses GPT-5 via Lovable AI Gateway to:
+  1. Understand user intent and expand the query with theological context
+  2. Generate a search strategy (exact chapter match + semantic expansion)
+- Queries `library_chunks` with deterministic filters first (`bible_book_usfm`, `chapter_number`, optional `author`), then broadens if needed
+- Uses GPT-5 to rank results by relevance and doctrinal accuracy
+- Returns `{ results: Array<{ id, content, author, book_title, page_reference, relevance_note }> }`
+- Auth-gated
+
+---
+
+### 2. "Go Deeper" → Bible Sight Handoff
+
+When a user is reading commentary content or viewing search results:
+
+- Add a "Go Deeper" button (amber accent, `Eye` icon) that appears:
+  - At the bottom of each commentary reading view
+  - On each search result card
+  - On selected/highlighted text via a floating action
+- Clicking "Go Deeper" closes the Commentary Drawer and opens `BibleSightDrawer` with a pre-seeded first message:
+  - Bible Sight opens already responding with something like: *"Praise God you want to go deeper! I see you were reading {author}'s commentary on {book} {chapter}. Is there anything in particular you'd like to explore — or would you like to see what Bible Sight can see?"*
+- This is achieved by passing a `initialContext` prop to `BibleSightDrawer` containing the commentary excerpt and author, which gets injected as the first assistant message
+
+**BibleReader.tsx wiring:**
+- New callback `onGoDeeper(context: { author: string, excerpt: string })` passed to `CommentaryDrawer`
+- Sets `bibleSightOpen = true` and passes context to `BibleSightDrawer`
+
+---
+
+### 3. Commentary Bookmarks
+
+**Migration:** New `commentary_bookmarks` table:
 
 ```sql
-ALTER TABLE library_chunks 
-  ADD COLUMN IF NOT EXISTS bible_book_usfm text,
-  ADD COLUMN IF NOT EXISTS chapter_number integer,
-  ADD COLUMN IF NOT EXISTS source_url text;
+CREATE TABLE public.commentary_bookmarks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  author text NOT NULL,
+  book_usfm text NOT NULL,
+  chapter_number integer NOT NULL,
+  chunk_id uuid REFERENCES library_chunks(id) ON DELETE SET NULL,
+  excerpt text NOT NULL,
+  title text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
 
-CREATE INDEX idx_library_chunks_chapter ON library_chunks (bible_book_usfm, chapter_number);
+ALTER TABLE public.commentary_bookmarks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own bookmarks"
+  ON public.commentary_bookmarks FOR ALL
+  TO authenticated
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
 ```
 
-Also add `chat_log jsonb` column to `bible_sight_entries` to store the full conversation history privately for the session creator.
+**UI in CommentaryDrawer:**
+
+- **Bookmark action**: Long-press or right-click on any commentary paragraph → "Bookmark this passage" option. Auto-generates a short title via AI (or uses first 8 words as fallback).
+- **Bookmarks side panel**: Collapsible panel on the right side of the drawer (or bottom sheet on mobile)
+  - Shows list of bookmarks grouped by date, with time and AI-generated title
+  - Long-press or right-click a bookmark title → title becomes immediately editable (inline `contentEditable`), click away to save
+  - Clicking a bookmark navigates to that commentary + chapter
+  - Delete via swipe or context menu
+- **Bookmark icon** in the Commentary Drawer header toggles the panel open/closed
+- Unlimited bookmarks per user
 
 ---
 
-### Phase 2: Commentary Ingestion Edge Function
+### 4. Updated CommentaryDrawer Search UI
 
-**`supabase/functions/ingest-commentary/index.ts`**
+Replace the current simple text filter with the AI-powered search:
 
-Admin-only function that:
-- Accepts `{ source_url, book_title, author, format }` (JSON or OSIS XML)
-- Fetches raw commentary from GitHub (simoncozens/open-source-bible-data, CrossWire mirrors)
-- Parses into ~500-800 token chunks mapped to `bible_book_usfm` + `chapter_number`
-- Generates embeddings via Lovable AI Gateway (`text-embedding-3-small` pattern from existing `vectorize-library`)
-- Inserts into `library_chunks` and creates `library_toc` entries
-- Processes in batches of 50
-
-**6 Commentary Sources (all public domain):**
-
-| Commentary | Author |
-|-----------|--------|
-| Matthew Henry's Complete Commentary | Matthew Henry |
-| Barnes' Notes on the Bible | Albert Barnes |
-| Calvin's Commentaries | John Calvin |
-| Keil & Delitzsch OT Commentary | Keil & Delitzsch |
-| John Wesley's Notes | John Wesley |
-| Jamieson-Fausset-Brown | JFB |
-
----
-
-### Phase 3: Commentary Drawer Component
-
-**`src/components/bible/CommentaryDrawer.tsx`** — New 80% height vaul Drawer matching Bible Sight's design language:
-
-- **Landing view**: Search bar at top, 6 commentary host cards below in a 2-column grid
-  - Each card: dignified title typography (serif), author name, subtle parchment/cream card style
-  - Cards: Matthew Henry, Barnes, Calvin, Keil & Delitzsch, Wesley, JFB
-- **Commentary reading view** (after clicking a card): the drawer transitions to show that commentary's content for the current chapter
-  - Blog/magazine layout matching the uploaded screenshot — serif headings, warm body text, amber blockquotes, VerseLink references inline
-  - Ornamental SVG dividers between sections (reuse `OliveBranchDivider`, `ScrollOrnament` from DeepStudyDrawer)
-  - Back button to return to the 6-card landing
-  - Search bar persists at top to filter/search within the commentary
-- **X close button** in header corner
-- Dark mode: `bg-[#1C1C1E]` with warm accents; Light mode: cream parchment
-
-**Entry point**: New "Commentary" button in `BibleSleeveSheet.tsx` below Bible Sight, with `Library` icon and subtext "6 classical commentaries"
-
----
-
-### Phase 4: Bible Sight Chat + Session Updates
-
-**`bible-sight-chat` edge function update:**
-- Query `library_toc` for all 6 commentaries (not just IVP) matching current chapter
-- Include commentary authors in the system prompt context so Bible Sight can reference them naturally: "As Matthew Henry observed..." or "Barnes notes that..."
-- Commentary context injected alongside existing IVP scholarly context
-
-**`bible_sight_entries` session storage update:**
-- When `[GENERATE_STUDY]` triggers, save the full `messages[]` chat log into the new `chat_log` jsonb column
-- The generated study session's `session_data` references commentary sources used
-
----
-
-### Phase 5: Public Sessions + Private Chat Logs
-
-**Bible Sight Study Session cards are public:**
-- Remove `user_id` filter from session queries when `entry_type = 'study_session'` — all sessions are discoverable
-- In `BibleSearchDialog.tsx`, study sessions appear for all users (not just the creator)
-- Session cards show title, date, chapter reference, creator name (from profiles)
-
-**Private chat log — creator only:**
-- In `DeepStudyDrawer.tsx`, when displaying a study session:
-  - If `session.user_id === currentUser.id` AND `session.chat_log` exists, render a "My Conversation" collapsible section below the study content
-  - Shows the full chat history in the same bubble layout as `BibleSightDrawer`
-  - Other users see only the formatted study content — no chat log
-- RLS: `chat_log` column is stripped from public reads via a database view or selective column queries
-
----
-
-### Phase 6: Update `enrich-chapter` + `bible-sight-chat`
-
-Both functions gain commentary awareness:
-- `enrich-chapter`: queries `library_chunks` for current chapter's commentary entries (up to 8), injects as additional scholarly context
-- `bible-sight-chat`: deterministic chapter match first (`WHERE bible_book_usfm = X AND chapter_number = Y`), then falls back to text search for topical queries spanning multiple books
-
----
-
-### Phase 7: Bible Sleeve Wiring
-
-**`BibleSleeveSheet.tsx`**: Add "Commentary" button below Bible Sight entry point
-**`BibleReader.tsx`**: Add `commentaryOpen` state, render `<CommentaryDrawer>` with current book/chapter
+- Search bar stays at top, same styling
+- On submit (Enter or search icon tap), calls `commentary-search` edge function
+- Results appear as cards below the search bar, replacing the commentary host grid temporarily
+- Each result card shows: author name, excerpt (highlighted match), relevance note from GPT-5, and a "Go Deeper" button
+- "Clear search" button returns to the 6-card host landing
+- Loading state: skeleton cards with amber shimmer
 
 ---
 
@@ -115,16 +109,9 @@ Both functions gain commentary awareness:
 
 | File | Change |
 |------|--------|
-| **Migration** | Add `bible_book_usfm`, `chapter_number`, `source_url` to `library_chunks`; add `chat_log` to `bible_sight_entries` |
-| `supabase/functions/ingest-commentary/index.ts` | New: fetch, parse, chunk, embed, insert commentary data |
-| `src/components/bible/CommentaryDrawer.tsx` | New: 80% height drawer with search + 6 commentary cards + reading view |
-| `supabase/functions/bible-sight-chat/index.ts` | Query all commentary TOCs, inject into system prompt |
-| `supabase/functions/enrich-chapter/index.ts` | Query commentary chunks for current chapter context |
-| `src/components/bible/DeepStudyDrawer.tsx` | Show private chat log for session creator |
-| `src/components/bible/BibleSightDrawer.tsx` | Save chat_log when generating study session |
-| `src/hooks/useBibleSearch.ts` | Make study sessions public in search results |
-| `src/components/bible/BibleSearchDialog.tsx` | Remove user_id filter for study_session results |
-| `src/components/bible/BibleSleeveSheet.tsx` | Add Commentary entry point |
-| `src/components/bible/BibleReader.tsx` | Wire commentaryOpen state + CommentaryDrawer |
-| `src/pages/Admin.tsx` | Commentary ingestion status + trigger buttons |
+| **Migration** | Create `commentary_bookmarks` table with RLS |
+| `supabase/functions/commentary-search/index.ts` | New: GPT-5 powered semantic search across commentary library |
+| `src/components/bible/CommentaryDrawer.tsx` | AI search integration, Go Deeper button, bookmark actions, bookmarks side panel |
+| `src/components/bible/BibleSightDrawer.tsx` | Accept `initialContext` prop for pre-seeded handoff message |
+| `src/components/bible/BibleReader.tsx` | Wire `onGoDeeper` callback between CommentaryDrawer and BibleSightDrawer |
 
