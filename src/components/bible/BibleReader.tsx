@@ -3822,10 +3822,14 @@ export function BibleReader() {
       {/* ── Bible Sight Conversational Drawer ── */}
       <BibleSightDrawer
         open={bibleSightOpen}
-        onOpenChange={setBibleSightOpen}
+        onOpenChange={(v) => {
+          setBibleSightOpen(v);
+          if (!v) setBibleSightContext(null);
+        }}
         bookUsfm={bookUsfm ?? "GEN"}
         chapterNumber={chapterIdx + 1}
         onTriggerDeepStudy={enrichment.trigger}
+        initialContext={bibleSightContext}
       />
 
       {/* ── Commentary Library Drawer ── */}
@@ -3834,6 +3838,11 @@ export function BibleReader() {
         onOpenChange={setCommentaryOpen}
         bookUsfm={bookUsfm ?? "GEN"}
         chapterNumber={chapterIdx + 1}
+        onGoDeeper={(ctx) => {
+          setCommentaryOpen(false);
+          setBibleSightContext(ctx);
+          setTimeout(() => setBibleSightOpen(true), 350);
+        }}
       />
       {canvasOpen && studyMode && studyModeVariant === "canvas" && (
         <ManuscriptCanvas
