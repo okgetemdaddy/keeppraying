@@ -974,7 +974,6 @@ export function BibleSleeveSheet({
                   <button
                     onClick={() => {
                       onOpenBibleSight();
-                      onOpenChange(false);
                     }}
                     className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
                   >
@@ -991,7 +990,6 @@ export function BibleSleeveSheet({
                   <button
                     onClick={() => {
                       onOpenCommentary();
-                      onOpenChange(false);
                     }}
                     className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
                   >
