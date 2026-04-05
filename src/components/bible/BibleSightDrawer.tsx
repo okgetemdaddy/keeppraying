@@ -29,6 +29,7 @@ export function BibleSightDrawer({
   bookUsfm,
   chapterNumber,
   onTriggerDeepStudy,
+  initialContext,
 }: BibleSightDrawerProps) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
