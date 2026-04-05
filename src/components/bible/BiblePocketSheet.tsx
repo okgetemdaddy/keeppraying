@@ -628,6 +628,8 @@ export function BiblePocketSheet({
             chapterId={chapterId}
             chapterTitle={chapterTitle}
             onJournalSave={onJournalSave}
+            onDeleteJournal={onDeleteJournal}
+            onShareJournal={onShareJournal}
           />
         ) : activeTab === "search" ? (
           <SearchTab onNavigateToChapter={onNavigateToChapter} />
