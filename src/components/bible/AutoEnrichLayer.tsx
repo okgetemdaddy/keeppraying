@@ -256,6 +256,7 @@ function ExegesisCard({
 export function AutoEnrichLayer({
   data,
   isLoading,
+  isLoadingMore,
   active,
   verses,
   onAdoptHighlight,
