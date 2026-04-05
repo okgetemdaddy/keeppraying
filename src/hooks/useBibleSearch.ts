@@ -201,6 +201,32 @@ export function useBibleSearch(availableBooks?: string[]) {
           })(),
         );
 
+        // Bible Sight entries search (journals + study sessions)
+        dbPromises.push(
+          (async () => {
+            const { data } = await supabase
+              .from("bible_sight_entries")
+              .select("id, title, book_usfm, chapter_number, summary_line, tags, created_at, entry_type, content")
+              .eq("user_id", user.id)
+              .or(`title.ilike.%${debouncedQuery}%,content.ilike.%${debouncedQuery}%`)
+              .order("created_at", { ascending: false })
+              .limit(5);
+            (data ?? []).forEach((s: any) => {
+              results.push({
+                type: "session",
+                id: s.id,
+                title: s.title || s.summary_line || `${s.book_usfm} ${s.chapter_number}`,
+                entryType: s.entry_type || "journal",
+                bookUsfm: s.book_usfm,
+                chapterNumber: s.chapter_number,
+                summaryLine: s.summary_line,
+                tags: s.tags,
+                createdAt: s.created_at,
+              });
+            });
+          })(),
+        );
+
         await Promise.all(dbPromises);
       }
 
