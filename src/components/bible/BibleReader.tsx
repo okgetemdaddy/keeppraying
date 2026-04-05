@@ -124,6 +124,7 @@ import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
+import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
 
 type ReadingMode = "verse" | "paragraph";
 type StudyModeVariant = "margin" | "canvas" | "journal";
