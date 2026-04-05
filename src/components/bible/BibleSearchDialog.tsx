@@ -235,6 +235,56 @@ export function BibleSearchDialog({
             </>
           )}
 
+          {/* ── Bible Sight Sessions ── */}
+          {sessionResults.length > 0 && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Bible Sight Sessions">
+                {sessionResults.map((r) => (
+                  <CommandItem
+                    key={`session-${r.id}`}
+                    value={`session-${r.id}`}
+                    onSelect={() => handleSelect(r)}
+                    className="cursor-pointer"
+                  >
+                    <Eye className="mr-2 h-4 w-4 text-amber-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{r.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {USFM_NAMES[r.bookUsfm] ?? r.bookUsfm} {r.chapterNumber} · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
+          {/* ── Journal Entries ── */}
+          {journalResults.length > 0 && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Journal Entries">
+                {journalResults.map((r) => (
+                  <CommandItem
+                    key={`journal-${r.id}`}
+                    value={`journal-${r.id}`}
+                    onSelect={() => handleSelect(r)}
+                    className="cursor-pointer"
+                  >
+                    <ScrollText className="mr-2 h-4 w-4 text-primary" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{r.summaryLine || r.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {USFM_NAMES[r.bookUsfm] ?? r.bookUsfm} {r.chapterNumber} · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
           {/* ── AI Suggestions ── */}
           {aiResults.length > 0 && (
             <>
