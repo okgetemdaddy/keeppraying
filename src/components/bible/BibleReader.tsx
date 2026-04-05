@@ -1128,7 +1128,7 @@ export function BibleReader() {
       .update({ status: "active", last_active_at: new Date().toISOString() })
       .eq("id", s.id)
       .then(() => {});
-  }, [existingSession, bookUsfm, chapterIdx, index]);
+  }, [existingSession, bookUsfm, chapterIdx]);
 
   // ── Start New handler ──
   const handleStartNewSession = useCallback(() => {
