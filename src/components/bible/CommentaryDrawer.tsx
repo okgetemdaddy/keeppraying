@@ -177,7 +177,8 @@ export function CommentaryDrawer({
         .from("library_chunks")
         .select("author, chapter_number")
         .eq("bible_book_usfm", bookUsfm)
-        .not("author", "is", null);
+        .not("author", "is", null)
+        .limit(1000);
       if (!data) return {};
       const counts: Record<string, Set<number>> = {};
       for (const row of data) {

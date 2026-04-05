@@ -45,20 +45,26 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
+    // User-scoped client for auth validation
+    const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Service-role client for library queries (bypasses RLS)
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
     const { messages, book_usfm, chapter_number } = await req.json();
 
@@ -72,7 +78,7 @@ serve(async (req) => {
     // Fetch ALL scholarly context for this chapter (IVP + classical commentaries)
     let libraryContext = "";
 
-    const { data: tocEntries } = await supabase
+    const { data: tocEntries } = await supabaseAdmin
       .from("library_toc")
       .select("book_title, author, section_title, content_summary, page_reference")
       .eq("bible_book_usfm", book_usfm)
@@ -81,7 +87,6 @@ serve(async (req) => {
       .limit(15);
 
     if (tocEntries?.length) {
-      // Group by author for cleaner context
       const byAuthor: Record<string, typeof tocEntries> = {};
       for (const entry of tocEntries) {
         const key = entry.author ?? entry.book_title;
@@ -99,7 +104,7 @@ serve(async (req) => {
 
     // Fetch deterministic chapter-level commentary chunks
     try {
-      const { data: commentaryChunks } = await supabase
+      const { data: commentaryChunks } = await supabaseAdmin
         .from("library_chunks")
         .select("book_title, author, content")
         .eq("bible_book_usfm", book_usfm)
@@ -120,25 +125,20 @@ serve(async (req) => {
     // Get the latest user message for topical search
     const latestUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content ?? "";
 
-    // Try vector search for broader scholarly context
+    // Try text search for broader scholarly context
     if (latestUserMsg) {
       try {
-        // Generate embedding for the user's message using Lovable AI gateway
-        const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-        if (LOVABLE_API_KEY) {
-          // Use a simpler approach: text search on library_chunks
-          const searchTerms = latestUserMsg.split(/\s+/).slice(0, 5).join(" ");
-          const { data: chunks } = await supabase
-            .from("library_chunks")
-            .select("book_title, author, content, page_reference")
-            .textSearch("content", searchTerms, { type: "websearch" })
-            .limit(3);
+        const searchTerms = latestUserMsg.split(/\s+/).slice(0, 5).join(" ");
+        const { data: chunks } = await supabaseAdmin
+          .from("library_chunks")
+          .select("book_title, author, content, page_reference")
+          .textSearch("content", searchTerms, { type: "websearch" })
+          .limit(3);
 
-          if (chunks?.length) {
-            libraryContext += "Relevant scholarly references:\n";
-            for (const chunk of chunks) {
-              libraryContext += `- ${chunk.book_title} (${chunk.author ?? "Unknown"}): "${chunk.content.slice(0, 300)}..."\n`;
-            }
+        if (chunks?.length) {
+          libraryContext += "Relevant scholarly references:\n";
+          for (const chunk of chunks) {
+            libraryContext += `- ${chunk.book_title} (${chunk.author ?? "Unknown"}): "${chunk.content.slice(0, 300)}..."\n`;
           }
         }
       } catch (e) {
@@ -167,7 +167,7 @@ serve(async (req) => {
         model: "grok-4-0709",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages.slice(-10), // Keep last 10 messages for context window
+          ...messages.slice(-10),
         ],
         temperature: 0.7,
         max_tokens: 1500,
@@ -184,7 +184,6 @@ serve(async (req) => {
       });
     }
 
-    // Stream the response back
     return new Response(grokResponse.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
