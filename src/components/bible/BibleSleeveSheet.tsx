@@ -1,6 +1,10 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { SleeveWaitlistInput } from "@/components/bible/iPadWaitlistDrawer";
 import { SessionCards } from "@/components/bible/SessionCards";
+import { SessionReviewDrawer } from "@/components/bible/SessionReviewDrawer";
+import { supabase } from "@/integrations/supabase/client";
+import type { StudySession } from "@/hooks/useStudySessions";
+import type { SessionEvent } from "@/hooks/useSessionTelemetry";
 import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser } from "lucide-react";
 import {
   ArrowLeft,
