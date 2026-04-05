@@ -2716,6 +2716,54 @@ export function BibleReader() {
               </Toggle>
             </div>
 
+            {/* ── Margin annotation controls (pencil-only) ── */}
+            {/* iPadOS: Controls map to PKToolPicker custom items */}
+            {pencilDetected && !isInPaperCanvas && (
+              <>
+                {/* Layout shift toggle: left / center / right */}
+                <div className="flex items-center rounded-lg border border-border bg-muted/50 p-0.5">
+                  <Toggle
+                    pressed={marginLayout === "left"}
+                    onPressedChange={() => handleMarginLayoutChange("left")}
+                    size="sm"
+                    className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    aria-label="Text left, margin right"
+                  >
+                    <AlignLeft className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    pressed={marginLayout === "center"}
+                    onPressedChange={() => handleMarginLayoutChange("center")}
+                    size="sm"
+                    className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    aria-label="Text centered"
+                  >
+                    <AlignCenter className="h-3.5 w-3.5" />
+                  </Toggle>
+                  <Toggle
+                    pressed={marginLayout === "right"}
+                    onPressedChange={() => handleMarginLayoutChange("right")}
+                    size="sm"
+                    className="h-7 w-7 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                    aria-label="Text right, margin left"
+                  >
+                    <AlignRight className="h-3.5 w-3.5" />
+                  </Toggle>
+                </div>
+
+                {/* Grid cycle button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleMarginGridCycle}
+                  className={`h-8 w-8 p-0 ${marginGrid !== "none" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  title={`Grid: ${marginGrid}`}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+
 
             {/* Bible Pocket (annotations drawer) */}
             <Button
