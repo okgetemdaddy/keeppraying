@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, BookOpen, Sparkles, ScrollText, ArrowUpRight } from "lucide-react";
+import { X, BookOpen, Sparkles, ScrollText, ArrowUpRight, MoreVertical, Trash2, Share2, Eye } from "lucide-react";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { USFM_BOOK_NAMES } from "@/lib/usfmBooks";
 import VerseLink from "@/components/VerseLink";
@@ -35,6 +37,34 @@ interface DeepStudyDrawerProps {
   chapterNumber: number;
   journals?: JournalEntry[];
   isLoadingMore?: boolean;
+  title?: string;
+  onDeleteJournal?: (id: string) => void;
+  onShareJournal?: (id: string, title: string, preview: string) => void;
+}
+
+/* ── Ornamental SVG Dividers ── */
+function OliveBranchDivider() {
+  return (
+    <div className="flex items-center justify-center gap-3 py-4 opacity-30">
+      <svg width="40" height="16" viewBox="0 0 40 16" fill="none" className="text-amber-400">
+        <path d="M20 8C14 4 6 2 2 6s4 6 8 4 6-4 10-2" stroke="currentColor" strokeWidth="1.2" fill="none" />
+        <path d="M20 8C26 4 34 2 38 6s-4 6-8 4-6-4-10-2" stroke="currentColor" strokeWidth="1.2" fill="none" />
+      </svg>
+    </div>
+  );
+}
+
+function ScrollOrnament() {
+  return (
+    <div className="flex items-center justify-center gap-4 py-3 opacity-20">
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-400/50" />
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-amber-400 shrink-0">
+        <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1" />
+        <path d="M10 3v2M10 15v2M3 10h2M15 10h2" stroke="currentColor" strokeWidth="0.8" />
+      </svg>
+      <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-400/50" />
+    </div>
+  );
 }
 
 function SegmentedControl({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -88,7 +118,6 @@ function ExegesisTab({ data, bookUsfm, chapterNumber, isLoadingMore }: {
             transition={{ delay: idx * 0.06, duration: 0.3 }}
             className="rounded-2xl border border-neutral-700/50 bg-neutral-800/40 p-5 space-y-4"
           >
-            {/* Header */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-[0.6rem] font-medium px-2 py-0.5 rounded-full ${badge.className}`}>
@@ -103,12 +132,11 @@ function ExegesisTab({ data, bookUsfm, chapterNumber, isLoadingMore }: {
               </h3>
             </div>
 
-            {/* Body — blog-style prose */}
+            {/* Pull-quote style body */}
             <div className="text-sm leading-[1.85] text-neutral-200/90 font-serif space-y-3 whitespace-pre-line">
               {renderWithVerseLinks(card.body)}
             </div>
 
-            {/* Citations */}
             {card.citations.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-3 border-t border-neutral-700/40">
                 {card.citations.map((cite, i) => (
@@ -120,7 +148,9 @@ function ExegesisTab({ data, bookUsfm, chapterNumber, isLoadingMore }: {
         );
       })}
 
-      {/* Loading more shimmer */}
+      {/* Ornamental divider between primary and secondary */}
+      {data.cards.length > 0 && <OliveBranchDivider />}
+
       {isLoadingMore && (
         <div className="space-y-4 animate-pulse">
           <div className="rounded-2xl border border-neutral-700/30 bg-neutral-800/20 p-5 space-y-3">
@@ -131,7 +161,6 @@ function ExegesisTab({ data, bookUsfm, chapterNumber, isLoadingMore }: {
             <div className="h-4 w-48 bg-neutral-700/30 rounded" />
             <div className="h-3 w-full bg-neutral-700/20 rounded" />
             <div className="h-3 w-4/5 bg-neutral-700/20 rounded" />
-            <div className="h-3 w-3/5 bg-neutral-700/20 rounded" />
           </div>
           <p className="text-center text-[0.65rem] text-neutral-500 italic">
             Deeper insights loading…
@@ -142,7 +171,13 @@ function ExegesisTab({ data, bookUsfm, chapterNumber, isLoadingMore }: {
   );
 }
 
-function JournalsTab({ journals }: { journals: JournalEntry[] }) {
+function JournalsTab({ journals, onDelete, onShare }: {
+  journals: JournalEntry[];
+  onDelete?: (id: string) => void;
+  onShare?: (id: string, title: string, preview: string) => void;
+}) {
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
   if (!journals.length) {
     return (
       <div className="text-center py-16">
@@ -156,50 +191,108 @@ function JournalsTab({ journals }: { journals: JournalEntry[] }) {
   }
 
   return (
-    <div className="space-y-6">
-      {journals.map((j, idx) => {
-        const modelLabel = j.model_used.includes("grok") ? "Deep Reasoning" : "Scholarly Lens";
-        return (
-          <motion.article
-            key={j.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.08 }}
-            className="rounded-2xl border border-neutral-700/50 bg-neutral-800/40 p-5 space-y-3"
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[0.6rem] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-                {j.lens_used.replace(/_/g, " ")}
-              </span>
-              <span className="text-[0.55rem] px-1.5 py-0.5 rounded bg-neutral-700/50 text-neutral-500">
-                {modelLabel}
-              </span>
-              <span className="text-[0.6rem] text-neutral-600 ml-auto">
-                {new Date(j.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-              </span>
-            </div>
-
-            {j.summary_line && (
-              <p className="text-xs text-amber-400/70 italic font-serif">{j.summary_line}</p>
-            )}
-
-            <div className="text-sm leading-[1.85] text-neutral-200/90 font-serif whitespace-pre-line">
-              {renderWithVerseLinks(j.content)}
-            </div>
-
-            {j.tags && j.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-2">
-                {j.tags.map((tag) => (
-                  <span key={tag} className="text-[0.55rem] bg-amber-400/10 text-amber-400/70 rounded px-1.5 py-0.5">
-                    {tag}
-                  </span>
-                ))}
+    <>
+      <div className="space-y-6">
+        {journals.map((j, idx) => {
+          const modelLabel = j.model_used.includes("grok") ? "Deep Reasoning" : "Scholarly Lens";
+          return (
+            <motion.article
+              key={j.id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08 }}
+              className="rounded-2xl border border-neutral-700/50 bg-neutral-800/40 p-5 space-y-3 relative"
+            >
+              {/* 3-dot menu */}
+              <div className="absolute top-3 right-3">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1.5 rounded-lg hover:bg-neutral-700/50 transition-colors">
+                      <MoreVertical className="h-4 w-4 text-neutral-500" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[160px]">
+                    {onShare && (
+                      <DropdownMenuItem onClick={() => onShare(j.id, j.summary_line || "Journal Entry", j.content.slice(0, 200))}>
+                        <Share2 className="h-3.5 w-3.5 mr-2" />
+                        Share
+                      </DropdownMenuItem>
+                    )}
+                    {onDelete && (
+                      <DropdownMenuItem
+                        onClick={() => setDeleteTarget(j.id)}
+                        className="text-red-400 focus:text-red-400"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 mr-2" />
+                        Delete Journal
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-            )}
-          </motion.article>
-        );
-      })}
-    </div>
+
+              <div className="flex items-center gap-2 flex-wrap pr-8">
+                <span className="text-[0.6rem] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
+                  {j.lens_used.replace(/_/g, " ")}
+                </span>
+                <span className="text-[0.55rem] px-1.5 py-0.5 rounded bg-neutral-700/50 text-neutral-500">
+                  {modelLabel}
+                </span>
+                <span className="text-[0.6rem] text-neutral-600 ml-auto">
+                  {new Date(j.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                </span>
+              </div>
+
+              {j.summary_line && (
+                <blockquote className="border-l-2 border-amber-500/40 pl-3 text-xs text-amber-400/70 italic font-serif">
+                  {j.summary_line}
+                </blockquote>
+              )}
+
+              <ScrollOrnament />
+
+              <div className="text-sm leading-[1.85] text-neutral-200/90 font-serif whitespace-pre-line">
+                {renderWithVerseLinks(j.content)}
+              </div>
+
+              {j.tags && j.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-2">
+                  {j.tags.map((tag) => (
+                    <span key={tag} className="text-[0.55rem] bg-amber-400/10 text-amber-400/70 rounded px-1.5 py-0.5">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </motion.article>
+          );
+        })}
+      </div>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Journal Entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this journal reflection. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (deleteTarget && onDelete) onDelete(deleteTarget);
+                setDeleteTarget(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -253,25 +346,29 @@ export function DeepStudyDrawer({
   chapterNumber,
   journals = [],
   isLoadingMore,
+  title,
+  onDeleteJournal,
+  onShareJournal,
 }: DeepStudyDrawerProps) {
   const [activeTab, setActiveTab] = useState<Tab>("exegesis");
   const bookName = USFM_BOOK_NAMES[bookUsfm] || bookUsfm;
+  const displayTitle = title || `${bookName} ${chapterNumber}`;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[80vh] bg-[#1C1C1E] border-neutral-800 rounded-t-2xl">
+      <DrawerContent className="h-[80vh] bg-[#1C1C1E] border-neutral-800 rounded-t-2xl flex flex-col">
         {/* Header */}
-        <div className="px-5 pt-4 pb-3 border-b border-neutral-800 space-y-3">
+        <div className="px-5 pt-4 pb-3 border-b border-neutral-800 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4.5 w-4.5 text-amber-400" />
-              <h2 className="text-base font-bold text-neutral-100">
-                Deep Study — {bookName} {chapterNumber}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Eye className="h-4.5 w-4.5 text-amber-400 shrink-0" />
+              <h2 className="text-base font-bold text-neutral-100 truncate">
+                Bible Sight — {displayTitle}
               </h2>
             </div>
             <button
               onClick={() => onOpenChange(false)}
-              className="p-1.5 rounded-lg hover:bg-neutral-700/50 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-neutral-700/50 transition-colors shrink-0 ml-2"
             >
               <X className="h-4 w-4 text-neutral-400" />
             </button>
@@ -285,7 +382,10 @@ export function DeepStudyDrawer({
           {!data ? (
             <div className="text-center py-16">
               <BookOpen className="h-10 w-10 mx-auto text-neutral-600 mb-3" />
-              <p className="text-sm text-neutral-300">No Deep Study data yet</p>
+              <p className="text-sm text-neutral-300">No study data yet</p>
+              <p className="text-[0.65rem] text-neutral-500 mt-2 italic">
+                "The unfolding of your words gives light" — Psalm 119:130
+              </p>
             </div>
           ) : activeTab === "exegesis" ? (
             <ExegesisTab
@@ -295,7 +395,11 @@ export function DeepStudyDrawer({
               isLoadingMore={isLoadingMore}
             />
           ) : activeTab === "journals" ? (
-            <JournalsTab journals={journals} />
+            <JournalsTab
+              journals={journals}
+              onDelete={onDeleteJournal}
+              onShare={onShareJournal}
+            />
           ) : (
             <CrossRefsTab
               crossRefs={data.crossRefs}
@@ -303,7 +407,17 @@ export function DeepStudyDrawer({
               chapterNumber={chapterNumber}
             />
           )}
+
+          {/* Bottom breathing room */}
+          <div className="h-8" />
         </ScrollArea>
+
+        {/* Footer watermark */}
+        <div className="shrink-0 border-t border-neutral-800/60 px-5 py-2.5 flex items-center justify-center">
+          <p className="text-[0.55rem] text-neutral-600 italic tracking-wide">
+            Bible Sight · KeepRead.ing — I do this for HIS glory
+          </p>
+        </div>
       </DrawerContent>
     </Drawer>
   );
