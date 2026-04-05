@@ -2613,31 +2613,6 @@ export function BibleReader() {
                 </span>
               )}
               <div className="flex items-center gap-2 shrink-0">
-                {!isInPaperCanvas && (activeSessionId || activeReadingSessionId) && (
-                  <motion.button
-                    onClick={handleEndSession}
-                    whileTap={{ scale: 0.97 }}
-                    className="relative px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide overflow-hidden"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))",
-                      border: "1px solid rgba(220, 38, 38, 0.3)",
-                      color: "#f87171",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      boxShadow: "0 2px 8px -2px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.25), rgba(220, 38, 38, 0.12))";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-                      e.currentTarget.style.background = "linear-gradient(135deg, rgba(220, 38, 38, 0.15), rgba(220, 38, 38, 0.08))";
-                    }}
-                  >
-                    End Session
-                  </motion.button>
-                )}
                 <button
                   onClick={() => setStudyNavOpen(false)}
                   className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors shrink-0"
