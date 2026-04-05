@@ -1109,17 +1109,25 @@ export function BibleReader() {
     const handler = (e: PointerEvent) => {
       if (e.pointerType === "pen" && !pencilDetected) {
         setPencilDetected(true);
-        if (!studyMode) {
-          handleStudyModeEntry();
-          toast("🍎 Apple Pencil detected", {
-            description: "Write directly on the page alongside your verses",
-          });
+        if (!studyMode && !localStorage.getItem("kr_pencil_onboard_shown")) {
+          setPencilOnboardOpen(true);
         }
       }
     };
     window.addEventListener("pointerdown", handler);
     return () => window.removeEventListener("pointerdown", handler);
-  }, [isIPad, pencilDetected, studyMode, handleStudyModeEntry]);
+  }, [isIPad, pencilDetected, studyMode]);
+
+  const handlePencilOnboardDismiss = useCallback(() => {
+    setPencilOnboardOpen(false);
+    try { localStorage.setItem("kr_pencil_onboard_shown", "1"); } catch {}
+  }, []);
+
+  const handlePencilTryStudyMode = useCallback(() => {
+    setPencilOnboardOpen(false);
+    try { localStorage.setItem("kr_pencil_onboard_shown", "1"); } catch {}
+    handleStudyModeEntry();
+  }, [handleStudyModeEntry]);
 
   // ── Sync bible-dark / bible-oled classes to <html> so portaled content (dropdowns, sleeve) inherits ──
   useEffect(() => {
