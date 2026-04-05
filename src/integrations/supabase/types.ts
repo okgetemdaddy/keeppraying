@@ -764,6 +764,50 @@ export type Database = {
         }
         Relationships: []
       }
+      commentary_bookmarks: {
+        Row: {
+          author: string
+          book_usfm: string
+          chapter_number: number
+          chunk_id: string | null
+          created_at: string
+          excerpt: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          author: string
+          book_usfm: string
+          chapter_number: number
+          chunk_id?: string | null
+          created_at?: string
+          excerpt: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          author?: string
+          book_usfm?: string
+          chapter_number?: number
+          chunk_id?: string | null
+          created_at?: string
+          excerpt?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commentary_bookmarks_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "library_chunks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       comments: {
         Row: {
           created_at: string
