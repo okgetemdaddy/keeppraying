@@ -701,6 +701,9 @@ export function BibleReader() {
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
 
+  // ── Bible Sight conversational drawer ──
+  const [bibleSightOpen, setBibleSightOpen] = useState(false);
+
   // ── Canvas Export sheet ──
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
 
