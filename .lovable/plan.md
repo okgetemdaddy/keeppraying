@@ -1,42 +1,29 @@
 
 
-## Custom Icons & Search Placeholder Update
+## Full-Screen Bible Sight + Auto-Expanding Textarea
 
-### 1. Create Custom SVG Icon Components
+### Changes
 
-**New file: `src/components/bible/BibleSightIcon.tsx`**
+#### 1. Bible Sight Drawer — Full-Screen on Mobile + Auto-Expanding Input
 
-A sparkle layered in front of an open book. The open book matches the KeepPray.ing logo style — a simple, elegant open book silhouette (two fanned pages meeting at a spine). A 4-pointed sparkle sits at the upper-right area of the book.
+**File: `src/components/bible/BibleSightDrawer.tsx`**
 
-**New file: `src/components/bible/DeepStudyIcon.tsx`**
+- Change drawer height from `h-[80vh]` to `h-[100dvh] max-h-[100dvh]` so it covers the full mobile screen (using `dvh` for correct behavior with mobile browser chrome).
+- Replace the single-line `<Input>` with a `<textarea>` that auto-expands as the user types (1 row minimum, ~5 rows max). Use an `onInput` handler that resets `scrollHeight` to auto-size. Style it with `resize-none`, `overflow-hidden` (until max), rounded corners, matching the current look.
+- Change `handleKeyDown` to submit on Enter (without Shift) and allow Shift+Enter for newlines.
+- Change `inputRef` from `HTMLInputElement` to `HTMLTextAreaElement`.
+- Add `visualViewport` resize listener to adjust bottom padding when the mobile keyboard opens.
 
-An anchor centered over/in front of the same open book silhouette. The anchor represents depth and grounding in Scripture.
+#### 2. PrayerAssist — Auto-Expanding Textarea Fix
 
-Both components accept standard `size`, `className`, and `color` props (matching Lucide conventions) for drop-in use anywhere icons are currently used.
+**File: `src/pages/PrayerAssist.tsx`**
 
-### 2. Replace Lucide Icons with Custom Icons
-
-**File: `src/components/bible/BibleReader.tsx`**
-
-- Import `BibleSightIcon` and `DeepStudyIcon`
-- Replace any `Eye`/`Sparkles` icons used for Bible Sight and Deep Study toolbar buttons with the new custom components
-
-**File: `src/components/bible/BibleSleeveSheet.tsx`**
-
-- Replace the icons next to "Bible Sight" and "Deep Study" labels in the Sleeve menu with the new custom SVG components
-
-### 3. Update Search Placeholder
-
-**File: `src/components/bible/BibleReader.tsx`** (line 2718)
-
-Change placeholder from `"What can I help you find?"` to `"Where is Easter found in the Bible?"`
+The `<Textarea>` already exists (line 365) with `min-h-[48px] max-h-32 resize-none rows={1}`, but it doesn't actually auto-expand — it stays at 1 row. Add an `onInput` auto-resize handler that sets `style.height = 'auto'` then `style.height = scrollHeight + 'px'`, capped at the max-h. This makes it grow dynamically as the user types, matching modern chat UX.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/bible/BibleSightIcon.tsx` | New — sparkle + open book SVG component |
-| `src/components/bible/DeepStudyIcon.tsx` | New — anchor + open book SVG component |
-| `src/components/bible/BibleReader.tsx` | Use new icons; update search placeholder |
-| `src/components/bible/BibleSleeveSheet.tsx` | Use new icons in Sleeve menu items |
+| `src/components/bible/BibleSightDrawer.tsx` | Full-screen drawer (100dvh); replace `<Input>` with auto-expanding `<textarea>`; keyboard-aware padding |
+| `src/pages/PrayerAssist.tsx` | Add auto-resize `onInput` handler to existing `<Textarea>` |
 
