@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package } from "lucide-react";
+import { Package, X } from "lucide-react";
 import {
   ResponsiveSheet as Sheet,
   ResponsiveSheetContent as SheetContent,
@@ -21,11 +21,17 @@ export function AddToBunchDrawer({ open, onOpenChange, bunches, onSelect }: AddT
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl pb-8 px-6 max-w-md mx-auto">
-        <SheetHeader>
+        <SheetHeader className="relative">
           <SheetTitle className="text-base flex items-center gap-2">
             <Package className="h-4 w-4 text-primary" />
             Add to a Bunch
           </SheetTitle>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute right-0 top-0 h-8 w-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
         </SheetHeader>
         <div className="mt-4 space-y-2 max-h-[50vh] overflow-y-auto">
           {bunches.length === 0 ? (

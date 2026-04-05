@@ -138,6 +138,7 @@ import { useBookAnnotations } from "@/hooks/useBookAnnotations";
 import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
+import { BibleSightDrawer } from "@/components/bible/BibleSightDrawer";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
 import { MarginAnnotationLayer, type MarginInkStroke } from "@/components/bible/MarginAnnotationLayer";
@@ -699,6 +700,9 @@ export function BibleReader() {
 
   // ── Bible Sleeve sheet ──
   const [sleeveOpen, setSleeveOpen] = useState(false);
+
+  // ── Bible Sight conversational drawer ──
+  const [bibleSightOpen, setBibleSightOpen] = useState(false);
 
   // ── Canvas Export sheet ──
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
@@ -3806,6 +3810,16 @@ export function BibleReader() {
         }}
         onTriggerDeepStudy={enrichment.trigger}
         deepStudyActive={enrichment.active}
+        onOpenBibleSight={() => setBibleSightOpen(true)}
+      />
+
+      {/* ── Bible Sight Conversational Drawer ── */}
+      <BibleSightDrawer
+        open={bibleSightOpen}
+        onOpenChange={setBibleSightOpen}
+        bookUsfm={bookUsfm ?? "GEN"}
+        chapterNumber={chapterIdx + 1}
+        onTriggerDeepStudy={enrichment.trigger}
       />
 
       {/* ── Manuscript Canvas (Mode 2) ── */}
