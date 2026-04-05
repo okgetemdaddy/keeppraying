@@ -3830,8 +3830,22 @@ export function BibleReader() {
         }}
         onTriggerDeepStudy={enrichment.trigger}
         deepStudyActive={enrichment.active}
-        onOpenBibleSight={() => setBibleSightOpen(true)}
-        onOpenCommentary={() => setCommentaryOpen(true)}
+        onOpenBibleSight={() => {
+          setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.set("sight", "1");
+            next.delete("sleeve");
+            return next;
+          }, { replace: true });
+        }}
+        onOpenCommentary={() => {
+          setSearchParams(prev => {
+            const next = new URLSearchParams(prev);
+            next.set("commentary", "1");
+            next.delete("sleeve");
+            return next;
+          }, { replace: true });
+        }}
       />
 
       {/* ── Bible Sight Conversational Drawer ── */}
