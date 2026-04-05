@@ -1,92 +1,103 @@
 
 
-## Deep Study + Dual-Model Journals + Study Session Drawer
+## Bible Sight Study Sessions, Searchable Content, Sharing, VerseLink Context Menu
 
-Five interconnected changes that make Deep Study the deepest Bible study experience available in an app.
-
----
-
-### 1. Scholarly Library: `library_toc` Table + Data Seeding
-
-**Migration:** Create `library_toc` with columns: `id`, `book_title`, `author`, `bible_book_usfm`, `chapter_start`, `chapter_end`, `section_title`, `content_summary`, `page_reference`.
-
-Populate via insert tool with IVP Commentary chapter-by-chapter TOC entries mapped to USFM codes (MAT 1-28, MRK 1-16, etc.). Each row holds Keener's section title and a content summary so the edge function can deterministically pull the right context without vector search for this resource.
-
-The other 9 reference works get inserted into existing `library_chunks` table via a new `vectorize-library` edge function (chunked + embedded for semantic search).
-
-**Add `secondary_json` column** to `enriched_chapters` table for caching the Gemini supplementary pass.
+Seven interconnected changes to complete the Bible Sight ecosystem and make all user-generated content searchable, shareable, and navigable.
 
 ---
 
-### 2. Dual-Model `enrich-chapter` (Parallel Primary + Secondary)
+### 1. Bible Sight Study Session Storage
 
-Refactor `enrich-chapter/index.ts` to accept a `pass` parameter:
+**`bible_sight_entries` table** already has the right columns. When a Bible Sight study session is generated (via the chat or Deep Study), save a special entry with a new `entry_type` column to distinguish sessions from journals.
 
-- **`pass: "primary"`** — Grok 4.20 reasoning (`grok-4-0709`)
-  - For NT chapters: query `library_toc` to pull exact IVP Commentary context (5-8K tokens)
-  - Inject into system prompt: "The following is from Craig Keener's IVP Bible Background Commentary for this chapter..."
-  - Returns core bunches, highlights, exegesis cards, crossRefs
-  - Cached in `enriched_chapters.content_json`
+**Migration:** Add `entry_type text NOT NULL DEFAULT 'journal'` and `title text` columns to `bible_sight_entries`. Values: `'journal'`, `'study_session'`. The title is auto-generated based on the study topic (e.g., "Why Does God Allow Pain? — Romans 8").
 
-- **`pass: "secondary"`** — Gemini 2.5 Pro via Lovable AI gateway
-  - Generates embedding of chapter text, queries `match_library_chunks` for top 8 chunks from all other scholarly works (Vine's, BDAG, Beale, etc.)
-  - System prompt instructs: "Supplement with word studies, cross-canonical theology, and historical-cultural insights"
-  - Returns supplementary cards only
-  - Cached in `enriched_chapters.secondary_json`
+Also add `session_data jsonb` column to store the full structured study (cards, cross-refs, verses) so the drawer can reconstruct the session.
 
 ---
 
-### 3. Dual-Model Journal Generation (Both Write Entries)
+### 2. Bible Sight Session Cards in Bible Sleeve
 
-Refactor `generate-journal/index.ts`:
-
-When Deep Study completes, **both models generate journal entries in parallel** using the master personality prompt + lens rotation system:
-
-- **Grok 4.20**: Gets IVP Commentary context injected, writes a journal entry with deep historical-cultural grounding
-- **Gemini 2.5 Pro**: Gets the other scholarly library context, writes a journal entry with broader theological/linguistic depth
-
-Both entries saved to `bible_sight_entries` with `model_used` distinguishing them. Both auto-saved as annotations.
-
-**Client-side:** `useChapterEnrichment` fires journal generation automatically after primary enrichment completes (debounced, only if no journal exists for this chapter).
+Below the existing "Deep Study" button in `BibleSleeveSheet.tsx`, add a "Bible Sight" section that:
+- Shows "Current chapter" subtext
+- Lists recent Bible Sight Study Session cards for the current chapter (queried from `bible_sight_entries` where `entry_type = 'study_session'`)
+- Each card shows: title, date/time, 3-dot menu (delete, share)
+- Clicking a card opens the `DeepStudyDrawer` (renamed internally to `BibleSightDrawer` or reused) populated with that session's `session_data`
 
 ---
 
-### 4. Progressive Rendering in `useChapterEnrichment`
+### 3. Search Integration — Bible Sight Sessions in `/bible` Search
 
-Refactor `useChapterEnrichment.ts`:
+**`useBibleSearch.ts`:** Add a new `SearchResultSession` type and a new DB query in the remote search:
 
-- Fire two parallel `supabase.functions.invoke` calls: `pass: "primary"` and `pass: "secondary"`
-- Maintain `primaryData` and `secondaryData` state slots
-- Expose merged `data` (primary cards first, secondary appended)
-- `isLoading` = true while primary pending; `isLoadingMore` = true while secondary pending
-- When primary completes → auto-trigger dual journal generation
-- `AutoEnrichLayer.tsx`: render primary cards immediately, show "Deeper insights loading..." shimmer below, animate secondary cards in with staggered fade-up. Secondary cards get badges like "Word Study" or "Historical Parallel".
+```typescript
+// Search bible_sight_entries for study sessions
+const { data } = await supabase
+  .from("bible_sight_entries")
+  .select("id, title, book_usfm, chapter_number, summary_line, tags, created_at, entry_type")
+  .eq("user_id", user.id)
+  .or(`title.ilike.%${query}%,content.ilike.%${query}%,tags.cs.{${query}}`)
+  .limit(5);
+```
 
----
+**`BibleSearchDialog.tsx`:** Add a "Bible Sight Sessions" group with `Eye` icon, showing title, chapter reference, and date. Selecting navigates to the chapter and opens the session drawer.
 
-### 5. Deep Study Session Card in Bible Sleeve → 80% Height Drawer
-
-**`BibleSleeveSheet.tsx`:** Add a "Deep Study Session" card in the Studies section that appears when `deepStudyActive` is true or cached enrichment exists. Card shows: chapter title, lens used, card count, timestamp.
-
-**New component: `DeepStudyDrawer.tsx`** — An 80% height `Drawer` (using vaul) that opens when the session card is clicked:
-
-- Full-screen scrollable presentation of all Deep Study content:
-  - Exegesis cards rendered blog-style (prose typography, EB Garamond-style headers, amber blockquotes)
-  - Cross-references as interactive `VerseLink` components
-  - Highlights summary section
-  - Journal entries section (both Grok and Gemini entries) with blog-style formatting matching the screenshot
-  - Dark mode: `bg-[#1C1C1E]`, `text-neutral-100`, amber accents
-  - Light mode: warm cream, dark text
-- Segmented control at top: "Exegesis" | "Journals" | "Cross-References"
-- Each journal card shows model badge (subtle), lens used, tags, full formatted text with `renderWithVerseLinks`
+Also search `bible_sight_entries` where `entry_type = 'journal'` for journal search results (currently only searched in BiblePocketSheet).
 
 ---
 
-### 6. Journal Card Delete (3-Dot Menu)
+### 4. 3-Dot Menu on All Content Cards (Delete + Share)
 
-**`BiblePocketSheet.tsx`:** Add `MoreVertical` icon on each journal card → `DropdownMenu` with "Delete Journal" (red, Trash2 icon) → confirmation AlertDialog → calls `onDeleteJournal(ann.id)`.
+Add `DropdownMenu` with `MoreVertical` trigger to:
 
-**`BibleReader.tsx`:** Wire `onDeleteJournal` to delete both the annotation and the corresponding `bible_sight_entries` row.
+- **Journal cards** in `BiblePocketSheet.tsx` and `DeepStudyDrawer.tsx` — Delete (with confirmation) and Share
+- **Bible Sight Session cards** in `BibleSleeveSheet.tsx` — Delete and Share
+- **Verse Bunches** — already have management; add Share option
+
+**Delete:** Calls `supabase.from('bible_sight_entries').delete().eq('id', id)` and invalidates queries.
+
+**Share:** Creates a `prayer_cards` entry with label `'bible_study'` (reusing existing share-to-circles/family-rooms pattern from `CanvasExportSheet`), or copies a shareable link. Share modal reuses `SharePrayerModal` pattern.
+
+---
+
+### 5. VerseLink Right-Click / Long-Press → "Go to Verse"
+
+**`VerseLink.tsx`:** Add a context menu (right-click on desktop, long-press on mobile):
+
+- Desktop: `onContextMenu` handler prevents default, shows a small positioned menu with "Go to {reference}" option
+- Mobile: Long-press detection (500ms `setTimeout` on `touchstart`, cleared on `touchend`/`touchmove`) shows the same option as a bottom sheet
+- "Go to verse" navigates using `react-router`: `/bible?book={usfm}&chapter={num}&verse={start}`
+- Parse the reference string back to USFM + chapter + verse using `parseBibleReferences` from `bibleReferenceParser.ts`
+
+The existing tap/hover behavior (summary popover) remains unchanged. This adds a secondary interaction layer.
+
+---
+
+### 6. Bible Sight Drawer — Premium Content Display
+
+Refactor `DeepStudyDrawer.tsx` to serve as the unified Bible Sight session viewer:
+
+- When opened from a session card, populate with stored `session_data` 
+- Chat input field moved to bottom with safe-area padding
+- Full study content displayed above in premium magazine layout:
+  - Ornamental SVG dividers between sections (cross motifs, vine patterns)
+  - Pull-quote blockquotes with amber left-border and serif font
+  - Key verses rendered as hero cards with subtle gradient backgrounds
+  - Section headers with small decorative flourishes
+  - Topic-relevant imagery: use tasteful SVG ornaments (olive branches, scrolls, lamp) when web images aren't available
+- Dark mode: `bg-[#1C1C1E]` with warm amber/gold accents
+- Light mode: cream parchment feel
+
+---
+
+### 7. Sharing Infrastructure for All Bible Content
+
+Add a `ShareContentModal` component (or extend `SharePrayerModal`) that accepts:
+- `contentType: 'journal' | 'study_session' | 'note' | 'bunch'`
+- `contentId: string`
+- Share targets: Prayer Circles, Family Rooms, copy link
+
+For Bible Sight Study Sessions from KeepRead.ing specifically, the share creates a `prayer_cards` record with `label: 'bible_study'` and `source: 'keepreading'` so it's branded correctly.
 
 ---
 
@@ -94,14 +105,13 @@ Refactor `useChapterEnrichment.ts`:
 
 | File | Change |
 |------|--------|
-| **Migration** | Create `library_toc`, add `secondary_json` to `enriched_chapters` |
-| `supabase/functions/vectorize-library/index.ts` | New: chunk + embed JSON scholarly library |
-| `supabase/functions/enrich-chapter/index.ts` | Dual-pass: primary (Grok+IVP) / secondary (Gemini+vectors) |
-| `supabase/functions/generate-journal/index.ts` | Accept scholarly context, support dual-model parallel generation |
-| `src/hooks/useChapterEnrichment.ts` | Parallel invoke, progressive state, auto-journal trigger |
-| `src/components/bible/AutoEnrichLayer.tsx` | Progressive card rendering, secondary shimmer, journal preview |
-| `src/components/bible/DeepStudyDrawer.tsx` | New: 80% height drawer with full study session presentation |
-| `src/components/bible/BibleSleeveSheet.tsx` | Add Deep Study session card linking to drawer |
-| `src/components/bible/BiblePocketSheet.tsx` | 3-dot delete menu on journal cards |
-| `src/components/bible/BibleReader.tsx` | Wire delete handler, pass journal/enrichment state |
+| **Migration** | Add `entry_type`, `title`, `session_data` to `bible_sight_entries` |
+| `src/hooks/useBibleSearch.ts` | Add `SearchResultSession` type, query bible_sight_entries |
+| `src/components/bible/BibleSearchDialog.tsx` | Add "Bible Sight" and "Journals" result groups |
+| `src/components/bible/BibleSleeveSheet.tsx` | Add Bible Sight session cards section with 3-dot menus |
+| `src/components/bible/DeepStudyDrawer.tsx` | Refactor as unified session viewer with magazine layout, chat input at bottom, SVG ornaments |
+| `src/components/bible/BiblePocketSheet.tsx` | Add 3-dot menu (delete/share) to journal cards |
+| `src/components/VerseLink.tsx` | Add right-click/long-press context menu with "Go to verse" |
+| `src/components/bible/ShareContentModal.tsx` | New: share modal for journals, sessions, bunches |
+| `src/components/bible/BibleReader.tsx` | Wire session card clicks, share handlers, delete mutations |
 
