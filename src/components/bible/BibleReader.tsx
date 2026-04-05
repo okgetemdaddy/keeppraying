@@ -970,6 +970,49 @@ export function BibleReader() {
     }
   }, [activeReadingSessionId, readingTelemetry]);
 
+  // iPadOS: "End Session" maps to a UIBarButtonItem with UIMenu confirmation action. "Learn More" opens SFSafariViewController to the help page.
+  const handleEndSession = useCallback(async () => {
+    const sessionId = activeSessionId ?? activeReadingSessionId;
+    if (!sessionId) return;
+
+    // Update session status
+    await supabase
+      .from("study_sessions")
+      .update({
+        status: "complete",
+        completed_at: new Date().toISOString(),
+        last_active_at: new Date().toISOString(),
+      })
+      .eq("id", sessionId);
+
+    // Log session_end event
+    const logEvent = activeSessionId ? canvasTelemetry.logEvent : readingTelemetry.logEvent;
+    logEvent("session_end", { reason: "user_explicit" });
+
+    // Trigger summary in background (don't await)
+    supabase.functions.invoke("summarize-session", {
+      body: { session_id: sessionId },
+    }).catch(console.error);
+
+    // If canvas session, exit study mode
+    if (activeSessionId) {
+      setStudyMode(false);
+      setActiveSessionId(null);
+      setActiveSessionConfig(null);
+      try { localStorage.setItem("bible_study_mode", "false"); } catch {}
+    }
+
+    // If reading session, just clear the session ID
+    if (activeReadingSessionId) {
+      setActiveReadingSessionId(null);
+      readingStartedRef.current = false;
+    }
+
+    toast.success("Session saved ✦", {
+      description: "Your study session has been saved to Bible Watch",
+    });
+  }, [activeSessionId, activeReadingSessionId, canvasTelemetry, readingTelemetry]);
+
   // ensureReadingSession, auto-start, and cleanup are declared after currentChapter/hasVerses
 
   /**
