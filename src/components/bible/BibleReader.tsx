@@ -704,6 +704,7 @@ export function BibleReader() {
 
   // ── Bible Sight conversational drawer ──
   const [bibleSightOpen, setBibleSightOpen] = useState(false);
+  const [bibleSightContext, setBibleSightContext] = useState<{ author: string; excerpt: string } | null>(null);
 
   // ── Commentary Library drawer ──
   const [commentaryOpen, setCommentaryOpen] = useState(false);
