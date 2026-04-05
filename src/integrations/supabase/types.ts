@@ -333,6 +333,62 @@ export type Database = {
         }
         Relationships: []
       }
+      bible_sight_entries: {
+        Row: {
+          book_usfm: string
+          chapter_number: number
+          content: string
+          created_at: string
+          id: string
+          is_refresh: boolean
+          lens_used: string
+          model_used: string
+          parent_entry_id: string | null
+          summary_line: string | null
+          tags: string[] | null
+          user_id: string
+          version_id: number
+        }
+        Insert: {
+          book_usfm: string
+          chapter_number: number
+          content: string
+          created_at?: string
+          id?: string
+          is_refresh?: boolean
+          lens_used: string
+          model_used: string
+          parent_entry_id?: string | null
+          summary_line?: string | null
+          tags?: string[] | null
+          user_id: string
+          version_id?: number
+        }
+        Update: {
+          book_usfm?: string
+          chapter_number?: number
+          content?: string
+          created_at?: string
+          id?: string
+          is_refresh?: boolean
+          lens_used?: string
+          model_used?: string
+          parent_entry_id?: string | null
+          summary_line?: string | null
+          tags?: string[] | null
+          user_id?: string
+          version_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bible_sight_entries_parent_entry_id_fkey"
+            columns: ["parent_entry_id"]
+            isOneToOne: false
+            referencedRelation: "bible_sight_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bible_watch_logs: {
         Row: {
           book_usfm: string
