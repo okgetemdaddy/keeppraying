@@ -186,7 +186,7 @@ export function BibleSightDrawer({
     } finally {
       setIsLoading(false);
     }
-  }, [input, isLoading, messages, user, bookUsfm, chapterNumber, onTriggerDeepStudy, onOpenChange]);
+  }, [input, isLoading, messages, user, bookUsfm, chapterNumber, onOpenChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
