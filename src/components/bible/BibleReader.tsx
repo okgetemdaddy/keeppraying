@@ -3105,13 +3105,16 @@ export function BibleReader() {
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
             </p>
-            {studyMode && (
-              <button
+            {!isInPaperCanvas && (
+              <motion.button
                 onClick={() => setThumbnailStripOpen(true)}
-                className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
+                animate={{ y: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                className="mx-auto block mt-1 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Browse chapters"
               >
-                ▼ Browse chapters
-              </button>
+                <ChevronDown className="h-4 w-4" />
+              </motion.button>
             )}
           </motion.header>
         )}
