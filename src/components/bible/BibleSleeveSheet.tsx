@@ -225,6 +225,10 @@ interface BibleSleeveSheetProps {
   /* study artifacts */
   studyArtifacts?: StudyArtifact[];
   onNavigateToArtifact?: (artifact: StudyArtifact) => void;
+
+  /* deep study */
+  onTriggerDeepStudy?: () => void;
+  deepStudyActive?: boolean;
 }
 
 export function BibleSleeveSheet({
