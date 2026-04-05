@@ -79,6 +79,8 @@ function ExegesisCard({
   onKeepHighlights,
   kept,
   isDark,
+  bookUsfm,
+  chapterNumber,
 }: {
   card: EnrichmentCard;
   bunch?: EnrichmentBunch;
@@ -88,6 +90,8 @@ function ExegesisCard({
   onKeepHighlights: () => void;
   kept: boolean;
   isDark: boolean;
+  bookUsfm: string;
+  chapterNumber: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const isMobile = useIsMobile();
@@ -97,9 +101,12 @@ function ExegesisCard({
     setExpanded(!isMobile);
   }, [isMobile]);
 
-  const anchorLabel = bunch
-    ? `vv. ${bunch.verseRange[0]}–${bunch.verseRange[1]}`
-    : `vv. ${card.anchors[0]}–${card.anchors[1]}`;
+  const bookName = USFM_BOOK_NAMES[bookUsfm] || bookUsfm;
+  const anchorStart = bunch ? bunch.verseRange[0] : card.anchors[0];
+  const anchorEnd = bunch ? bunch.verseRange[1] : card.anchors[1];
+  const anchorRef = anchorStart === anchorEnd
+    ? `${bookName} ${chapterNumber}:${anchorStart}`
+    : `${bookName} ${chapterNumber}:${anchorStart}-${anchorEnd}`;
 
   const bunchTypeColors: Record<string, string> = {
     thematic: "bg-amber-500/20 text-amber-300",
