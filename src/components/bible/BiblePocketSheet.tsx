@@ -472,6 +472,11 @@ export function BiblePocketSheet({
   onExportCanvas,
   defaultTab,
   onNavigateToChapter,
+  chapterVerses,
+  versionId,
+  bookUsfm,
+  chapterId,
+  onJournalSave,
 }: BiblePocketSheetProps) {
   const [activeTab, setActiveTab] = useState<PocketTab>(defaultTab ?? "notes");
 
