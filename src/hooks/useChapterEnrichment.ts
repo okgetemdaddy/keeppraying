@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,6 +24,7 @@ export interface EnrichmentCard {
   title: string;
   body: string;
   citations: string[];
+  cardType?: "exegesis" | "word_study" | "historical_parallel" | "theological_depth";
 }
 
 export interface EnrichmentCrossRef {
@@ -44,6 +45,19 @@ interface Verse {
   text: string;
 }
 
+function mergePayloads(primary: EnrichmentPayload | null, secondary: EnrichmentPayload | null): EnrichmentPayload | null {
+  if (!primary && !secondary) return null;
+  if (!primary) return secondary;
+  if (!secondary) return primary;
+
+  return {
+    bunches: primary.bunches,
+    highlights: [...primary.highlights, ...secondary.highlights],
+    cards: [...primary.cards, ...secondary.cards],
+    crossRefs: [...primary.crossRefs, ...secondary.crossRefs],
+  };
+}
+
 export function useChapterEnrichment(
   bookUsfm?: string,
   chapterNumber?: number,
@@ -51,54 +65,65 @@ export function useChapterEnrichment(
   verses?: Verse[]
 ) {
   const [triggered, setTriggered] = useState(false);
+  const [primaryData, setPrimaryData] = useState<EnrichmentPayload | null>(null);
+  const [secondaryData, setSecondaryData] = useState<EnrichmentPayload | null>(null);
+  const [primaryLoading, setPrimaryLoading] = useState(false);
+  const [secondaryLoading, setSecondaryLoading] = useState(false);
+  const [primaryError, setPrimaryError] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const journalTriggeredRef = useRef(false);
+  const prevChapterRef = useRef<string>("");
 
-  const queryKey = ["enrichment", bookUsfm, chapterNumber, versionId];
+  // Reset when chapter changes
+  const chapterKey = `${bookUsfm}.${chapterNumber}.${versionId}`;
+  useEffect(() => {
+    if (chapterKey !== prevChapterRef.current) {
+      prevChapterRef.current = chapterKey;
+      setTriggered(false);
+      setPrimaryData(null);
+      setSecondaryData(null);
+      setPrimaryLoading(false);
+      setSecondaryLoading(false);
+      setPrimaryError(false);
+      journalTriggeredRef.current = false;
+    }
+  }, [chapterKey]);
 
-  const query = useQuery<EnrichmentPayload>({
-    queryKey,
-    queryFn: async () => {
-      if (!bookUsfm || !chapterNumber || !versionId || !verses?.length) {
-        throw new Error("Missing chapter data");
+  const fetchPass = useCallback(async (pass: "primary" | "secondary") => {
+    if (!bookUsfm || !chapterNumber || !versionId || !verses?.length) return null;
+
+    const { data, error } = await supabase.functions.invoke("enrich-chapter", {
+      body: {
+        book_usfm: bookUsfm,
+        chapter_number: chapterNumber,
+        version_id: versionId,
+        verses: verses.map((v) => ({ number: v.number, text: v.text })),
+        pass,
+      },
+    });
+
+    if (error) {
+      const msg = (error as any)?.message || String(error);
+      if (msg.includes("429") || msg.includes("high demand")) {
+        toast({
+          title: "Deep Study is busy",
+          description: "Please try again in a moment.",
+          variant: "destructive",
+        });
+      } else if (msg.includes("402") || msg.includes("limit reached")) {
+        toast({
+          title: "Usage limit reached",
+          description: "Deep Study is temporarily unavailable.",
+          variant: "destructive",
+        });
       }
+      throw error;
+    }
 
-      const { data, error } = await supabase.functions.invoke("enrich-chapter", {
-        body: {
-          book_usfm: bookUsfm,
-          chapter_number: chapterNumber,
-          version_id: versionId,
-          verses: verses.map((v) => ({ number: v.number, text: v.text })),
-        },
-      });
+    return data as EnrichmentPayload;
+  }, [bookUsfm, chapterNumber, versionId, verses, toast]);
 
-      if (error) {
-        // Surface rate limit / payment errors
-        const msg = (error as any)?.message || String(error);
-        if (msg.includes("429") || msg.includes("high demand")) {
-          toast({
-            title: "Deep Study is busy",
-            description: "Please try again in a moment.",
-            variant: "destructive",
-          });
-        } else if (msg.includes("402") || msg.includes("limit reached")) {
-          toast({
-            title: "Usage limit reached",
-            description: "Deep Study is temporarily unavailable.",
-            variant: "destructive",
-          });
-        }
-        throw error;
-      }
-
-      return data as EnrichmentPayload;
-    },
-    enabled: triggered && !!bookUsfm && !!chapterNumber && !!versionId && !!verses?.length,
-    staleTime: Infinity,
-    retry: false,
-  });
-
-  const trigger = useCallback(() => {
+  const trigger = useCallback(async () => {
     if (!bookUsfm || !chapterNumber || !versionId || !verses?.length) {
       toast({
         title: "Navigate to a chapter first",
@@ -107,27 +132,55 @@ export function useChapterEnrichment(
       });
       return;
     }
-    // If we already have cached data, just set triggered
-    const existing = queryClient.getQueryData(queryKey);
-    if (existing) {
-      setTriggered(true);
-      return;
-    }
+
     setTriggered(true);
-    // Invalidate to re-fetch
-    queryClient.invalidateQueries({ queryKey });
-  }, [bookUsfm, chapterNumber, versionId, verses, queryClient, queryKey, toast]);
+    journalTriggeredRef.current = false;
+
+    // Fire both passes in parallel
+    setPrimaryLoading(true);
+    setSecondaryLoading(true);
+    setPrimaryError(false);
+
+    // Primary pass
+    fetchPass("primary")
+      .then((data) => {
+        if (data) setPrimaryData(data);
+        setPrimaryLoading(false);
+      })
+      .catch(() => {
+        setPrimaryLoading(false);
+        setPrimaryError(true);
+      });
+
+    // Secondary pass
+    fetchPass("secondary")
+      .then((data) => {
+        if (data) setSecondaryData(data);
+        setSecondaryLoading(false);
+      })
+      .catch(() => {
+        setSecondaryLoading(false);
+      });
+  }, [bookUsfm, chapterNumber, versionId, verses, fetchPass, toast]);
 
   const close = useCallback(() => {
     setTriggered(false);
   }, []);
 
+  const merged = triggered ? mergePayloads(primaryData, secondaryData) : null;
+
   return {
-    data: triggered ? (query.data ?? null) : null,
-    isLoading: triggered && query.isLoading,
-    isError: query.isError,
+    data: merged,
+    primaryData: triggered ? primaryData : null,
+    secondaryData: triggered ? secondaryData : null,
+    isLoading: triggered && primaryLoading,
+    isLoadingMore: triggered && secondaryLoading,
+    isError: primaryError,
     active: triggered,
     trigger,
     close,
+    /** Whether journal auto-generation should fire */
+    shouldAutoJournal: triggered && !!primaryData && !journalTriggeredRef.current,
+    markJournalTriggered: () => { journalTriggeredRef.current = true; },
   };
 }

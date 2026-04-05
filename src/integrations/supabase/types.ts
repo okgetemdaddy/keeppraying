@@ -1041,6 +1041,7 @@ export type Database = {
           created_at: string | null
           id: string
           model_version: string
+          secondary_json: Json | null
           updated_at: string | null
           version_id: number
         }
@@ -1051,6 +1052,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           model_version: string
+          secondary_json?: Json | null
           updated_at?: string | null
           version_id: number
         }
@@ -1061,6 +1063,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           model_version?: string
+          secondary_json?: Json | null
           updated_at?: string | null
           version_id?: number
         }
@@ -1379,6 +1382,45 @@ export type Database = {
           embedding?: string | null
           id?: string
           page_reference?: string | null
+        }
+        Relationships: []
+      }
+      library_toc: {
+        Row: {
+          author: string | null
+          bible_book_usfm: string
+          book_title: string
+          chapter_end: number
+          chapter_start: number
+          content_summary: string | null
+          created_at: string
+          id: string
+          page_reference: string | null
+          section_title: string | null
+        }
+        Insert: {
+          author?: string | null
+          bible_book_usfm: string
+          book_title: string
+          chapter_end: number
+          chapter_start: number
+          content_summary?: string | null
+          created_at?: string
+          id?: string
+          page_reference?: string | null
+          section_title?: string | null
+        }
+        Update: {
+          author?: string | null
+          bible_book_usfm?: string
+          book_title?: string
+          chapter_end?: number
+          chapter_start?: number
+          content_summary?: string | null
+          created_at?: string
+          id?: string
+          page_reference?: string | null
+          section_title?: string | null
         }
         Relationships: []
       }
