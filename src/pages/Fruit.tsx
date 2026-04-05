@@ -33,7 +33,7 @@ export default function Fruit() {
   if (!user || user.email !== "jwlesley@gmail.com") return <Navigate to="/bible" replace />;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="dark min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
