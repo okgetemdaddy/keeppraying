@@ -941,6 +941,27 @@ export function BibleSleeveSheet({
 
             <div className="h-px bg-border" />
 
+            {/* ── Deep Study ── */}
+            {onTriggerDeepStudy && (
+              <section>
+                <button
+                  onClick={() => {
+                    onTriggerDeepStudy();
+                    onOpenChange(false);
+                  }}
+                  className={`flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors ${deepStudyActive ? "bg-amber-500/10" : ""}`}
+                >
+                  <Sparkles className={`h-4 w-4 ${deepStudyActive ? "text-amber-400" : "text-muted-foreground"}`} />
+                  <span className="text-sm font-medium text-foreground">Deep Study</span>
+                  {deepStudyActive && (
+                    <span className="ml-auto text-[0.6rem] font-medium text-amber-400">Active</span>
+                  )}
+                </button>
+              </section>
+            )}
+
+            <div className="h-px bg-border" />
+
             {/* ── Trash Bin (always visible) ── */}
             <section>
               <button
