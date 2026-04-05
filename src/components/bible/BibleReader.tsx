@@ -108,6 +108,7 @@ import { useStudySessionHeartbeat } from "@/hooks/useStudySessionHeartbeat";
 import { useSessionTelemetry } from "@/hooks/useSessionTelemetry";
 import { PremiumUpsellSheet } from "@/components/bible/PremiumUpsellSheet";
 import { ResumeOrNewSheet } from "@/components/bible/ResumeOrNewSheet";
+import { PencilDetectedSheet } from "@/components/bible/PencilDetectedSheet";
 import type { StudySession } from "@/hooks/useStudySessions";
 
 import { MobileStudyToolbar } from "@/components/bible/MobileStudyToolbar";
