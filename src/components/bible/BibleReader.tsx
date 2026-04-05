@@ -1492,9 +1492,14 @@ export function BibleReader() {
           strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
         });
+        // Debounced thumbnail invalidation
+        if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
+        invalidateTimerRef.current = setTimeout(() => {
+          if (currentChapter) invalidateChapter(parseInt(currentChapter.id, 10));
+        }, 1500);
       }, 500);
     },
-    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId, invalidateChapter],
   );
 
   const handleInkStrokeComplete = useCallback(
