@@ -1,73 +1,68 @@
 
 
-## Fix: Resumed Session Navigation + SVG Text Layout Architecture
+## Replace SessionReviewDrawer with SessionDetailDashboard — Premium Bento Grid
 
-### Part 1: Fix Resume Handler (Blocking Bug)
+### Overview
+Delete `SessionReviewDrawer.tsx` and create `SessionDetailDashboard.tsx` — a full-screen glassmorphic overlay with a 12-column bento grid layout, replacing the bottom drawer with an iPadOS-inspired spatial environment.
 
-**File: `src/components/bible/BibleReader.tsx`** — `handleResumeSession` (~line 1064)
-
-**Problem**: The resume handler sets session config and enters study mode but never navigates to the session's book/chapter. The canvas opens on whatever chapter the user was already viewing.
-
-**Fix**:
-1. After `setShowResumeOrNew(false)`, navigate to the session's book and chapter:
-   - `setBookUsfm(s.book_usfm)` if it differs from current
-   - Compute `targetChapterIdx` from `s.chapter_id` (1-indexed → 0-indexed) and `setChapterIdx()`
-2. Populate `verses` array from `s.verse_start`/`s.verse_end` instead of empty `[]` — the verse numbers are what the filter on line 3035 needs
-3. Restore camera position from session's `camera_x/y/scale/rotation` into `paperCameraRef`
-4. Add `bookUsfm`, `chapterIdx`, `index` to the `useCallback` dependency array
-
-**File: `src/components/bible/PaperCanvas.tsx`** — Add mount-time camera restore
-
-Add a `useEffect` that checks `cameraRef?.current` for non-default values on mount and applies them via `transformState` + `applyTransform()`.
-
-### Part 2: Create `src/lib/svgTextLayout.ts`
-
-New pure-TypeScript module. Exports:
-- `SvgTextLayoutConfig`, `SvgTextLayoutResult`, `SvgWordElement` interfaces
-- `layoutBibleText(config)` function
-
-The function:
-- Uses offscreen `<canvas>` 2D context with `ctx.measureText()` for sub-pixel word width measurement
-- Performs word-wrapping with verse number superscripts
-- Outputs a `<g>` SVG string with `<text>` and `<tspan>` elements (each word gets `data-verse` and `data-word-idx` attributes)
-- Returns `wordElements` array with bounding boxes for future hit-testing migration
-- iPadOS comment about CTFramesetter/CTLine
-
-### Part 3: Store SVG Text as Annotation on Session Start
-
-**File: `src/components/bible/BibleReader.tsx`** — in the `onStartSession` handler
-
-After session config is built:
-1. Run the font loading barrier (`document.fonts.load()` with 3s timeout + `document.fonts.ready`)
-2. Call `layoutBibleText()` with session config
-3. Save SVG text string via `saveAnnotation` mutation with verse_id key `{bookUsfm}.{chapterId}.svgtext`
-4. Save word map JSON via `saveAnnotation` mutation with verse_id key `{bookUsfm}.{chapterId}.wordmap`
-
-### Part 4: Render SVG Text Layer in PaperCanvas (Phase 1 — Alongside DOM)
-
-**File: `src/components/bible/PaperCanvas.tsx`**
-
-Add optional `svgTextLayer?: string` prop. Render an absolutely-positioned `<svg>` with `dangerouslySetInnerHTML` inside the paper div, aligned to `textBoxConfig`, with `pointer-events: none` and `z-index: 2`.
-
-**File: `src/components/bible/BibleReader.tsx`**
-
-Load the SVG text annotation from chapter annotations and pass it to `<PaperCanvas svgTextLayer={...}>`. DOM text remains as-is for visual comparison.
-
-### Part 5: Font Loading Barrier
-
-In the `onStartSession` flow, before calling `layoutBibleText`:
-- `document.fonts.load(fontString)` with 3s `Promise.race` timeout
-- `document.fonts.ready` await
-- Warn on timeout, proceed with fallback font (internally consistent)
-- iPadOS comment about `UIFont(name:size:)` synchronous loading
-
----
-
-### Files Summary
+### Files
 
 | File | Action |
 |------|--------|
-| `src/components/bible/BibleReader.tsx` | Fix `handleResumeSession` navigation + camera restore; wire SVG layout on session start; pass `svgTextLayer` to PaperCanvas |
-| `src/components/bible/PaperCanvas.tsx` | Add camera restore on mount; add `svgTextLayer` prop + SVG render |
-| `src/lib/svgTextLayout.ts` | **New** — pure text-to-SVG layout engine |
+| `src/components/bible/SessionDetailDashboard.tsx` | **Create** — full component with BentoCard wrapper + 5 modules |
+| `src/components/bible/BibleSleeveSheet.tsx` | **Edit** — swap import & usage from SessionReviewDrawer → SessionDetailDashboard |
+| `src/components/bible/SessionReviewDrawer.tsx` | **Delete** |
+
+### New Component: `SessionDetailDashboard.tsx`
+
+**Props**: `open`, `onClose`, `session: StudySession`, `events: SessionEvent[]`, `loading: boolean`, `onResume?: () => void`
+
+**Container**: Fixed overlay at `z-[200]`. Black/40 backdrop with `onClick={onClose}`. Inner panel: `w-[92vw] max-w-[1200px] h-[88vh]` centered, `rounded-2xl`, glass blur (`rgba(24,24,27,0.40)`, `backdrop-filter: blur(64px) saturate(1.5)`). On mobile (<768px): full-screen `100vw × 100vh`. Framer Motion spring entrance (`scale 0.95→1, y 20→0`).
+
+**Inner layout**: Scrollable area with 12-column CSS grid, `gap-3`, `p-5`. Mobile: single-column stack.
+
+**BentoCard wrapper** (inline component): Accepts `colSpan`, `rowSpan`, `className`. Renders `motion.div` with `whileHover={{ scale: 1.015, y: -2 }}` (disabled on mobile via `useIsMobile`), translucent card (`rgba(255,255,255,0.03)`, `border rgba(255,255,255,0.06)`, `backdrop-blur(20px)`, `rounded-xl`).
+
+**Module 1 — Command Header** (span 12, row 1):
+- Left: Thematic title from `session_summary?.thematic_summary` (EB Garamond ~24px) or verse range fallback. Date formatted as full weekday ("Tuesday, April 1, 2026"), elapsed time, session type badge.
+- Right: "Resume Session" button (amber gradient, `whileTap scale 0.97`) for paused/active canvas sessions. "Jump to {chapter}" text button otherwise.
+- Close X button top-right.
+
+**Module 2 — AI Synthesis** (span 7 desktop, full mobile, rows 2-3):
+- `study_arc` as amber subtitle, `thematic_summary` in serif, `key_insights` with ✦ markers, `tags` as pill badges (`bg-white/5 border-white/10 text-zinc-400`).
+- Empty state: pulsing skeleton bars + "Generating insights..." italic text. Auto-trigger `summarize-session` edge function if summary is null (reuse existing logic from BibleSleeveSheet).
+
+**Module 3 — Study Analytics** (span 5 desktop, full mobile, rows 2-3):
+- Computed from raw `events` array in a `useMemo`:
+  - Reading Velocity: distinct verses viewed / session minutes (large ~32px number + "verses/min" label)
+  - Exegesis Depth: (ink + highlights + notes) / distinct verses (number + "annotations/verse")
+  - Tool Breakdown: horizontal stacked bar (amber=ink, green=highlights, blue=notes, purple=cross-refs) with percentages
+  - Verse Focus: from `session_summary?.verse_focus` or computed top 2-3 verses by event count
+
+**Module 4 — Cross-Reference Constellation** (span 6 desktop, full mobile, rows 4-5):
+- Filter events for `cross_ref_nav`. Build node/edge graph from `payload.from_verse` and `payload.target`.
+- Circular SVG layout: primary chapter center, cross-refs radiating outward. Nodes = 8px circles (amber for primary, zinc-400 for cross-refs). Edges = `<line>` with stroke-width scaled by navigation count.
+- Framer Motion `pathLength` animation on edges.
+- Empty state: "No cross-references explored" with network icon.
+
+**Module 5 — Spatial Timeline** (span 6 desktop, full mobile, rows 4-5):
+- Vertical scrollable timeline (horizontal on mobile). Events clustered within 2-minute windows (reuse `clusterEvents` logic from old drawer).
+- Cluster nodes: expandable via `AnimatePresence` with `layout`. Icons per event type (same icon map). Show verse ref + 40-char payload snippet.
+- Thin vertical line (1px zinc-700) connecting nodes. 6px circles on the line.
+- Staggered entrance: `staggerChildren: 0.05` from bottom to top.
+- Hover tooltip on clusters showing event count breakdown.
+
+### BibleSleeveSheet.tsx Changes
+
+- Line 4: Change import from `SessionReviewDrawer` → `SessionDetailDashboard`
+- Lines 1026-1033: Replace `<SessionReviewDrawer>` with `<SessionDetailDashboard>`, adding `loading={reviewLoading}` prop. The `onResume` prop wires to the existing resume handler (currently logs to console — keep as-is, it's wired upstream).
+
+### Technical Notes
+
+- All animations use Framer Motion spring physics — no CSS transitions.
+- No external charting libraries. All visualizations are raw SVG + Framer Motion.
+- Dark mode only — component always renders on glassmorphic dark overlay.
+- `AnimatePresence` wraps the entire dashboard for exit animations.
+- iPadOS port comments on every major section.
+- Mobile responsive: grid collapses to single column, module order is Header → AI → Analytics → Timeline → Constellation, `whileHover` disabled.
 
