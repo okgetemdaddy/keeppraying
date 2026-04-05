@@ -2382,26 +2382,28 @@ export function BibleReader() {
               <PanelLeft className="h-4 w-4" />
             </Button>
 
-            {/* Study Mode (iPad/Pencil) */}
-            <Button
-              variant={studyMode ? "default" : "ghost"}
-              size="sm"
-              onClick={() => {
-                if (studyMode && studyModeVariant === "canvas") {
-                  setCanvasOpen(!canvasOpen);
-                } else if (studyMode && studyModeVariant === "journal") {
-                  setJournalOpen(!journalOpen);
-                } else if (studyMode) {
-                  handleToggleStudyMode(false);
-                } else {
-                  handleStudyModeEntry();
-                }
-              }}
-              className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-              title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
-            >
-              <PixarLampIPadIcon className="!h-full !w-full" />
-            </Button>
+            {/* Study Mode (iPad/Pencil) — iPad-only */}
+            {isIPad && (
+              <Button
+                variant={studyMode ? "default" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  if (studyMode && studyModeVariant === "canvas") {
+                    setCanvasOpen(!canvasOpen);
+                  } else if (studyMode && studyModeVariant === "journal") {
+                    setJournalOpen(!journalOpen);
+                  } else if (studyMode) {
+                    handleToggleStudyMode(false);
+                  } else {
+                    handleStudyModeEntry();
+                  }
+                }}
+                className={`h-8 w-8 p-0 overflow-visible ${studyMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                title={studyMode ? (studyModeVariant === "canvas" ? "Open Canvas" : "Exit Study Mode") : "iPad Study Mode"}
+              >
+                <PixarLampIPadIcon className="!h-full !w-full" />
+              </Button>
+            )}
 
             {/* Export Canvas (visible in study mode) */}
             {studyMode && (
