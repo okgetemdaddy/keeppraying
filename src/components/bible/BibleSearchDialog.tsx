@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Search, BookOpen, StickyNote, Package, Sparkles, Clock, X } from "lucide-react";
+import { Search, BookOpen, StickyNote, Package, Sparkles, Clock, X, Eye, ScrollText } from "lucide-react";
 import {
   CommandDialog,
   Command,
@@ -20,6 +20,7 @@ import {
   type SearchResultNote,
   type SearchResultBunch,
   type SearchResultAI,
+  type SearchResultSession,
 } from "@/hooks/useBibleSearch";
 import { USFM_NAMES } from "@/lib/bibleReferenceParser";
 
@@ -65,7 +66,6 @@ export function BibleSearchDialog({
       addRecentSearch(query);
       onOpenChange(false);
 
-      // Let dialog exit animation clear before navigating
       setTimeout(() => {
         switch (result.type) {
           case "reference":
@@ -81,6 +81,9 @@ export function BibleSearchDialog({
             break;
           case "ai":
             onNavigate(result.bookUsfm, result.chapter, result.verseStart);
+            break;
+          case "session":
+            onNavigate(result.bookUsfm, result.chapterNumber);
             break;
         }
       }, 50);
@@ -99,10 +102,12 @@ export function BibleSearchDialog({
   const noteResults = remoteResults.filter((r): r is SearchResultNote => r.type === "note");
   const bunchResults = remoteResults.filter((r): r is SearchResultBunch => r.type === "bunch");
   const aiResults = remoteResults.filter((r): r is SearchResultAI => r.type === "ai");
+  const sessionResults = remoteResults.filter((r): r is SearchResultSession => r.type === "session" && r.entryType === "study_session");
+  const journalResults = remoteResults.filter((r): r is SearchResultSession => r.type === "session" && r.entryType === "journal");
 
   const hasQuery = query.trim().length > 0;
   const hasAnyResults =
-    localResults.length > 0 || noteResults.length > 0 || bunchResults.length > 0 || aiResults.length > 0;
+    localResults.length > 0 || noteResults.length > 0 || bunchResults.length > 0 || aiResults.length > 0 || sessionResults.length > 0 || journalResults.length > 0;
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
@@ -224,6 +229,56 @@ export function BibleSearchDialog({
                     <Badge variant="secondary" className="ml-2 text-[10px]">
                       {r.verseCount} verse{r.verseCount !== 1 ? "s" : ""}
                     </Badge>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
+          {/* ── Bible Sight Sessions ── */}
+          {sessionResults.length > 0 && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Bible Sight Sessions">
+                {sessionResults.map((r) => (
+                  <CommandItem
+                    key={`session-${r.id}`}
+                    value={`session-${r.id}`}
+                    onSelect={() => handleSelect(r)}
+                    className="cursor-pointer"
+                  >
+                    <Eye className="mr-2 h-4 w-4 text-amber-500" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{r.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {USFM_NAMES[r.bookUsfm] ?? r.bookUsfm} {r.chapterNumber} · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
+
+          {/* ── Journal Entries ── */}
+          {journalResults.length > 0 && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Journal Entries">
+                {journalResults.map((r) => (
+                  <CommandItem
+                    key={`journal-${r.id}`}
+                    value={`journal-${r.id}`}
+                    onSelect={() => handleSelect(r)}
+                    className="cursor-pointer"
+                  >
+                    <ScrollText className="mr-2 h-4 w-4 text-primary" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{r.summaryLine || r.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {USFM_NAMES[r.bookUsfm] ?? r.bookUsfm} {r.chapterNumber} · {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      </p>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -229,6 +229,9 @@ interface BibleSleeveSheetProps {
   /* deep study */
   onTriggerDeepStudy?: () => void;
   deepStudyActive?: boolean;
+
+  /* bible sight */
+  onOpenBibleSight?: () => void;
 }
 
 export function BibleSleeveSheet({
@@ -291,6 +294,7 @@ export function BibleSleeveSheet({
   onClearAll,
   onTriggerDeepStudy,
   deepStudyActive = false,
+  onOpenBibleSight,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -943,7 +947,7 @@ export function BibleSleeveSheet({
 
             {/* ── Deep Study ── */}
             {onTriggerDeepStudy && (
-              <section>
+              <section className="space-y-2">
                 <button
                   onClick={() => {
                     onTriggerDeepStudy();
@@ -952,11 +956,31 @@ export function BibleSleeveSheet({
                   className={`flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors ${deepStudyActive ? "bg-amber-500/10" : ""}`}
                 >
                   <Sparkles className={`h-4 w-4 ${deepStudyActive ? "text-amber-400" : "text-muted-foreground"}`} />
-                  <span className="text-sm font-medium text-foreground">Deep Study</span>
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-foreground">Deep Study</span>
+                    <p className="text-[0.6rem] text-muted-foreground">Current chapter</p>
+                  </div>
                   {deepStudyActive && (
                     <span className="ml-auto text-[0.6rem] font-medium text-amber-400">Active</span>
                   )}
                 </button>
+
+                {/* Bible Sight entry point */}
+                {onOpenBibleSight && (
+                  <button
+                    onClick={() => {
+                      onOpenBibleSight();
+                      onOpenChange(false);
+                    }}
+                    className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
+                  >
+                    <Eye className="h-4 w-4 text-amber-500" />
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-foreground">Bible Sight</span>
+                      <p className="text-[0.6rem] text-muted-foreground">Go deeper with guidance</p>
+                    </div>
+                  </button>
+                )}
               </section>
             )}
 

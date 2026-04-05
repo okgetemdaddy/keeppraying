@@ -3,7 +3,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { BookOpen, PenTool, StickyNote, Clock, Lightbulb, BookMarked, Download, Search, Loader2, Sparkles } from "lucide-react";
+import { BookOpen, PenTool, StickyNote, Clock, Lightbulb, BookMarked, Download, Search, Loader2, Sparkles, MoreVertical, Trash2, Share2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -53,6 +55,8 @@ interface BiblePocketSheetProps {
     typedText?: string;
     existingId?: string;
   }) => void;
+  onDeleteJournal?: (annotationId: string) => void;
+  onShareJournal?: (annotationId: string, title: string, preview: string) => void;
 }
 
 /* ---------- Sub-components ---------- */
@@ -172,6 +176,8 @@ function JournalTab({
   chapterId,
   chapterTitle,
   onJournalSave,
+  onDeleteJournal,
+  onShareJournal,
 }: {
   sortedJournalAnnotations: Annotation[];
   chapterVerses?: Verse[];
@@ -180,7 +186,10 @@ function JournalTab({
   chapterId?: string;
   chapterTitle?: string;
   onJournalSave?: (entry: { verseIds: string[]; strokes: any[]; typedText?: string }) => void;
+  onDeleteJournal?: (id: string) => void;
+  onShareJournal?: (id: string, title: string, preview: string) => void;
 }) {
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const chapterNum = chapterId ? parseInt(chapterId, 10) : undefined;
   const { generate, refreshAndUpdate, isGenerating, isRefreshing } =
     useJournalGeneration(bookUsfm, chapterNum, chapterTitle, chapterVerses, versionId);
@@ -269,6 +278,33 @@ function JournalTab({
                       minute: "2-digit",
                     })}
                   </span>
+                  {/* 3-dot menu */}
+                  <div className="ml-auto">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1 rounded hover:bg-neutral-700/50 transition-colors">
+                          <MoreVertical className="h-3.5 w-3.5 text-neutral-500" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="min-w-[140px]">
+                        {onShareJournal && (
+                          <DropdownMenuItem onClick={() => onShareJournal(ann.id, chapterTitle || "Journal", ((ann as any).typed_text || "").slice(0, 200))}>
+                            <Share2 className="h-3.5 w-3.5 mr-2" />
+                            Share
+                          </DropdownMenuItem>
+                        )}
+                        {onDeleteJournal && (
+                          <DropdownMenuItem
+                            onClick={() => setDeleteTarget(ann.id)}
+                            className="text-red-400 focus:text-red-400"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
                 {(ann as any).typed_text && (
                   <p className="text-xs text-neutral-200 line-clamp-4 leading-relaxed">
@@ -297,6 +333,30 @@ function JournalTab({
           ))
         )}
       </div>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Journal Entry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this journal reflection.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (deleteTarget && onDeleteJournal) onDeleteJournal(deleteTarget);
+                setDeleteTarget(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ScrollArea>
   );
 }
@@ -478,6 +538,8 @@ export function BiblePocketSheet({
   bookUsfm,
   chapterId,
   onJournalSave,
+  onDeleteJournal,
+  onShareJournal,
 }: BiblePocketSheetProps) {
   const [activeTab, setActiveTab] = useState<PocketTab>(defaultTab ?? "notes");
 
@@ -568,6 +630,8 @@ export function BiblePocketSheet({
             chapterId={chapterId}
             chapterTitle={chapterTitle}
             onJournalSave={onJournalSave}
+            onDeleteJournal={onDeleteJournal}
+            onShareJournal={onShareJournal}
           />
         ) : activeTab === "search" ? (
           <SearchTab onNavigateToChapter={onNavigateToChapter} />

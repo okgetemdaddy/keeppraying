@@ -339,13 +339,16 @@ export type Database = {
           chapter_number: number
           content: string
           created_at: string
+          entry_type: string
           id: string
           is_refresh: boolean
           lens_used: string
           model_used: string
           parent_entry_id: string | null
+          session_data: Json | null
           summary_line: string | null
           tags: string[] | null
+          title: string | null
           user_id: string
           version_id: number
         }
@@ -354,13 +357,16 @@ export type Database = {
           chapter_number: number
           content: string
           created_at?: string
+          entry_type?: string
           id?: string
           is_refresh?: boolean
           lens_used: string
           model_used: string
           parent_entry_id?: string | null
+          session_data?: Json | null
           summary_line?: string | null
           tags?: string[] | null
+          title?: string | null
           user_id: string
           version_id?: number
         }
@@ -369,13 +375,16 @@ export type Database = {
           chapter_number?: number
           content?: string
           created_at?: string
+          entry_type?: string
           id?: string
           is_refresh?: boolean
           lens_used?: string
           model_used?: string
           parent_entry_id?: string | null
+          session_data?: Json | null
           summary_line?: string | null
           tags?: string[] | null
+          title?: string | null
           user_id?: string
           version_id?: number
         }
