@@ -1,5 +1,6 @@
 // iPadOS: Container maps to UISheetPresentationController with .large() detent and UIBlurEffect(.systemUltraThinMaterialDark)
 import React, { useState, useMemo, useCallback } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
