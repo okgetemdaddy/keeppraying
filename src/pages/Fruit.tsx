@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import ReactMarkdown from "react-markdown";
+import ReactMarkdown, { Components } from "react-markdown";
 import {
   RefreshCw, Send, ChevronRight, Clock, Sparkles,
   Eye, Brain, Gem, Loader2, PanelLeftClose, PanelLeftOpen
@@ -69,6 +69,128 @@ export default function Fruit() {
     </div>
   );
 }
+
+/* ── WSJ-style markdown component overrides ── */
+const wsjSerif = "'EB Garamond', 'Georgia', 'Times New Roman', serif";
+
+const wsjComponents: Components = {
+  h1: ({ children }) => (
+    <h2
+      className="text-2xl md:text-3xl font-black text-foreground mt-8 mb-3 leading-tight border-b-2 border-foreground/15 pb-2"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </h2>
+  ),
+  h2: ({ children }) => (
+    <h3
+      className="text-xl md:text-2xl font-bold text-foreground mt-7 mb-2 leading-snug"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </h3>
+  ),
+  h3: ({ children }) => (
+    <h4
+      className="text-base font-bold text-foreground mt-5 mb-1.5 uppercase tracking-wide text-[0.85rem]"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </h4>
+  ),
+  h4: ({ children }) => (
+    <h5
+      className="text-sm font-semibold text-foreground/80 mt-4 mb-1 italic"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </h5>
+  ),
+  p: ({ children }) => (
+    <p
+      className="text-[0.9rem] leading-[1.75] text-foreground/90 mb-3 text-justify hyphens-auto"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </p>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-3 ml-4 space-y-1.5 list-none">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-3 ml-4 space-y-1.5 list-decimal" style={{ fontFamily: wsjSerif }}>
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => (
+    <li
+      className="text-[0.85rem] leading-[1.7] text-foreground/85 pl-3 relative before:content-['■'] before:absolute before:left-[-0.25rem] before:text-[0.45rem] before:text-foreground/30 before:top-[0.55em]"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </li>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote
+      className="my-4 border-l-[3px] border-foreground/20 pl-4 italic text-foreground/70 text-[0.85rem] leading-relaxed"
+      style={{ fontFamily: wsjSerif }}
+    >
+      {children}
+    </blockquote>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-bold text-foreground">{children}</strong>
+  ),
+  em: ({ children }) => (
+    <em className="italic text-foreground/80">{children}</em>
+  ),
+  hr: () => (
+    <div className="my-6 flex items-center gap-3">
+      <div className="h-px flex-1 bg-foreground/15" />
+      <span className="text-[0.5rem] text-muted-foreground/40 tracking-[0.3em] uppercase">✦</span>
+      <div className="h-px flex-1 bg-foreground/15" />
+    </div>
+  ),
+  code: ({ children, className }) => {
+    const isBlock = className?.includes("language-");
+    if (isBlock) {
+      return (
+        <pre className="my-4 rounded-lg bg-muted/30 border border-border/50 p-4 overflow-x-auto">
+          <code className="text-xs font-mono text-foreground/80">{children}</code>
+        </pre>
+      );
+    }
+    return (
+      <code className="text-[0.8rem] font-mono bg-muted/30 px-1.5 py-0.5 rounded text-foreground/80">
+        {children}
+      </code>
+    );
+  },
+  table: ({ children }) => (
+    <div className="my-4 overflow-x-auto">
+      <table className="w-full text-[0.8rem] border-collapse" style={{ fontFamily: wsjSerif }}>
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="border-b-2 border-foreground/20">
+      {children}
+    </thead>
+  ),
+  th: ({ children }) => (
+    <th className="text-left py-2 px-3 text-[0.7rem] font-bold uppercase tracking-wider text-foreground/60">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="py-2 px-3 border-b border-border/30 text-foreground/80">
+      {children}
+    </td>
+  ),
+};
 
 function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boolean }) {
   const { session } = useAuth();
@@ -343,13 +465,43 @@ function ReportTab({ model, sidebarOpen }: { model: ModelTab; sidebarOpen: boole
           </Button>
         </div>
 
-        {/* Report Content */}
-        <ScrollArea className="flex-1 p-6">
+        {/* Report Content — WSJ front-page style */}
+        <ScrollArea className="flex-1">
           {displayContent ? (
-            <article className="prose prose-sm dark:prose-invert max-w-none font-serif leading-relaxed">
-              <ReactMarkdown>{displayContent}</ReactMarkdown>
-              <div ref={reportEndRef} />
-            </article>
+            <div className="wsj-report px-8 py-6 max-w-5xl mx-auto">
+              {/* Masthead */}
+              <div className="text-center border-b-[3px] border-foreground pb-3 mb-1">
+                <p className="text-[0.6rem] uppercase tracking-[0.35em] text-muted-foreground mb-1">
+                  KeepRead.ing Product Intelligence
+                </p>
+                <h1
+                  className="text-3xl md:text-4xl font-black tracking-tight text-foreground"
+                  style={{ fontFamily: "'EB Garamond', 'Georgia', 'Times New Roman', serif" }}
+                >
+                  The Fruit Inspector
+                </h1>
+                <div className="flex items-center justify-center gap-4 mt-1.5 text-[0.6rem] text-muted-foreground">
+                  <span>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</span>
+                  <span>·</span>
+                  <span>{MODEL_LABELS[model].label} — {MODEL_LABELS[model].desc}</span>
+                </div>
+              </div>
+              {/* Thin double rule */}
+              <div className="border-t border-foreground/20 mb-6" />
+
+              {/* Article body — newspaper columns */}
+              <article className="wsj-body">
+                <ReactMarkdown components={wsjComponents}>{displayContent}</ReactMarkdown>
+                <div ref={reportEndRef} />
+              </article>
+
+              {/* Footer rule */}
+              <div className="mt-8 pt-3 border-t border-foreground/15 text-center">
+                <p className="text-[0.55rem] text-muted-foreground/50 italic tracking-wider uppercase">
+                  End of Report · Confidential
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-4 py-20">
               <span className="text-5xl">🍇</span>
