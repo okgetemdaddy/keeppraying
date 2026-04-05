@@ -615,30 +615,34 @@ export function InkOverlay({
     };
   }, []);
 
-  /* ── Rendered committed strokes ── */
+  /* ── Rendered committed strokes (brush-aware filters from store) ── */
   const renderedStrokes = useMemo(
     () =>
       strokes.map((s) => {
+        const brushOpts = getBrushStrokeOptions(store.brushStyle, s.size, 0.5);
         const outline = getStroke(
           s.points.map((p) => [p.x, p.y, p.pressure]),
-          { ...STROKE_OPTIONS, size: s.size },
+          { ...brushOpts, size: s.size, start: STROKE_OPTIONS.start, end: STROKE_OPTIONS.end },
         );
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
         const isSepia = s.color === SEPIA_COLOR;
         const isNeon = !!s.glow;
         const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
+        const brushFilterId = getActiveFilterId(store.activeTool, store.brushStyle);
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
         const appliedFilter = isNeon
           ? `url(#${neonFilterId})`
-          : bleedFilter;
+          : brushFilterId
+            ? `url(#${brushFilterId})`
+            : bleedFilter;
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSepia ? 0.6 : 0.98}
+            opacity={isSepia ? 0.6 : effectiveOpacity}
             filter={appliedFilter}
             style={{
               mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
@@ -646,7 +650,7 @@ export function InkOverlay({
           />
         );
       }),
-    [strokes, isDark],
+    [strokes, isDark, store.brushStyle, store.activeTool, effectiveOpacity],
   );
 
   return (
@@ -692,11 +696,12 @@ export function InkOverlay({
             </filter>
           ))}
         </defs>
+        <InkFilterDefs standalone={false} />
         {renderedStrokes}
 
         <path
           ref={livePathRef}
-          fill={penColor}
+          fill={effectiveColor}
           stroke="none"
           opacity={0.7}
           style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
@@ -706,8 +711,8 @@ export function InkOverlay({
           <circle
             cx={hoverPos.x}
             cy={hoverPos.y}
-            r={penSize / 2}
-            fill={penColor}
+            r={effectiveSize / 2}
+            fill={effectiveColor}
             opacity={0.25}
             style={{ pointerEvents: "none" }}
           />
