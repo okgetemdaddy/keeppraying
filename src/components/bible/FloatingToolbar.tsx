@@ -16,6 +16,7 @@ import {
   Layers,
   PenTool,
   ArrowRight,
+  Focus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -229,34 +230,44 @@ function ToolbarActions({
           </button>
         )}
 
-        {/* ── Cross-References ── */}
-        {primaryVerse && onCrossRef && (
-          <button
-            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
-            title="Cross-references"
-            onClick={() => {
-              onCrossRef(primaryVerse);
-              onDismiss();
-            }}
-          >
-            <BookMarked className="h-4 w-4" />
-            {isVertical && <span className="text-sm">Cross-refs</span>}
-          </button>
-        )}
+        {/* ── Focus group (mobile) or individual buttons (desktop) ── */}
+        {primaryVerse && isVertical && (onCrossRef || onReference) ? (
+          <FocusGroup
+            verseNumber={primaryVerse}
+            onCrossRef={onCrossRef}
+            onReference={onReference}
+            onDismiss={onDismiss}
+          />
+        ) : (
+          <>
+            {/* ── Cross-References (desktop) ── */}
+            {primaryVerse && onCrossRef && (
+              <button
+                className="flex h-8 gap-1 px-2 items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground"
+                title="Cross-references"
+                onClick={() => {
+                  onCrossRef(primaryVerse);
+                  onDismiss();
+                }}
+              >
+                <BookMarked className="h-4 w-4" />
+              </button>
+            )}
 
-        {/* ── Reference (Word Study) ── */}
-        {primaryVerse && onReference && (
-          <button
-            className={`flex ${isVertical ? "h-10 flex-1 gap-2 rounded-lg border border-border px-3" : "h-8 gap-1 px-2"} items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground`}
-            title="Word study & reference"
-            onClick={() => {
-              onReference(primaryVerse);
-              onDismiss();
-            }}
-          >
-            <BookOpen className="h-4 w-4" />
-            {isVertical && <span className="text-sm">Reference</span>}
-          </button>
+            {/* ── Reference / Word Study (desktop) ── */}
+            {primaryVerse && onReference && (
+              <button
+                className="flex h-8 gap-1 px-2 items-center justify-center rounded-lg hover:bg-muted transition-colors text-foreground"
+                title="Word study & reference"
+                onClick={() => {
+                  onReference(primaryVerse);
+                  onDismiss();
+                }}
+              >
+                <BookOpen className="h-4 w-4" />
+              </button>
+            )}
+          </>
         )}
 
         {/* ── Verse Bunch (only for multi-verse selection) ── */}
