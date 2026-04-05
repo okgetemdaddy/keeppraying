@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
 import { isClosedLoop, convexHull, pointInPolygon, findVersesInsideStroke } from "@/lib/convexHull";
+import { usePencilTools, getBrushStrokeOptions, getActiveFilterId } from "@/hooks/usePencilTools";
+import InkFilterDefs from "@/components/bible/toolbar/InkFilterDefs";
 
 // iPadOS: MarginAnnotationLayer maps to PKCanvasView overlay with PKToolPicker hidden, pencilOnly input policy
 
