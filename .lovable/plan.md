@@ -1,29 +1,37 @@
 
 
-## Fix: Upload Links Tab Showing Blank Content
+## Fix: Add User Profile & Admin Access on Mobile
 
 ### Root Cause
 
-The `UploadLinksTab` component is rendering but likely stuck in a perpetual loading state or has invisible content. Two issues:
+In `SiteNav.tsx`, the `UserMenu` component (avatar + dropdown with Admin Dashboard, Profile, Board, Sign Out) is only rendered on desktop (`!isMobile`). On mobile, only the `NotificationBell` shows. There is no alternative mobile path to access the profile, admin page, or sign out.
 
-1. **RLS query may silently return empty/fail** — the `loadTokens` query uses the authenticated client, which requires the `has_role(auth.uid(), 'admin')` check. If the query errors, the component stays in loading state with a nearly invisible spinner on the dark admin background.
+### Solution
 
-2. **No error handling on the SELECT query** — if the query fails due to RLS or missing table, `data` is null, tokens stays empty, but the loading spinner may not dismiss properly if the error path isn't handled.
+Add the `UserMenu` to the mobile section of `SiteNav` so mobile users see their profile avatar and can access the dropdown (including Admin Dashboard).
 
-### Fix (UploadLinksTab.tsx)
+### Changes
 
-1. Add proper error handling to `loadTokens` — catch errors and still set `loading = false`
-2. Add a visible header/title so the tab is never fully blank
-3. Add error state feedback if the query fails
-4. Ensure the "Generate Link" input + button always renders regardless of loading state
+**File: `src/components/SiteNav.tsx`**
 
-### Also: Upload.tsx Page
+Replace the mobile auth section (lines 326–334) to include `UserMenu` alongside `NotificationBell`:
 
-Since the `/upload` page was created alongside this tab, verify it exists and renders properly — it's the guest-facing page that uses the tokens.
+```text
+Current mobile section:
+  {isMobile && session && <NotificationBell />}
+  {isMobile && !session && <Link to="/auth">...</Link>}
 
-### Files Modified
+Updated mobile section:
+  {isMobile && session && <NotificationBell />}
+  {isMobile && session && <UserMenu dark={dark} scrolled={scrolled} />}
+  {isMobile && !session && <Link to="/auth">...</Link>}
+```
 
-| File | Change |
-|------|--------|
-| `src/components/admin/UploadLinksTab.tsx` | Add header, error handling, ensure UI always visible |
+This adds the same avatar circle + dropdown menu that desktop users see. The dropdown already contains:
+- Admin Dashboard (visible only when `isAdmin` is true)
+- My Profile
+- My Board
+- Sign Out
+
+No other files need to change. The `UserMenu` component is already fully functional and responsive — it just wasn't being rendered on mobile.
 
