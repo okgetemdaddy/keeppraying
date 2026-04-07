@@ -140,55 +140,60 @@ export default function Admin() {
   });
 
   const load = useCallback(async () => {
-    const [
-      { data: p },
-      { count: total },
-      { count: approved },
-      { count: pend },
-      { count: testimonyCount },
-      { count: userCount },
-      { data: liked },
-      { data: prayed },
-      { data: profiles },
-      { data: contactData },
-      { data: reportData },
-      { data: blogData },
-    ] = await Promise.all([
-      supabase.from("prayer_cards").select("id,title,prayer_text,created_at").eq("status", "pending").order("created_at", { ascending: false }),
-      supabase.from("prayer_cards").select("*", { count: "exact", head: true }),
-      supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "approved"),
-      supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "pending"),
-      supabase.from("testimonies").select("*", { count: "exact", head: true }),
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("likes_count", { ascending: false }).limit(5),
-      supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("prayed_count", { ascending: false }).limit(5),
-      supabase.from("profiles").select("created_at").order("created_at", { ascending: true }),
-      supabase.from("contact_submissions").select("*").order("created_at", { ascending: false }),
-      supabase.from("admin_reports").select("*").order("generated_at", { ascending: false }).limit(5),
-      supabase.from("blog_posts").select("id,title,slug,excerpt,published,created_at").order("created_at", { ascending: false }),
-    ]);
+    try {
+      const [
+        { data: p },
+        { count: total },
+        { count: approved },
+        { count: pend },
+        { count: testimonyCount },
+        { count: userCount },
+        { data: liked },
+        { data: prayed },
+        { data: profiles },
+        { data: contactData },
+        { data: reportData },
+        { data: blogData },
+      ] = await Promise.all([
+        supabase.from("prayer_cards").select("id,title,prayer_text,created_at").eq("status", "pending").order("created_at", { ascending: false }),
+        supabase.from("prayer_cards").select("*", { count: "exact", head: true }),
+        supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "approved"),
+        supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("testimonies").select("*", { count: "exact", head: true }),
+        supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("likes_count", { ascending: false }).limit(5),
+        supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("prayed_count", { ascending: false }).limit(5),
+        supabase.from("profiles").select("created_at").order("created_at", { ascending: true }),
+        supabase.from("contact_submissions").select("*").order("created_at", { ascending: false }),
+        supabase.from("admin_reports").select("*").order("generated_at", { ascending: false }).limit(5),
+        supabase.from("blog_posts").select("id,title,slug,excerpt,published,created_at").order("created_at", { ascending: false }),
+      ]);
 
-    setPending(p || []);
-    setStats({ total: total || 0, approved: approved || 0, pending: pend || 0, testimonies: testimonyCount || 0, users: userCount || 0 });
-    setTopLiked((liked as PrayerStat[]) || []);
-    setTopPrayed((prayed as PrayerStat[]) || []);
-    setContacts((contactData as ContactSubmission[]) || []);
-    setReports((reportData as AdminReport[]) || []);
-    setBlogPosts((blogData as BlogPost[]) || []);
+      setPending(p || []);
+      setStats({ total: total || 0, approved: approved || 0, pending: pend || 0, testimonies: testimonyCount || 0, users: userCount || 0 });
+      setTopLiked((liked as PrayerStat[]) || []);
+      setTopPrayed((prayed as PrayerStat[]) || []);
+      setContacts((contactData as ContactSubmission[]) || []);
+      setReports((reportData as AdminReport[]) || []);
+      setBlogPosts((blogData as BlogPost[]) || []);
 
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const recent = (profiles || []).filter(p => new Date(p.created_at) >= thirtyDaysAgo);
-    const grouped: Record<string, number> = {};
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
-      grouped[d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })] = 0;
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const recent = (profiles || []).filter(p => new Date(p.created_at) >= thirtyDaysAgo);
+      const grouped: Record<string, number> = {};
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
+        grouped[d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })] = 0;
+      }
+      recent.forEach(p => {
+        const key = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (grouped[key] !== undefined) grouped[key]++;
+      });
+      setSignupData(Object.entries(grouped).slice(-14).map(([date, count]) => ({ date, count })));
+    } catch (error) {
+      console.error("Failed to load admin data:", error);
+      toast({ title: "Failed to load admin data", description: "Please refresh or try again.", variant: "destructive" });
     }
-    recent.forEach(p => {
-      const key = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      if (grouped[key] !== undefined) grouped[key]++;
-    });
-    setSignupData(Object.entries(grouped).slice(-14).map(([date, count]) => ({ date, count })));
   }, []);
 
   useEffect(() => { load(); }, [load]);
