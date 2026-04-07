@@ -115,29 +115,17 @@ export default function Upload() {
         if (!uploadRes.ok) throw new Error("Upload failed");
         setProgress(80);
 
-        // Update metadata with encryption details
-        const metaRes = await fetch(`${SUPABASE_URL}/functions/v1/burn-upload-token`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_KEY,
-          },
-          body: JSON.stringify({
-            token: "__update_meta__",
-          }),
-        });
-        // Metadata was already inserted during burn; update it directly
-        // Since anon can insert, use supabase client
-        // Actually the submission was already created during burn with placeholders.
-        // We need to update it with encryption details. Let's use an RPC-free approach:
-        // The edge function already saved the metadata during burn. We passed empty encryption
-        // fields. Now we update via the anon insert policy... but we only have INSERT not UPDATE.
-        // Solution: the burn function doesn't insert metadata — we do it here.
-        
-        // Insert the final submission record with encryption details
+        // Insert submission metadata with encryption details
         const { error: metaErr } = await supabase.from("admin_submissions").insert({
           token_id: tokenId,
           original_filename: file.name,
+          stored_path: storagePath,
+          file_size_bytes: file.size,
+          encryption_iv: ivHex,
+          encryption_salt: saltHex,
+        } as any);
+
+        if (metaErr) console.warn("Metadata insert warning:", metaErr);
           stored_path: storagePath,
           file_size_bytes: file.size,
           encryption_iv: ivHex,
