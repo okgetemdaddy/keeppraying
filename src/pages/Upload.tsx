@@ -126,11 +126,6 @@ export default function Upload() {
         } as any);
 
         if (metaErr) console.warn("Metadata insert warning:", metaErr);
-          stored_path: storagePath,
-          file_size_bytes: file.size,
-          encryption_iv: ivHex,
-          encryption_salt: saltHex,
-        } as any);
 
         setProgress(100);
         setState("complete");
