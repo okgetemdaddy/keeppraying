@@ -837,6 +837,8 @@ export default function Admin() {
               {/* ── BIBLE SIGHT ── */}
               {activeTab === "bible-sight" && <BibleSightAdminTab />}
 
+              {activeTab === "upload-links" && <UploadLinksTab />}
+
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
