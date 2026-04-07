@@ -74,7 +74,7 @@ interface AdminReport { id: string; title: string; content: string; generated_at
 interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache" | "waitlist" | "bible-sight";
+type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache" | "waitlist" | "bible-sight" | "upload-links";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "overview",         label: "Overview",          icon: LayoutDashboard },
@@ -97,6 +97,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "sermon-cache",     label: "Sermon Cache",       icon: Youtube },
   { id: "waitlist",          label: "KeepRead.ing Waitlist", icon: Tablet },
   { id: "bible-sight",       label: "Bible Sight",       icon: BookText },
+  { id: "upload-links",      label: "Upload Links",      icon: Shield },
 ];
 
 export default function Admin() {
