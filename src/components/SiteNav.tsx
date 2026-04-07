@@ -325,6 +325,7 @@ export function SiteNav({ transparent = false, dark = false, rightSlot }: SiteNa
 
           {/* Mobile: just notification bell — no hamburger, we have bottom tabs + FAB */}
           {isMobile && session && <NotificationBell dark={dark} scrolled={scrolled} />}
+          {isMobile && session && <UserMenu dark={dark} scrolled={scrolled} />}
           {isMobile && !session && (
             <Link to="/auth">
               <Button size="sm" className="btn-gold rounded-xl gap-1.5 px-4 text-xs">
