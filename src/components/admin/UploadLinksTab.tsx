@@ -25,16 +25,26 @@ export default function UploadLinksTab() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [label, setLabel] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const loadTokens = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("upload_access_tokens")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-    setTokens((data as any[]) || []);
-    setLoading(false);
+    try {
+      setLoading(true);
+      setError(null);
+      const { data, error: queryError } = await supabase
+        .from("upload_access_tokens")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (queryError) throw queryError;
+      setTokens((data as any[]) || []);
+    } catch (err: any) {
+      console.error("Failed to load upload tokens:", err);
+      setError(err?.message || "Failed to load tokens");
+      setTokens([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -51,7 +61,7 @@ export default function UploadLinksTab() {
       .single();
 
     if (error || !data) {
-      toast({ title: "Error", description: "Failed to generate link", variant: "destructive" });
+      toast({ title: "Error", description: error?.message || "Failed to generate link", variant: "destructive" });
       setCreating(false);
       return;
     }
@@ -66,6 +76,11 @@ export default function UploadLinksTab() {
 
   return (
     <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold text-foreground mb-1">Secure Upload Links</h3>
+        <p className="text-sm text-muted-foreground">Generate single-use encrypted upload links. Each link self-destructs after first use.</p>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <Input
           placeholder="Label (e.g. 'For John's files')"
@@ -80,7 +95,9 @@ export default function UploadLinksTab() {
         </Button>
       </div>
 
-      {loading ? (
+      {error ? (
+        <p className="text-sm text-destructive text-center py-6">{error}</p>
+      ) : loading ? (
         <div className="flex justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
