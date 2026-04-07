@@ -112,7 +112,7 @@ export async function encryptFile(
 
   return {
     encryptedBlob: new Blob([ciphertext], { type: "application/octet-stream" }),
-    saltHex: bufToHex(salt),
-    ivHex: bufToHex(iv),
+    saltHex: bufToHex(salt.buffer as ArrayBuffer),
+    ivHex: bufToHex(iv.buffer as ArrayBuffer),
   };
 }
