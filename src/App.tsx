@@ -39,6 +39,7 @@ import SharedPrayerLanding from "./pages/SharedPrayerLanding";
 import Profile from "./pages/Profile";
 import Classical from "./pages/Classical";
 import Help from "./pages/Help";
+import Upload from "./pages/Upload";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
@@ -222,6 +223,7 @@ function AppShell() {
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="/shared-prayer/:token" element={<SharedPrayerLanding />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/upload" element={<Upload />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

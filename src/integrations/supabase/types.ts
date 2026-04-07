@@ -183,6 +183,50 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_submissions: {
+        Row: {
+          created_at: string | null
+          encrypted: boolean | null
+          encryption_iv: string | null
+          encryption_salt: string | null
+          file_size_bytes: number | null
+          id: string
+          original_filename: string
+          stored_path: string
+          token_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          encrypted?: boolean | null
+          encryption_iv?: string | null
+          encryption_salt?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          original_filename: string
+          stored_path: string
+          token_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          encrypted?: boolean | null
+          encryption_iv?: string | null
+          encryption_salt?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          original_filename?: string
+          stored_path?: string
+          token_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_submissions_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "upload_access_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_chat_logs: {
         Row: {
           ai_response: string | null
@@ -2683,6 +2727,39 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+        }
+        Relationships: []
+      }
+      upload_access_tokens: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          label: string | null
+          token: string
+          used: boolean | null
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          token?: string
+          used?: boolean | null
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          token?: string
+          used?: boolean | null
+          used_at?: string | null
         }
         Relationships: []
       }
