@@ -381,6 +381,7 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <LaunchOverlay />
 
       {/* ── Navigation ──────────────────────────────────────────────────── */}
       <motion.div
