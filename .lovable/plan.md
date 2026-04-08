@@ -1,37 +1,45 @@
 
 
-## Diagnosis: Admin Page Access Issues After RLS Changes
+## Marketing Overlay for Landing Page (`/`)
 
-### What I Found
+### What We're Building
 
-1. **Your user account IS correctly set as admin** — the `has_role()` function confirms `role = 'admin'` for your user ID.
+A full-screen animated overlay that appears on top of the landing page for unauthenticated visitors. It presents John's message about the vision behind KeepPray.ing, formatted as a cinematic scroll experience, and ends with an email waitlist signup for the official launch. Authenticated users skip it entirely (they already redirect to `/board`).
 
-2. **All tables have RLS enabled** — every table the admin page queries (`prayer_cards`, `testimonies`, `profiles`, `contact_submissions`, `admin_reports`, `blog_posts`) has RLS turned on with policies.
+### Design Direction
 
-3. **Inconsistent admin policy patterns** — this is the likely culprit:
-   - Some tables use the safe `has_role(auth.uid(), 'admin')` function (SECURITY DEFINER, bypasses RLS)
-   - Others (`blog_posts`, `contact_submissions`) use a direct subquery: `EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')` — this is subject to RLS evaluation chains and can cause subtle failures
+- **Dark, reverent aesthetic** — zinc-950 background with gold (hsl 42 85% 46%) accents, matching existing brand
+- **Animated text reveal** — body copy splits into meaningful paragraphs that fade/slide in as the user scrolls or with staggered timing
+- **Dismissible** — "Enter Site" button or scroll-past to close; state saved to localStorage so it only shows once per device
+- **Waitlist CTA** — email input at the bottom using the existing `waitlist_signups` table with `platform: "keeppray_launch"`
 
-4. **No error handling on the admin data load** — `Promise.all` with 12 parallel queries in `Admin.tsx`. If ANY query throws or returns in an unexpected format, the entire page crashes with no recovery.
+### Content Formatting
 
-### Plan
+The body copy will be split into 3 emotionally distinct sections with staggered animation:
 
-**1. Standardize all admin RLS policies to use `has_role()`** (database migration)
+1. **The Problem** — "When people say they are praying for us..." → italic serif, larger text, opening hook
+2. **The Mission** — "At KeepPray.ing we encourage..." → standard body, describes the ministry
+3. **The Story** — "My name is John..." → personal, warm, slightly smaller, includes the emojis naturally
 
-Replace the direct `profiles` subquery pattern with the `has_role()` security definer function on these tables:
-- `blog_posts` — "Admins can manage posts"
-- `contact_submissions` — "Admins can view submissions"
+Each section fades up with a delay. A "KINGDOM PRAYERS" tagline anchors the top.
 
-This eliminates RLS evaluation chains where checking admin on table A requires querying `profiles` which itself has RLS.
+### Technical Plan
 
-**2. Add error handling to Admin page load** (`src/pages/Admin.tsx`)
+**New file: `src/components/LaunchOverlay.tsx`**
+- Full-screen fixed overlay (`z-[100]`) with `AnimatePresence`
+- Uses `framer-motion` staggered `fadeUp` variants (matching existing Index.tsx patterns)
+- Email input + submit button at bottom → inserts into `waitlist_signups` with `platform: "keeppray_launch"`
+- "Enter Site →" dismiss button saves `kp_launch_overlay_seen` to localStorage
+- Only renders when `!user && !localStorage.getItem("kp_launch_overlay_seen")`
 
-Wrap the `Promise.all` in a try/catch so a single failing query doesn't crash the entire page. Show a toast with the error instead of a blank/crashed screen.
+**Modified file: `src/pages/Index.tsx`**
+- Import and render `<LaunchOverlay />` at the top of the return, before the nav
+- No other changes to the existing page
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| Migration SQL | Replace 2 RLS policies to use `has_role()` |
-| `src/pages/Admin.tsx` | Add try/catch around `load()`, show error feedback |
+| `src/components/LaunchOverlay.tsx` | New — full marketing overlay component |
+| `src/pages/Index.tsx` | Add `<LaunchOverlay />` render |
 
