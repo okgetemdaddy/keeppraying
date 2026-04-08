@@ -17,6 +17,7 @@ import ReactMarkdown from "react-markdown";
 import VerseLink from "@/components/VerseLink";
 import heroBg from "@/assets/hero-bg.jpg";
 import { SiteNav } from "@/components/SiteNav";
+import LaunchOverlay from "@/components/LaunchOverlay";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
