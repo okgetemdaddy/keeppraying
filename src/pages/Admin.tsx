@@ -72,7 +72,7 @@ type PrayerCardFormValues = z.infer<typeof prayerCardSchema>;
 interface PrayerStat { id: string; title: string | null; prayer_text: string; likes_count: number; prayed_count: number; views: number; }
 interface ContactSubmission { id: string; name: string | null; email: string | null; message: string; created_at: string; ai_reply: string | null; replied_at: string | null; }
 interface AdminReport { id: string; title: string; content: string; generated_at: string; }
-interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
+interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; content?: string | null; cover_image_url?: string | null; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
 type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache" | "waitlist" | "bible-sight" | "upload-links";
@@ -116,6 +116,7 @@ export default function Admin() {
   const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
+  const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [showPrayerForm, setShowPrayerForm] = useState(false);
   const [savingPrayer, setSavingPrayer] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -241,18 +242,42 @@ export default function Admin() {
     }
   };
 
+  const startEditBlog = async (post: BlogPost) => {
+    // Fetch full content if not already loaded
+    const { data } = await supabase.from("blog_posts").select("content,cover_image_url").eq("id", post.id).single();
+    blogForm.reset({
+      title: post.title,
+      slug: post.slug,
+      excerpt: post.excerpt || "",
+      content: data?.content || "",
+      cover_image_url: data?.cover_image_url || "",
+      published: post.published || false,
+    });
+    setEditingBlogId(post.id);
+    setShowBlogForm(true);
+  };
+
+  const cancelBlogForm = () => {
+    blogForm.reset();
+    setEditingBlogId(null);
+    setShowBlogForm(false);
+  };
+
   const onBlogSubmit = async (values: BlogFormValues) => {
     setFormattingBlog(true);
     try {
       const formatted = values.content ? await formatBlogContent(values.content, values.title) : values.content;
-      const { error } = await supabase.from("blog_posts").insert({
+      const payload = {
         title: values.title, slug: values.slug, excerpt: values.excerpt || null,
         content: formatted, cover_image_url: values.cover_image_url || null,
-        published: values.published, author_id: user?.id || null,
-      });
+        published: values.published,
+      };
+      const { error } = editingBlogId
+        ? await supabase.from("blog_posts").update(payload).eq("id", editingBlogId)
+        : await supabase.from("blog_posts").insert({ ...payload, author_id: user?.id || null });
       if (error) { toast({ title: "Failed to save post", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Blog post saved & formatted! 📝✨" });
-      blogForm.reset(); setShowBlogForm(false); load();
+      toast({ title: editingBlogId ? "Post updated! 📝✨" : "Blog post saved & formatted! 📝✨" });
+      cancelBlogForm(); load();
     } finally {
       setFormattingBlog(false);
     }
@@ -860,14 +885,14 @@ export default function Admin() {
                       <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>KeepGrow.ing Posts</h2>
                       <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Devotional content and faith encouragement</p>
                     </div>
-                    <GoldButton onClick={() => setShowBlogForm(!showBlogForm)}>
-                      <PlusCircle className="w-4 h-4" />New Post
+                    <GoldButton onClick={() => { if (showBlogForm) { cancelBlogForm(); } else { setEditingBlogId(null); blogForm.reset(); setShowBlogForm(true); } }}>
+                      <PlusCircle className="w-4 h-4" />{showBlogForm ? "Cancel" : "New Post"}
                     </GoldButton>
                   </div>
 
                   {showBlogForm && (
                     <GuardianCard>
-                      <h3 className="font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Create Post</h3>
+                      <h3 className="font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>{editingBlogId ? "Edit Post" : "Create Post"}</h3>
                       <Form {...blogForm}>
                         <form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-3">
                           <div className="grid grid-cols-2 gap-3">
@@ -915,8 +940,8 @@ export default function Admin() {
                           )} />
                           <div className="flex gap-2">
                             <GoldButton type="submit" disabled={formattingBlog}>
-                              {formattingBlog ? <><Loader2 className="w-4 h-4 animate-spin" />Formatting with AI…</> : "Save Post"}</GoldButton>
-                            <DarkOutlineButton type="button" onClick={() => setShowBlogForm(false)}>Cancel</DarkOutlineButton>
+                              {formattingBlog ? <><Loader2 className="w-4 h-4 animate-spin" />Formatting with AI…</> : editingBlogId ? "Update Post" : "Save Post"}</GoldButton>
+                            <DarkOutlineButton type="button" onClick={cancelBlogForm}>Cancel</DarkOutlineButton>
                           </div>
                         </form>
                       </Form>
@@ -945,6 +970,14 @@ export default function Admin() {
                             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
                             {post.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                          <button
+                            onClick={() => startEditBlog(post)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
+                            style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}
+                            title="Edit post"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => reformatPost(post)}
