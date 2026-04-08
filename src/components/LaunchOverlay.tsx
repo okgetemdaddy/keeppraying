@@ -15,7 +15,7 @@ const container = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 const glowPulse = {
@@ -23,7 +23,7 @@ const glowPulse = {
   show: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 1.2, ease: "easeOut" },
+    transition: { duration: 1.2, ease: "easeOut" as const },
   },
 };
 
