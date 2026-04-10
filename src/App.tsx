@@ -67,6 +67,14 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Pre-launch: redirect unauthenticated users to / for all non-essential routes */
+function PreLaunchGuard({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
