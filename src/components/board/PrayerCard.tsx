@@ -140,11 +140,10 @@ export function PrayerCard({
   }, [prayer.extended_prayer]);
 
   /* ── TTS ──────────────────────────────────────────────────────────────── */
-  const { isPlaying, isLoading: ttsLoading, play, stop } = useTtsPlayer({
-    prayerText: prayer.prayer_text,
-    prayerTitle: prayer.title || "Prayer",
+  const { ttsPlaying, ttsLoading, toggleTts, stopTts, pauseTts, resumeTts, playbackRate, changePlaybackRate, timedPhrases, audioRef } = useTtsPlayer({
+    audioUrl: prayer.audio_url,
+    cacheId: prayer.id,
     voiceId: ttsVoiceId,
-    captionMode: captionModeTts,
   });
 
   /* ── Testimony check ─────────────────────────────────────────────────── */
