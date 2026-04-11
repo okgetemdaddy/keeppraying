@@ -101,7 +101,11 @@ export function PrayerCard({
   const [bgIndex, setBgIndex] = useState(0);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
 
-  const themeBase = themeMode === "dark" ? THEME_DARK : (await import("@/components/board/prayerCardTheme")).THEME_LIGHT;
+  const THEME_LIGHT_IMPORT = useMemo(() => {
+    const { THEME_LIGHT: TL } = require("@/components/board/prayerCardTheme");
+    return TL;
+  }, []);
+  const themeBase = themeMode === "dark" ? THEME_DARK : THEME_LIGHT_IMPORT;
   const backgrounds = themeMode === "dark" ? DARK_BACKGROUNDS : LIGHT_BACKGROUNDS;
   const theme: CardTheme = { ...themeBase, cardBg: backgrounds[bgIndex].bg } as CardTheme;
 
