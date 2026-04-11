@@ -51,11 +51,23 @@ function PrayerCard3D() {
       >
         {/* Front — Prayer */}
         <div
-          className="absolute inset-0 rounded-2xl overflow-hidden border border-[hsl(var(--gold)/0.25)]"
-          style={{ backfaceVisibility: "hidden" }}
+          className="absolute inset-0 rounded-2xl overflow-hidden"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            willChange: "transform",
+            transform: "translateZ(0)",
+          }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-[hsl(25_35%_10%)] via-[hsl(25_30%_14%)] to-[hsl(25_35%_8%)]" />
+          <div className="absolute inset-0 bg-[hsl(25_35%_10%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[hsl(25_35%_12%)] via-[hsl(25_30%_14%)] to-[hsl(25_35%_8%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_20%,hsl(42_85%_46%/0.08),transparent)]" />
+          {/* Top edge light */}
+          <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[hsl(42_85%_56%/0.4)] to-transparent" />
+          {/* Inner border glow */}
+          <div className="absolute inset-0 rounded-2xl border border-[hsl(42_85%_46%/0.2)] shadow-[inset_0_1px_0_0_hsl(42_85%_56%/0.1),inset_0_-1px_0_0_hsl(25_35%_5%/0.5)]" />
+          {/* Outer depth shadow */}
+          <div className="absolute -inset-px rounded-2xl shadow-[0_4px_20px_-4px_hsl(0_0%_0%/0.6),0_8px_40px_-8px_hsl(0_0%_0%/0.4),0_0_15px_-3px_hsl(42_85%_46%/0.1)]" style={{ pointerEvents: "none" }} />
           <div className="relative z-10 flex flex-col h-full p-8 sm:p-10">
             <p className="text-[10px] uppercase tracking-[0.4em] text-[hsl(42_85%_56%/0.5)] mb-2">
               KeepPray.ing
@@ -64,8 +76,8 @@ function PrayerCard3D() {
               A Prayer for My Family
             </h3>
             <p
-              className="flex-1 text-base sm:text-lg leading-relaxed text-white/70 italic"
-              style={{ fontFamily: "'Caveat', cursive" }}
+              className="flex-1 text-base sm:text-lg leading-relaxed text-white/70"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >
               Lord, watch over my family today. Guard their hearts, guide their
               steps, and fill our home with Your peace. Help us to love each
@@ -82,12 +94,24 @@ function PrayerCard3D() {
 
         {/* Back — Testimony */}
         <div
-          className="absolute inset-0 rounded-2xl overflow-hidden border border-[hsl(var(--gold)/0.4)]"
-          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          className="absolute inset-0 rounded-2xl overflow-hidden"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+            willChange: "transform",
+          }}
         >
+          <div className="absolute inset-0 bg-[hsl(42_50%_6%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42_50%_8%)] via-[hsl(42_40%_12%)] to-[hsl(42_50%_6%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_40%,hsl(42_85%_46%/0.12),transparent)]" />
           <div className="absolute top-4 right-4 w-20 h-20 rounded-full bg-[hsl(42_85%_46%/0.06)] blur-2xl" />
+          {/* Top edge light */}
+          <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[hsl(42_85%_56%/0.5)] to-transparent" />
+          {/* Inner border glow */}
+          <div className="absolute inset-0 rounded-2xl border border-[hsl(42_85%_46%/0.3)] shadow-[inset_0_1px_0_0_hsl(42_85%_56%/0.15),inset_0_-1px_0_0_hsl(42_50%_4%/0.5)]" />
+          {/* Outer depth shadow */}
+          <div className="absolute -inset-px rounded-2xl shadow-[0_4px_20px_-4px_hsl(0_0%_0%/0.6),0_8px_40px_-8px_hsl(0_0%_0%/0.4),0_0_15px_-3px_hsl(42_85%_46%/0.15)]" style={{ pointerEvents: "none" }} />
           <div className="relative z-10 flex flex-col h-full p-8 sm:p-10">
             <p className="text-[10px] uppercase tracking-[0.4em] text-[hsl(42_85%_56%/0.7)] mb-2">
               Testimony
