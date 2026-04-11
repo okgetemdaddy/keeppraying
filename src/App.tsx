@@ -40,6 +40,8 @@ import Profile from "./pages/Profile";
 import Classical from "./pages/Classical";
 import Help from "./pages/Help";
 import Upload from "./pages/Upload";
+import BoardV2 from "./pages/BoardV2";
+import DesignLab from "./pages/DesignLab";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
@@ -240,6 +242,8 @@ function AppShell() {
         <Route path="/classical" element={<PreLaunchGuard><Classical /></PreLaunchGuard>} />
         <Route path="/canvas" element={<PreLaunchGuard><BibleCanvas /></PreLaunchGuard>} />
         <Route path="/help" element={<PreLaunchGuard><Help /></PreLaunchGuard>} />
+        <Route path="/boardv2" element={<PreLaunchGuard><BoardV2 /></PreLaunchGuard>} />
+        <Route path="/design-lab" element={<PreLaunchGuard><DesignLab /></PreLaunchGuard>} />
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
