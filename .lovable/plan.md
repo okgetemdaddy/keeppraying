@@ -1,40 +1,47 @@
 
 
-## Convert Board Cards to Premium PrayerCardAsset Design
+## KeepPray.ing Complete Overhaul
 
-### Completed
+### Phase 1: Foundation — COMPLETED
 
-**Phase 1: Shared Theme Primitives**
-- Created `src/components/board/prayerCardTheme.tsx` — single source of truth for `CardTheme` type, `THEME_DARK`/`THEME_LIGHT`, backgrounds, Google Fonts, SVG icons, luminance detection, and `buildCardTheme()` bridge
-- Created `src/components/board/DustParticles.tsx` — CSS `@keyframes` particles (no framer-motion), IntersectionObserver gated, mobile-throttled (10 vs 16)
-- Created `src/components/board/BarBtn.tsx` — themed icon button accepting `CardTheme`
+**Build Fixes**
+- Moved `PrayerCardAsset.tsx` → `src/components/board/PrayerCardAsset.tsx`
+- Moved `TestimonyCanvasAsset.tsx` → `src/components/board/TestimonyCanvasAsset.tsx`
+- Fixed `donation-webhook` import (`npm:` → `https://esm.sh/`)
 
-**Phase 2: BoardCard Visual Rewrite**
-- Replaced flat `rounded-2xl` shell with 3D perspective `rounded-3xl` + ambient glow pulse + inner glow + lamp light + dust particles
-- Added `KEEPPRAY.ING` brand text (10px, uppercase, gold, tracking 0.22em) above title
-- Implemented theme bridge: cards inherit board theme via luminance detection, brand colour from `--board-accent`
-- Premium bottom bar with themed `BarBtn` icons matching PrayerCardAsset layout
-- Scripture & Meditation collapsible strip between content and bottom bar
-- Responsive ••• menu: `DropdownMenu` on desktop (≥1024px), `ResponsiveSheet` drawer on mobile
-- Background images layer correctly under inner glow/lamp light/dust with existing overlay opacity slider
-- Back face (testimony) gets inner glow treatment matching front
+**1A. Canonical PrayerCard** — `src/components/board/PrayerCard.tsx`
+- 5 variants: `full | compact | preview | shared | embed`
+- Props: `prayer`, `savedMeta`, `variant`, `isOwner`, `userId`, `themeOverride`, `themeVars`, `onAction`, `onRefresh`
+- All Supabase mutations (prayed, pin, share, delete, notes, enrich)
+- Theme bridge from board themes, scripture strip, testimony flip, TTS, dust particles
+- Responsive menus: DropdownMenu desktop, Drawer mobile
 
-**Phase 3: PrayerCardAsset Updated**
-- Refactored to import shared primitives from `prayerCardTheme.tsx` and `DustParticles.tsx`
-- Removed ~200 lines of duplicated constants
+**1B. PrayNowSheet** — `src/components/PrayNowSheet.tsx`
+- 92vh vaul drawer with Type | Speak | Draw modes
+- No title required — AI generates via enrich-prayer
+- Background enrichment (scripture, labels) after save
+- Voice mode with Web Speech API live transcription
+
+**1C. BoardV2** — `src/pages/BoardV2.tsx`
+- Cards-first layout: compact header → stats → filter chips → card stack
+- Full-width mobile, 2-col desktop (max-width 800px)
+- Filter: All | Pinned | Shared | Answered
+- Sort: Recent | Most Prayed | Oldest
+- Stale-while-revalidate with IDB cache
+- Floating + FAB opens PrayNowSheet
+
+**1D. Routes** — `src/App.tsx`
+- `/boardv2` → BoardV2 (guarded playground)
+- `/design-lab` → DesignLab (isolated sandbox)
 
 ### What Was NOT Changed
-- No board features removed (stats, sermon plans, verse bunches, calendar, sort/filter, playlist builder all remain)
-- No per-card independent dark/light toggle by default (cards inherit board theme)
-- All Supabase queries, TTS, flip/testify, prayed actions, font picker — untouched
-- `Board.tsx` layout and chrome — untouched
+- `/board` and `Board.tsx` — untouched, stays live
+- `BoardCard.tsx` — untouched until PrayerCard proven
+- All Supabase tables and edge functions — no schema changes
+- MobileTabBar / SiteNav — NOT modified yet (deferred to next iteration)
+- Bible/KeepRead.ing, Auth, Profile — untouched
 
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `src/components/board/prayerCardTheme.tsx` | **NEW** — shared CardTheme system |
-| `src/components/board/DustParticles.tsx` | **NEW** — CSS-only dust particles |
-| `src/components/board/BarBtn.tsx` | **NEW** — themed icon button |
-| `src/components/board/BoardCard.tsx` | Full visual rewrite with premium shell |
-| `PrayerCardAsset.tsx` | Updated to import from shared files |
+### Next Phases (not yet started)
+- Phase 2: Social (shared prayer landing, circles rebuild, testimony on flip)
+- Phase 3: Intelligence (PrayerWatch OS, vector search, omnipresent PrayerAssist)
+- Phase 4: Polish (strip scrapped features, performance, iOS prep)
