@@ -125,8 +125,7 @@ export default function BoardV2() {
         const c = s.prayer_cards!;
         return (
           c.prayer_text.toLowerCase().includes(q) ||
-          c.title?.toLowerCase().includes(q) ||
-          c.labels?.some((l) => l.toLowerCase().includes(q))
+          c.title?.toLowerCase().includes(q)
         );
       });
     }
@@ -302,7 +301,7 @@ export default function BoardV2() {
             </button>
           </div>
         ) : (
-          <div className={isMobile ? "space-y-4" : "grid grid-cols-2 gap-4"}>
+          <div className={isMobile ? "flex flex-col items-center gap-6" : "grid grid-cols-2 gap-6 justify-items-center"}>
             {displayedItems.map((item) => {
               const card = item.prayer_cards!;
               const meta: SavedMeta = {
@@ -311,8 +310,6 @@ export default function BoardV2() {
                 favorite: item.favorite,
                 notes: item.notes,
                 position: item.position,
-                overlay_opacity: (item as any).overlay_opacity,
-                card_color: (item as any).card_color,
               };
 
               return (
