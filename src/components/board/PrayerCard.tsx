@@ -13,7 +13,6 @@ import { Drawer } from "vaul";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { TestifyBack } from "@/components/board/TestifyBack";
-import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
 import { DustParticles } from "@/components/board/DustParticles";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
@@ -21,6 +20,7 @@ import TtsLoadingPopup from "@/components/TtsLoadingPopup";
 import {
   type CardTheme,
   THEME_DARK,
+  THEME_LIGHT,
   DARK_BACKGROUNDS,
   LIGHT_BACKGROUNDS,
   GOOGLE_FONTS,
@@ -101,11 +101,7 @@ export function PrayerCard({
   const [bgIndex, setBgIndex] = useState(0);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
 
-  const THEME_LIGHT_IMPORT = useMemo(() => {
-    const { THEME_LIGHT: TL } = require("@/components/board/prayerCardTheme");
-    return TL;
-  }, []);
-  const themeBase = themeMode === "dark" ? THEME_DARK : THEME_LIGHT_IMPORT;
+  const themeBase = themeMode === "dark" ? THEME_DARK : THEME_LIGHT;
   const backgrounds = themeMode === "dark" ? DARK_BACKGROUNDS : LIGHT_BACKGROUNDS;
   const theme: CardTheme = { ...themeBase, cardBg: backgrounds[bgIndex].bg } as CardTheme;
 
