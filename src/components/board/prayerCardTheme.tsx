@@ -39,6 +39,7 @@ export const DARK_BACKGROUNDS = [
   { name: "Deep Brown", bg: "linear-gradient(175deg, #2a2318 0%, #1a1610 40%, #15120d 100%)" },
   { name: "Charcoal", bg: "linear-gradient(175deg, #252528 0%, #1a1a1e 40%, #131315 100%)" },
   { name: "Navy", bg: "linear-gradient(175deg, #1e2230 0%, #151820 40%, #0e1118 100%)" },
+  { name: "Royal Purple", bg: "linear-gradient(175deg, #251e30 0%, #1a1520 40%, #12101a 100%)" },
 ];
 
 export const LIGHT_BACKGROUNDS = [
