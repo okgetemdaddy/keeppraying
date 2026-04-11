@@ -23,7 +23,7 @@ import { BOARD_THEMES } from "@/components/board/boardThemes";
 import { buildCardTheme } from "@/components/board/prayerCardTheme";
 import type { Database } from "@/integrations/supabase/types";
 import {
-  Search, Settings, Flame, Plus, Filter, Loader2, BookOpen,
+  Search, Settings, Flame, Plus, Filter, Loader2, BookOpen, X,
 } from "lucide-react";
 import { useSayingsCycle } from "@/hooks/useSayingsCycle";
 
@@ -64,6 +64,8 @@ export default function BoardV2() {
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
+  const [testimonyPrayerIds, setTestimonyPrayerIds] = useState<Set<string>>(new Set());
   const boardCacheInit = useRef(false);
 
   // Theme
@@ -114,6 +116,20 @@ export default function BoardV2() {
 
   useEffect(() => { fetchSaved(); }, [fetchSaved]);
 
+  // ── Fetch testimony prayer IDs for "Answered" filter ────────────────────
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("testimonies")
+        .select("prayer_id")
+        .eq("user_id", user.id);
+      if (data) {
+        setTestimonyPrayerIds(new Set(data.map((t: any) => t.prayer_id).filter(Boolean)));
+      }
+    })();
+  }, [user]);
+
   // ── Filter + Sort ──────────────────────────────────────────────────────
   const displayedItems = useMemo(() => {
     let items = saved.filter((s) => s.prayer_cards);
@@ -133,7 +149,7 @@ export default function BoardV2() {
     // Filter
     if (filterMode === "pinned") items = items.filter((s) => s.pinned);
     if (filterMode === "shared") items = items.filter((s) => s.prayer_cards!.status === "approved");
-    // "answered" would filter by testimony existence — simplified for now
+    if (filterMode === "answered") items = items.filter((s) => testimonyPrayerIds.has(s.prayer_cards!.id));
 
     // Sort
     if (sortMode === "newest") items.sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -141,9 +157,14 @@ export default function BoardV2() {
     if (sortMode === "most-prayed") items.sort((a, b) => (b.prayer_cards?.prayed_count || 0) - (a.prayer_cards?.prayed_count || 0));
 
     return items;
-  }, [saved, filterMode, sortMode, searchQuery]);
+  }, [saved, filterMode, sortMode, searchQuery, testimonyPrayerIds]);
 
   const activeCount = saved.filter((s) => s.prayer_cards).length;
+
+  // ── Find focused card data ─────────────────────────────────────────────
+  const focusedItem = focusedCardId
+    ? displayedItems.find((i) => i.prayer_cards?.id === focusedCardId)
+    : null;
 
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER
@@ -159,7 +180,7 @@ export default function BoardV2() {
       {/* Desktop nav */}
       {!isMobile && <SiteNav dark />}
 
-      <div className="max-w-3xl mx-auto px-4 pb-28">
+      <div className="max-w-3xl mx-auto px-4 pb-8">
         {/* ── Compact Header ─────────────────────────────────────────────── */}
         <header className="pt-6 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -287,18 +308,20 @@ export default function BoardV2() {
           <div className="text-center py-20 space-y-4">
             <BookOpen className="w-12 h-12 mx-auto" style={{ color: "hsl(38 20% 30%)" }} />
             <p className="text-sm" style={{ color: "hsl(38 20% 45%)" }}>
-              {searchQuery ? "No prayers match your search" : "Your prayer board is empty"}
+              {searchQuery ? "No prayers match your search" : filterMode === "answered" ? "No answered prayers yet — keep praying!" : "Your prayer board is empty"}
             </p>
-            <button
-              onClick={() => setPrayNowOpen(true)}
-              className="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all active:scale-95"
-              style={{
-                backgroundColor: "hsl(42 85% 55%)",
-                color: "hsl(30 25% 10%)",
-              }}
-            >
-              Write Your First Prayer
-            </button>
+            {!searchQuery && filterMode === "all" && (
+              <button
+                onClick={() => setPrayNowOpen(true)}
+                className="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+                style={{
+                  backgroundColor: "hsl(42 85% 55%)",
+                  color: "hsl(30 25% 10%)",
+                }}
+              >
+                Write Your First Prayer
+              </button>
+            )}
           </div>
         ) : (
           <div className={isMobile ? "flex flex-col items-center gap-6" : "grid grid-cols-2 gap-6 justify-items-center"}>
@@ -324,6 +347,8 @@ export default function BoardV2() {
                   onRefresh={fetchSaved}
                   captionModeTts={prefs.caption_mode_tts}
                   ttsVoiceId={prefs.tts_voice_id}
+                  initialFlipped={filterMode === "answered"}
+                  onCardClick={() => setFocusedCardId(card.id)}
                 />
               );
             })}
@@ -331,12 +356,64 @@ export default function BoardV2() {
         )}
       </div>
 
+      {/* ── Focus Mode Overlay ──────────────────────────────────────────── */}
+      <AnimatePresence>
+        {focusedItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+            onClick={() => setFocusedCardId(null)}
+          >
+            {/* Close hint */}
+            <button
+              className="absolute top-4 right-4 p-2 rounded-full transition-all active:scale-90"
+              style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}
+              onClick={() => setFocusedCardId(null)}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PrayerCard
+                prayer={focusedItem.prayer_cards!}
+                savedMeta={{
+                  id: focusedItem.id,
+                  pinned: focusedItem.pinned,
+                  favorite: focusedItem.favorite,
+                  notes: focusedItem.notes,
+                  position: focusedItem.position,
+                }}
+                variant="full"
+                isOwner={!!(user && focusedItem.prayer_cards!.created_by === user.id)}
+                userId={user?.id}
+                themeVars={themeVars}
+                onRefresh={() => { fetchSaved(); setFocusedCardId(null); }}
+                captionModeTts={prefs.caption_mode_tts}
+                ttsVoiceId={prefs.tts_voice_id}
+                focused
+                initialFlipped={filterMode === "answered"}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Floating + button ────────────────────────────────────────────── */}
       <motion.button
         onClick={() => setPrayNowOpen(true)}
         className="fixed z-40 flex items-center justify-center rounded-full shadow-2xl"
         style={{
-          bottom: isMobile ? "5.5rem" : "2rem",
+          bottom: "2rem",
           right: "1.5rem",
           width: 56,
           height: 56,

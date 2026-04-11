@@ -67,6 +67,12 @@ export interface PrayerCardProps {
   onRefresh?: () => void;
   captionModeTts?: boolean;
   ttsVoiceId?: string;
+  /** When true, card renders with reduced outer glow (focus overlay mode) */
+  focused?: boolean;
+  /** When true, card starts flipped to testimony side */
+  initialFlipped?: boolean;
+  /** Click handler for the card shell (not buttons inside) */
+  onCardClick?: () => void;
 }
 
 /* ── Inject global styles once ───────────────────────────────────────────── */
@@ -84,6 +90,7 @@ export function PrayerCard({
   prayer, savedMeta, variant, isOwner, userId,
   themeOverride, themeVars, onAction, onRefresh,
   captionModeTts, ttsVoiceId,
+  focused, initialFlipped, onCardClick,
 }: PrayerCardProps) {
   const { toast } = useToast();
 
@@ -91,7 +98,7 @@ export function PrayerCard({
   useEffect(() => { ensureStyles(); }, []);
 
   /* ── State ────────────────────────────────────────────────────────────── */
-  const [flipped, setFlipped] = useState(false);
+  const [flipped, setFlipped] = useState(initialFlipped ?? false);
   const [isPublic, setIsPublic] = useState(prayer.status === "approved");
   const [prayed, setPrayed] = useState(false);
   const [prayedBounce, setPrayedBounce] = useState(false);
@@ -228,6 +235,10 @@ export function PrayerCard({
     <div
       style={{ perspective: "1200px", animation: "pca-breathe 6s ease-in-out infinite" }}
       className="w-full max-w-[420px] aspect-[9/16] max-h-[calc(100vh-3rem)] mx-auto select-none touch-manipulation"
+      onClick={(e) => {
+        // Only fire onCardClick if the click target is the card shell itself (not a button/drawer inside)
+        if (onCardClick && e.currentTarget === e.target) onCardClick();
+      }}
     >
       {/* ── 3-D flip ─────────────────────────────────────────────────────── */}
       <motion.div
@@ -239,8 +250,8 @@ export function PrayerCard({
         {/* ═══ FRONT FACE ═══════════════════════════════════════════════════ */}
         <div className="absolute inset-0 rounded-3xl" style={{ backfaceVisibility: "hidden", pointerEvents: flipped ? "none" : "auto" }}>
 
-          {/* Ambient glow (outer) */}
-          <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ boxShadow: theme.borderGlow, animation: "pca-glow-pulse 4s ease-in-out infinite" }} />
+          {/* Ambient glow (outer) — 50% reduced in focus mode */}
+          <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ boxShadow: theme.borderGlow, animation: "pca-glow-pulse 4s ease-in-out infinite", opacity: focused ? 0.5 : 1 }} />
 
           {/* Card body */}
           <div
@@ -268,8 +279,8 @@ export function PrayerCard({
               >
                 {prayer.title || "Untitled Prayer"}
               </h2>
-              <div className="flex-1 overflow-hidden relative">
-                <div className="pca-hide-scrollbar h-full">
+            <div className="flex-1 min-h-0 overflow-hidden relative">
+                <div className="pca-hide-scrollbar h-full overflow-y-auto">
                   <p
                     className="text-[15px] leading-[1.8] tracking-[0.01em]"
                     style={{ fontFamily: `"${fontFamily}", ${fontType === "serif" ? '"Georgia", serif' : '"Helvetica Neue", sans-serif'}`, color: theme.textColor }}
