@@ -20,22 +20,79 @@ const stagger = {
   show: { transition: { staggerChildren: 0.12 } },
 };
 
+/* ─── Prayer / Testimony Pairs ───────────────────────────────────────── */
+const cardPairs = [
+  {
+    prayer: {
+      title: "A Prayer for My Daughter",
+      body: "Father, my heart aches for my little girl — she's not so little anymore, and she's drifted so far from You and from me. I see the choices she's making, the habits that are pulling her under, and the wall between us that grows higher every day. Lord, You are the God of restoration. You mend what is broken. Draw her back to You, soften her heart, and open her eyes. Give me the words she needs to hear and the patience to wait on Your timing. Restore our relationship, God. I trust You with my daughter. In Jesus' name, Amen.",
+      stats: "🙏 3,412 prayed · ❤️ 1,208 amen",
+    },
+    testimony: {
+      title: "She Came Home",
+      body: "For two years I prayed that prayer every single morning. Last month my daughter showed up at my door — not to argue, not to ask for anything — just to talk. We sat on the porch for four hours. She told me everything. We laughed until we cried. She's back in church. She calls me every day now. God didn't just answer my prayer — He gave me back my best friend.",
+      verse: '"He will turn the hearts of the fathers to their children, and the hearts of the children to their fathers" — Malachi 4:6',
+    },
+  },
+  {
+    prayer: {
+      title: "A Prayer for Healing",
+      body: "Heavenly Father, the doctors have given us news no family should have to hear. My mother has stage 3 cancer. I am afraid, but I choose to trust You. You are Jehovah-Rapha, the God who heals. Place Your hand upon her body. Strengthen her through every treatment, comfort her in every moment of pain, and remind us all that You are still on the throne. We surrender the outcome to You. In Jesus' name, Amen.",
+      stats: "🙏 2,103 prayed · ❤️ 847 amen",
+    },
+    testimony: {
+      title: "God Answered",
+      body: "My mother was diagnosed with stage 3 cancer. Our family prayed every single day. After 6 months of treatment, the doctors found no trace of cancer. They called it remarkable. We call it God. He is faithful. He hears every prayer.",
+      verse: '"Call to me and I will answer you" — Jeremiah 33:3',
+    },
+  },
+  {
+    prayer: {
+      title: "A Prayer for Provision",
+      body: "Lord, I don't know how we're going to make it. I lost my job three weeks ago and the bills are piling up. My children look at me with such trust and I feel like I'm failing them. You fed five thousand with five loaves. You provided manna in the wilderness. I'm asking You to provide for my family now. Open a door that no man can shut. I believe You see us. In Jesus' name, Amen.",
+      stats: "🙏 4,671 prayed · ❤️ 2,340 amen",
+    },
+    testimony: {
+      title: "More Than Enough",
+      body: "Two days after I posted this prayer, a former colleague called out of nowhere with a job offer — better pay than what I'd lost. That same week, an anonymous envelope appeared at our church with enough to cover two months of mortgage. God didn't just provide. He showed off. Every bill is paid. My kids saw a miracle with their own eyes.",
+      verse: '"And my God will meet all your needs according to the riches of his glory in Christ Jesus" — Philippians 4:19',
+    },
+  },
+];
+
 /* ─── 3D Prayer Card ─────────────────────────────────────────────────── */
 function PrayerCard3D() {
   const [flipped, setFlipped] = useState(false);
+  const [pairIndex, setPairIndex] = useState(0);
   const [autoFlip, setAutoFlip] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const flipRef = useRef(false); // tracks current flip state for the interval
 
   useEffect(() => {
     if (!autoFlip) return;
-    intervalRef.current = setInterval(() => setFlipped(p => !p), 5000);
-    return () => clearInterval(intervalRef.current);
+    const id = setInterval(() => {
+      flipRef.current = !flipRef.current;
+      setFlipped(flipRef.current);
+      // When flipping back to front, advance to next pair
+      if (!flipRef.current) {
+        setPairIndex(prev => (prev + 1) % cardPairs.length);
+      }
+    }, 5000);
+    return () => clearInterval(id);
   }, [autoFlip]);
 
   const handleClick = () => {
     setAutoFlip(false);
-    setFlipped(p => !p);
+    setFlipped(prev => {
+      const next = !prev;
+      // When manually flipping back to front, advance pair
+      if (!next) {
+        setPairIndex(p => (p + 1) % cardPairs.length);
+      }
+      return next;
+    });
   };
+
+  const pair = cardPairs[pairIndex];
 
   return (
     <div
@@ -62,32 +119,24 @@ function PrayerCard3D() {
           <div className="absolute inset-0 bg-[hsl(25_35%_10%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-[hsl(25_35%_12%)] via-[hsl(25_30%_14%)] to-[hsl(25_35%_8%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_20%,hsl(42_85%_46%/0.08),transparent)]" />
-          {/* Top edge light */}
           <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[hsl(42_85%_56%/0.4)] to-transparent" />
-          {/* Inner border glow */}
           <div className="absolute inset-0 rounded-2xl border border-[hsl(42_85%_46%/0.2)] shadow-[inset_0_1px_0_0_hsl(42_85%_56%/0.1),inset_0_-1px_0_0_hsl(25_35%_5%/0.5)]" />
-          {/* Outer depth shadow */}
           <div className="absolute -inset-px rounded-2xl shadow-[0_4px_20px_-4px_hsl(0_0%_0%/0.6),0_8px_40px_-8px_hsl(0_0%_0%/0.4),0_0_15px_-3px_hsl(42_85%_46%/0.1)]" style={{ pointerEvents: "none" }} />
           <div className="relative z-10 flex flex-col h-full p-8 sm:p-10">
             <p className="text-[10px] uppercase tracking-[0.4em] text-[hsl(42_85%_56%/0.5)] mb-2">
               KeepPray.ing
             </p>
-            <h3 className="text-lg sm:text-xl font-bold text-white/90 mb-6">
-              A Prayer for My Family
+            <h3 className="text-lg sm:text-xl font-bold text-white/90 mb-4">
+              {pair.prayer.title}
             </h3>
             <p
-              className="flex-1 text-base sm:text-lg leading-relaxed text-white/70"
+              className="flex-1 text-[13px] sm:text-[15px] leading-relaxed text-white/70 overflow-hidden"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
             >
-              Lord, watch over my family today. Guard their hearts, guide their
-              steps, and fill our home with Your peace. Help us to love each
-              other well and to keep You at the center of everything we do.
-              In Jesus' name, Amen.
+              {pair.prayer.body}
             </p>
-            <div className="mt-6 flex items-center gap-3 text-xs text-white/30">
-              <span>🙏 2,103 prayed</span>
-              <span>·</span>
-              <span>❤️ 847 amen</span>
+            <div className="mt-4 flex items-center gap-3 text-xs text-white/30">
+              <span>{pair.prayer.stats}</span>
             </div>
           </div>
         </div>
@@ -106,30 +155,25 @@ function PrayerCard3D() {
           <div className="absolute inset-0 bg-gradient-to-b from-[hsl(42_50%_8%)] via-[hsl(42_40%_12%)] to-[hsl(42_50%_6%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_40%,hsl(42_85%_46%/0.12),transparent)]" />
           <div className="absolute top-4 right-4 w-20 h-20 rounded-full bg-[hsl(42_85%_46%/0.06)] blur-2xl" />
-          {/* Top edge light */}
           <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-[hsl(42_85%_56%/0.5)] to-transparent" />
-          {/* Inner border glow */}
           <div className="absolute inset-0 rounded-2xl border border-[hsl(42_85%_46%/0.3)] shadow-[inset_0_1px_0_0_hsl(42_85%_56%/0.15),inset_0_-1px_0_0_hsl(42_50%_4%/0.5)]" />
-          {/* Outer depth shadow */}
           <div className="absolute -inset-px rounded-2xl shadow-[0_4px_20px_-4px_hsl(0_0%_0%/0.6),0_8px_40px_-8px_hsl(0_0%_0%/0.4),0_0_15px_-3px_hsl(42_85%_46%/0.15)]" style={{ pointerEvents: "none" }} />
           <div className="relative z-10 flex flex-col h-full p-8 sm:p-10">
             <p className="text-[10px] uppercase tracking-[0.4em] text-[hsl(42_85%_56%/0.7)] mb-2">
               Testimony
             </p>
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-4">
               <Sparkles className="h-5 w-5 text-[hsl(42_85%_56%)]" />
               <h3 className="text-lg sm:text-xl font-bold text-[hsl(42_85%_70%)]">
-                God Answered
+                {pair.testimony.title}
               </h3>
             </div>
-            <p className="flex-1 text-base sm:text-lg leading-relaxed text-white/70">
-              My mother was diagnosed with stage 3 cancer. Our family prayed
-              every single day. After 6 months of treatment, the doctors found
-              no trace of cancer. God is faithful. He hears every prayer.
+            <p className="flex-1 text-[13px] sm:text-[15px] leading-relaxed text-white/70 overflow-hidden">
+              {pair.testimony.body}
             </p>
-            <div className="mt-6 pt-4 border-t border-[hsl(42_85%_46%/0.15)]">
+            <div className="mt-4 pt-4 border-t border-[hsl(42_85%_46%/0.15)]">
               <p className="text-xs text-[hsl(42_85%_56%/0.5)] italic">
-                "Call to me and I will answer you" — Jeremiah 33:3
+                {pair.testimony.verse}
               </p>
             </div>
           </div>
