@@ -242,6 +242,8 @@ function AppShell() {
         <Route path="/classical" element={<PreLaunchGuard><Classical /></PreLaunchGuard>} />
         <Route path="/canvas" element={<PreLaunchGuard><BibleCanvas /></PreLaunchGuard>} />
         <Route path="/help" element={<PreLaunchGuard><Help /></PreLaunchGuard>} />
+        <Route path="/boardv2" element={<PreLaunchGuard><BoardV2 /></PreLaunchGuard>} />
+        <Route path="/design-lab" element={<PreLaunchGuard><DesignLab /></PreLaunchGuard>} />
         <Route path="/invite/:type/:token" element={<InviteLanding />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
