@@ -38,12 +38,12 @@ export function MobileTabBar() {
     };
   }, []);
 
+  const currentPath = location.pathname;
+
   if (!isMobile || hidden || isKeepReading()) return null;
   
   // Hide on boardv2 and design-lab — they have their own nav
   if (currentPath.startsWith("/boardv2") || currentPath.startsWith("/design-lab")) return null;
-
-  const currentPath = location.pathname;
 
   return (
     <nav
