@@ -390,7 +390,7 @@ export function PrayerCard({
                 </BarBtn>
 
                 {/* Listen (TTS) */}
-                <BarBtn label="Listen" active={isPlaying} onClick={() => { isPlaying ? stop() : play(); }}>
+                <BarBtn label="Listen" active={ttsPlaying} onClick={() => { ttsPlaying ? stopTts() : toggleTts(prayer.prayer_text); }}>
                   <Volume2 className="w-[16px] h-[16px]" />
                 </BarBtn>
 
@@ -415,9 +415,9 @@ export function PrayerCard({
         >
           <div className="absolute inset-0 rounded-3xl overflow-hidden" style={{ border: theme.borderSolid }}>
             {hasTestimony ? (
-              <TestimonyCardFace prayerCard={prayer} onFlipBack={() => setFlipped(false)} />
+              <TestifyBack prayerId={prayer.id} prayerAuthorId={prayer.created_by} onFlipBack={() => setFlipped(false)} />
             ) : (
-              <TestifyBack prayerId={prayer.id} userId={userId} onFlipBack={() => setFlipped(false)} onTestimonyCreated={() => { setHasTestimony(true); onRefresh?.(); }} />
+              <TestifyBack prayerId={prayer.id} prayerAuthorId={prayer.created_by} onFlipBack={() => setFlipped(false)} />
             )}
           </div>
         </div>
@@ -989,11 +989,18 @@ export function PrayerCard({
       </Drawer.Root>
 
       {/* ── TTS Overlays ──────────────────────────────────────────────── */}
-      {ttsLoading && <TtsLoadingPopup />}
-      {isPlaying && captionModeTts && (
+      <TtsLoadingPopup visible={ttsLoading} />
+      {ttsPlaying && captionModeTts && (
         <TtsContemplationOverlay
-          prayerText={prayer.prayer_text}
-          onClose={stop}
+          playing={ttsPlaying}
+          onStop={stopTts}
+          onPause={pauseTts}
+          onResume={resumeTts}
+          text={prayer.prayer_text}
+          playbackRate={playbackRate}
+          onPlaybackRateChange={changePlaybackRate}
+          timedPhrases={timedPhrases}
+          audioRef={audioRef}
         />
       )}
     </div>
