@@ -53,7 +53,8 @@ export default function BoardV2() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const { prefs, loaded: prefsLoaded } = useBoardPreferences();
-  const { currentStreak } = useStreak();
+  const { streak } = useStreak();
+  const currentStreak = streak.currentStreak;
   const { currentSaying } = useSayingsCycle();
 
   const [saved, setSaved] = useState<SavedPrayer[]>([]);
