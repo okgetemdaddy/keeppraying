@@ -1,30 +1,42 @@
 
 
-## Fix 3D Prayer Card: Depth, Readability, and Bleed-Through
+## Update 3D Prayer Card: Three Rotating Prayer/Testimony Pairs
 
-### Problems Identified (from screenshot)
+### What Changes
 
-1. **Text bleed-through** — both card faces are visible simultaneously because `backfaceVisibility: "hidden"` alone isn't sufficient; the card faces need an opaque background to fully occlude the reverse side
-2. **Cursive font too hard to read** — the `Caveat` cursive font on the prayer front is illegible at this size
-3. **Flat edges** — no depth cues like shadow, inner border, or edge highlights to give the card a physical, premium feel
+**File: `src/components/LaunchOverlay.tsx`** — `PrayerCard3D` component
 
-### Changes
+**1. Define three prayer/testimony pairs as data:**
 
-**File: `src/components/LaunchOverlay.tsx`** — `PrayerCard3D` component only
+| # | Prayer | Testimony |
+|---|--------|-----------|
+| 1 | **Existing (updated):** A mother's healing from cancer — petition for God's healing hand, trust during treatment | God answered — doctors found no trace of cancer after 6 months |
+| 2 | **New:** A concerned mother praying for her daughter who has wandered from faith, developed bad habits, strained relationship — asking the God of restoration to draw her back | Long talks restored, laughter returned, relationship healed — God brought her daughter home |
+| 3 | **New:** A third prayer/testimony pair — e.g., a father praying for provision after job loss → miraculous job offer and debts paid |
 
-1. **Fix bleed-through**: Add `-webkit-backface-visibility: hidden` alongside `backfaceVisibility: "hidden"` on both faces. Ensure both face `div`s have a fully opaque background (no transparency in the base layer). Add `will-change: transform` and `transform: translateZ(0)` to the front face to force GPU compositing.
+**2. Rotation logic:**
 
-2. **Replace cursive font**: Change the prayer text from `fontFamily: "'Caveat', cursive"` and `italic` to `Georgia, serif` with normal weight — elegant but fully readable. Remove the `italic` class.
+- Add a `pairIndex` state (0, 1, 2) alongside the existing `flipped` state
+- On each flip cycle: show prayer (front) → flip to testimony (back) → pause → flip back to front while advancing `pairIndex` to next pair
+- Sequence: Prayer₁ → Testimony₁ → Prayer₂ → Testimony₂ → Prayer₃ → Testimony₃ → repeat
+- The content transitions with a subtle fade when the pair changes (while card is face-down/mid-flip)
+- Manual tap still flips but also follows the rotation sequence
 
-3. **Add depth and edge detail**:
-   - Outer `box-shadow` with multiple layers: a close dark shadow for depth + a subtle gold glow for warmth
-   - Inner border highlight using `ring` or `shadow-[inset_...]` to simulate edge lighting
-   - A subtle top-edge gradient line (1px) in gold to catch "light"
-   - Slightly rounded corners with a thicker border on both faces
+**3. Content rendered dynamically** from the pairs array instead of hardcoded JSX — the card face markup stays the same, just reads from `pairs[pairIndex]`.
 
-| Area | Before | After |
-|------|--------|-------|
-| Font | Caveat cursive, italic | Georgia serif, normal |
-| Bleed | Text visible through reverse | Opaque backgrounds + webkit prefix |
-| Depth | Flat card, thin border | Multi-layer shadow, inner glow, edge highlight |
+### Technical Detail
+
+```
+// Flip timing: every 5s flip card. After showing back for 5s, 
+// flip to front AND increment pairIndex (mod 3).
+// Content updates happen while backface is showing, so transition is seamless.
+```
+
+State machine: `flipped=false` (showing prayer) → 5s → `flipped=true` (showing testimony) → 5s → `flipped=false + pairIndex = (pairIndex+1) % 3` (next prayer)
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/components/LaunchOverlay.tsx` | Add pairs array, rotation state, update PrayerCard3D to cycle through 3 pairs |
 
