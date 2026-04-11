@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trashItem } from "@/hooks/useTrashBin";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,13 +14,29 @@ import { TestimonyCardFace } from "@/components/board/TestimonyCardFace";
 import { VoiceWaveformPlayer } from "@/components/board/VoiceWaveformPlayer";
 import { renderWithVerseLinks } from "@/lib/renderWithVerseLinks";
 import { FormattedText } from "@/lib/FormattedText";
+import { DustParticles } from "@/components/board/DustParticles";
+import { BarBtn } from "@/components/board/BarBtn";
+import {
+  type CardTheme,
+  THEME_DARK,
+  THEME_LIGHT,
+  DARK_BACKGROUNDS,
+  LIGHT_BACKGROUNDS,
+  GOOGLE_FONTS,
+  loadGoogleFont,
+  PrayingHandsIcon,
+  isLuminanceDark,
+  buildCardTheme,
+  PRAYER_CARD_STYLES,
+} from "@/components/board/prayerCardTheme";
 import type { Database } from "@/integrations/supabase/types";
 import {
   Heart, Pin, ChevronDown, ChevronUp, Sparkles, Tag,
   Trash2, Globe, Lock, Loader2, Maximize2, Minimize2, Square,
   MoreHorizontal, Share2, Type, Shuffle, Check, ListPlus, Bird,
   SunDim, ImagePlus, ImageOff, Send, BookmarkX, AlertTriangle,
-  ExternalLink, Volume2,
+  ExternalLink, Volume2, BookOpen, MessageCircle, Palette,
+  UserRoundCheck, X,
 } from "lucide-react";
 import { useTtsPlayer } from "@/hooks/useTtsPlayer";
 import { TtsContemplationOverlay } from "@/components/TtsContemplationOverlay";
@@ -36,17 +52,13 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub,
   DropdownMenuSubTrigger, DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-
-function PrayingHandsIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2C12 2 9 5.5 9 9v4l-2 3v3h10v-3l-2-3V9c0-3.5-3-7-3-7z" />
-      <path d="M9 13H7.5a1.5 1.5 0 0 0 0 3H9" />
-      <path d="M15 13h1.5a1.5 1.5 0 0 1 0 3H15" />
-      <line x1="9" y1="19" x2="15" y2="19" />
-    </svg>
-  );
-}
+import { useIsTouch } from "@/hooks/use-mobile";
+import {
+  ResponsiveSheet,
+  ResponsiveSheetContent,
+  ResponsiveSheetHeader,
+  ResponsiveSheetTitle,
+} from "@/components/ui/responsive-sheet";
 
 type PrayerCard = Database['public']['Tables']['prayer_cards']['Row'];
 type SavedPrayer = Database['public']['Tables']['user_saved_prayers']['Row'] & {
@@ -121,6 +133,16 @@ interface BoardCardProps {
   ttsVoiceId?: string;
 }
 
+/* ── inject global styles once ───────────────────────────────────────────── */
+let stylesInjected = false;
+function ensureStyles() {
+  if (stylesInjected) return;
+  stylesInjected = true;
+  const tag = document.createElement("style");
+  tag.textContent = PRAYER_CARD_STYLES;
+  document.head.appendChild(tag);
+}
+
 export function BoardCard({
   item,
   userId,
@@ -139,6 +161,12 @@ export function BoardCard({
 }: BoardCardProps) {
   const { toast } = useToast();
   const card = item.prayer_cards;
+  const isTouch = useIsTouch();
+
+  // Inject shared CSS keyframes once
+  useEffect(() => ensureStyles(), []);
+
+  // ── State ────────────────────────────────────────────────────────────────
   const [expanded, setExpanded] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(item.notes || "");
@@ -171,7 +199,20 @@ export function BoardCard({
   const [isSharedRecipient, setIsSharedRecipient] = useState(false);
   const [duplicateDialog, setDuplicateDialog] = useState<{ matchId: string } | null>(null);
   const [disputeSending, setDisputeSending] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
+  // ── Theme Bridge ─────────────────────────────────────────────────────────
+  // Cards inherit the board theme by default.
+  const theme: CardTheme = useMemo(() => {
+    const isDarkBoard = isLuminanceDark(themeVars?.["--board-text"]);
+    const baseTheme = isDarkBoard ? THEME_DARK : THEME_LIGHT;
+    const backgrounds = isDarkBoard ? DARK_BACKGROUNDS : LIGHT_BACKGROUNDS;
+    return {
+      ...baseTheme,
+      brandColor: themeVars?.["--board-accent"] || baseTheme.brandColor,
+      cardBg: cardBgPreset?.bg || backgrounds[0].bg,
+    } as CardTheme;
+  }, [themeVars, cardBgPreset]);
 
   // TTS player
   const {
@@ -232,7 +273,6 @@ export function BoardCard({
           setUserTestimony(data);
         }
       });
-    // Check prayed state
     supabase.from("prayed_actions").select("id").eq("prayer_id", item.prayer_cards.id).eq("user_id", userId).maybeSingle()
       .then(({ data }) => setPrayed(!!data));
     setPrayedCount(item.prayer_cards.prayed_count || 0);
@@ -241,7 +281,7 @@ export function BoardCard({
   // Check if this prayer was shared to the current user via secure link
   useEffect(() => {
     if (!userId || !item.prayer_cards?.id) return;
-    if (item.prayer_cards.created_by === userId) return; // owner, skip
+    if (item.prayer_cards.created_by === userId) return;
     supabase
       .from("prayer_shares")
       .select("id")
@@ -266,12 +306,9 @@ export function BoardCard({
     ?? PRAYER_FONTS.find(f => f.family === card.text_style)?.family
     ?? null;
 
-  // Theme colours
-  const accentColor = themeVars?.["--board-accent"]     || "hsl(42 75% 40%)";
-  const cardBg      = themeVars?.["--board-card-bg"]     || "hsl(var(--card) / 0.97)";
-  const cardBorder  = themeVars?.["--board-card-border"] || "hsl(var(--border) / 0.7)";
-  const textColor   = themeVars?.["--board-text"]        || "hsl(25 35% 14%)";
-  const subtleText  = `${textColor}80`;
+  // Legacy colour references for compatibility
+  const accentColor = themeVars?.["--board-accent"] || theme.brandColor;
+  const textColor = themeVars?.["--board-text"] || theme.textColor;
 
   // ── actions ─────────────────────────────────────────────────────────────────
 
@@ -318,7 +355,6 @@ export function BoardCard({
       await navigator.clipboard.writeText(link);
       toast({ title: "Secure link copied! 🔗" });
     } catch {
-      // Fallback to direct link
       const url = `${window.location.origin}/prayer/${card.id}`;
       navigator.clipboard.writeText(url).then(() => toast({ title: "Link copied! 🔗" }));
     }
@@ -359,7 +395,6 @@ export function BoardCard({
     setTogglingPublic(true);
     try {
       if (makePublic) {
-        // Duplicate-to-public check
         const { data: simData } = await supabase.rpc('check_prayer_similarity', {
           input_text: card.prayer_text,
         });
@@ -371,7 +406,6 @@ export function BoardCard({
             return;
           }
         }
-
         const modResp = await fetch(`${SUPABASE_URL}/functions/v1/moderate-prayer`, {
           method: "POST",
           headers: {
@@ -427,12 +461,29 @@ export function BoardCard({
     }
   };
 
-  // ── derived ──────────────────────────────────────────────────────────────────
-  // SAFEGUARD: Single unified footer for ALL card sizes — do NOT branch by size
+  const handlePrayed = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!userId) return;
+    if (prayedCooldownRef.current) return;
+    prayedCooldownRef.current = true;
+    setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
+    setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
+    if (prayed) {
+      const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
+      if (snap) await trashItem(userId, "prayed_action", snap.id, snap as any);
+      await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
+      setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
+    } else {
+      await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
+      setPrayed(true); setPrayedCount(c => c + 1);
+      setPrayedFloat(true); setTimeout(() => setPrayedFloat(false), 1200);
+    }
+  };
 
-  // ── render ───────────────────────────────────────────────────────────────────
+  // ── derived ──────────────────────────────────────────────────────────────────
   const bgUrl = card.background_url || null;
 
+  // ── RENDER ──────────────────────────────────────────────────────────────────
   return (
     <div style={{ perspective: "1200px", willChange: "transform" }}>
       <motion.div
@@ -449,474 +500,592 @@ export function BoardCard({
         }}
         className="relative"
       >
-        {/* ── FRONT face ───────────────────────────────────────────────── */}
+        {/* ══════ FRONT FACE ══════════════════════════════════════════════ */}
         <motion.div
           animate={{ rotateY: flipped ? -180 : 0 }}
           transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 18 }}
           style={{
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            background: bgUrl ? undefined : cardBgPreset ? cardBgPreset.bg : cardBg,
-            borderColor: cardBorder,
-            color: bgUrl ? "rgba(255,255,255,0.92)" : cardBgPreset ? cardBgPreset.text : textColor,
-            backdropFilter: "blur(16px) saturate(1.6)",
-            WebkitBackdropFilter: "blur(16px) saturate(1.6)",
-            boxShadow: item.pinned
-              ? `inset 3px 0 0 ${accentColor}, 0 4px 24px -8px rgba(0,0,0,0.16)`
-              : "0 2px 16px -4px rgba(0,0,0,0.10)",
+            transformStyle: "preserve-3d",
           }}
-          whileHover={flipped ? {} : { y: -3, boxShadow: `0 20px 56px -12px ${accentColor}30, 0 4px 18px -4px rgba(0,0,0,0.12)` }}
-          className={`relative rounded-2xl overflow-hidden ${bgUrl ? 'border border-slate-100' : 'border border-slate-100 shadow-sm md:hover:shadow-md'} transition-all bg-white`}
+          className="relative rounded-3xl overflow-hidden"
         >
-      {/* Background image */}
-      {bgUrl && (
-        <div className="absolute inset-0 rounded-2xl overflow-hidden">
-          <img
-            src={bgUrl}
-            alt=""
-            className="w-full h-full object-cover"
-            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          {/* Ambient glow (outer) */}
+          <div
+            className="absolute -inset-px rounded-3xl pointer-events-none z-0"
+            style={{
+              boxShadow: theme.borderGlow,
+              animation: "pca-glow-pulse 4s ease-in-out infinite",
+            }}
           />
-          <div className="absolute inset-0" style={{ background: `linear-gradient(to top, rgba(0,0,0,${1.0 * overlayOpacity}), rgba(0,0,0,${0.85 * overlayOpacity}), rgba(0,0,0,${0.7 * overlayOpacity}))` }} />
-        </div>
-      )}
 
-      {/* Glass sheen (only for non-bg cards) */}
-      {!bgUrl && (
-        <div className="absolute inset-0 pointer-events-none rounded-2xl"
-          style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.24) 0%, transparent 52%)" }} />
-      )}
-
-      <div className="relative p-4 md:p-6 flex flex-col gap-3">
-
-        {/* ── Drag handle + content ────────────────────────────────────── */}
-        <div className="flex items-start gap-2">
-          <div className="flex-1 min-w-0">
-            {card.title && (
-              <h3 className={`font-display font-semibold text-sm md:text-base leading-snug mb-1 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
-                style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : undefined}>
-                {card.title}
-              </h3>
-            )}
-
-            {/* Voice waveform player for voice-recorded prayers */}
-            {(card as any).voice_audio_url && (
-              <div className="my-2">
-                <VoiceWaveformPlayer
-                  audioUrl={(card as any).voice_audio_url}
-                  large={defaultCardLayout === "voice-visual"}
-                  accentColor={accentColor}
-                   captionsEnabled={captionModeRecorded}
-                  onPlay={captionModeRecorded ? () => {
-                    const text = card.extended_prayer
-                      ? `${card.prayer_text}\n\n${card.extended_prayer}`
-                      : card.prayer_text;
-                    toggleTts(text);
-                    return true;
-                  } : undefined}
+          {/* Card body */}
+          <div
+            className="relative rounded-3xl flex flex-col overflow-hidden"
+            style={{
+              background: bgUrl ? undefined : theme.cardBg,
+              border: theme.borderSolid,
+              boxShadow: item.pinned
+                ? `inset 3px 0 0 ${theme.brandColor}, 0 20px 60px -12px rgba(0,0,0,0.35), 0 8px 20px -8px rgba(0,0,0,0.25)`
+                : "0 20px 60px -12px rgba(0,0,0,0.35), 0 8px 20px -8px rgba(0,0,0,0.25)",
+            }}
+          >
+            {/* Background image layer */}
+            {bgUrl && (
+              <div className="absolute inset-0 rounded-3xl overflow-hidden">
+                <img
+                  src={bgUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(to top, rgba(0,0,0,${1.0 * overlayOpacity}), rgba(0,0,0,${0.85 * overlayOpacity}), rgba(0,0,0,${0.7 * overlayOpacity}))`,
+                  }}
                 />
               </div>
             )}
 
-            {/* Prayer text — with optional custom font (hidden in voice-visual mode for voice cards) */}
-            {!(defaultCardLayout === "voice-visual" && (card as any).voice_audio_url) && (
-            <div className="select-none" onClick={(e) => {
-              const now = Date.now();
-              if (now - lastTapRef.current < 350) {
-                e.stopPropagation();
-                lastTapRef.current = 0;
-                setFlipped(true);
-                return;
-              }
-              lastTapRef.current = now;
-              setTimeout(() => {
-                if (lastTapRef.current !== 0 && Date.now() - lastTapRef.current >= 340) {
-                  onOpenViewer?.(item);
-                }
-              }, 360);
-            }}>
-              <FormattedText
-                text={card.prayer_text}
-                truncateAt={PRAYER_CHAR_LIMIT}
-                className={`leading-relaxed text-sm md:text-base cursor-pointer ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-700'}`}
-                style={{
-                  fontFamily: activeFontFamily ? `"${activeFontFamily}", serif` : undefined,
-                  ...(cardBgPreset && !bgUrl ? { color: cardBgPreset.text } : {}),
-                }}
-              />
-              {isTruncated && (
-                <button
-                  onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
-                  className={`mt-1.5 text-xs font-semibold transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : cardBgPreset ? '' : 'text-slate-900'}`}
-                  style={cardBgPreset && !bgUrl ? { color: cardBgPreset.text, opacity: 0.7 } : undefined}
-                >
-                  See more…
-                </button>
-              )}
-            </div>
-            )}
+            {/* Inner glow */}
+            <div
+              className="absolute inset-0 pointer-events-none rounded-3xl z-[1]"
+              style={{ boxShadow: theme.innerGlow }}
+            />
 
-            {/* Font preview banner */}
-            <AnimatePresence>
-              {pendingFont && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden mt-2"
-                >
-                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl"
-                    style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}30` }}>
-                    <span className="text-[10px]" style={{ color: `${textColor}60` }}>
-                      Preview:
-                    </span>
-                    <span className="text-xs flex-1" style={{ fontFamily: `"${pendingFont}", serif`, color: textColor }}>
-                      {pendingFont}
-                    </span>
-                    <button
-                      onClick={saveFont}
-                      disabled={savingFont}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all"
-                      style={{ background: accentColor, color: "white" }}
-                    >
-                      {savingFont ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-2.5 h-2.5" />}
-                      Save
-                    </button>
-                    <button
-                      onClick={cancelFont}
-                      className="text-[10px] px-1.5 py-0.5 rounded-lg transition-opacity hover:opacity-70"
-                      style={{ color: `${textColor}50` }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+            {/* Overhead lamp light */}
+            <div
+              className="absolute inset-0 pointer-events-none rounded-3xl z-[2]"
+              style={{ background: theme.lampLight }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none rounded-3xl z-[2]"
+              style={{ background: "linear-gradient(180deg, rgba(200,170,100,0.05) 0%, transparent 40%)" }}
+            />
 
-        {/* ── Collapsible chrome ────────────────────────────────────────── */}
-        <AnimatePresence initial={false}>
-          {!collapsed && (
-            <motion.div
-              key="chrome"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-              className="overflow-hidden space-y-3"
-            >
-              {/* Status badges */}
-              {(card.status === "ai_generated" || (isPrivate && isOwner) || card.status === "pending") && (
-                <div className="flex flex-wrap gap-1">
-                  {card.status === "ai_generated" && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                      style={{ background: `${accentColor}20`, color: accentColor }}>
-                      <Sparkles className="w-2.5 h-2.5" />✦ PrayerAssist
-                    </span>
-                  )}
-                  {card.status === "pending" && isOwner && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      style={{ background: `${textColor}10`, color: `${textColor}60` }}>
-                      In review
-                    </span>
-                  )}
+            {/* Dust particles — CSS only, IntersectionObserver gated */}
+            <DustParticles dustColor={theme.dustColor} />
+
+            {/* ── Content area ─────────────────────────────────────────────── */}
+            <div className="relative z-10 px-5 pt-5 pb-3 flex flex-col gap-1" {...dragHandleProps}>
+              {/* Brand text */}
+              <span
+                className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-0.5"
+                style={{ color: theme.titleColor }}
+              >
+                KEEPPRAY.ING
+              </span>
+
+              {/* Title */}
+              {card.title && (
+                <h3
+                  className="font-display font-bold text-sm md:text-base leading-snug mb-1"
+                  style={{
+                    color: bgUrl ? "rgba(255,255,255,0.95)" : theme.headingColor,
+                    fontFamily: '"Playfair Display", "Georgia", serif',
+                  }}
+                >
+                  {card.title}
+                </h3>
+              )}
+
+              {/* Voice waveform player for voice-recorded prayers */}
+              {(card as any).voice_audio_url && (
+                <div className="my-2">
+                  <VoiceWaveformPlayer
+                    audioUrl={(card as any).voice_audio_url}
+                    large={defaultCardLayout === "voice-visual"}
+                    accentColor={theme.brandColor}
+                    captionsEnabled={captionModeRecorded}
+                    onPlay={captionModeRecorded ? () => {
+                      const text = card.extended_prayer
+                        ? `${card.prayer_text}\n\n${card.extended_prayer}`
+                        : card.prayer_text;
+                      toggleTts(text);
+                      return true;
+                    } : undefined}
+                  />
                 </div>
               )}
 
-              {/* Scripture / Labels toggles */}
-              {size !== "small" && (
-                <div className="flex items-center justify-between gap-2">
-                  {card.extended_prayer ? (
+              {/* Prayer text */}
+              {!(defaultCardLayout === "voice-visual" && (card as any).voice_audio_url) && (
+                <div
+                  className="select-none pca-hide-scrollbar"
+                  onClick={(e) => {
+                    const now = Date.now();
+                    if (now - lastTapRef.current < 350) {
+                      e.stopPropagation();
+                      lastTapRef.current = 0;
+                      setFlipped(true);
+                      return;
+                    }
+                    lastTapRef.current = now;
+                    setTimeout(() => {
+                      if (lastTapRef.current !== 0 && Date.now() - lastTapRef.current >= 340) {
+                        onOpenViewer?.(item);
+                      }
+                    }, 360);
+                  }}
+                >
+                  <FormattedText
+                    text={card.prayer_text}
+                    truncateAt={PRAYER_CHAR_LIMIT}
+                    className="leading-[1.8] text-[15px] tracking-[0.01em] cursor-pointer"
+                    style={{
+                      fontFamily: activeFontFamily
+                        ? `"${activeFontFamily}", serif`
+                        : '"Cormorant Garamond", "Georgia", serif',
+                      color: bgUrl ? "rgba(255,255,255,0.92)" : theme.textColor,
+                    }}
+                  />
+                  {isTruncated && (
                     <button
-                      onClick={() => setScriptureOpen(v => !v)}
-                      className={`text-xs font-semibold flex items-center gap-1 transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
+                      onClick={e => { e.stopPropagation(); onOpenViewer?.(item); }}
+                      className="mt-1.5 text-xs font-semibold transition-colors"
+                      style={{ color: theme.brandColor, opacity: 0.8 }}
                     >
-                      <motion.div animate={{ rotate: scriptureOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </motion.div>
-                      {scriptureOpen ? "Hide Scripture" : "Scripture"}
-                    </button>
-                  ) : <div />}
-                  {card.labels && card.labels.length > 0 && (
-                    <button
-                      onClick={() => setLabelsOpen(v => !v)}
-                      className={`text-xs font-semibold flex items-center gap-1 transition-colors hover:text-amber-600 ${bgUrl ? 'text-white' : 'text-slate-900'}`}
-                    >
-                      <Tag className="w-3 h-3" />
-                      {labelsOpen ? "Hide labels" : "Labels"}
-                      <motion.div animate={{ rotate: labelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                        <ChevronDown className="w-3 h-3" />
-                      </motion.div>
+                      See more…
                     </button>
                   )}
                 </div>
               )}
 
-              {/* Scripture accordion */}
+              {/* Font preview banner */}
               <AnimatePresence>
-                {scriptureOpen && card.extended_prayer && (
-                  <motion.p
-                    key="scripture"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.22 }}
-                    className="font-display italic text-xs leading-relaxed overflow-hidden"
-                    style={{ color: `${textColor}75` }}
-                  >
-                    {renderWithVerseLinks(card.extended_prayer)}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-
-              {/* Labels accordion */}
-              <AnimatePresence>
-                {labelsOpen && card.labels && card.labels.length > 0 && (
+                {pendingFont && (
                   <motion.div
-                    key="labels"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.22 }}
-                    className="flex flex-wrap gap-1.5 overflow-hidden"
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden mt-2"
                   >
-                    {card.labels.map(tag => {
-                      const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
-                      return (
-                        <span key={tag}
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
-                          style={{ background: palette.bg, color: palette.text }}>
-                          #{tag}
-                        </span>
-                      );
-                    })}
+                    <div
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl"
+                      style={{ background: `${theme.brandColor}15`, border: `1px solid ${theme.brandColor}30` }}
+                    >
+                      <span className="text-[10px]" style={{ color: theme.iconDefault }}>Preview:</span>
+                      <span className="text-xs flex-1" style={{ fontFamily: `"${pendingFont}", serif`, color: theme.headingColor }}>
+                        {pendingFont}
+                      </span>
+                      <button
+                        onClick={saveFont}
+                        disabled={savingFont}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all"
+                        style={{ background: theme.brandColor, color: theme.mode === "dark" ? "#1a1610" : "#fff" }}
+                      >
+                        {savingFont ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Check className="w-2.5 h-2.5" />}
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelFont}
+                        className="text-[10px] px-1.5 py-0.5 rounded-lg transition-opacity hover:opacity-70"
+                        style={{ color: theme.iconDefault }}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
 
-              {/* Notes */}
-              {size !== "small" && (
-              <div className="pt-3 mt-1">
-                  {editingNotes ? (
-                    <div className="space-y-2">
-                      <Textarea
-                        value={notes}
-                        onChange={e => setNotes(e.target.value)}
-                        placeholder="Personal notes, reflection…"
-                        rows={2}
-                        className="min-h-[44px] bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-xs resize-none w-full"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={saveNotes} className="btn-gold rounded-xl h-7 text-xs">Save</Button>
-                        <Button size="sm" variant="outline" onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }} className="rounded-xl h-7 text-xs">Cancel</Button>
-                      </div>
+            {/* ── Collapsible chrome (labels, notes, etc.) ─────────────────── */}
+            <AnimatePresence initial={false}>
+              {!collapsed && (
+                <motion.div
+                  key="chrome"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className="overflow-hidden space-y-3 px-5 relative z-10"
+                >
+                  {/* Status badges */}
+                  {(card.status === "ai_generated" || (isPrivate && isOwner) || card.status === "pending") && (
+                    <div className="flex flex-wrap gap-1">
+                      {card.status === "ai_generated" && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                          style={{ background: `${theme.brandColor}20`, color: theme.brandColor }}
+                        >
+                          <Sparkles className="w-2.5 h-2.5" />✦ Prayer Assist
+                        </span>
+                      )}
+                      {card.status === "pending" && isOwner && (
+                        <span
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                          style={{ background: `${theme.textColor}10`, color: theme.iconDefault }}
+                        >
+                          In review
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => setEditingNotes(true)}
-                      className="min-h-[44px] w-full text-left bg-slate-50 border-none text-slate-600 placeholder:text-slate-400 rounded-lg px-3 py-2 text-xs transition-opacity hover:opacity-80"
-                    >
-                      {item.notes
-                        ? <span className="italic text-slate-600">"{item.notes}"</span>
-                        : <span className="text-slate-400">+ Add notes…</span>}
-                    </button>
                   )}
-                </div>
-              )}
 
-              {/* Sermon Application Points — for sermon-sync daily prayer cards */}
-              {card.labels?.includes("sermon-sync") && card.meditation_essay && userId && (
-                <SermonApplicationPoints
-                  meditationEssay={card.meditation_essay}
-                  userId={userId}
-                  cardId={card.id}
-                  accentColor={accentColor}
-                  textColor={textColor}
-                  onRefresh={onRefresh}
-                />
-              )}
+                  {/* Scripture / Labels toggles */}
+                  {size !== "small" && (
+                    <div className="flex items-center justify-between gap-2">
+                      {card.extended_prayer ? (
+                        <button
+                          onClick={() => setScriptureOpen(v => !v)}
+                          className="text-xs font-semibold flex items-center gap-1 transition-colors"
+                          style={{ color: theme.brandColor }}
+                        >
+                          <motion.div animate={{ rotate: scriptureOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </motion.div>
+                          {scriptureOpen ? "Hide Scripture" : "Scripture"}
+                        </button>
+                      ) : <div />}
+                      {card.labels && card.labels.length > 0 && (
+                        <button
+                          onClick={() => setLabelsOpen(v => !v)}
+                          className="text-xs font-semibold flex items-center gap-1 transition-colors"
+                          style={{ color: theme.brandColor }}
+                        >
+                          <Tag className="w-3 h-3" />
+                          {labelsOpen ? "Hide labels" : "Labels"}
+                          <motion.div animate={{ rotate: labelsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown className="w-3 h-3" />
+                          </motion.div>
+                        </button>
+                      )}
+                    </div>
+                  )}
 
-              {size === "large" && isPublic && (
-                <>
-                  <button
-                    onClick={() => setShowComments(s => !s)}
-                    className="text-xs flex items-center gap-1 transition-opacity hover:opacity-80"
-                    style={{ color: `${textColor}50` }}
-                  >
-                    {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                    {showComments ? "Hide comments" : "Comments"}
-                  </button>
-                  {showComments && <Comments prayerId={card.id} />}
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  {/* Scripture accordion */}
+                  <AnimatePresence>
+                    {scriptureOpen && card.extended_prayer && (
+                      <motion.p
+                        key="scripture"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="font-display italic text-xs leading-relaxed overflow-hidden"
+                        style={{ color: theme.textColor, opacity: 0.75 }}
+                      >
+                        {renderWithVerseLinks(card.extended_prayer)}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
 
-        {/* ══════════════════════════════════════════════════════════════
-            UNIFIED FOOTER — identical for ALL card sizes (small/medium/large),
-            ALL card types (standard, voice, breath). DO NOT branch by size.
-            SAFEGUARD: If you need to add a new action, add it HERE — nowhere else.
+                  {/* Labels accordion */}
+                  <AnimatePresence>
+                    {labelsOpen && card.labels && card.labels.length > 0 && (
+                      <motion.div
+                        key="labels"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="flex flex-wrap gap-1.5 overflow-hidden"
+                      >
+                        {card.labels.map(tag => {
+                          const palette = LABEL_PALETTE[tag] || DEFAULT_LABEL;
+                          return (
+                            <span key={tag}
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
+                              style={{ background: palette.bg, color: palette.text }}>
+                              #{tag}
+                            </span>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Notes */}
+                  {size !== "small" && (
+                    <div className="pt-3 mt-1">
+                      {editingNotes ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={notes}
+                            onChange={e => setNotes(e.target.value)}
+                            placeholder="Personal notes, reflection…"
+                            rows={2}
+                            className="min-h-[44px] border-none rounded-lg px-3 py-2 text-xs resize-none w-full"
+                            style={{ backgroundColor: theme.drawerInputBg, color: theme.textColor }}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={saveNotes} className="rounded-xl h-7 text-xs" style={{ background: theme.brandColor, color: theme.mode === "dark" ? "#1a1610" : "#fff" }}>Save</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setEditingNotes(false); setNotes(item.notes || ""); }} className="rounded-xl h-7 text-xs">Cancel</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setEditingNotes(true)}
+                          className="min-h-[44px] w-full text-left rounded-lg px-3 py-2 text-xs transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: `${theme.textColor}08`, color: theme.textColor }}
+                        >
+                          {item.notes
+                            ? <span className="italic" style={{ color: theme.textColor }}>"{item.notes}"</span>
+                            : <span style={{ color: theme.iconDefault }}>+ Add notes…</span>}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sermon Application Points */}
+                  {card.labels?.includes("sermon-sync") && card.meditation_essay && userId && (
+                    <SermonApplicationPoints
+                      meditationEssay={card.meditation_essay}
+                      userId={userId}
+                      cardId={card.id}
+                      accentColor={theme.brandColor}
+                      textColor={theme.textColor}
+                      onRefresh={onRefresh}
+                    />
+                  )}
+
+                  {size === "large" && isPublic && (
+                    <>
+                      <button
+                        onClick={() => setShowComments(s => !s)}
+                        className="text-xs flex items-center gap-1 transition-opacity hover:opacity-80"
+                        style={{ color: theme.iconDefault }}
+                      >
+                        {showComments ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        {showComments ? "Hide comments" : "Comments"}
+                      </button>
+                      {showComments && <Comments prayerId={card.id} />}
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ══════════════════════════════════════════════════════════════
+                SCRIPTURE & MEDITATION STRIP (collapsible, above bottom bar)
             ══════════════════════════════════════════════════════════════ */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-slate-400 text-xs md:text-sm"
-        >
-          {/* Left: Visibility toggle (owner only) */}
-          {isOwner ? (
-            <div className="flex items-center gap-1.5">
-              {togglingPublic ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" />
-              ) : isPrivate ? (
-                <Lock className="w-3.5 h-3.5 text-slate-400" />
-              ) : (
-                <Globe className="w-3.5 h-3.5 text-slate-500" />
-              )}
-              <span className="text-xs text-slate-500">
-                {isPrivate ? "Private" : card.status === "pending" ? "In review" : "Public"}
-              </span>
-              <Switch
-                checked={!isPrivate}
-                onCheckedChange={handlePublicToggle}
-                disabled={togglingPublic || card.status === "approved"}
-                className="scale-75 origin-left"
-              />
-            </div>
-          ) : <div />}
+            {card.extended_prayer && (
+              <div className="relative z-20" style={{ borderTop: theme.barBorder }}>
+                <button
+                  onClick={() => setScriptureOpen(v => !v)}
+                  className="w-full flex items-center justify-between px-5 py-2 transition-all active:scale-[0.99]"
+                  style={{ background: theme.barBg }}
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5" style={{ color: theme.brandColor }} />
+                    <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: theme.brandColor }}>
+                      Scripture &amp; Meditation
+                    </span>
+                  </div>
+                  {scriptureOpen ? (
+                    <ChevronDown className="w-3.5 h-3.5" style={{ color: theme.iconDefault }} />
+                  ) : (
+                    <ChevronUp className="w-3.5 h-3.5" style={{ color: theme.iconDefault }} />
+                  )}
+                </button>
+              </div>
+            )}
 
-          {/* Right: All action icons in fixed order */}
-          <div className="flex items-center gap-0.5">
-            {/* 1. Prayed */}
-            <div className="relative">
-              <AnimatePresence>
-                {prayedFloat && (
-                  <motion.span
-                    key="prayed-float"
-                    initial={{ opacity: 1, y: 0, x: "-50%" }}
-                    animate={{ opacity: 0, y: -28 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1.1, ease: "easeOut" }}
-                    className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
-                    style={{ color: accentColor }}
+            {/* ══════════════════════════════════════════════════════════════
+                PREMIUM BOTTOM BAR — themed icon row matching PrayerCardAsset
+            ══════════════════════════════════════════════════════════════ */}
+            <div
+              className="relative z-20 flex items-center justify-between px-2 py-1.5"
+              style={{ background: theme.barBg, borderTop: theme.barBorder }}
+            >
+              {/* Left group */}
+              <div className="flex items-center gap-0">
+                {/* Privacy status dot */}
+                {isOwner ? (
+                  <button
+                    onClick={() => handlePublicToggle(!isPublic)}
+                    disabled={togglingPublic || card.status === "approved"}
+                    className="p-2.5 rounded-xl transition-transform active:scale-90"
+                    title={isPublic ? "Public" : "Private"}
                   >
-                    🙏 Prayed
-                  </motion.span>
+                    {togglingPublic ? (
+                      <Loader2 className="w-3 h-3 animate-spin" style={{ color: theme.iconDefault }} />
+                    ) : (
+                      <div className="relative w-2.5 h-2.5">
+                        <div
+                          className="absolute inset-0 rounded-full transition-colors duration-500"
+                          style={{
+                            backgroundColor: isPublic ? "#34d399" : "#f87171",
+                            boxShadow: isPublic
+                              ? "0 0 6px 2px rgba(52,211,153,0.5)"
+                              : "0 0 5px 1px rgba(248,113,113,0.4)",
+                          }}
+                        />
+                        <div
+                          className="absolute inset-0 rounded-full animate-ping"
+                          style={{
+                            backgroundColor: isPublic ? "#34d399" : "#f87171",
+                            opacity: 0.25,
+                            animationDuration: "2.5s",
+                          }}
+                        />
+                      </div>
+                    )}
+                  </button>
+                ) : <div className="w-2" />}
+
+                {/* Prayed */}
+                <div className="relative">
+                  <AnimatePresence>
+                    {prayedFloat && (
+                      <motion.span
+                        key="prayed-float"
+                        initial={{ opacity: 1, y: 0, x: "-50%" }}
+                        animate={{ opacity: 0, y: -28 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1.1, ease: "easeOut" }}
+                        className="absolute left-1/2 bottom-full mb-1 text-xs font-semibold pointer-events-none select-none whitespace-nowrap"
+                        style={{ color: theme.brandColor }}
+                      >
+                        🙏 Prayed
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  <BarBtn theme={theme} label="Prayed" active={prayed} onClick={handlePrayed}>
+                    <motion.div animate={prayAnim ? { scale: [1, 1.4, 1] } : {}} transition={{ duration: 0.35 }}>
+                      <PrayingHandsIcon className="w-[18px] h-[18px]" />
+                    </motion.div>
+                  </BarBtn>
+                </div>
+
+                {/* Comments */}
+                <BarBtn theme={theme} label="Comments" onClick={() => setShowComments(s => !s)}>
+                  <MessageCircle className="w-[18px] h-[18px]" />
+                </BarBtn>
+              </div>
+
+              {/* Right group */}
+              <div className="flex items-center gap-0">
+                {/* Pin */}
+                <BarBtn theme={theme} label="Pin" active={item.pinned} onClick={togglePin}>
+                  <Pin className="w-[16px] h-[16px]" />
+                </BarBtn>
+
+                {/* Share */}
+                {!isSharedRecipient && (
+                  <BarBtn theme={theme} label="Share" onClick={handleShare}>
+                    <Share2 className="w-[16px] h-[16px]" />
+                  </BarBtn>
                 )}
-              </AnimatePresence>
-              <motion.button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  if (!userId) return;
-                  if (prayedCooldownRef.current) return;
-                  prayedCooldownRef.current = true;
-                  setTimeout(() => { prayedCooldownRef.current = false; }, 3000);
-                  setPrayAnim(true); setTimeout(() => setPrayAnim(false), 400);
-                  if (prayed) {
-                    const { data: snap } = await supabase.from("prayed_actions").select("*").eq("prayer_id", card.id).eq("user_id", userId).maybeSingle();
-                    if (snap) await trashItem(userId, "prayed_action", snap.id, snap as any);
-                    await supabase.from("prayed_actions").delete().eq("prayer_id", card.id).eq("user_id", userId);
-                    setPrayed(false); setPrayedCount(c => Math.max(0, c - 1));
-                  } else {
-                    await supabase.from("prayed_actions").insert({ prayer_id: card.id, user_id: userId });
-                    setPrayed(true); setPrayedCount(c => c + 1);
-                    setPrayedFloat(true); setTimeout(() => setPrayedFloat(false), 1200);
-                  }
-                }}
-                animate={prayAnim ? { scale: [1, 1.35, 1] } : {}}
-                transition={{ duration: 0.35 }}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-accent/60"
-                style={{ color: prayed ? accentColor : `${textColor}55` }}
-                title="I prayed this"
-              >
-                <PrayingHandsIcon className="w-3.5 h-3.5" />
-                {prayedCount > 0 && <span>{prayedCount}</span>}
-              </motion.button>
-            </div>
 
-            {/* 2. Heart / Favourite */}
-            <button
-              onClick={toggleFavorite}
-              className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-              style={{ color: item.favorite ? "hsl(0 72% 51%)" : `${textColor}55` }}
-              aria-label="Favourite"
-            >
-              <Heart className={`w-3.5 h-3.5 ${item.favorite ? "fill-current" : ""}`} />
-            </button>
+                {/* Listen */}
+                <div className="relative">
+                  <TtsLoadingPopup visible={!!ttsLoading && !ttsPlaying} />
+                  <BarBtn
+                    theme={theme}
+                    label="Listen"
+                    active={ttsPlaying}
+                    onClick={(e) => { e.stopPropagation(); handleListen(); }}
+                  >
+                    {ttsLoading ? (
+                      <Loader2 className="w-[16px] h-[16px] animate-spin" />
+                    ) : (
+                      <Volume2 className={`w-[16px] h-[16px] ${ttsPlaying ? 'fill-current' : ''}`} />
+                    )}
+                  </BarBtn>
+                </div>
 
-            {/* 3. Pin */}
-            <button
-              onClick={togglePin}
-              className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-              style={{ color: item.pinned ? accentColor : `${textColor}55` }}
-              aria-label="Pin"
-            >
-              <Pin className="w-3.5 h-3.5" />
-            </button>
+                {/* Testify */}
+                <BarBtn theme={theme} label={hasTestimony ? "Testimony" : "Testify"} onClick={() => setFlipped(true)}>
+                  <UserRoundCheck className="w-[16px] h-[16px]" />
+                </BarBtn>
 
-            {/* 4. Listen / Speaker */}
-            <div className="relative">
-              <TtsLoadingPopup visible={!!ttsLoading && !ttsPlaying} />
-              <button
-                onClick={(e) => { e.stopPropagation(); handleListen(); }}
-                className="p-1.5 rounded-lg transition-colors hover:bg-accent/40"
-                style={{ color: ttsPlaying ? accentColor : `${textColor}55` }}
-                aria-label="Listen"
-              >
-                {ttsLoading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                {/* More ••• — Responsive: DropdownMenu on desktop, Sheet on mobile */}
+                {isTouch ? (
+                  <BarBtn theme={theme} label="More" onClick={() => setMoreMenuOpen(true)}>
+                    <MoreHorizontal className="w-[16px] h-[16px]" />
+                  </BarBtn>
                 ) : (
-                  <Volume2 className={`w-3.5 h-3.5 ${ttsPlaying ? 'fill-current' : ''}`} />
+                  <MoreDropdown
+                    item={item} card={card} theme={theme}
+                    isOwner={isOwner} size={size} isSharedRecipient={isSharedRecipient}
+                    bgUrl={bgUrl} overlayOpacity={overlayOpacity}
+                    cardBgPreset={cardBgPreset}
+                    onCardSize={setCardSize}
+                    onEnrich={() => setEnrichOpen(true)}
+                    onRemove={onRemove}
+                    onPickFont={pickFont} onPickRandomFont={pickRandomFont}
+                    currentFont={pendingFont ?? card.text_style}
+                    onAddToPlaylist={onAddToPlaylist}
+                    onOverlayOpacityChange={handleOverlayOpacityChange}
+                    onCardBgPresetChange={handleCardBgPresetChange}
+                    userId={userId} onRefresh={onRefresh}
+                    onSharePrivately={() => setShareModalOpen(true)}
+                  />
                 )}
-              </button>
+              </div>
             </div>
-
-            {/* 5. Share */}
-            {!isSharedRecipient && (
-              <button
-                onClick={handleShare}
-                className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
-                style={{ color: `${textColor}55` }}
-                aria-label="Share"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {/* 6. Testify (all prayers — private prayers can be answered too) */}
-            {(
-              <button
-                onClick={() => setFlipped(true)}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all hover:bg-slate-100"
-                title={hasTestimony ? "See your testimony" : "Share your testimony"}
-              >
-                <Bird className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{hasTestimony ? "Testimony" : "Testify"}</span>
-              </button>
-            )}
-
-            {/* 7. ⋯ Dropdown menu (ActionButtons — dropdown only) */}
-            <ActionButtons
-              item={item} accentColor={accentColor} textColor={textColor}
-              onCardSize={setCardSize} onEnrich={() => setEnrichOpen(true)}
-              onRemove={onRemove} isOwner={isOwner} size={size}
-              onPickFont={pickFont} onPickRandomFont={pickRandomFont}
-              currentFont={pendingFont ?? card.text_style}
-              onAddToPlaylist={onAddToPlaylist}
-              hasBgImage={!!bgUrl}
-              overlayOpacity={overlayOpacity}
-              onOverlayOpacityChange={handleOverlayOpacityChange}
-              cardBgPreset={cardBgPreset}
-              onCardBgPresetChange={handleCardBgPresetChange}
-              userId={userId}
-              onRefresh={onRefresh}
-              onSharePrivately={() => setShareModalOpen(true)}
-              isSharedRecipient={isSharedRecipient}
-            />
           </div>
-        </div>
-      </div>
+        </motion.div>
+
+        {/* ══════ BACK FACE — Testify ══════════════════════════════════════ */}
+        <motion.div
+          animate={{ rotateY: flipped ? 0 : 180 }}
+          transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 18 }}
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            position: "absolute",
+            inset: 0,
+            borderRadius: "1.5rem",
+            overflow: "hidden",
+            background: theme.cardBg,
+            border: theme.borderSolid,
+            boxShadow: "0 20px 60px -12px rgba(0,0,0,0.35), 0 8px 20px -8px rgba(0,0,0,0.25)",
+            minHeight: size === "large" ? 320 : size === "medium" ? 220 : 140,
+          }}
+        >
+          {/* Inner glow on back face too */}
+          <div
+            className="absolute inset-0 pointer-events-none rounded-3xl z-[1]"
+            style={{ boxShadow: theme.innerGlow }}
+          />
+          {flipped && hasTestimony && userTestimony ? (
+            <TestimonyCardFace
+              testimony={userTestimony}
+              onFlipBack={() => setFlipped(false)}
+              accentColor={theme.brandColor}
+              textColor={theme.textColor}
+              cardBg={theme.cardBg}
+            />
+          ) : flipped ? (
+            <TestifyBack
+              prayerId={card.id}
+              prayerAuthorId={card.created_by}
+              onFlipBack={() => setFlipped(false)}
+              accentColor={theme.brandColor}
+              textColor={theme.textColor}
+              cardBg={theme.cardBg}
+            />
+          ) : null}
+        </motion.div>
+      </motion.div>
+
+      {/* ── Mobile More Menu (ResponsiveSheet) ──────────────────────────── */}
+      <MobileMoreSheet
+        open={moreMenuOpen}
+        onOpenChange={setMoreMenuOpen}
+        item={item} card={card} theme={theme}
+        isOwner={isOwner} size={size} isSharedRecipient={isSharedRecipient}
+        bgUrl={bgUrl} overlayOpacity={overlayOpacity}
+        cardBgPreset={cardBgPreset}
+        onCardSize={setCardSize}
+        onEnrich={() => setEnrichOpen(true)}
+        onRemove={onRemove}
+        onPickFont={pickFont} onPickRandomFont={pickRandomFont}
+        currentFont={pendingFont ?? card.text_style}
+        onAddToPlaylist={onAddToPlaylist}
+        onOverlayOpacityChange={handleOverlayOpacityChange}
+        onCardBgPresetChange={handleCardBgPresetChange}
+        userId={userId} onRefresh={onRefresh}
+        onSharePrivately={() => setShareModalOpen(true)}
+        toggleFavorite={toggleFavorite}
+        isFavorite={item.favorite}
+      />
 
       {/* Auto Verses & Labels Panel */}
       {isOwner && (
@@ -938,50 +1107,8 @@ export function BoardCard({
         prayerId={card.id}
         prayerTitle={card.title}
       />
-        </motion.div>{/* end front face */}
 
-        {/* ── BACK face — TestifyBack ──────────────────────────────────── */}
-        <motion.div
-          animate={{ rotateY: flipped ? 0 : 180 }}
-          transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 18 }}
-          style={{
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-            position: "absolute",
-            inset: 0,
-            borderRadius: "1rem",
-            overflow: "hidden",
-            background: cardBg,
-            borderColor: cardBorder,
-            border: `1px solid ${cardBorder}`,
-            backdropFilter: "blur(16px) saturate(1.6)",
-            WebkitBackdropFilter: "blur(16px) saturate(1.6)",
-            boxShadow: "0 4px 24px -8px rgba(0,0,0,0.16)",
-            minHeight: size === "large" ? 320 : size === "medium" ? 220 : 140,
-          }}
-        >
-          {flipped && hasTestimony && userTestimony ? (
-            <TestimonyCardFace
-              testimony={userTestimony}
-              onFlipBack={() => setFlipped(false)}
-              accentColor={accentColor}
-              textColor={textColor}
-              cardBg={cardBg}
-            />
-          ) : flipped ? (
-            <TestifyBack
-              prayerId={card.id}
-              prayerAuthorId={card.created_by}
-              onFlipBack={() => setFlipped(false)}
-              accentColor={accentColor}
-              textColor={textColor}
-              cardBg={cardBg}
-            />
-          ) : null}
-        </motion.div>
-      </motion.div>{/* end layout motion.div */}
-
-      {/* ── Duplicate-to-public dialog ────────────────────────────────── */}
+      {/* Duplicate-to-public dialog */}
       <Dialog open={!!duplicateDialog} onOpenChange={(open) => { if (!open) setDuplicateDialog(null); }}>
         <DialogContent className="rounded-2xl max-w-sm">
           <DialogHeader>
@@ -1026,7 +1153,7 @@ export function BoardCard({
         </DialogContent>
       </Dialog>
 
-      {/* TTS Contemplation Overlay — only when caption mode is enabled */}
+      {/* TTS Contemplation Overlay */}
       {captionModeTts && (
         <TtsContemplationOverlay
           playing={ttsPlaying}
@@ -1040,59 +1167,53 @@ export function BoardCard({
           audioRef={audioRef}
         />
       )}
-
     </div>
   );
 }
 
 /*
  * ══════════════════════════════════════════════════════════════════════════════
- * ActionButtons — DROPDOWN MENU ONLY (⋯ button)
- *
- * SAFEGUARD: All inline action icons (Heart, Pin, Listen, Share, Testify, Prayed)
- * live in the unified footer above. This component renders ONLY the ⋯ dropdown.
- * Do NOT add inline icon buttons here — add them to the unified footer instead.
+ * MoreDropdown — Desktop ⋯ DropdownMenu (unchanged logic, themed styling)
  * ══════════════════════════════════════════════════════════════════════════════
  */
-interface ActionButtonsProps {
+interface MoreMenuProps {
   item: SavedPrayer & { card_size?: CardSize };
-  accentColor: string;
-  textColor: string;
+  card: PrayerCard;
+  theme: CardTheme;
+  isOwner: boolean;
+  size: CardSize;
+  isSharedRecipient?: boolean;
+  bgUrl: string | null;
+  overlayOpacity: number;
+  cardBgPreset: { bg: string; text: string } | null;
   onCardSize: (s: CardSize) => void;
   onEnrich: () => void;
   onRemove: (id: string) => void;
-  isOwner: boolean;
-  size: CardSize;
   onPickFont: (family: string) => void;
   onPickRandomFont: () => void;
   currentFont: string | null | undefined;
   onAddToPlaylist?: (prayerId: string) => void;
-  hasBgImage: boolean;
-  overlayOpacity: number;
   onOverlayOpacityChange: (v: number) => void;
-  cardBgPreset: { bg: string; text: string } | null;
   onCardBgPresetChange: (p: { bg: string; text: string } | null) => void;
   userId?: string;
   onRefresh: () => void;
   onSharePrivately?: () => void;
-  isSharedRecipient?: boolean;
 }
 
-function ActionButtons({
-  item, accentColor, textColor,
-  onCardSize, onEnrich, onRemove, isOwner, size,
-  onPickFont, onPickRandomFont, currentFont, onAddToPlaylist,
-  hasBgImage, overlayOpacity, onOverlayOpacityChange,
-  cardBgPreset, onCardBgPresetChange,
-  userId, onRefresh, onSharePrivately, isSharedRecipient,
-}: ActionButtonsProps) {
+function MoreDropdown({
+  item, card, theme, isOwner, size, isSharedRecipient,
+  bgUrl, overlayOpacity, cardBgPreset,
+  onCardSize, onEnrich, onRemove, onPickFont, onPickRandomFont, currentFont,
+  onAddToPlaylist, onOverlayOpacityChange, onCardBgPresetChange,
+  userId, onRefresh, onSharePrivately,
+}: MoreMenuProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
   const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !userId || !item.prayer_cards) return;
+    if (!file || !userId || !card) return;
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() || "jpg";
@@ -1104,12 +1225,10 @@ function ActionButtons({
       const { data: urlData } = supabase.storage
         .from("prayer-backgrounds")
         .getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
-      const { error: updateErr } = await supabase
+      await supabase
         .from("prayer_cards")
-        .update({ background_url: publicUrl })
-        .eq("id", item.prayer_cards.id);
-      if (updateErr) throw updateErr;
+        .update({ background_url: urlData.publicUrl })
+        .eq("id", card.id);
       onRefresh();
       toast({ title: "Background image added ✨" });
     } catch {
@@ -1121,12 +1240,8 @@ function ActionButtons({
   };
 
   const handleRemoveImage = async () => {
-    if (!item.prayer_cards) return;
     try {
-      await supabase
-        .from("prayer_cards")
-        .update({ background_url: null })
-        .eq("id", item.prayer_cards.id);
+      await supabase.from("prayer_cards").update({ background_url: null }).eq("id", card.id);
       onRefresh();
       toast({ title: "Background image removed" });
     } catch {
@@ -1139,15 +1254,14 @@ function ActionButtons({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="p-1.5 rounded-lg transition-all hover:bg-slate-100 opacity-100 lg:opacity-50 lg:hover:opacity-100"
-            style={{ color: `${textColor}55` }}
+            className="relative p-2.5 rounded-xl transition-all duration-200 active:scale-90 group opacity-50 hover:opacity-100"
+            style={{ color: theme.iconDefault }}
             aria-label="More options"
           >
-            <MoreHorizontal className="w-3.5 h-3.5" />
+            <MoreHorizontal className="w-[16px] h-[16px]" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 rounded-xl">
-
           {/* Size */}
           <DropdownMenuItem className="text-xs gap-2" onClick={() => onCardSize("small")}>
             <Minimize2 className="w-3.5 h-3.5" /> Small {size === "small" && "✓"}
@@ -1159,37 +1273,29 @@ function ActionButtons({
             <Maximize2 className="w-3.5 h-3.5" /> Large {size === "large" && "✓"}
           </DropdownMenuItem>
 
-          {/* Share Privately — hidden for shared recipients */}
+          {/* Share Privately */}
           {onSharePrivately && !isSharedRecipient && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-xs gap-2"
-                onClick={onSharePrivately}
-              >
+              <DropdownMenuItem className="text-xs gap-2" onClick={onSharePrivately}>
                 <Send className="w-3.5 h-3.5" /> Share Privately
               </DropdownMenuItem>
             </>
           )}
 
           {/* Open Prayer Page */}
-          {item.prayer_cards && (
-            <DropdownMenuItem
-              className="text-xs gap-2"
-              onClick={() => window.open(`/prayer/${item.prayer_cards!.id}`, '_blank')}
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> Open Prayer Page
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            className="text-xs gap-2"
+            onClick={() => window.open(`/prayer/${card.id}`, '_blank')}
+          >
+            <ExternalLink className="w-3.5 h-3.5" /> Open Prayer Page
+          </DropdownMenuItem>
 
           {/* Add to playlist */}
-          {onAddToPlaylist && item.prayer_cards && (
+          {onAddToPlaylist && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-xs gap-2"
-                onClick={() => onAddToPlaylist(item.prayer_cards!.id)}
-              >
+              <DropdownMenuItem className="text-xs gap-2" onClick={() => onAddToPlaylist(card.id)}>
                 <ListPlus className="w-3.5 h-3.5" /> Add to Playlist
               </DropdownMenuItem>
             </>
@@ -1204,23 +1310,13 @@ function ActionButtons({
                   <Type className="w-3.5 h-3.5" /> Font
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-52 rounded-xl max-h-72 overflow-y-auto">
-                  <DropdownMenuItem
-                    className="text-xs gap-2 font-medium"
-                    onClick={onPickRandomFont}
-                  >
-                    <Shuffle className="w-3.5 h-3.5" />
-                    Random font 🎲
+                  <DropdownMenuItem className="text-xs gap-2 font-medium" onClick={onPickRandomFont}>
+                    <Shuffle className="w-3.5 h-3.5" /> Random font 🎲
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {PRAYER_FONTS.map(font => (
-                    <DropdownMenuItem
-                      key={font.family}
-                      className="text-xs gap-2"
-                      onClick={() => onPickFont(font.family)}
-                    >
-                      <span style={{ fontFamily: `"${font.family}", serif`, flex: 1 }}>
-                        {font.label}
-                      </span>
+                    <DropdownMenuItem key={font.family} className="text-xs gap-2" onClick={() => onPickFont(font.family)}>
+                      <span style={{ fontFamily: `"${font.family}", serif`, flex: 1 }}>{font.label}</span>
                       {currentFont === font.family && <Check className="w-3 h-3 opacity-60" />}
                     </DropdownMenuItem>
                   ))}
@@ -1233,41 +1329,27 @@ function ActionButtons({
               </DropdownMenuItem>
             </>
           )}
-          {/* Image transparency slider — only when bg image exists */}
-          {hasBgImage && (
+
+          {/* Image transparency slider */}
+          {bgUrl && (
             <>
               <DropdownMenuSeparator />
-              <div
-                className="px-3 py-2 space-y-1.5"
-                onClick={e => e.stopPropagation()}
-                onPointerDown={e => e.stopPropagation()}
-              >
+              <div className="px-3 py-2 space-y-1.5" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <SunDim className="w-3.5 h-3.5" />
                   <span>Image dimming</span>
                   <span className="ml-auto tabular-nums text-[10px]">{Math.round(overlayOpacity * 100)}%</span>
                 </div>
-                <Slider
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[Math.round(overlayOpacity * 100)]}
-                  onValueChange={([v]) => onOverlayOpacityChange(v / 100)}
-                  className="w-full"
-                />
+                <Slider min={0} max={100} step={1} value={[Math.round(overlayOpacity * 100)]} onValueChange={([v]) => onOverlayOpacityChange(v / 100)} className="w-full" />
               </div>
             </>
           )}
 
-          {/* Background color presets — only when NO bg image */}
-          {!hasBgImage && (
+          {/* Background color presets */}
+          {!bgUrl && (
             <>
               <DropdownMenuSeparator />
-              <div
-                className="px-3 py-2 space-y-1.5"
-                onClick={e => e.stopPropagation()}
-                onPointerDown={e => e.stopPropagation()}
-              >
+              <div className="px-3 py-2 space-y-1.5" onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
                   <span className="w-3.5 h-3.5 flex items-center justify-center">🎨</span>
                   <span>Card color</span>
@@ -1276,13 +1358,10 @@ function ActionButtons({
                   <button
                     onClick={() => onCardBgPresetChange(null)}
                     className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
-                    style={{
-                      borderColor: !cardBgPreset ? 'hsl(42 75% 40%)' : 'hsl(215 14% 80%)',
-                      background: 'white',
-                    }}
+                    style={{ borderColor: !cardBgPreset ? theme.brandColor : 'hsl(215 14% 80%)', background: 'white' }}
                     title="Default"
                   >
-                    {!cardBgPreset && <Check className="w-3 h-3 text-amber-600" />}
+                    {!cardBgPreset && <Check className="w-3 h-3" style={{ color: theme.brandColor }} />}
                   </button>
                   {CARD_BG_PRESETS.map(preset => {
                     const isActive = cardBgPreset?.bg === preset.bg;
@@ -1291,10 +1370,7 @@ function ActionButtons({
                         key={preset.name}
                         onClick={() => onCardBgPresetChange(preset)}
                         className="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
-                        style={{
-                          background: preset.bg,
-                          borderColor: isActive ? preset.text : `${preset.text}30`,
-                        }}
+                        style={{ background: preset.bg, borderColor: isActive ? preset.text : `${preset.text}30` }}
                         title={preset.name}
                       >
                         {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
@@ -1308,19 +1384,12 @@ function ActionButtons({
 
           {/* Upload / Remove Image */}
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-xs gap-2"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
+          <DropdownMenuItem className="text-xs gap-2" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
-            {uploading ? "Uploading…" : hasBgImage ? "Replace Image" : "Upload Image"}
+            {uploading ? "Uploading…" : bgUrl ? "Replace Image" : "Upload Image"}
           </DropdownMenuItem>
-          {hasBgImage && (
-            <DropdownMenuItem
-              className="text-xs gap-2"
-              onClick={handleRemoveImage}
-            >
+          {bgUrl && (
+            <DropdownMenuItem className="text-xs gap-2" onClick={handleRemoveImage}>
               <ImageOff className="w-3.5 h-3.5" /> Remove Image
             </DropdownMenuItem>
           )}
@@ -1330,30 +1399,226 @@ function ActionButtons({
             className={`text-xs gap-2 ${isSharedRecipient ? '' : 'text-destructive focus:text-destructive'}`}
             onClick={async () => {
               if (userId) {
-                const { data: snap } = await supabase.from("user_saved_prayers").select("*").eq("id", item.id).single();
-                if (snap) await trashItem(userId, "saved_prayer", item.id, snap as any);
+                await trashItem(userId, "saved_prayer", item.id, item as any);
               }
               onRemove(item.id);
-              supabase.from("user_saved_prayers").delete().eq("id", item.id);
             }}
           >
             {isSharedRecipient ? (
-              <><BookmarkX className="w-3.5 h-3.5" /> Unbookmark</>
+              <><BookmarkX className="w-3.5 h-3.5" /> Unsave from board</>
             ) : (
               <><Trash2 className="w-3.5 h-3.5" /> Remove</>
             )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Hidden file input for image upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleUploadImage}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
     </>
+  );
+}
+
+/*
+ * ══════════════════════════════════════════════════════════════════════════════
+ * MobileMoreSheet — Mobile/Tablet ⋯ bottom sheet via ResponsiveSheet
+ * ══════════════════════════════════════════════════════════════════════════════
+ */
+interface MobileMoreSheetProps extends MoreMenuProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  toggleFavorite: () => void;
+  isFavorite: boolean;
+}
+
+function MobileMoreSheet({
+  open, onOpenChange,
+  item, card, theme, isOwner, size, isSharedRecipient,
+  bgUrl, overlayOpacity, cardBgPreset,
+  onCardSize, onEnrich, onRemove, onPickFont, onPickRandomFont, currentFont,
+  onAddToPlaylist, onOverlayOpacityChange, onCardBgPresetChange,
+  userId, onRefresh, onSharePrivately,
+  toggleFavorite, isFavorite,
+}: MobileMoreSheetProps) {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId || !card) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${userId}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("prayer-backgrounds").upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("prayer-backgrounds").getPublicUrl(path);
+      await supabase.from("prayer_cards").update({ background_url: urlData.publicUrl }).eq("id", card.id);
+      onRefresh();
+      toast({ title: "Background image added ✨" });
+      onOpenChange(false);
+    } catch {
+      toast({ title: "Failed to upload image", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    try {
+      await supabase.from("prayer_cards").update({ background_url: null }).eq("id", card.id);
+      onRefresh();
+      toast({ title: "Background image removed" });
+      onOpenChange(false);
+    } catch {
+      toast({ title: "Failed to remove image", variant: "destructive" });
+    }
+  };
+
+  const SheetRow = ({ icon: Icon, label, onClick, active, destructive }: {
+    icon: any; label: string; onClick: () => void; active?: boolean; destructive?: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-[0.98] text-left"
+      style={{
+        backgroundColor: active ? `${theme.brandColor}12` : theme.drawerCardBg,
+        border: `1px solid ${active ? `${theme.brandColor}25` : theme.drawerBorder}`,
+        color: destructive ? "#ef4444" : active ? theme.brandColor : theme.drawerText,
+      }}
+    >
+      <Icon className="w-4 h-4 flex-shrink-0" />
+      <span className="text-sm font-medium">{label}</span>
+      {active && <Check className="w-3.5 h-3.5 ml-auto" />}
+    </button>
+  );
+
+  return (
+    <ResponsiveSheet open={open} onOpenChange={onOpenChange}>
+      <ResponsiveSheetContent className="max-h-[85vh]" style={{ backgroundColor: theme.drawerBg, color: theme.drawerText }}>
+        <div className="p-5 overflow-y-auto pca-hide-scrollbar space-y-2">
+          <ResponsiveSheetHeader className="px-0 pb-3">
+            <ResponsiveSheetTitle style={{ color: theme.drawerText }}>Options</ResponsiveSheetTitle>
+          </ResponsiveSheetHeader>
+
+          {/* Favourite */}
+          <SheetRow icon={Heart} label={isFavorite ? "Unfavourite" : "Favourite"} onClick={() => { toggleFavorite(); onOpenChange(false); }} active={isFavorite} />
+
+          {/* Size */}
+          <div className="flex gap-2">
+            {(["small", "medium", "large"] as CardSize[]).map(s => (
+              <button
+                key={s}
+                onClick={() => { onCardSize(s); onOpenChange(false); }}
+                className="flex-1 py-2.5 rounded-xl text-xs font-medium capitalize transition-all"
+                style={{
+                  backgroundColor: size === s ? `${theme.brandColor}18` : theme.drawerCardBg,
+                  color: size === s ? theme.brandColor : theme.drawerMuted,
+                  border: `1px solid ${size === s ? `${theme.brandColor}25` : theme.drawerBorder}`,
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+
+          {/* Share Privately */}
+          {onSharePrivately && !isSharedRecipient && (
+            <SheetRow icon={Send} label="Share Privately" onClick={() => { onSharePrivately(); onOpenChange(false); }} />
+          )}
+
+          {/* Open Prayer Page */}
+          <SheetRow icon={ExternalLink} label="Open Prayer Page" onClick={() => { window.open(`/prayer/${card.id}`, '_blank'); onOpenChange(false); }} />
+
+          {/* Playlist */}
+          {onAddToPlaylist && (
+            <SheetRow icon={ListPlus} label="Add to Playlist" onClick={() => { onAddToPlaylist(card.id); onOpenChange(false); }} />
+          )}
+
+          {/* Enrich */}
+          {isOwner && (
+            <SheetRow icon={Sparkles} label="Enrich with Scripture" onClick={() => { onEnrich(); onOpenChange(false); }} />
+          )}
+
+          {/* Font */}
+          {isOwner && (
+            <SheetRow icon={Type} label="Change Font" onClick={() => {
+              onOpenChange(false);
+              // Open font picker via random for now — the full font picker drawer can be added later
+              onPickRandomFont();
+            }} />
+          )}
+
+          {/* Image dimming slider */}
+          {bgUrl && (
+            <div className="p-4 rounded-2xl space-y-2" style={{ backgroundColor: theme.drawerCardBg, border: `1px solid ${theme.drawerBorder}` }}>
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: theme.drawerMuted }}>
+                <SunDim className="w-3.5 h-3.5" />
+                <span>Image dimming</span>
+                <span className="ml-auto tabular-nums text-[10px]">{Math.round(overlayOpacity * 100)}%</span>
+              </div>
+              <Slider min={0} max={100} step={1} value={[Math.round(overlayOpacity * 100)]} onValueChange={([v]) => onOverlayOpacityChange(v / 100)} className="w-full" />
+            </div>
+          )}
+
+          {/* Card colour presets */}
+          {!bgUrl && (
+            <div className="p-4 rounded-2xl space-y-2" style={{ backgroundColor: theme.drawerCardBg, border: `1px solid ${theme.drawerBorder}` }}>
+              <div className="flex items-center gap-1.5 text-xs mb-1.5" style={{ color: theme.drawerMuted }}>
+                <Palette className="w-3.5 h-3.5" />
+                <span>Card colour</span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => onCardBgPresetChange(null)}
+                  className="w-7 h-7 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
+                  style={{ borderColor: !cardBgPreset ? theme.brandColor : theme.drawerBorder, background: theme.mode === "dark" ? "#2a2318" : "white" }}
+                >
+                  {!cardBgPreset && <Check className="w-3 h-3" style={{ color: theme.brandColor }} />}
+                </button>
+                {CARD_BG_PRESETS.map(preset => {
+                  const isActive = cardBgPreset?.bg === preset.bg;
+                  return (
+                    <button
+                      key={preset.name}
+                      onClick={() => onCardBgPresetChange(preset)}
+                      className="w-7 h-7 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center"
+                      style={{ background: preset.bg, borderColor: isActive ? preset.text : `${preset.text}30` }}
+                    >
+                      {isActive && <Check className="w-3 h-3" style={{ color: preset.text }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Upload / Remove Image */}
+          <SheetRow
+            icon={uploading ? Loader2 : ImagePlus}
+            label={uploading ? "Uploading…" : bgUrl ? "Replace Image" : "Upload Image"}
+            onClick={() => fileInputRef.current?.click()}
+          />
+          {bgUrl && (
+            <SheetRow icon={ImageOff} label="Remove Image" onClick={handleRemoveImage} />
+          )}
+
+          {/* Remove */}
+          <div className="pt-2">
+            <SheetRow
+              icon={isSharedRecipient ? BookmarkX : Trash2}
+              label={isSharedRecipient ? "Unsave from board" : "Remove"}
+              destructive={!isSharedRecipient}
+              onClick={async () => {
+                if (userId) await trashItem(userId, "saved_prayer", item.id, item as any);
+                onRemove(item.id);
+                onOpenChange(false);
+              }}
+            />
+          </div>
+        </div>
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
+      </ResponsiveSheetContent>
+    </ResponsiveSheet>
   );
 }
