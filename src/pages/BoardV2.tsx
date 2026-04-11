@@ -125,8 +125,7 @@ export default function BoardV2() {
         const c = s.prayer_cards!;
         return (
           c.prayer_text.toLowerCase().includes(q) ||
-          c.title?.toLowerCase().includes(q) ||
-          c.labels?.some((l) => l.toLowerCase().includes(q))
+          c.title?.toLowerCase().includes(q)
         );
       });
     }
