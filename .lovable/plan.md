@@ -1,47 +1,66 @@
 
 
-## KeepPray.ing Complete Overhaul
+## Reset PrayerCard to Match PrayerCardAsset Design Lab — Exactly
 
-### Phase 1: Foundation — COMPLETED
+### Problem
+The current `PrayerCard.tsx` (836 lines) diverges significantly from the design truth in `PrayerCardAsset.tsx` (1073 lines). It merged old BoardCard logic (labels, inline notes, background images, truncation, desktop dropdown menus) that contradicts the design lab's vision. The user wants an exact reset: every card should look and behave identically to the design lab, with real data wired in.
 
-**Build Fixes**
-- Moved `PrayerCardAsset.tsx` → `src/components/board/PrayerCardAsset.tsx`
-- Moved `TestimonyCanvasAsset.tsx` → `src/components/board/TestimonyCanvasAsset.tsx`
-- Fixed `donation-webhook` import (`npm:` → `https://esm.sh/`)
+### What Changes
 
-**1A. Canonical PrayerCard** — `src/components/board/PrayerCard.tsx`
-- 5 variants: `full | compact | preview | shared | embed`
-- Props: `prayer`, `savedMeta`, `variant`, `isOwner`, `userId`, `themeOverride`, `themeVars`, `onAction`, `onRefresh`
-- All Supabase mutations (prayed, pin, share, delete, notes, enrich)
-- Theme bridge from board themes, scripture strip, testimony flip, TTS, dust particles
-- Responsive menus: DropdownMenu desktop, Drawer mobile
+**Rewrite `src/components/board/PrayerCard.tsx`** — completely, using `PrayerCardAsset.tsx` as the template. The structure will be:
 
-**1B. PrayNowSheet** — `src/components/PrayNowSheet.tsx`
-- 92vh vaul drawer with Type | Speak | Draw modes
-- No title required — AI generates via enrich-prayer
-- Background enrichment (scripture, labels) after save
-- Voice mode with Web Speech API live transcription
+1. **Same outer shell**: `aspect-[9/16]`, `max-w-[420px]`, `perspective: 1200px`, breathing animation, ambient glow pulse
+2. **Same front face**: KEEPPRAY.ING brand tag, Playfair Display title, scrollable prayer text, dust particles, inner glow, lamp light
+3. **Same Scripture & Meditation collapsible strip**: with individual verse badges (verselinks) + full text — pulling from `prayer.extended_prayer` and any `prayer_verses` data
+4. **Same bottom bar**: Privacy dot → Prayed → Comments → Pin → Share → Listen → Testify → More (••• )
+5. **Same 3-dot menu drawer** (all 8 items in the 2x2 grid): Go to Prayer Circle, Save to Prayer Room, Enrich with Scripture, Private Share, Journal Entry, Add Photos, Change Theme, Change Font
+6. **All 8 themed drawers** copied exactly from PrayerCardAsset: Comments, Options/More, Font Picker, Theme Picker, Privacy, Share, Journal Entry, Add Photos, Enrich with Scripture
+7. **Same back face**: TestimonyCanvasAsset / TestimonyCardFace / TestifyBack (this part already works)
+8. **Same 3D flip** with spring physics
 
-**1C. BoardV2** — `src/pages/BoardV2.tsx`
-- Cards-first layout: compact header → stats → filter chips → card stack
-- Full-width mobile, 2-col desktop (max-width 800px)
-- Filter: All | Pinned | Shared | Answered
-- Sort: Recent | Most Prayed | Oldest
-- Stale-while-revalidate with IDB cache
-- Floating + FAB opens PrayNowSheet
+**What gets removed from the current PrayerCard.tsx:**
+- Labels/tags display (user said delete all tags)
+- Inline notes editing section (notes have new locations per user)
+- `card_color` / `overlay_opacity` / background image layer overrides
+- `PRAYER_CHAR_LIMIT` truncation (design lab scrolls, doesn't truncate)
+- `FormattedText` component (design lab uses plain `<p>`)
+- Desktop `DropdownMenu` for more menu (design lab uses Drawer for all; we keep responsive pattern — Drawer on mobile, DropdownMenu on desktop — but the DropdownMenu gets ALL 8 items, not just 3)
+- `LABEL_PALETTE` and all label rendering code
 
-**1D. Routes** — `src/App.tsx`
-- `/boardv2` → BoardV2 (guarded playground)
-- `/design-lab` → DesignLab (isolated sandbox)
+**What gets wired to real data (the only additions beyond PrayerCardAsset):**
+- `prayer.prayer_text` replaces hardcoded demo text
+- `prayer.title` replaces "A Prayer for Provision"
+- `prayer.extended_prayer` + verse data replaces `MOCK_SCRIPTURES`
+- `prayer.text_style` drives font selection (persisted)
+- `prayer.status` drives privacy dot state
+- `prayer.voice_audio_url` → VoiceWaveformPlayer (keep, exists in design lab vision)
+- Real Supabase mutations for: prayed, pin, delete, share, notes
+- TTS player hook (keep — Listen button is in design lab)
+- Testimony check on mount (keep — Testify button is in design lab)
 
-### What Was NOT Changed
-- `/board` and `Board.tsx` — untouched, stays live
-- `BoardCard.tsx` — untouched until PrayerCard proven
-- All Supabase tables and edge functions — no schema changes
-- MobileTabBar / SiteNav — NOT modified yet (deferred to next iteration)
-- Bible/KeepRead.ing, Auth, Profile — untouched
+**What gets wired for responsive desktop:**
+- The ••• menu: Drawer on mobile (matching design lab exactly), DropdownMenu on desktop with all 8 items
+- This is the ONLY responsive divergence from design lab
 
-### Next Phases (not yet started)
-- Phase 2: Social (shared prayer landing, circles rebuild, testimony on flip)
-- Phase 3: Intelligence (PrayerWatch OS, vector search, omnipresent PrayerAssist)
-- Phase 4: Polish (strip scrapped features, performance, iOS prep)
+### Card Sizing
+All cards will be fixed `aspect-[9/16]` with `max-w-[420px]` — identical sizing, no resize options. On mobile they fill width. On desktop they sit in the 2-col grid at their natural max-width.
+
+### BoardV2 Updates
+- Remove tag/label rendering from the grid (tags are gone)
+- Cards render at fixed aspect ratio — no variable heights
+
+### Files Changed
+
+| File | Action |
+|------|--------|
+| `src/components/board/PrayerCard.tsx` | **REWRITE** — reset to PrayerCardAsset structure with real data wiring |
+| `src/pages/BoardV2.tsx` | **MINOR UPDATE** — remove label-related code if any |
+
+### What Is NOT Changing
+- `PrayerCardAsset.tsx` — untouched (design sandbox)
+- `prayerCardTheme.tsx` — untouched
+- `DustParticles.tsx` — untouched
+- `BarBtn.tsx` — untouched (but PrayerCard will use inline BarBtn like PrayerCardAsset does, not the extracted component, to match exactly)
+- `TestimonyCanvasAsset.tsx`, `TestifyBack.tsx`, `TestimonyCardFace.tsx` — untouched
+- Board.tsx / BoardCard.tsx — untouched (legacy)
+
