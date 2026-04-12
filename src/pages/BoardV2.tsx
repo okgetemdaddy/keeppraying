@@ -442,31 +442,35 @@ export default function BoardV2() {
         )}
       </AnimatePresence>
 
-      {/* ── Floating + button ────────────────────────────────────────────── */}
-      <motion.button
-        onClick={() => setPrayNowOpen(true)}
-        className="fixed z-40 flex items-center justify-center rounded-full shadow-2xl"
-        style={{
-          bottom: "2rem",
-          right: "1.5rem",
-          width: 56,
-          height: 56,
-          backgroundColor: "hsl(42 85% 55%)",
-          color: "hsl(30 25% 10%)",
-          boxShadow: "0 8px 32px -4px rgba(180,140,50,0.4)",
-        }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.92 }}
-      >
-        <Plus className="w-6 h-6" strokeWidth={2.5} />
-      </motion.button>
+      {/* ── Floating + button (desktop only — mobile uses MobileNavV2) ── */}
+      {!isMobile && (
+        <motion.button
+          onClick={() => setPrayNowOpen(true)}
+          className="fixed z-40 flex items-center justify-center rounded-full shadow-2xl"
+          style={{
+            bottom: "2rem",
+            right: "1.5rem",
+            width: 56,
+            height: 56,
+            backgroundColor: "var(--kp-gold)",
+            color: "#1a1610",
+            boxShadow: "0 8px 32px -4px rgba(180,140,50,0.4)",
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.92 }}
+        >
+          <Plus className="w-6 h-6" strokeWidth={2.5} />
+        </motion.button>
+      )}
 
-      {/* ── PrayNow Sheet ────────────────────────────────────────────────── */}
-      <PrayNowSheet
-        open={prayNowOpen}
-        onOpenChange={setPrayNowOpen}
-        onPrayerCreated={fetchSaved}
-      />
+      {/* ── PrayNow Sheet (desktop only — mobile uses MobileNavV2) ────── */}
+      {!isMobile ? (
+        <PrayNowSheet
+          open={prayNowOpen}
+          onOpenChange={setPrayNowOpen}
+          onPrayerCreated={fetchSaved}
+        />
+      ) : null}
     </div>
   );
 }
