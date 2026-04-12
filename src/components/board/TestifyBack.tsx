@@ -50,6 +50,7 @@ interface TestifyBackProps {
   prayerId: string;
   prayerAuthorId: string | null | undefined;
   onFlipBack: () => void;
+  variant?: "default" | "compact" | "fullscreen";
 }
 
 /* ═══ Palette (coffee & cream — canonical from TestimonyCanvasAsset) ══════ */
