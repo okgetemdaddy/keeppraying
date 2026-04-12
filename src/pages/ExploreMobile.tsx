@@ -300,6 +300,8 @@ export default function ExploreMobile() {
             <PrayerCardMobile
               key={p.id}
               prayer={p}
+              isOwner={p.created_by === user?.id}
+              userId={user?.id}
               initialFlipped={filter === "answered"}
               onRefresh={fetchPrayers}
             />
