@@ -148,7 +148,7 @@ export function CommunityPrayerRequestModal({ open, onOpenChange }: Props) {
                 disabled={submitting}
                 className="w-full rounded-xl h-11 font-medium gap-2"
                 style={{
-                  background: "linear-gradient(135deg, hsl(150 38% 26%), hsl(150 32% 36%))",
+                  background: "var(--gradient-forest)",
                   color: "white",
                 }}
               >
