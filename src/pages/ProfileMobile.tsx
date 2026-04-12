@@ -3,7 +3,8 @@
  * Hero with avatar + stats, menu items matching mockup exactly.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { FaithJourneyTimeline } from "@/components/FaithJourneyTimeline";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,13 +69,15 @@ export default function ProfileMobile() {
     navigate("/auth");
   };
 
+  const [showJourney, setShowJourney] = useState(false);
+
   const menuItems = [
     {
       icon: Sparkles,
       label: "Faith Journey",
       color: "rgba(180,140,50,0.15)",
       iconColor: "var(--kp-gold)",
-      action: () => toast({ title: "Coming soon", description: "Your full faith journey timeline is in development." }),
+      action: () => setShowJourney(true),
     },
     {
       icon: Archive,
@@ -192,35 +195,51 @@ export default function ProfileMobile() {
         </div>
       </div>
 
-      {/* Menu */}
-      <div className="px-5 space-y-2">
-        {menuItems.map((item, i) => (
-          <motion.button
-            key={item.label}
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + i * 0.04 }}
-            onClick={item.action}
-            disabled={item.loading}
-            className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98] disabled:opacity-50"
-            style={{
-              backgroundColor: "var(--kp-bg-card)",
-              border: "1px solid var(--kp-border)",
-            }}
+      {/* Menu or Faith Journey */}
+      {showJourney ? (
+        <div className="px-5">
+          <button
+            onClick={() => setShowJourney(false)}
+            className="text-xs font-medium mb-2 flex items-center gap-1"
+            style={{ color: "var(--kp-gold)" }}
           >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: item.color }}
+            ← Back to Profile
+          </button>
+          <h2 className="text-base font-bold mb-2" style={{ color: "var(--kp-text-primary)", fontFamily: "var(--kp-font-display)" }}>
+            Your Faith Journey
+          </h2>
+          <FaithJourneyTimeline />
+        </div>
+      ) : (
+        <div className="px-5 space-y-2">
+          {menuItems.map((item, i) => (
+            <motion.button
+              key={item.label}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + i * 0.04 }}
+              onClick={item.action}
+              disabled={item.loading}
+              className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98] disabled:opacity-50"
+              style={{
+                backgroundColor: "var(--kp-bg-card)",
+                border: "1px solid var(--kp-border)",
+              }}
             >
-              <item.icon className="w-4.5 h-4.5" style={{ color: item.iconColor }} />
-            </div>
-            <span className="flex-1 text-sm font-medium" style={{ color: "var(--kp-text-primary)" }}>
-              {item.label}
-            </span>
-            <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: "var(--kp-text-muted)" }} />
-          </motion.button>
-        ))}
-      </div>
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: item.color }}
+              >
+                <item.icon className="w-4.5 h-4.5" style={{ color: item.iconColor }} />
+              </div>
+              <span className="flex-1 text-sm font-medium" style={{ color: "var(--kp-text-primary)" }}>
+                {item.label}
+              </span>
+              <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: "var(--kp-text-muted)" }} />
+            </motion.button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
