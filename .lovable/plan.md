@@ -1,147 +1,106 @@
 
 
-## Phase 3: Explore + Circles + Profile Mobile Screens + 3 Missing Features
+## Phase 5: Shared Landing Overhaul, CTA Token Pass, Desktop Layout, PWA
 
-Phase 1 built the shell, tokens, and nav. Phase 2 built Prayer Card, Pray Now, and Focus Mode. This phase builds the remaining 3 tab screens (Explore, Circles, Profile) to match the mockup, converts existing CTAs to use CSS tokens (keeping their current copy and layout), and implements the 3 features flagged as "not yet built."
-
----
-
-### Part A — CTA Token Conversion (Style Only, No Restructuring)
-
-Existing CTAs across the app (Auth page buttons, PremiumUpsellSheet, share modals, etc.) keep their current copy, layout, and behavior. Only the styling changes:
-- Replace hardcoded Tailwind colors (`bg-amber-500`, `text-slate-900`) with CSS token equivalents (`var(--kp-gold)`, `var(--kp-bg-deep)`)
-- Primary buttons: `background: var(--kp-gold); color: var(--kp-bg-deep)`
-- Ghost/secondary buttons: `background: var(--kp-bg-elevated); border: 1px solid var(--kp-border-gold); color: var(--kp-gold)`
-- Files touched: `Auth.tsx`, `PremiumUpsellSheet.tsx`, `InviteShareModal.tsx`, `SharePrayerModal.tsx`, `CommunityPrayerRequestModal.tsx`, `TeamPrayerRequestModal.tsx`
+Phases 1-4 built the mobile shell, cards, all tab screens, warrior system, drawing canvas, faith journey, and landing page. Phase 5 finishes the mockup's remaining gaps and prepares the app for production.
 
 ---
 
-### Part B — Explore Screen (New: `src/pages/ExploreMobile.tsx`)
+### Part A — Shared Prayer Landing Redesign
 
-Mirrors mockup `#screen-explore` exactly:
+The existing `SharedPrayerLanding.tsx` (879 lines) is functional but predates the design system. Restyle it to match mockup `#shared-landing`:
 
-1. **Rotating brand sayings header** — cycles through `['KeepPray.ing', 'Keep Believing', 'Keep Trusting', 'Keep Hoping', 'Keep Seeking', 'Keep Praising', 'Keep Standing']` with 5s interval + 600ms opacity fade. Uses `useSayingsCycle` but overrides the fallback array with the mockup's brand sayings.
-
-2. **Search bar** — styled per mockup (rounded, muted bg, search icon). Triggers existing Supabase full-text search on `prayer_cards` (public, approved). Hybrid vector search deferred to Phase 4.
-
-3. **Filter chips** — `For You | Trending | Answered | Recent`. "Answered" renders `PrayerCardMobile` with `initialFlipped={true}` per the `@LOVABLE` dev note. "Trending" sorts by `prayed_count DESC` within 7 days. "Recent" by `created_at DESC`.
-
-4. **PrayerAssist CTA card** — gold-accent card with star icon. Taps open the existing `prayer-assist` SSE chat. Copy and layout match mockup line 2111-2121.
-
-5. **Request a Prayer CTA card** — green-accent card with shield icon, 3 mode buttons (Type/Speak/Draw). Inserts into existing `prayer_requests` table. Copy matches mockup line 2123-2147.
-
-6. **Prayer Warriors Online section** — green pulse dot + avatar stack. Wired to the new warrior presence system (Part E).
+1. Replace hardcoded Tailwind colors with CSS tokens throughout
+2. Match mockup layout: sender avatar + "Sarah is praying for you" hero, full prayer card (reuse `PrayerCardMobile`), conversion CTA bar with "Listen" (secondary) and "Save & Pray Together" (primary gold)
+3. TTS auto-play prompt on load (respect browser autoplay policies)
+4. Non-authenticated flow: show full prayer, soft-sell signup below
+5. Authenticated flow: "Save to Board" inserts `user_saved_prayers` + auto-forms circle with sender
+6. Keep all existing logic (token lookup, comments, prayed actions) — only restyle
 
 ---
 
-### Part C — Circles Screen (New: `src/pages/CirclesMobile.tsx`)
+### Part B — CTA Token Conversion (Remaining Files)
 
-Mirrors mockup `#screen-circles`:
+Phase 4 converted `PremiumUpsellSheet`. These files still use hardcoded Tailwind colors for primary action buttons:
 
-1. **Header** — "Prayer Circles" + "+" create button
-2. **Search bar** — filters circles by name
-3. **Circle cards** — each shows emoji avatar, circle name, latest activity snippet, member avatar dots with overflow count
-4. **Data query**: `accountability_circles` JOIN `accountability_circle_members` WHERE `user_id = me`, with latest prayer activity from `accountability_circle_prayers`
-5. **Tap** → navigates to existing `/circles/:id` detail page
-6. All styled with CSS tokens (card bg, borders, text colors from `var(--kp-*)`)
+- `Auth.tsx` — `btn-gold` class on submit buttons, standard Tailwind on OAuth buttons. Convert submit buttons to `style={{ background: 'var(--kp-gold)', color: 'var(--kp-bg-deep)' }}`. OAuth buttons get token borders/bg.
+- `InviteShareModal.tsx` — share/copy buttons
+- `SharePrayerModal.tsx` — share buttons  
+- `CommunityPrayerRequestModal.tsx` — submit button
+- `TeamPrayerRequestModal.tsx` — submit button
 
----
-
-### Part D — Profile Screen (New: `src/pages/ProfileMobile.tsx`)
-
-Mirrors mockup `#screen-profile`:
-
-1. **Hero section** — large avatar, name, "Praying since [date]", 3 stat boxes (Prayers count, Day Streak, Testimonies count)
-2. **Menu items** (mockup-accurate icons + labels):
-   - Faith Journey → placeholder view (Phase 4 PrayerWatch OS)
-   - Prayer Archive → existing `useTrashBin` data in a sheet
-   - Board Theme → links to existing theme selector
-   - Light/Dark toggle → `toggleTheme()` from `themeProvider.ts`
-   - Available for Prayer → warrior toggle (Part E)
-   - Notifications → placeholder
-   - Support KeepPray.ing → links to `/support`
-   - Sign Out → `supabase.auth.signOut()`
-3. Each menu item uses the mockup's icon + colored icon background pattern
+Rule: keep all copy, layout, and behavior. Only swap color values to CSS token equivalents.
 
 ---
 
-### Part E — Prayer Warrior System (Not Yet Built → Full Implementation)
+### Part C — Desktop Responsive Layout (768px+ breakpoint)
 
-**Database migration:**
-```sql
-ALTER TABLE profiles ADD COLUMN is_prayer_warrior boolean DEFAULT false;
-ALTER TABLE profiles ADD COLUMN warrior_status text DEFAULT 'offline';
-```
+Currently mobile-only. Add desktop support:
 
-**Realtime Presence channel:**
-- New hook `useWarriorPresence.ts` — when `is_prayer_warrior = true` and `warrior_status = 'available'`, user joins Supabase Realtime Presence channel `prayer-warriors`
-- Tracks online warrior count + avatar list for the Explore screen
-- Profile toggle updates `profiles.is_prayer_warrior` + joins/leaves presence channel
+1. **Navigation**: At `md:` breakpoint, hide `MobileNavV2` bottom tab bar. Show a top horizontal nav bar with the same 5 destinations + KeepPray.ing logo on the left.
+2. **BoardV2**: 2-column card grid at `md:`, 3-column at `lg:`. Filter chips inline with header.
+3. **Explore**: Side-by-side layout — prayer feed left, PrayerAssist + Request CTA cards in a right sidebar.
+4. **Circles**: List view with wider cards showing more activity detail.
+5. **Profile**: Center-constrained card layout (max-w-2xl) with stats row.
+6. **MobileShell**: At `md:+`, remove the shell wrapper padding/overflow constraints designed for mobile viewport.
 
-**Auto-circle on accept:**
-- When a warrior accepts a `prayer_requests` record, auto-create an `accountability_circles` row + 2 member entries (requester + warrior) for a private 1:1 prayer thread
+New component: `src/components/DesktopNav.tsx`
+Modified: `MobileShell.tsx`, `MobileNavV2.tsx`, `BoardV2.tsx`, `ExploreMobile.tsx`, `CirclesMobile.tsx`, `ProfileMobile.tsx`
 
 ---
 
-### Part F — Fullscreen Draw Canvas (Not Yet Built → Full Implementation)
+### Part D — PWA Setup
 
-New component: `src/components/DrawCanvasFullscreen.tsx`
-
-Matches mockup `#draw-fullscreen` (lines 2680-2759):
-- **Toolbar**: Close button + "Draw Your Prayer" title + undo/redo buttons
-- **Color bar**: 8 preset color buttons (gold, cream, green, blue, purple, red, yellow, muted) stored in `usePencilTools` Zustand store
-- **Thickness bar**: 3 presets (thin=2, medium=4, bold=8) mapped to `perfect-freehand` size
-- **Canvas**: Pointer events for cross-device support, `perfect-freehand` + `simplify-js` for pressure-sensitive calligraphy strokes, faint ruled guide lines
-- **Tool bar**: Pen (default), Highlighter (semi-transparent, multiply blend), Eraser (tap-to-delete stroke)
-- **Save flow**: Export canvas → call `ink-ocr` edge function → extracted text → `prayer_cards.prayer_text` + image → storage bucket
-- **Undo/Redo**: `useInkHistory` hook maintains stroke stack
-- Launched from the "Draw" mode in `PrayNowSheet`
+1. Create `public/manifest.json` with app name, icons, `display: standalone`, theme color `#0a0908`, background `#0a0908`
+2. Add `<link rel="manifest">` to `index.html`
+3. Create `public/sw.js` — minimal service worker that caches the app shell (HTML, CSS, JS bundles) for offline loading. Network-first strategy for API calls.
+4. Register service worker in `src/main.tsx`
+5. Add Apple meta tags for iOS home screen (`apple-mobile-web-app-capable`, status bar style)
 
 ---
 
-### Part G — Personalized Sayings (Not Yet Built → Implementation)
+### Part E — Performance & Code Splitting
 
-Enhance `useSayingsCycle.ts`:
-- Replace the generic fallback array with the mockup's brand sayings: `['KeepPray.ing', 'Keep Believing', 'Keep Trusting', 'Keep Hoping', 'Keep Seeking', 'Keep Praising', 'Keep Standing']`
-- Context-awareness: query user's most recent prayer topics from `prayer_cards` labels. If "healing" is present → bias toward "Keep Believing". If "guidance" → "Keep Seeking". Simple keyword→saying map, no vector search needed.
-- Explore header displays the current saying with 600ms opacity fade transition per mockup spec
+1. Lazy-load heavy pages: `Bible`, `Admin`, `DesignLab`, `Classical`, `Help`, `Support` via `React.lazy` + `Suspense`
+2. Lazy-load `DrawCanvasFullscreen` (pulls in `perfect-freehand`)
+3. Add `SacredSpinner` as the Suspense fallback
+4. Audit bundle — ensure Framer Motion tree-shaking is working (import only `motion`, `AnimatePresence`)
 
 ---
 
-### Part H — Route Wiring
+### Part F — Light Theme Polish
 
-Update `MobileNavV2.tsx` tab paths:
-- Explore → `/explore` (new route)
-- Circles → `/circles` (new route)  
-- Profile → `/profile` (existing route, renders new mobile version)
+The mockup defines extensive `[data-theme="light"]` overrides (lines 66-100). Verify and fix:
 
-Add routes in `App.tsx`:
-- `/explore` → `ExploreMobile`
-- `/circles` → `CirclesMobile`
-- Profile page conditionally renders `ProfileMobile` on mobile viewport
+1. Bottom nav background: `rgba(255,255,255,0.92)` with light border
+2. Card backgrounds: white gradient, light gold borders
+3. Profile menu items: white background with light borders
+4. Focus mode header/bar: white backgrounds
+5. All components using inline `style=` with `var(--kp-*)` tokens already work. Fix any that use hardcoded dark values.
 
 ---
 
 ### Technical Details
 
-**New files (6):**
-- `src/pages/ExploreMobile.tsx`
-- `src/pages/CirclesMobile.tsx`
-- `src/pages/ProfileMobile.tsx`
-- `src/components/DrawCanvasFullscreen.tsx`
-- `src/hooks/useWarriorPresence.ts`
+**New files (3):**
+- `src/components/DesktopNav.tsx` — horizontal top nav for desktop
+- `public/manifest.json` — PWA manifest
+- `public/sw.js` — service worker
 
-**Modified files (~10):**
-- `src/App.tsx` — new routes
-- `src/components/MobileNavV2.tsx` — updated paths
-- `src/hooks/useSayingsCycle.ts` — brand sayings + context bias
-- `src/pages/Auth.tsx` — token-based button styles
-- `src/components/bible/PremiumUpsellSheet.tsx` — token CTA
+**Modified files (~12):**
+- `src/pages/SharedPrayerLanding.tsx` — full restyle with tokens
+- `src/pages/Auth.tsx` — token buttons
 - `src/components/InviteShareModal.tsx` — token buttons
 - `src/components/SharePrayerModal.tsx` — token buttons
-- `src/components/PrayNowSheet.tsx` — wire Draw mode to fullscreen canvas
-- `src/pages/Profile.tsx` — mobile detection → render ProfileMobile
+- `src/components/CommunityPrayerRequestModal.tsx` — token buttons
+- `src/components/TeamPrayerRequestModal.tsx` — token buttons
+- `src/components/MobileShell.tsx` — desktop breakpoint handling
+- `src/components/MobileNavV2.tsx` — hide on desktop
+- `src/pages/BoardV2.tsx` — responsive grid
+- `src/pages/ExploreMobile.tsx` — desktop sidebar layout
+- `src/App.tsx` — lazy imports + Suspense
+- `index.html` — manifest link + Apple meta tags
+- `src/main.tsx` — service worker registration
 
-**Database migration (1):**
-- Add `is_prayer_warrior` and `warrior_status` columns to `profiles`
+**No database migrations required.**
 
