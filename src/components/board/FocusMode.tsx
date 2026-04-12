@@ -187,7 +187,7 @@ export function FocusMode({
       <div
         className="flex items-center justify-around px-1 py-2 flex-shrink-0"
         style={{
-          background: "linear-gradient(to top, rgba(10,9,8,0.98), rgba(20,18,13,0.92))",
+          background: "var(--kp-bg-surface)",
           borderTop: "1px solid var(--kp-border)",
         }}
       >
