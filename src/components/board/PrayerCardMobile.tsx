@@ -251,12 +251,12 @@ export function PrayerCardMobile({
       <motion.div
         animate={{ rotateY: flipped ? -180 : 0 }}
         transition={{ duration: 0.65, type: "spring", stiffness: 80, damping: 18 }}
-        className={`relative w-full ${isFullscreen ? "flex-1 min-h-0" : "aspect-[9/16]"}`}
+        className={`relative w-full ${isFullscreen ? "flex-1 min-h-0 flex flex-col" : ""}`}
         style={{ transformStyle: "preserve-3d" }}
       >
         {/* ═══ FRONT FACE ═══════════════════════════════════════════════ */}
         <div
-          className={`absolute inset-0 overflow-hidden flex flex-col ${isFullscreen ? "" : "rounded-[var(--kp-radius)]"}`}
+          className={`relative overflow-hidden ${isFullscreen ? "flex-1 min-h-0 flex flex-col" : "rounded-[var(--kp-radius)]"}`}
           style={{
             backfaceVisibility: "hidden",
             background: "var(--kp-bg-card)",
@@ -266,7 +266,7 @@ export function PrayerCardMobile({
             borderRadius: isFullscreen ? 0 : undefined,
             pointerEvents: flipped ? "none" : "auto",
             opacity: flipped ? 0 : 1,
-            visibility: flipped ? "hidden" : "visible",
+            visibility: flipped ? "hidden" as const : "visible" as const,
             transition: "opacity 0.3s, visibility 0.3s",
           }}
         >
@@ -488,17 +488,17 @@ export function PrayerCardMobile({
 
         {/* ═══ BACK FACE (Testimony) ═══════════════════════════════════ */}
         <div
-          className={`absolute inset-0 overflow-hidden flex flex-col ${isFullscreen ? "" : "rounded-[var(--kp-radius)]"}`}
+          className="absolute inset-0 rounded-[var(--kp-radius)] overflow-hidden"
           style={{
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
             pointerEvents: flipped ? "auto" : "none",
             background: "linear-gradient(175deg, #1a2318 0%, #121a10 40%, #0d140a 100%)",
-            border: isFullscreen ? "none" : "1px solid rgba(52,211,153,0.25)",
-            boxShadow: isFullscreen ? "none" : "0 0 40px 4px rgba(52,211,153,0.12)",
+            border: "1px solid rgba(52,211,153,0.25)",
+            boxShadow: "0 0 40px 4px rgba(52,211,153,0.12)",
           }}
         >
-          <div className="h-full w-full">
+          <div className="h-full w-full flex flex-col">
             <TestifyBack
               prayerId={prayer.id}
               prayerAuthorId={prayer.created_by}
