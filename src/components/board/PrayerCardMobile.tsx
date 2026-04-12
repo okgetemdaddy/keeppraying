@@ -416,31 +416,33 @@ export function PrayerCardMobile({
           >
             {/* Left group */}
             <div className="flex items-center">
-              {/* Privacy dot */}
-              <button
-                onClick={() => setPrivacyOpen(true)}
-                className="relative w-[38px] h-[38px] flex items-center justify-center rounded-[var(--kp-radius-sm)] active:scale-[0.88] transition-transform"
-              >
-                <div className="relative w-[9px] h-[9px]">
-                  <div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
-                      boxShadow: isPublic
-                        ? "0 0 6px 2px rgba(52,211,153,0.4)"
-                        : "0 0 6px 2px rgba(248,113,113,0.4)",
-                    }}
-                  />
-                  <div
-                    className="absolute inset-0 rounded-full animate-ping"
-                    style={{
-                      backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
-                      opacity: 0.25,
-                      animationDuration: "2.5s",
-                    }}
-                  />
-                </div>
-              </button>
+              {/* Privacy dot — owner only */}
+              {isOwner && (
+                <button
+                  onClick={() => setPrivacyOpen(true)}
+                  className="relative w-[38px] h-[38px] flex items-center justify-center rounded-[var(--kp-radius-sm)] active:scale-[0.88] transition-transform"
+                >
+                  <div className="relative w-[9px] h-[9px]">
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
+                        boxShadow: isPublic
+                          ? "0 0 6px 2px rgba(52,211,153,0.4)"
+                          : "0 0 6px 2px rgba(248,113,113,0.4)",
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 rounded-full animate-ping"
+                      style={{
+                        backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
+                        opacity: 0.25,
+                        animationDuration: "2.5s",
+                      }}
+                    />
+                  </div>
+                </button>
+              )}
 
               {/* Prayed */}
               <BarBtn label="Prayed" active={prayed} onClick={handlePrayed}>
