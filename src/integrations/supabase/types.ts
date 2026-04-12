@@ -2058,6 +2058,7 @@ export type Database = {
           id: string
           is_donor: boolean
           is_founder: boolean
+          is_prayer_warrior: boolean
           is_public: boolean
           last_prayed_date: string | null
           longest_streak: number
@@ -2065,6 +2066,7 @@ export type Database = {
           role: string
           subscription_tier: string
           updated_at: string
+          warrior_status: string
         }
         Insert: {
           avatar_url?: string | null
@@ -2077,6 +2079,7 @@ export type Database = {
           id: string
           is_donor?: boolean
           is_founder?: boolean
+          is_prayer_warrior?: boolean
           is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
@@ -2084,6 +2087,7 @@ export type Database = {
           role?: string
           subscription_tier?: string
           updated_at?: string
+          warrior_status?: string
         }
         Update: {
           avatar_url?: string | null
@@ -2096,6 +2100,7 @@ export type Database = {
           id?: string
           is_donor?: boolean
           is_founder?: boolean
+          is_prayer_warrior?: boolean
           is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
@@ -2103,6 +2108,7 @@ export type Database = {
           role?: string
           subscription_tier?: string
           updated_at?: string
+          warrior_status?: string
         }
         Relationships: []
       }
