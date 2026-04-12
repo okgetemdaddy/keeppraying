@@ -281,7 +281,9 @@ export function PrayerCardMobile({
           <DustParticles dustColor="rgba(210,185,120," />
 
           {/* ── Content ────────────────────────────────────────────────── */}
-          <div className="relative z-[3] px-[22px] pt-5 pb-3">
+          <div className={`relative z-[3] px-[22px] ${isCompact ? "pt-3 pb-2" : "pt-5 pb-3"} ${isFullscreen ? "flex-1 min-h-0 overflow-y-auto" : ""}`}
+            style={isFullscreen ? { WebkitOverflowScrolling: "touch" } : undefined}
+          >
             <div
               className="text-[9px] font-bold uppercase tracking-[0.22em] mb-1"
               style={{ color: "var(--kp-gold)" }}
@@ -289,13 +291,13 @@ export function PrayerCardMobile({
               KEEPPRAY.ING
             </div>
             <h3
-              className="text-[17px] font-bold leading-[1.35] mb-0"
+              className={`font-bold leading-[1.35] mb-0 ${isFullscreen ? "text-[22px]" : "text-[17px]"}`}
               style={{
                 fontFamily: "var(--kp-font-display)",
                 color: "var(--kp-text-primary)",
-                cursor: "pointer",
+                cursor: isFullscreen ? "default" : "pointer",
               }}
-              onClick={onFocusOpen}
+              onClick={isFullscreen ? undefined : onFocusOpen}
             >
               {prayer.title || "Untitled Prayer"}
               {hasTestimony && (
@@ -311,13 +313,19 @@ export function PrayerCardMobile({
               )}
             </h3>
             <p
-              className="text-[15px] leading-[1.8] mt-3"
+              className={`mt-3 ${isFullscreen ? "text-[18px] leading-[2]" : "text-[15px] leading-[1.8]"}`}
               style={{
                 fontFamily: `"${fontFamily}", ${fontType === "serif" ? '"Georgia", serif' : '"Helvetica Neue", sans-serif'}`,
                 color: "var(--kp-text-body)",
-                cursor: "pointer",
+                cursor: isFullscreen ? "default" : "pointer",
+                ...(isCompact ? {
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical" as const,
+                  overflow: "hidden",
+                } : {}),
               }}
-              onClick={onFocusOpen}
+              onClick={isFullscreen ? undefined : onFocusOpen}
             >
               {prayer.prayer_text}
             </p>
