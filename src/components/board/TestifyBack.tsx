@@ -641,7 +641,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className="p-4 rounded-2xl relative cursor-pointer"
+                      className={`relative cursor-pointer ${isBoard ? "p-3 rounded-xl" : "p-4 rounded-2xl"}`}
                       onClick={() => setExpandedId(testimony.id)}
                       whileTap={{ scale: 0.98 }}
                       style={{
@@ -687,7 +687,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
                       </div>
 
                       {/* Testimony text */}
-                      <p className="text-[14px] leading-relaxed line-clamp-3"
+                      <p className={`leading-relaxed ${isBoard ? "text-[12px] line-clamp-2" : "text-[14px] line-clamp-3"}`}
                         style={{ fontFamily: '"Cormorant Garamond", "Georgia", serif', color: textPrimary }}>
                         {testimony.title || testimony.body}
                       </p>
