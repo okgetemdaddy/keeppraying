@@ -699,13 +699,15 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
 
             {/* Bottom tagline + Testify button */}
             {!alreadyTestified && (
-              <div className="mt-3 space-y-2.5">
-                <span className="text-[10px] font-medium italic tracking-wide px-1" style={{ color: textMuted }}>
-                  Testify to His Goodness
-                </span>
+              <div className={isBoard ? "mt-2 space-y-1.5" : "mt-3 space-y-2.5"}>
+                {!isBoard && (
+                  <span className="text-[10px] font-medium italic tracking-wide px-1" style={{ color: textMuted }}>
+                    Testify to His Goodness
+                  </span>
+                )}
                 <button
                   onClick={() => setMode("typing")}
-                  className="w-full py-3.5 rounded-xl font-medium text-sm transition-all active:scale-[0.98]"
+                  className={`w-full rounded-xl font-medium transition-all active:scale-[0.98] ${isBoard ? "py-2.5 text-xs" : "py-3.5 text-sm"}`}
                   style={{
                     background: `linear-gradient(135deg, ${accent}, #d4b04e)`,
                     color: "#1a1610",
