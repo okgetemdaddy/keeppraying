@@ -1,0 +1,16 @@
+{
+  "name": "KeepPray.ing",
+  "short_name": "KeepPray.ing",
+  "description": "Your sacred digital prayer companion",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0a0908",
+  "background_color": "#0a0908",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -97,7 +97,7 @@ export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
             <Button
               onClick={handleClose}
               className="rounded-xl h-10 px-6 font-medium"
-              style={{ background: "linear-gradient(135deg, hsl(42 85% 46%), hsl(35 82% 54%))", color: "white" }}
+              style={{ background: "var(--gradient-gold)", color: "white" }}
             >
               Amen 🙏
             </Button>
@@ -145,7 +145,7 @@ export function TeamPrayerRequestModal({ open, onOpenChange }: Props) {
                     disabled={submitting}
                     className="w-full rounded-xl h-11 font-medium gap-2"
                     style={{
-                      background: "linear-gradient(135deg, hsl(42 85% 46%), hsl(35 82% 54%))",
+                      background: "var(--gradient-gold)",
                       color: "white",
                     }}
                   >

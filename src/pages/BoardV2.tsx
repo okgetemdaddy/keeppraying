@@ -140,7 +140,7 @@ export default function BoardV2() {
     }}>
       {!isMobile && <SiteNav dark />}
 
-      <div className={isMobile ? "pb-4" : "max-w-3xl mx-auto px-4 pb-8"}>
+      <div className={isMobile ? "pb-4" : "max-w-5xl mx-auto px-4 pb-8"}>
         {/* ── Header ─────────────────────────────────────────────────── */}
         <header className="flex items-center justify-between flex-shrink-0 sticky top-0 z-20"
           style={{ padding: "14px 18px 10px", background: isMobile ? "linear-gradient(to bottom, var(--kp-bg-deep) 60%, transparent)" : undefined }}>
@@ -290,7 +290,7 @@ export default function BoardV2() {
           </div>
         ) : (
           /* ── Desktop (legacy PrayerCard) ───────────────────────────── */
-          <div className="grid grid-cols-2 gap-6 justify-items-center">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
             {displayedItems.map((item) => {
               const card = item.prayer_cards!;
               const meta: SavedMeta = { id: item.id, pinned: item.pinned, favorite: item.favorite, notes: item.notes, position: item.position };

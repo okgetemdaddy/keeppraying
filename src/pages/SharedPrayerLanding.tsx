@@ -322,7 +322,7 @@ export default function SharedPrayerLanding() {
   // Loading state
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-amber-50 to-white">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--kp-bg-deep)" }}>
         <SacredSpinner />
       </div>
     );
@@ -331,10 +331,10 @@ export default function SharedPrayerLanding() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-amber-50 to-white">
-        <AlertTriangle className="w-12 h-12 text-amber-500 mb-4" />
-        <h1 className="text-xl font-semibold text-foreground mb-2">Oops</h1>
-        <p className="text-muted-foreground text-center max-w-sm mb-6">{error}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "var(--kp-bg-deep)" }}>
+        <AlertTriangle className="w-12 h-12 mb-4" style={{ color: "var(--kp-gold)" }} />
+        <h1 className="text-xl font-semibold mb-2" style={{ color: "var(--kp-text-primary)" }}>Oops</h1>
+        <p className="text-center max-w-sm mb-6" style={{ color: "var(--kp-text-muted)" }}>{error}</p>
         <Button onClick={() => navigate("/")} className="rounded-xl">
           Go Home
         </Button>
@@ -410,7 +410,7 @@ export default function SharedPrayerLanding() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
-          className="min-h-screen bg-gradient-to-b from-amber-50/50 to-white pb-24"
+          className="min-h-screen pb-24" style={{ background: "var(--kp-bg-deep)" }}
         >
           {/* Hero */}
           <div className="relative overflow-hidden">
@@ -474,7 +474,7 @@ export default function SharedPrayerLanding() {
                   }}
                   className="rounded-xl h-11 px-8 font-semibold"
                   style={{
-                    background: "linear-gradient(135deg, hsl(42 80% 50%) 0%, hsl(38 75% 45%) 100%)",
+                    background: "var(--gradient-gold)",
                     color: "white",
                   }}
                 >
@@ -491,7 +491,7 @@ export default function SharedPrayerLanding() {
     return (
       <div className="min-h-screen relative overflow-hidden flex flex-col">
         {/* ── Hero gradient background ── */}
-        <div className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, hsl(25 60% 10%) 0%, hsl(30 40% 8%) 50%, hsl(35 35% 6%) 100%)" }}>
+        <div className="relative overflow-hidden" style={{ background: "linear-gradient(160deg, var(--kp-bg-deep) 0%, var(--kp-bg-surface) 50%, var(--kp-bg-deep) 100%)" }}>
           {/* Subtle radial dot pattern */}
           <div className="absolute inset-0 opacity-[0.04]" style={{
             backgroundImage: "radial-gradient(circle, hsl(42 80% 70%) 1px, transparent 1px)",
@@ -503,7 +503,7 @@ export default function SharedPrayerLanding() {
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
               <Avatar className="w-18 h-18 mx-auto mb-5 ring-3 ring-amber-400/30 shadow-lg shadow-amber-500/20" style={{ width: 72, height: 72 }}>
                 <AvatarImage src={sender?.avatar_url || undefined} />
-                <AvatarFallback className="text-xl font-bold" style={{ background: "hsl(42 60% 25%)", color: "hsl(42 80% 75%)" }}>
+                <AvatarFallback className="text-xl font-bold" style={{ background: "var(--kp-bg-elevated)", color: "var(--kp-gold)" }}>
                   {senderFirstName[0]}
                 </AvatarFallback>
               </Avatar>
@@ -514,7 +514,7 @@ export default function SharedPrayerLanding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15, duration: 0.6 }}
               className="text-2xl font-bold leading-tight mb-2"
-              style={{ color: "hsl(42 80% 85%)", fontFamily: '"Playfair Display", serif' }}
+              style={{ color: "var(--kp-text-primary)", fontFamily: "var(--kp-font-display)" }}
             >
               {senderFirstName} shared a prayer with you
             </motion.h1>
@@ -525,7 +525,7 @@ export default function SharedPrayerLanding() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
                 className="text-sm italic mb-4 max-w-xs mx-auto"
-                style={{ color: "hsl(42 30% 60%)" }}
+                style={{ color: "var(--kp-text-muted)" }}
               >
                 "{share.message}"
               </motion.p>
@@ -554,12 +554,12 @@ export default function SharedPrayerLanding() {
             transition={{ delay: 0.25, duration: 0.5, type: "spring", stiffness: 200, damping: 24 }}
             className="rounded-2xl p-5 space-y-3"
             style={{
-              background: "linear-gradient(135deg, hsl(42 55% 97%) 0%, hsl(38 45% 95%) 100%)",
-              border: "1px solid hsl(42 40% 88%)",
-              boxShadow: "0 8px 32px -8px hsl(42 50% 40% / 0.12), 0 2px 8px -2px hsl(42 50% 40% / 0.08)",
+              background: "var(--kp-bg-card)",
+              border: "1px solid var(--kp-border-gold)",
+              boxShadow: "0 8px 32px -8px rgba(180,140,50,0.12)",
             }}
           >
-            <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(25 18% 52%)" }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: "var(--kp-text-muted)" }}>
               {isAccessible ? (
                 <>
                   <BookOpen className="w-3.5 h-3.5" />
@@ -573,12 +573,12 @@ export default function SharedPrayerLanding() {
               )}
             </div>
             {prayer.title && prayer.title !== "A Prayer Shared With You" && (
-              <h2 className="text-lg font-semibold" style={{ color: "hsl(25 35% 14%)" }}>{prayer.title}</h2>
+              <h2 className="text-lg font-semibold" style={{ color: "var(--kp-text-primary)" }}>{prayer.title}</h2>
             )}
-            <p className="text-sm leading-relaxed line-clamp-4" style={{ color: "hsl(25 28% 28%)" }}>
+            <p className="text-sm leading-relaxed line-clamp-4" style={{ color: "var(--kp-text-body)" }}>
               {isAccessible ? prayer.prayer_text : "A heartfelt prayer has been shared with you…"}
             </p>
-            <div className="pt-2 border-t text-[11px]" style={{ borderColor: "hsl(42 40% 88%)", color: "hsl(25 18% 58%)" }}>
+            <div className="pt-2 border-t text-[11px]" style={{ borderColor: "var(--kp-border)", color: "var(--kp-text-muted)" }}>
               <BookOpen className="w-3 h-3 inline mr-1" />
               {isAccessible ? "Tap below to read the full prayer" : "Sign in to read the full prayer"}
             </div>
@@ -592,7 +592,7 @@ export default function SharedPrayerLanding() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
             className="text-xs font-semibold uppercase tracking-widest text-center mb-5"
-            style={{ color: "hsl(42 60% 45%)" }}
+            style={{ color: "var(--kp-gold)" }}
           >
             What you can do on KeepPray.ing
           </motion.p>
@@ -606,15 +606,15 @@ export default function SharedPrayerLanding() {
                 transition={{ delay: 0.45 + i * 0.08, duration: 0.4 }}
                 className="rounded-xl p-3.5 space-y-2"
                 style={{
-                  background: "hsl(42 40% 97%)",
-                  border: "1px solid hsl(42 35% 91%)",
+                  background: "var(--kp-bg-elevated)",
+                  border: "1px solid var(--kp-border)",
                 }}
               >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "hsl(42 60% 92%)" }}>
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: "rgba(180,140,50,0.12)" }}>
                   {feat.icon}
                 </div>
-                <h3 className="text-sm font-semibold" style={{ color: "hsl(25 35% 18%)" }}>{feat.title}</h3>
-                <p className="text-[11px] leading-snug" style={{ color: "hsl(25 18% 48%)" }}>{feat.desc}</p>
+                <h3 className="text-sm font-semibold" style={{ color: "var(--kp-text-primary)" }}>{feat.title}</h3>
+                <p className="text-[11px] leading-snug" style={{ color: "var(--kp-text-muted)" }}>{feat.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -627,10 +627,10 @@ export default function SharedPrayerLanding() {
           transition={{ delay: 0.9 }}
           className="px-8 pb-6 text-center"
         >
-          <p className="text-xs italic" style={{ color: "hsl(25 18% 52%)" }}>
+          <p className="text-xs italic" style={{ color: "var(--kp-text-muted)" }}>
             "The prayer of a righteous person is powerful and effective."
           </p>
-          <p className="text-[10px] mt-1" style={{ color: "hsl(25 18% 62%)" }}>
+          <p className="text-[10px] mt-1" style={{ color: "var(--kp-text-muted)" }}>
             — James 5:16
           </p>
         </motion.div>
@@ -639,7 +639,7 @@ export default function SharedPrayerLanding() {
         <div className="flex-1 min-h-[80px]" />
 
         {/* ── Sticky CTA ── */}
-        <div className="sticky bottom-0 z-20 px-5 pb-5 pt-3" style={{ background: "linear-gradient(to top, white 70%, transparent)" }}>
+        <div className="sticky bottom-0 z-20 px-5 pb-5 pt-3" style={{ background: "linear-gradient(to top, var(--kp-bg-deep) 70%, transparent)" }}>
           <motion.button
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -648,9 +648,9 @@ export default function SharedPrayerLanding() {
             className="w-full h-13 rounded-2xl font-semibold text-base shadow-lg flex items-center justify-center gap-2"
             style={{
               height: 52,
-              background: "linear-gradient(135deg, hsl(42 80% 50%) 0%, hsl(38 75% 45%) 100%)",
+              background: "var(--gradient-gold)",
               color: "white",
-              boxShadow: "0 8px 24px -4px hsl(42 80% 50% / 0.35)",
+              boxShadow: "var(--shadow-gold)",
             }}
           >
             {isAccessible ? (
@@ -665,7 +665,7 @@ export default function SharedPrayerLanding() {
               </>
             )}
           </motion.button>
-          <p className="text-center text-[11px] mt-2" style={{ color: "hsl(25 18% 55%)" }}>
+          <p className="text-center text-[11px] mt-2" style={{ color: "var(--kp-text-muted)" }}>
             Free account — no credit card needed
           </p>
         </div>
@@ -676,10 +676,10 @@ export default function SharedPrayerLanding() {
   // ── AUTHENTICATED — wrong recipient ─────────────────────────────────────────
   if (share.recipient_id && share.recipient_id !== user.id && share.sender_id !== user.id) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-b from-amber-50 to-white">
-        <Lock className="w-12 h-12 text-amber-500 mb-4" />
-        <h1 className="text-xl font-semibold text-foreground mb-2">Not for you</h1>
-        <p className="text-muted-foreground text-center max-w-sm mb-6">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "var(--kp-bg-deep)" }}>
+        <Lock className="w-12 h-12 mb-4" style={{ color: "var(--kp-gold)" }} />
+        <h1 className="text-xl font-semibold mb-2" style={{ color: "var(--kp-text-primary)" }}>Not for you</h1>
+        <p className="text-center max-w-sm mb-6" style={{ color: "var(--kp-text-muted)" }}>
           This prayer was shared with someone else. Ask them to share it with you directly.
         </p>
         <Button onClick={() => navigate("/")} className="rounded-xl">Go Home</Button>
@@ -693,7 +693,7 @@ export default function SharedPrayerLanding() {
     : senderFirstName;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/50 to-white pb-24">
+    <div className="min-h-screen pb-24" style={{ background: "var(--kp-bg-deep)" }}>
       {/* Hero */}
       <div className="relative overflow-hidden">
         {prayer.background_url ? (
