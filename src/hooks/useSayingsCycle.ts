@@ -10,6 +10,17 @@ const FALLBACK_SAYINGS = [
   "You are never praying alone",
 ];
 
+/** Brand sayings that rotate in the Explore header */
+const BRAND_SAYINGS = [
+  "KeepPray.ing",
+  "Keep Believing",
+  "Keep Trusting",
+  "Keep Hoping",
+  "Keep Seeking",
+  "Keep Praising",
+  "Keep Standing",
+];
+
 const MIN_INTERVAL = 45_000;
 const MAX_INTERVAL = 90_000;
 const DISPLAY_DURATION = 6_000;
@@ -52,5 +63,16 @@ export function useSayingsCycle() {
     };
   }, [showRandom]);
 
-  return { currentSaying };
+  // Brand saying cycle for Explore header (5s interval, separate from DB sayings)
+  const [brandIdx, setBrandIdx] = useState(0);
+  const brandSaying = BRAND_SAYINGS[brandIdx];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBrandIdx((prev) => (prev + 1) % BRAND_SAYINGS.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return { currentSaying, brandSaying };
 }

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SiteNav } from "@/components/SiteNav";
+import { useIsMobile } from "@/hooks/use-mobile";
+import ProfileMobile from "./ProfileMobile";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import VerseLink from "@/components/VerseLink";
 import PrayerPartnerCard from "@/components/companions/PrayerPartnerCard";
 import {
@@ -283,6 +284,9 @@ export default function Profile() {
       default: return <Heart className="w-4 h-4 text-muted-foreground" />;
     }
   };
+
+  // On mobile, render the mobile-specific profile for own profile
+  if (isMobile && isOwnProfile) return <ProfileMobile />;
 
   /* ── loading state ── */
   if (loading) {

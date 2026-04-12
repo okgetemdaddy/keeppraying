@@ -37,8 +37,8 @@ export function MobileNavV2({ onPrayerCreated }: Props) {
     {
       id: "explore",
       label: "Explore",
-      path: "/prayers",
-      match: (p: string) => p === "/prayers" || p.startsWith("/prayer/"),
+      path: "/explore",
+      match: (p: string) => p === "/explore" || p === "/prayers" || p.startsWith("/prayer/"),
       icon: (active: boolean) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.8"
           stroke={active ? "var(--kp-gold)" : "var(--kp-text-muted)"}>
@@ -51,7 +51,7 @@ export function MobileNavV2({ onPrayerCreated }: Props) {
     {
       id: "circles",
       label: "Circles",
-      path: "/circles",
+      path: "/circles-mobile",
       match: (p: string) => p.startsWith("/circles"),
       icon: (active: boolean) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.8"

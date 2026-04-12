@@ -42,6 +42,9 @@ import Help from "./pages/Help";
 import Upload from "./pages/Upload";
 import BoardV2 from "./pages/BoardV2";
 import DesignLab from "./pages/DesignLab";
+import ExploreMobile from "./pages/ExploreMobile";
+import CirclesMobile from "./pages/CirclesMobile";
+import ProfileMobile from "./pages/ProfileMobile";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
@@ -235,6 +238,9 @@ function AppShell() {
       <Route path="/help" element={<PreLaunchGuard><Help /></PreLaunchGuard>} />
       <Route path="/boardv2" element={<PreLaunchGuard><BoardV2 /></PreLaunchGuard>} />
       <Route path="/design-lab" element={<PreLaunchGuard><DesignLab /></PreLaunchGuard>} />
+      <Route path="/explore" element={<PreLaunchGuard><ExploreMobile /></PreLaunchGuard>} />
+      <Route path="/circles-mobile" element={<PreLaunchGuard><CirclesMobile /></PreLaunchGuard>} />
+      <Route path="/profile-mobile" element={<PreLaunchGuard><ProfileMobile /></PreLaunchGuard>} />
       <Route path="/invite/:type/:token" element={<InviteLanding />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

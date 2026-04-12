@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mic, MicOff, PenLine, Type, X, Send, Sparkles } from "lucide-react";
+import { DrawCanvasFullscreen } from "@/components/DrawCanvasFullscreen";
 
 interface PrayNowSheetProps {
   open: boolean;
@@ -24,6 +25,7 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
   const { user } = useAuth();
   const { toast } = useToast();
   const [mode, setMode] = useState<InputMode>("type");
+  const [drawOpen, setDrawOpen] = useState(false);
   const [prayerText, setPrayerText] = useState("");
   const [saving, setSaving] = useState(false);
   const [enriching, setEnriching] = useState(false);
@@ -103,6 +105,7 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
   const canSave = prayerText.trim().length > 5;
 
   return (
+    <>
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" />
@@ -172,13 +175,17 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
               </div>
             )}
             {mode === "draw" && (
-              <div className="flex-1 flex items-center justify-center rounded-[var(--kp-radius)]"
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 rounded-[var(--kp-radius)]"
                 style={{ backgroundColor: "var(--kp-bg-elevated)", border: "1px solid var(--kp-border)" }}>
-                <div className="text-center space-y-3">
-                  <PenLine className="w-12 h-12 mx-auto" style={{ color: "var(--kp-text-muted)" }} />
-                  <p className="text-sm" style={{ color: "var(--kp-text-muted)" }}>Handwriting mode coming soon</p>
-                  <p className="text-xs" style={{ color: "var(--kp-gold-dim)" }}>Use Type or Speak mode for now</p>
-                </div>
+                <PenLine className="w-12 h-12" style={{ color: "var(--kp-gold)" }} />
+                <p className="text-sm font-medium" style={{ color: "var(--kp-text-primary)" }}>Draw your prayer</p>
+                <button
+                  onClick={() => setDrawOpen(true)}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.96]"
+                  style={{ backgroundColor: "var(--kp-gold)", color: "var(--kp-bg-deep)" }}
+                >
+                  Open Canvas
+                </button>
               </div>
             )}
           </div>
@@ -204,5 +211,15 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+
+      <DrawCanvasFullscreen
+        open={drawOpen}
+        onClose={() => setDrawOpen(false)}
+        onPrayerCreated={() => {
+          onOpenChange(false);
+          onPrayerCreated?.();
+        }}
+      />
+    </>
   );
 }
