@@ -285,6 +285,9 @@ export default function Profile() {
     }
   };
 
+  // On mobile, render the mobile-specific profile for own profile
+  if (isMobile && isOwnProfile) return <ProfileMobile />;
+
   /* ── loading state ── */
   if (loading) {
     return (
