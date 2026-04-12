@@ -101,6 +101,8 @@
     --kp-header-height: 56px;
     --kp-font-display: 'Playfair Display', 'Georgia', serif;
     --kp-font-prayer: 'Cormorant Garamond', 'Georgia', serif;
+    --kp-nav-bg: linear-gradient(to top, rgba(10,9,8,0.98), rgba(20,18,13,0.92));
+    --kp-nav-border: var(--kp-border);
   }
 
   /* ═══ Mockup Light Theme Tokens ═══ */
@@ -122,6 +124,8 @@
     --kp-green-dim: rgba(5,150,105,0.08);
     --kp-red: #dc2626;
     --kp-red-dim: rgba(220,38,38,0.08);
+    --kp-nav-bg: rgba(255,255,255,0.92);
+    --kp-nav-border: rgba(100,80,40,0.08);
   }
 
   /* ═══ Card breathing + glow-pulse animations ═══ */
