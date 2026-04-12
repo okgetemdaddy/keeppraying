@@ -1,11 +1,21 @@
 /**
- * PrayerCardMobile — The canonical mobile prayer card for KeepPray.ing Phase 2.
+ * PrayerCardMobile — THE ONE CANONICAL prayer card for KeepPray.ing.
  *
- * Built from mockup/index.html spec. Uses global CSS tokens (var(--kp-*)).
+ * ⚠️  GUARDRAIL: This is the ONLY prayer card visual implementation in the app.
+ *     DO NOT create alternate card components. All contexts (board, focus, prayer page,
+ *     shared landing, explore, design lab) MUST use this component.
+ *     Visual differences are handled via the `variant` prop.
+ *     Owner vs public differences are handled via the `isOwner` prop.
+ *
+ * Built from the DesignLab truth (PrayerCardAsset.tsx).
+ * Uses global CSS tokens (var(--kp-*)).
  * 3D flip via React state + framer-motion rotateY.
  * Dust particles, inner glow, lamp light, scripture toggle, full action bar.
  *
- * This is the ONE card to rule them all on mobile.
+ * Variants:
+ *   - "default"    — Full card on board, normal flow
+ *   - "compact"    — 2-line text clamp for layered stack view, reduced padding
+ *   - "fullscreen" — Fixed inset-0 prayer page/stage, only text scrolls, bar pinned
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -43,6 +53,8 @@ export interface MobileCardMeta {
   position?: number;
 }
 
+export type PrayerCardVariant = "default" | "compact" | "fullscreen";
+
 interface PrayerCardMobileProps {
   prayer: PrayerCardRow;
   meta?: MobileCardMeta;
@@ -57,6 +69,10 @@ interface PrayerCardMobileProps {
   onFocusOpen?: () => void;
   /** Reduced glow when in Focus overlay */
   focused?: boolean;
+  /** Layout variant — default | compact | fullscreen */
+  variant?: PrayerCardVariant;
+  /** Close callback for fullscreen variant */
+  onClose?: () => void;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
