@@ -13,28 +13,17 @@ import Auth from "./pages/Auth";
 import Prayers from "./pages/Prayers";
 import PrayerAssist from "./pages/PrayerAssist";
 import Board from "./pages/Board";
-import WarRoom from "./pages/WarRoom";
-import Games from "./pages/Games";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
 import Admin from "./pages/Admin";
 import Prayer from "./pages/Prayer";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Testify from "./pages/Testify";
 import TestimonyDetail from "./pages/TestimonyDetail";
-import FamilyRooms from "./pages/FamilyRooms";
-import FamilyRoomDetail from "./pages/FamilyRoomDetail";
-import PrayTheWorld from "./pages/PrayTheWorld";
-import SermonSync from "./pages/SermonSync";
-import AccountabilityCircles from "./pages/AccountabilityCircles";
-import CircleDetail from "./pages/CircleDetail";
 import InviteLanding from "./pages/InviteLanding";
 import Support from "./pages/Support";
 import Breathe from "./pages/Breathe";
 import Bible from "./pages/Bible";
 import Fruit from "./pages/Fruit";
-import BibleCanvas from "./pages/BibleCanvas";
 import SharedPrayerLanding from "./pages/SharedPrayerLanding";
 import Profile from "./pages/Profile";
 import Classical from "./pages/Classical";
@@ -45,6 +34,8 @@ import DesignLab from "./pages/DesignLab";
 import ExploreMobile from "./pages/ExploreMobile";
 import CirclesMobile from "./pages/CirclesMobile";
 import ProfileMobile from "./pages/ProfileMobile";
+import AccountabilityCircles from "./pages/AccountabilityCircles";
+import CircleDetail from "./pages/CircleDetail";
 import { UrgentPrayerNotifier } from "@/components/UrgentPrayerNotifier";
 import { useActivityLogger } from "@/hooks/useActivityLogger";
 import { PrayerFAB } from "@/components/PrayerFAB";
@@ -86,7 +77,7 @@ function AppShell() {
   const [communityOpen, setCommunityOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
   const isMobile = useIsMobile();
-  useActivityLogger(); // auto-tracks page views & sessions
+  useActivityLogger();
 
   const routeContent = (
     <Routes>
@@ -97,7 +88,7 @@ function AppShell() {
       <Route path="/upload" element={<Upload />} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
 
-      {/* All other routes locked behind PreLaunchGuard */}
+      {/* Core routes */}
       <Route path="/prayers" element={<PreLaunchGuard><Prayers /></PreLaunchGuard>} />
       <Route path="/prayer/:id" element={<PreLaunchGuard><Prayer /></PreLaunchGuard>} />
       <Route path="/assistant" element={<PreLaunchGuard><PrayerAssist /></PreLaunchGuard>} />
@@ -106,7 +97,7 @@ function AppShell() {
         <PreLaunchGuard>
           <AuthGate
             title="Your Prayer Board"
-            subtitle="A sacred space to collect, organize, and revisit the prayers closest to your heart. Pin favorites, add notes, and watch God move."
+            subtitle="A sacred space to collect, organize, and revisit the prayers closest to your heart."
             heroIcon={LayoutGrid}
             features={[
               { icon: LayoutGrid, title: "Organize Your Prayers", description: "Pin, resize, and arrange prayer cards in a layout that's uniquely yours." },
@@ -126,7 +117,7 @@ function AppShell() {
         <PreLaunchGuard>
           <AuthGate
             title="Prayer Circles"
-            subtitle="Gather with friends, small groups, and accountability partners. Share prayers, assign growth homework, and walk together in faith."
+            subtitle="Gather with friends, small groups, and accountability partners."
             heroIcon={Users}
             features={[
               { icon: Users, title: "Pray Together", description: "Create circles with friends, church members, or believers worldwide." },
@@ -145,7 +136,7 @@ function AppShell() {
         <PreLaunchGuard>
           <AuthGate
             title="Your Circle"
-            subtitle="This is where community meets accountability — walking together in prayer and truth."
+            subtitle="This is where community meets accountability."
             heroIcon={Users}
             features={[
               { icon: Users, title: "Community Prayer", description: "See what others are praying and join in agreement." },
@@ -159,51 +150,11 @@ function AppShell() {
         </PreLaunchGuard>
       } />
 
-      <Route path="/groups" element={<Navigate to="/circles" replace />} />
-      <Route path="/groups/:id" element={<Navigate to="/circles" replace />} />
-
-      <Route path="/family" element={
-        <PreLaunchGuard>
-          <AuthGate
-            title="Family Rooms"
-            subtitle="Create a private prayer space for your family. Teach your children to pray, share requests, and grow in faith together."
-            heroIcon={Home}
-            features={[
-              { icon: Home, title: "Family Prayer Space", description: "A warm, safe environment designed for families to pray together." },
-              { icon: Heart, title: "Child-Friendly Mode", description: "Optional settings that make prayer approachable for young hearts." },
-              { icon: Users, title: "Invite Family Members", description: "Share a magic invite link so everyone can join your family room." },
-              { icon: BookOpen, title: "Leader Tools", description: "Set schedules, assign homework, and guide your family's prayer journey." },
-            ]}
-            verse="Train up a child in the way he should go; even when he is old he will not depart from it."
-            verseRef="Proverbs 22:6"
-          >
-            <FamilyRooms />
-          </AuthGate>
-        </PreLaunchGuard>
-      } />
-      <Route path="/family/:id" element={
-        <PreLaunchGuard>
-          <AuthGate
-            title="Family Room"
-            subtitle="Your family's private prayer space — where hearts gather before God."
-            heroIcon={Home}
-            features={[
-              { icon: Home, title: "Pray Together", description: "Share prayers and lift your family up before God." },
-              { icon: Heart, title: "Stay Connected", description: "Even when apart, you're united in prayer." },
-            ]}
-            verse="As for me and my household, we will serve the Lord."
-            verseRef="Joshua 24:15"
-          >
-            <FamilyRoomDetail />
-          </AuthGate>
-        </PreLaunchGuard>
-      } />
-
       <Route path="/profile" element={
         <PreLaunchGuard>
           <AuthGate
             title="Your Faith Profile"
-            subtitle="Track your prayer journey, view your streak, and see how God has been moving in your life."
+            subtitle="Track your prayer journey, view your streak, and see how God has been moving."
             heroIcon={UserCircle}
             features={[
               { icon: Flame, title: "Prayer Streak", description: "See your daily prayer consistency and longest streak." },
@@ -219,22 +170,13 @@ function AppShell() {
       } />
       <Route path="/profile/:id" element={<PreLaunchGuard><Profile /></PreLaunchGuard>} />
 
-      <Route path="/war-room" element={<PreLaunchGuard><WarRoom /></PreLaunchGuard>} />
-      <Route path="/games" element={<PreLaunchGuard><Games /></PreLaunchGuard>} />
-      <Route path="/blog" element={<PreLaunchGuard><Blog /></PreLaunchGuard>} />
-      <Route path="/blog/:slug" element={<PreLaunchGuard><BlogPost /></PreLaunchGuard>} />
       <Route path="/testify" element={<PreLaunchGuard><Testify /></PreLaunchGuard>} />
       <Route path="/testimony/:id" element={<PreLaunchGuard><TestimonyDetail /></PreLaunchGuard>} />
-      <Route path="/prayer-warriors" element={<PreLaunchGuard><PrayTheWorld /></PreLaunchGuard>} />
-      <Route path="/we-pray" element={<Navigate to="/prayer-warriors" replace />} />
-      <Route path="/pray-the-world" element={<Navigate to="/prayer-warriors" replace />} />
-      <Route path="/sermon-sync" element={<PreLaunchGuard><SermonSync /></PreLaunchGuard>} />
       <Route path="/support" element={<PreLaunchGuard><Support /></PreLaunchGuard>} />
       <Route path="/breathe" element={<PreLaunchGuard><Breathe /></PreLaunchGuard>} />
       <Route path="/bible" element={<PreLaunchGuard><Bible /></PreLaunchGuard>} />
       <Route path="/Fruit" element={<PreLaunchGuard><Fruit /></PreLaunchGuard>} />
       <Route path="/classical" element={<PreLaunchGuard><Classical /></PreLaunchGuard>} />
-      <Route path="/canvas" element={<PreLaunchGuard><BibleCanvas /></PreLaunchGuard>} />
       <Route path="/help" element={<PreLaunchGuard><Help /></PreLaunchGuard>} />
       <Route path="/boardv2" element={<PreLaunchGuard><BoardV2 /></PreLaunchGuard>} />
       <Route path="/design-lab" element={<PreLaunchGuard><DesignLab /></PreLaunchGuard>} />
@@ -242,6 +184,22 @@ function AppShell() {
       <Route path="/circles-mobile" element={<PreLaunchGuard><CirclesMobile /></PreLaunchGuard>} />
       <Route path="/profile-mobile" element={<PreLaunchGuard><ProfileMobile /></PreLaunchGuard>} />
       <Route path="/invite/:type/:token" element={<InviteLanding />} />
+
+      {/* Delinked legacy routes — redirect to home */}
+      <Route path="/games" element={<Navigate to="/" replace />} />
+      <Route path="/blog" element={<Navigate to="/" replace />} />
+      <Route path="/blog/:slug" element={<Navigate to="/" replace />} />
+      <Route path="/war-room" element={<Navigate to="/" replace />} />
+      <Route path="/prayer-warriors" element={<Navigate to="/" replace />} />
+      <Route path="/we-pray" element={<Navigate to="/" replace />} />
+      <Route path="/pray-the-world" element={<Navigate to="/" replace />} />
+      <Route path="/sermon-sync" element={<Navigate to="/" replace />} />
+      <Route path="/family" element={<Navigate to="/" replace />} />
+      <Route path="/family/:id" element={<Navigate to="/" replace />} />
+      <Route path="/canvas" element={<Navigate to="/" replace />} />
+      <Route path="/groups" element={<Navigate to="/circles" replace />} />
+      <Route path="/groups/:id" element={<Navigate to="/circles" replace />} />
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

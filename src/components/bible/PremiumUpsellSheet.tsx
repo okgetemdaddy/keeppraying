@@ -128,7 +128,8 @@ export function PremiumUpsellSheet({ open, onClose, onProceed }: PremiumUpsellSh
               {/* CTA */}
               {/* TODO: Restore StoreKit 2 / Stripe gate */}
               <Button
-                className="w-full h-12 rounded-xl text-base font-medium bg-amber-600 hover:bg-amber-700 text-white"
+                className="w-full h-12 rounded-xl text-base font-medium"
+                style={{ background: "var(--kp-gold)", color: "var(--kp-bg-deep)" }}
                 onClick={() => {
                   if (onProceed) {
                     onProceed();
@@ -143,7 +144,8 @@ export function PremiumUpsellSheet({ open, onClose, onProceed }: PremiumUpsellSh
               {/* Ghost dismiss */}
               <Button
                 variant="ghost"
-                className="w-full text-muted-foreground"
+                className="w-full"
+                style={{ color: "var(--kp-text-muted)", background: "var(--kp-bg-elevated)", border: "1px solid var(--kp-border-gold)" }}
                 onClick={onClose}
               >
                 Maybe later
