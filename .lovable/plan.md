@@ -1,71 +1,56 @@
 
 
-## BoardV2 Tweaks — 6 Fixes
+## Full Rewrite: TestifyBack.tsx → TestimonyCanvasAsset Visual Shell + Real Data
 
-### 1. Text overflow fix in PrayerCard
-**Problem**: Prayer text overflows over the bottom bar. The content div at line 271 uses `overflow-hidden` but the inner `pca-hide-scrollbar` div needs `overflow-y: auto` explicitly so long text scrolls within the content area without visible scrollbars.
+### What
+Replace TestifyBack.tsx entirely with the TestimonyCanvasAsset design (coffee/cream palette, GloryParticles, glow effects, 3 compose modes) while wiring in the existing Supabase data layer (testimonies CRUD, praise, flag, comments, enrich modal).
 
-**Fix in `src/components/board/PrayerCard.tsx`**:
-- Change the text container div (line 271-280) to add `overflow-y: auto` on the inner scrollable div
-- The `pca-hide-scrollbar` class already hides the scrollbar chrome; just need to ensure the content area is properly constrained with `min-h-0` on the flex parent
+### Single File Changed
+`src/components/board/TestifyBack.tsx` — full rewrite (~600 lines)
 
-### 2. Hide old MobileTabBar on /boardv2 + fix scroll
-**Problem**: The old 3-tab `MobileTabBar` (Prayers/Breathe/Testify) renders globally in `AppShell` (App.tsx line 90), blocking scroll and showing stale nav on `/boardv2`.
+### Structure
 
-**Fix in `src/components/MobileTabBar.tsx`**:
-- Add `/boardv2` and `/design-lab` to a hide-list: if `location.pathname` starts with `/boardv2` or `/design-lab`, return `null`
+**Visual layer copied verbatim from TestimonyCanvasAsset:**
+- Coffee gradient background (`#3d3328 → #322a20 → #2a231a`)
+- `GloryParticles` component (inline)
+- Inner glow + top glory light + bottom glory wash CSS animations
+- Header: ArrowLeft + "TESTIMONY" gold uppercase label
+- Testimony list: rounded-2xl cards with `canvasBg`, gradient avatar circles, 🙌 praise + bookmark top-right
+- Expanded testimony view with full text, praise count, "Save to Room"
+- Compose modes: Type (textarea) | Speak (mic pulse) | Write (`HandwriteCanvas` inline)
+- Gold gradient "✝ Testify" CTA button
+- "Testify to His Goodness" italic tagline
 
-**Fix in `src/pages/BoardV2.tsx`**:
-- Add `pb-8` (or appropriate bottom padding) instead of `pb-28` since the old tab bar won't be there
-- Ensure the outer container doesn't block scroll (check for `overflow-hidden` on parent)
+**Data layer preserved from current TestifyBack:**
+- `fetchTestimonies()` — Supabase query with profiles join, praise/flag/comment counts
+- `togglePraise()` — testimony_praises insert/delete
+- `handleFlag()` — testimony_flags insert
+- `fetchComments()` / `submitComment()` — testimony_comments CRUD
+- `handleShare()` — clipboard link copy
+- `TestimonyEnrichModal` integration — opens before posting typed testimony
+- `alreadyTestified` check — hides compose CTA if user already testified
+- Comments UI inside expanded testimony view (kept from current, styled to match canvas palette)
 
-### 3. Card focus mode (click to expand)
-**Problem**: Clicking a card should bring it front-and-center with dimmed/blurred background, current glow but 50% reduced.
+**Mapping mock data → real data:**
+- `TESTIMONIES` mock array → `testimonies` state from Supabase
+- `t.author` → `testimony.profiles?.full_name || "Anonymous"`
+- `t.initial` → first letter of display name
+- `t.gradient` → deterministic gradient from user_id hash
+- `t.praises` → `testimony.praise_count`
+- `t.date` → relative time from `testimony.created_at`
+- `expandedId: number` → `expandedId: string` (Supabase UUID)
 
-**Fix in `src/pages/BoardV2.tsx`**:
-- Add `focusedCardId` state
-- When a card is tapped (not a button within the card), set `focusedCardId`
-- Render a fixed overlay: `bg-black/60 backdrop-blur-sm` covering the screen
-- Render the focused `PrayerCard` centered on screen with `position: fixed`, `z-50`, with a reduced outer glow (50% of normal `borderGlow` opacity values)
-- Click on overlay dismisses
+**Compose flow wiring:**
+- Type mode textarea → captures to `body` state, "Post" button → `handleShareClick()` → opens `TestimonyEnrichModal`
+- Speak mode → visual placeholder (mic pulse), future phase wiring
+- Write mode → `HandwriteCanvas` visual placeholder, future phase wiring
 
-**Fix in `src/components/board/PrayerCard.tsx`**:
-- Add optional `focused` prop that halves the `borderGlow` box-shadow opacity
-- Add `onClick` prop for the card shell (distinct from button clicks inside)
-
-### 4. Answered tab shows only testimonies (flipped cards)
-**Problem**: "Answered" filter currently doesn't filter properly and should show only cards with testimonies, auto-flipped to the testimony side.
-
-**Fix in `src/pages/BoardV2.tsx`**:
-- Query testimonies table to get prayer IDs that have testimonies: `supabase.from('testimonies').select('prayer_id').eq('user_id', user.id)`
-- When `filterMode === "answered"`, filter to only cards whose `prayer.id` is in the testimony set
-
-**Fix in `src/components/board/PrayerCard.tsx`**:
-- Add `initialFlipped` prop (boolean). When true, card starts flipped to testimony side
-- BoardV2 passes `initialFlipped={filterMode === "answered"}` to each card
-
-### 5. Add purple dark background (4th color)
-**Problem**: Only 3 dark backgrounds exist. Need a purple option.
-
-**Fix in `src/components/board/prayerCardTheme.tsx`**:
-- Add to `DARK_BACKGROUNDS` array:
-```ts
-{ name: "Royal Purple", bg: "linear-gradient(175deg, #251e30 0%, #1a1520 40%, #12101a 100%)" }
+### Props (unchanged)
+```
+prayerId: string
+prayerAuthorId: string | null | undefined
+onFlipBack: () => void
 ```
 
-### 6. Default all cards to dark theme
-**Problem**: Cards should always use the default dark theme from the design lab.
-
-**No code change needed** — `PrayerCard.tsx` already defaults `themeMode` to `"dark"` and `bgIndex` to `0` (line 100-101). This is correct. The theme picker drawer allows changing per-card, which matches the design lab behavior.
-
----
-
-### Files Changed
-
-| File | Action |
-|------|--------|
-| `src/components/board/PrayerCard.tsx` | Fix text scroll, add `focused`/`initialFlipped`/`onClick` props |
-| `src/pages/BoardV2.tsx` | Add focus mode overlay, fix answered filter with testimony query, fix padding |
-| `src/components/MobileTabBar.tsx` | Hide on `/boardv2` and `/design-lab` routes |
-| `src/components/board/prayerCardTheme.tsx` | Add Royal Purple to `DARK_BACKGROUNDS` |
+`accentColor`, `textColor`, `cardBg` props removed — the canvas uses its own hardcoded coffee palette (matching the design lab exactly).
 
