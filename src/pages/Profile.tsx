@@ -69,12 +69,11 @@ export default function Profile() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // On mobile, render the mobile-specific profile for own profile
-  const isOwnProfile = !id || id === user?.id;
-  if (isMobile && isOwnProfile) return <ProfileMobile />;
-
   const isOwnProfile = !id || id === user?.id;
   const profileId = isOwnProfile ? user?.id : id;
+
+  // On mobile, render the mobile-specific profile for own profile
+  if (isMobile && isOwnProfile) return <ProfileMobile />;
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
