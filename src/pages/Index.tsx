@@ -35,7 +35,7 @@ const FEATURES = [
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] as const } },
 };
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.12 } } };
 
