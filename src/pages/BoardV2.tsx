@@ -61,6 +61,7 @@ export default function BoardV2() {
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
   const [testimonyPrayerIds, setTestimonyPrayerIds] = useState<Set<string>>(new Set());
   const [layout, setLayout] = useState<LayoutMode>("cards");
+  const [frontCardId, setFrontCardId] = useState<string | null>(null);
   const boardCacheInit = useRef(false);
 
   // Theme (desktop)
