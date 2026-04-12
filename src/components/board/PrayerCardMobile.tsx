@@ -497,14 +497,14 @@ export function PrayerCardMobile({
 
         {/* ═══ BACK FACE (Testimony) ═══════════════════════════════════ */}
         <div
-          className="absolute inset-0 rounded-[var(--kp-radius)] overflow-hidden"
+          className={`absolute inset-0 overflow-hidden ${isFullscreen ? "" : "rounded-[var(--kp-radius)]"}`}
           style={{
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
             pointerEvents: flipped ? "auto" : "none",
             background: "linear-gradient(175deg, #1a2318 0%, #121a10 40%, #0d140a 100%)",
-            border: "1px solid rgba(52,211,153,0.25)",
-            boxShadow: "0 0 40px 4px rgba(52,211,153,0.12)",
+            border: isFullscreen ? "none" : "1px solid rgba(52,211,153,0.25)",
+            boxShadow: isFullscreen ? "none" : "0 0 40px 4px rgba(52,211,153,0.12)",
           }}
         >
           <div className="h-full w-full flex flex-col">
@@ -512,6 +512,7 @@ export function PrayerCardMobile({
               prayerId={prayer.id}
               prayerAuthorId={prayer.created_by}
               onFlipBack={() => setFlipped(false)}
+              variant={isFullscreen ? "fullscreen" : isCompact ? "compact" : "default"}
             />
           </div>
         </div>
