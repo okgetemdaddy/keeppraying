@@ -16,8 +16,6 @@ import { useStreak } from "@/hooks/useStreak";
 import { SiteNav } from "@/components/SiteNav";
 import { PrayerCard, type SavedMeta } from "@/components/board/PrayerCard";
 import { PrayerCardMobile } from "@/components/board/PrayerCardMobile";
-import { LayeredCard } from "@/components/board/LayeredCard";
-import { FocusMode } from "@/components/board/FocusMode";
 import { PrayNowSheet } from "@/components/PrayNowSheet";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BOARD_THEMES } from "@/components/board/boardThemes";
