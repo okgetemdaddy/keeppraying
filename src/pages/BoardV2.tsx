@@ -1,7 +1,7 @@
 /**
  * BoardV2 — "Your Prayer Space"
  * Cards-first, minimal chrome, full-width mobile, 2-col desktop.
- * Phase 2: PrayerCardMobile + LayeredCard + FocusMode.
+ * Uses PrayerCardMobile (the ONE canonical card) for all views.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
