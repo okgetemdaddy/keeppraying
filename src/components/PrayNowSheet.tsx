@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mic, MicOff, PenLine, Type, X, Send, Sparkles } from "lucide-react";
+import { DrawCanvasFullscreen } from "@/components/DrawCanvasFullscreen";
 
 interface PrayNowSheetProps {
   open: boolean;
@@ -24,6 +25,7 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
   const { user } = useAuth();
   const { toast } = useToast();
   const [mode, setMode] = useState<InputMode>("type");
+  const [drawOpen, setDrawOpen] = useState(false);
   const [prayerText, setPrayerText] = useState("");
   const [saving, setSaving] = useState(false);
   const [enriching, setEnriching] = useState(false);
