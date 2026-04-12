@@ -323,15 +323,17 @@ export default function BoardV2() {
       {/* ── Focus Mode ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {isMobile && focusedItem && (
-          <FocusMode
+          <PrayerCardMobile
             prayer={focusedItem.prayer_cards!}
-            userId={user?.id}
+            variant="fullscreen"
+            meta={{ id: focusedItem.id, pinned: focusedItem.pinned, favorite: focusedItem.favorite, notes: focusedItem.notes, position: focusedItem.position }}
             isOwner={!!(user && focusedItem.prayer_cards!.created_by === user.id)}
-            onClose={() => setFocusedCardId(null)}
-            ttsVoiceId={prefs.tts_voice_id}
-            pinned={focusedItem.pinned}
-            savedId={focusedItem.id}
+            userId={user?.id}
             onRefresh={fetchSaved}
+            captionModeTts={prefs.caption_mode_tts}
+            ttsVoiceId={prefs.tts_voice_id}
+            initialFlipped={filterMode === "answered"}
+            onClose={() => setFocusedCardId(null)}
           />
         )}
       </AnimatePresence>
