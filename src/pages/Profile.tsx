@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SiteNav } from "@/components/SiteNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import ProfileMobile from "./ProfileMobile";
-import { SiteNav } from "@/components/SiteNav";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 import VerseLink from "@/components/VerseLink";
 import PrayerPartnerCard from "@/components/companions/PrayerPartnerCard";
 import {
