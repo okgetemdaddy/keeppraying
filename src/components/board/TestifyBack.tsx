@@ -446,15 +446,15 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
       <GloryParticles />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2 relative z-10">
+      <div className={`flex items-center justify-between relative z-10 ${isBoard ? "px-3 pt-3 pb-1" : "px-5 pt-5 pb-2"}`}>
         <button onClick={onFlipBack} className="flex items-center gap-1.5 transition-colors active:scale-95" style={{ color: textMuted }}>
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-xs font-medium">Back</span>
+          <ArrowLeft className={isBoard ? "w-3.5 h-3.5" : "w-4 h-4"} />
+          <span className={`font-medium ${isBoard ? "text-[10px]" : "text-xs"}`}>Back</span>
         </button>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
+        <h3 className={`font-semibold uppercase tracking-[0.2em] ${isBoard ? "text-[9px]" : "text-[11px]"}`} style={{ color: accent }}>
           Testimony
         </h3>
-        <div className="w-14" />
+        <div className={isBoard ? "w-10" : "w-14"} />
       </div>
 
       {/* ── Main area ──────────────────────────────────────────────── */}
