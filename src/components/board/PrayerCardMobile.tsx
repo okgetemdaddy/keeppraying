@@ -474,9 +474,11 @@ export function PrayerCardMobile({
               <BarBtn label="Testify" onClick={() => setFlipped(true)}>
                 <UserRoundCheck className="w-[18px] h-[18px]" />
               </BarBtn>
-              <BarBtn label="More" onClick={() => setOptionsOpen(true)}>
-                <MoreHorizontal className="w-[18px] h-[18px]" />
-              </BarBtn>
+              {isOwner && (
+                <BarBtn label="More" onClick={() => setOptionsOpen(true)}>
+                  <MoreHorizontal className="w-[18px] h-[18px]" />
+                </BarBtn>
+              )}
             </div>
           </div>
         </div>
