@@ -1,34 +1,74 @@
 
+I understand the issue now, and the problem is simpler than the last fixes treated it.
 
-## Fix: Testimony Back Face Blank + Front Text Bleeding
+What is actually wrong
+- `PrayerCardMobile.tsx` is currently mixing two conflicting sizing models:
+  - natural-height cards for normal/compact board usage
+  - `flex-1 min-h-0` fullscreen/fill behavior
+- When the card flips, `TestifyBack` is forced into the same large container, so the back side inherits too much height and creates dead space.
+- The explicit opacity/visibility hack helped bleed-through, but the real UX problem is height ownership: the shell is dictating height instead of the mode.
 
-### Root Cause
+What I will fix
+1. Rework card height rules in `src/components/board/PrayerCardMobile.tsx`
+- `compact` = intentionally short card
+- `default` = one consistent board card height
+- `fullscreen` = fixed stage height, non-scrollable page, only internal prayer text scrolls
+- flipped/testify on board cards = card height shrinks to the testimony content instead of keeping the front-face board height
 
-**Bug 1 — Back face blank in fullscreen:** The flip container uses `flex-1 min-h-0 flex flex-col` and the front face is also `flex-1 min-h-0 flex flex-col`. The back face (line 487) uses `absolute inset-0`, which should work — but the flip container's `flex flex-col` combined with `min-h-0` causes it to collapse when the front face content is minimal. The back face inherits zero height.
+2. Separate front-height logic from back-height logic
+- Stop making the back face inherit fullscreen/default board height when it should size to testimony content
+- Keep the 3D flip shell, but make board variants use explicit mode heights instead of flex growth
+- Keep fullscreen as its own fixed-height stage only
 
-**Bug 2 — Front text bleeds through on flip in compact/layered:** `backfaceVisibility: hidden` is unreliable across browsers when combined with `perspective` and `preserve-3d`. The front face only sets `pointerEvents: "none"` when flipped but remains visually rendered, causing text bleed.
+3. Fix bleed-through correctly
+- Keep `backfaceVisibility`
+- Keep explicit visual hiding on the front while flipped
+- But do not absolute-stretch both faces in board modes if that forces oversized empty space
 
-### Fix (single file: `PrayerCardMobile.tsx`)
+4. Make `TestifyBack` cooperate with card-sized contexts
+- Add a size/context prop to `TestifyBack` so it can render differently inside:
+  - compact board flip
+  - normal board flip
+  - fullscreen prayer page
+- On board flips, default testimony list should fit naturally inside the card without requiring hunting/scanning for controls
+- Preserve richer/fullscreen testimony experience only on fullscreen prayer page
 
-**1. Front face: add explicit visual hiding when flipped**
-Add `opacity: 0` and `visibility: "hidden"` to the front face style when `flipped === true`. This guarantees the front text cannot bleed through regardless of browser 3D rendering quirks.
+5. Preserve the canonical card rules
+- No redesign
+- No glow removal
+- No alternate prayer card visual system
+- Only height behavior and flip containment change
 
-**2. Flip container: remove `flex flex-col` from the motion.div**
-The flip container should be `relative w-full` with explicit height handling, not a flex column. In fullscreen, use `flex-1 min-h-0` only (no `flex flex-col`). Both faces should be positioned to fill the container — front face via `absolute inset-0` in addition to the back face already using it.
+Files to update
+- `src/components/board/PrayerCardMobile.tsx`
+- `src/components/board/TestifyBack.tsx`
 
-**3. Both faces use `absolute inset-0`**
-Make the front face also `absolute inset-0` in all variants, and give the flip container a fixed aspect-ratio (9:16) in non-fullscreen mode or `flex-1` in fullscreen mode. This ensures both faces always have identical dimensions.
+Implementation approach
+- Introduce explicit card shell heights in `PrayerCardMobile` by variant instead of relying on `flex-1`
+- Keep normal board cards equal-height
+- Keep compact cards shorter
+- When flipped in board modes, let the testimony side use a smaller/natural card height path
+- Reserve full-height/fixed-stage behavior for `fullscreen` only
+- Add a compact/board-aware testimony layout in `TestifyBack` so buttons stay in view and dead space is eliminated
 
-**4. Back face in fullscreen: add `h-full` to TestifyBack wrapper**
-Ensure the back face container passes full height down so `TestifyBack` can render its content.
+Acceptance criteria
+- Compact mode shows a short prayer card
+- Normal mode shows equal-height prayer cards
+- Clicking Testify on a board card shrinks the card to the testimony content instead of leaving giant empty space
+- Flipped cards do not require scrolling around to locate controls
+- Front text does not bleed through on flip
+- Fullscreen prayer page remains non-scrollable, with only internal text areas scrolling
+- Glow and canonical prayer-card styling remain intact
 
-### Changes
+Technical detail
+- The current regression comes from `PrayerCardMobile` using fullscreen-style `flex` sizing inside the flip container and applying one sizing strategy to all modes.
+- The correction is to make height mode-driven:
+```text
+compact    -> short fixed/min height
+default    -> consistent equal board height
+fullscreen -> fixed viewport stage height
+flipped(board) -> content-sized/testify-sized
+```
+- `TestifyBack` also needs a context prop so it does not render the full fullscreen testimony experience inside a compact board flip state.
 
-| Line Range | What Changes |
-|---|---|
-| ~254 | Flip container: `relative w-full ${isFullscreen ? "flex-1 min-h-0" : "aspect-[9/16]"}` — remove `flex flex-col` |
-| ~258-268 | Front face: add `absolute inset-0` positioning, add `opacity` and `visibility` transitions based on `flipped` state |
-| ~487-503 | Back face: ensure `h-full` on inner wrapper, keep `absolute inset-0` |
-
-### No other files change. No database migrations.
-
+I will implement only that targeted height correction, not another redesign.
