@@ -408,10 +408,10 @@ export function PrayerCardMobile({
 
           {/* ── Action Bar ──────────────────────────────────────────────── */}
           <div
-            className="relative z-10 flex items-center justify-between px-2 py-1.5"
+            className="relative z-10 flex items-center justify-between px-2 py-1.5 flex-shrink-0"
             style={{
-              background: "linear-gradient(to top, rgba(20,18,13,0.95), rgba(30,26,20,0.6))",
-              borderTop: "1px solid rgba(180,140,50,0.08)",
+              background: "var(--kp-bar-bg, linear-gradient(to top, rgba(20,18,13,0.95), rgba(30,26,20,0.6)))",
+              borderTop: "1px solid var(--kp-bar-border, rgba(180,140,50,0.08))",
             }}
           >
             {/* Left group */}
