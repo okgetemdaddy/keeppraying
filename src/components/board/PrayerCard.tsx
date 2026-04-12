@@ -269,7 +269,7 @@ export function PrayerCard({
             <DustParticles dustColor={theme.dustColor} />
 
             {/* ── Content 90% ──────────────────────────────────────────────── */}
-            <div className="flex-1 px-6 pt-7 pb-3 flex flex-col relative z-10">
+            <div className="flex-1 min-h-0 px-6 pt-7 pb-3 flex flex-col relative z-10">
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] mb-1.5" style={{ color: theme.titleColor }}>
                 KEEPPRAY.ING
               </span>
