@@ -209,11 +209,44 @@ export function PrayerCardMobile({
     </button>
   );
 
+  const isCompact = variant === "compact";
+  const isFullscreen = variant === "fullscreen";
+
   /* ══════════════════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════════════════ */
   return (
-    <div className="w-full px-[14px] pb-4" style={{ perspective: "1200px" }}>
+    <div
+      className={isFullscreen ? "fixed inset-0 z-[180] flex flex-col" : "w-full px-[14px] pb-4"}
+      style={isFullscreen
+        ? { background: "var(--kp-bg-deep)", perspective: "1200px" }
+        : { perspective: "1200px" }
+      }
+    >
+      {/* ── Fullscreen header ─────────────────────────────────────────── */}
+      {isFullscreen && (
+        <header
+          className="flex items-center gap-3 px-4 py-3.5 flex-shrink-0 z-10"
+          style={{
+            borderBottom: "1px solid var(--kp-border)",
+            background: "var(--kp-bg-surface)",
+          }}
+        >
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+            style={{ background: "rgba(180,140,50,0.08)", border: "1px solid var(--kp-border)" }}
+          >
+            <ArrowLeft className="w-[18px] h-[18px]" style={{ color: "var(--kp-gold)" }} />
+          </button>
+          <h1
+            className="flex-1 text-[15px] font-semibold truncate"
+            style={{ fontFamily: "var(--kp-font-display)", color: "var(--kp-text-primary)" }}
+          >
+            {prayer.title || "Untitled Prayer"}
+          </h1>
+        </header>
+      )}
       {/* ── 3D Flip Container ─────────────────────────────────────────── */}
       <motion.div
         animate={{ rotateY: flipped ? -180 : 0 }}
