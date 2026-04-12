@@ -180,7 +180,7 @@ export default function BoardV2() {
       {/* Desktop nav */}
       {!isMobile && <SiteNav dark />}
 
-      <div className="max-w-3xl mx-auto px-4 pb-8">
+      <div className={isMobile ? "pb-4" : "max-w-3xl mx-auto px-4 pb-8"}>
         {/* ── Compact Header (mockup-aligned) ───────────────────────── */}
         <header
           className="flex items-center justify-between flex-shrink-0 sticky top-0 z-20"
