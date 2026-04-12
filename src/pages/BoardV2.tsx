@@ -1,7 +1,7 @@
 /**
  * BoardV2 — "Your Prayer Space"
  * Cards-first, minimal chrome, full-width mobile, 2-col desktop.
- * Phase 2: PrayerCardMobile + LayeredCard + FocusMode.
+ * Uses PrayerCardMobile (the ONE canonical card) for all views.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -16,8 +16,6 @@ import { useStreak } from "@/hooks/useStreak";
 import { SiteNav } from "@/components/SiteNav";
 import { PrayerCard, type SavedMeta } from "@/components/board/PrayerCard";
 import { PrayerCardMobile } from "@/components/board/PrayerCardMobile";
-import { LayeredCard } from "@/components/board/LayeredCard";
-import { FocusMode } from "@/components/board/FocusMode";
 import { PrayNowSheet } from "@/components/PrayNowSheet";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BOARD_THEMES } from "@/components/board/boardThemes";
@@ -250,25 +248,32 @@ export default function BoardV2() {
           </div>
         ) : isMobile && layout === "layered" ? (
           /* ── Layered View ──────────────────────────────────────────── */
-          <div className="px-[14px] pb-4">
+          <div className="px-0 pb-4">
             {displayedItems.map((item, i) => {
               const card = item.prayer_cards!;
               const isFront = frontCardId === card.id;
               return (
-                <div key={item.id} style={{ zIndex: isFront ? 100 : i + 1, position: "relative", transition: "z-index 0s" }}>
-                  <LayeredCard
+                <div
+                  key={item.id}
+                  style={{ zIndex: isFront ? 100 : i + 1, position: "relative", transition: "z-index 0s", marginBottom: isFront ? 0 : -42 }}
+                  onClick={() => {
+                    if (isFront) {
+                      setFocusedCardId(card.id);
+                    } else {
+                      setFrontCardId(card.id);
+                    }
+                  }}
+                >
+                  <PrayerCardMobile
                     prayer={card}
-                    hasTestimony={testimonyPrayerIds.has(card.id)}
-                    pinned={item.pinned}
-                    isPublic={card.status === "approved"}
-                    isFront={isFront}
-                    onClick={() => {
-                      if (isFront) {
-                        setFocusedCardId(card.id);
-                      } else {
-                        setFrontCardId(card.id);
-                      }
-                    }}
+                    variant="compact"
+                    meta={{ id: item.id, pinned: item.pinned, favorite: item.favorite, notes: item.notes, position: item.position }}
+                    isOwner={!!(user && card.created_by === user.id)}
+                    userId={user?.id}
+                    onRefresh={fetchSaved}
+                    captionModeTts={prefs.caption_mode_tts}
+                    ttsVoiceId={prefs.tts_voice_id}
+                    initialFlipped={filterMode === "answered"}
                   />
                 </div>
               );
@@ -318,15 +323,17 @@ export default function BoardV2() {
       {/* ── Focus Mode ──────────────────────────────────────────────── */}
       <AnimatePresence>
         {isMobile && focusedItem && (
-          <FocusMode
+          <PrayerCardMobile
             prayer={focusedItem.prayer_cards!}
-            userId={user?.id}
+            variant="fullscreen"
+            meta={{ id: focusedItem.id, pinned: focusedItem.pinned, favorite: focusedItem.favorite, notes: focusedItem.notes, position: focusedItem.position }}
             isOwner={!!(user && focusedItem.prayer_cards!.created_by === user.id)}
-            onClose={() => setFocusedCardId(null)}
-            ttsVoiceId={prefs.tts_voice_id}
-            pinned={focusedItem.pinned}
-            savedId={focusedItem.id}
+            userId={user?.id}
             onRefresh={fetchSaved}
+            captionModeTts={prefs.caption_mode_tts}
+            ttsVoiceId={prefs.tts_voice_id}
+            initialFlipped={filterMode === "answered"}
+            onClose={() => setFocusedCardId(null)}
           />
         )}
       </AnimatePresence>

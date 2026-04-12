@@ -1,11 +1,21 @@
 /**
- * PrayerCardMobile — The canonical mobile prayer card for KeepPray.ing Phase 2.
+ * PrayerCardMobile — THE ONE CANONICAL prayer card for KeepPray.ing.
  *
- * Built from mockup/index.html spec. Uses global CSS tokens (var(--kp-*)).
+ * ⚠️  GUARDRAIL: This is the ONLY prayer card visual implementation in the app.
+ *     DO NOT create alternate card components. All contexts (board, focus, prayer page,
+ *     shared landing, explore, design lab) MUST use this component.
+ *     Visual differences are handled via the `variant` prop.
+ *     Owner vs public differences are handled via the `isOwner` prop.
+ *
+ * Built from the DesignLab truth (PrayerCardAsset.tsx).
+ * Uses global CSS tokens (var(--kp-*)).
  * 3D flip via React state + framer-motion rotateY.
  * Dust particles, inner glow, lamp light, scripture toggle, full action bar.
  *
- * This is the ONE card to rule them all on mobile.
+ * Variants:
+ *   - "default"    — Full card on board, normal flow
+ *   - "compact"    — 2-line text clamp for layered stack view, reduced padding
+ *   - "fullscreen" — Fixed inset-0 prayer page/stage, only text scrolls, bar pinned
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -30,7 +40,7 @@ import {
   Image as ImageIcon, Palette, StickyNote, UserPlus, Users, Lock,
   ChevronRight, ChevronDown, ChevronUp, Pin, BookOpen, Sparkles,
   Plus, Upload, X, Camera, Mic, PenLine, Type, Check, Eye, HandHeart,
-  Bookmark, Heart,
+  Bookmark, Heart, ArrowLeft,
 } from "lucide-react";
 
 type PrayerCardRow = Database["public"]["Tables"]["prayer_cards"]["Row"];
@@ -42,6 +52,8 @@ export interface MobileCardMeta {
   notes?: string | null;
   position?: number;
 }
+
+export type PrayerCardVariant = "default" | "compact" | "fullscreen";
 
 interface PrayerCardMobileProps {
   prayer: PrayerCardRow;
@@ -57,6 +69,10 @@ interface PrayerCardMobileProps {
   onFocusOpen?: () => void;
   /** Reduced glow when in Focus overlay */
   focused?: boolean;
+  /** Layout variant — default | compact | fullscreen */
+  variant?: PrayerCardVariant;
+  /** Close callback for fullscreen variant */
+  onClose?: () => void;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -64,6 +80,7 @@ export function PrayerCardMobile({
   prayer, meta, isOwner, userId,
   onRefresh, captionModeTts, ttsVoiceId,
   initialFlipped, onFocusOpen, focused,
+  variant = "default", onClose,
 }: PrayerCardMobileProps) {
   const { toast } = useToast();
 
@@ -192,27 +209,61 @@ export function PrayerCardMobile({
     </button>
   );
 
+  const isCompact = variant === "compact";
+  const isFullscreen = variant === "fullscreen";
+
   /* ══════════════════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════════════════ */
   return (
-    <div className="w-full px-[14px] pb-4" style={{ perspective: "1200px" }}>
+    <div
+      className={isFullscreen ? "fixed inset-0 z-[180] flex flex-col" : "w-full px-[14px] pb-4"}
+      style={isFullscreen
+        ? { background: "var(--kp-bg-deep)", perspective: "1200px" }
+        : { perspective: "1200px" }
+      }
+    >
+      {/* ── Fullscreen header ─────────────────────────────────────────── */}
+      {isFullscreen && (
+        <header
+          className="flex items-center gap-3 px-4 py-3.5 flex-shrink-0 z-10"
+          style={{
+            borderBottom: "1px solid var(--kp-border)",
+            background: "var(--kp-bg-surface)",
+          }}
+        >
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+            style={{ background: "rgba(180,140,50,0.08)", border: "1px solid var(--kp-border)" }}
+          >
+            <ArrowLeft className="w-[18px] h-[18px]" style={{ color: "var(--kp-gold)" }} />
+          </button>
+          <h1
+            className="flex-1 text-[15px] font-semibold truncate"
+            style={{ fontFamily: "var(--kp-font-display)", color: "var(--kp-text-primary)" }}
+          >
+            {prayer.title || "Untitled Prayer"}
+          </h1>
+        </header>
+      )}
       {/* ── 3D Flip Container ─────────────────────────────────────────── */}
       <motion.div
         animate={{ rotateY: flipped ? -180 : 0 }}
         transition={{ duration: 0.65, type: "spring", stiffness: 80, damping: 18 }}
-        className="relative w-full"
+        className={`relative w-full ${isFullscreen ? "flex-1 min-h-0 flex flex-col" : ""}`}
         style={{ transformStyle: "preserve-3d" }}
       >
         {/* ═══ FRONT FACE ═══════════════════════════════════════════════ */}
         <div
-          className="relative rounded-[var(--kp-radius)] overflow-hidden"
+          className={`relative overflow-hidden ${isFullscreen ? "flex-1 min-h-0 flex flex-col" : "rounded-[var(--kp-radius)]"}`}
           style={{
             backfaceVisibility: "hidden",
             background: "var(--kp-bg-card)",
-            border: "1px solid var(--kp-border-gold)",
-            boxShadow: `0 0 40px 4px var(--kp-gold-glow), 0 20px 60px -12px rgba(0,0,0,0.35)`,
-            animation: "kp-card-breathe 6s ease-in-out infinite",
+            border: isFullscreen ? "none" : "1px solid var(--kp-border-gold)",
+            boxShadow: isFullscreen ? "none" : `0 0 40px 4px var(--kp-gold-glow), 0 20px 60px -12px rgba(0,0,0,0.35)`,
+            animation: isFullscreen ? "none" : "kp-card-breathe 6s ease-in-out infinite",
+            borderRadius: isFullscreen ? 0 : undefined,
             pointerEvents: flipped ? "none" : "auto",
           }}
         >
@@ -230,7 +281,9 @@ export function PrayerCardMobile({
           <DustParticles dustColor="rgba(210,185,120," />
 
           {/* ── Content ────────────────────────────────────────────────── */}
-          <div className="relative z-[3] px-[22px] pt-5 pb-3">
+          <div className={`relative z-[3] px-[22px] ${isCompact ? "pt-3 pb-2" : "pt-5 pb-3"} ${isFullscreen ? "flex-1 min-h-0 overflow-y-auto" : ""}`}
+            style={isFullscreen ? { WebkitOverflowScrolling: "touch" } : undefined}
+          >
             <div
               className="text-[9px] font-bold uppercase tracking-[0.22em] mb-1"
               style={{ color: "var(--kp-gold)" }}
@@ -238,13 +291,13 @@ export function PrayerCardMobile({
               KEEPPRAY.ING
             </div>
             <h3
-              className="text-[17px] font-bold leading-[1.35] mb-0"
+              className={`font-bold leading-[1.35] mb-0 ${isFullscreen ? "text-[22px]" : "text-[17px]"}`}
               style={{
                 fontFamily: "var(--kp-font-display)",
                 color: "var(--kp-text-primary)",
-                cursor: "pointer",
+                cursor: isFullscreen ? "default" : "pointer",
               }}
-              onClick={onFocusOpen}
+              onClick={isFullscreen ? undefined : onFocusOpen}
             >
               {prayer.title || "Untitled Prayer"}
               {hasTestimony && (
@@ -260,13 +313,19 @@ export function PrayerCardMobile({
               )}
             </h3>
             <p
-              className="text-[15px] leading-[1.8] mt-3"
+              className={`mt-3 ${isFullscreen ? "text-[18px] leading-[2]" : "text-[15px] leading-[1.8]"}`}
               style={{
                 fontFamily: `"${fontFamily}", ${fontType === "serif" ? '"Georgia", serif' : '"Helvetica Neue", sans-serif'}`,
                 color: "var(--kp-text-body)",
-                cursor: "pointer",
+                cursor: isFullscreen ? "default" : "pointer",
+                ...(isCompact ? {
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical" as const,
+                  overflow: "hidden",
+                } : {}),
               }}
-              onClick={onFocusOpen}
+              onClick={isFullscreen ? undefined : onFocusOpen}
             >
               {prayer.prayer_text}
             </p>
@@ -349,39 +408,41 @@ export function PrayerCardMobile({
 
           {/* ── Action Bar ──────────────────────────────────────────────── */}
           <div
-            className="relative z-10 flex items-center justify-between px-2 py-1.5"
+            className="relative z-10 flex items-center justify-between px-2 py-1.5 flex-shrink-0"
             style={{
-              background: "linear-gradient(to top, rgba(20,18,13,0.95), rgba(30,26,20,0.6))",
-              borderTop: "1px solid rgba(180,140,50,0.08)",
+              background: "var(--kp-bar-bg, linear-gradient(to top, rgba(20,18,13,0.95), rgba(30,26,20,0.6)))",
+              borderTop: "1px solid var(--kp-bar-border, rgba(180,140,50,0.08))",
             }}
           >
             {/* Left group */}
             <div className="flex items-center">
-              {/* Privacy dot */}
-              <button
-                onClick={() => setPrivacyOpen(true)}
-                className="relative w-[38px] h-[38px] flex items-center justify-center rounded-[var(--kp-radius-sm)] active:scale-[0.88] transition-transform"
-              >
-                <div className="relative w-[9px] h-[9px]">
-                  <div
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
-                      boxShadow: isPublic
-                        ? "0 0 6px 2px rgba(52,211,153,0.4)"
-                        : "0 0 6px 2px rgba(248,113,113,0.4)",
-                    }}
-                  />
-                  <div
-                    className="absolute inset-0 rounded-full animate-ping"
-                    style={{
-                      backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
-                      opacity: 0.25,
-                      animationDuration: "2.5s",
-                    }}
-                  />
-                </div>
-              </button>
+              {/* Privacy dot — owner only */}
+              {isOwner && (
+                <button
+                  onClick={() => setPrivacyOpen(true)}
+                  className="relative w-[38px] h-[38px] flex items-center justify-center rounded-[var(--kp-radius-sm)] active:scale-[0.88] transition-transform"
+                >
+                  <div className="relative w-[9px] h-[9px]">
+                    <div
+                      className="absolute inset-0 rounded-full"
+                      style={{
+                        backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
+                        boxShadow: isPublic
+                          ? "0 0 6px 2px rgba(52,211,153,0.4)"
+                          : "0 0 6px 2px rgba(248,113,113,0.4)",
+                      }}
+                    />
+                    <div
+                      className="absolute inset-0 rounded-full animate-ping"
+                      style={{
+                        backgroundColor: isPublic ? "var(--kp-green)" : "var(--kp-red)",
+                        opacity: 0.25,
+                        animationDuration: "2.5s",
+                      }}
+                    />
+                  </div>
+                </button>
+              )}
 
               {/* Prayed */}
               <BarBtn label="Prayed" active={prayed} onClick={handlePrayed}>
@@ -413,9 +474,11 @@ export function PrayerCardMobile({
               <BarBtn label="Testify" onClick={() => setFlipped(true)}>
                 <UserRoundCheck className="w-[18px] h-[18px]" />
               </BarBtn>
-              <BarBtn label="More" onClick={() => setOptionsOpen(true)}>
-                <MoreHorizontal className="w-[18px] h-[18px]" />
-              </BarBtn>
+              {isOwner && (
+                <BarBtn label="More" onClick={() => setOptionsOpen(true)}>
+                  <MoreHorizontal className="w-[18px] h-[18px]" />
+                </BarBtn>
+              )}
             </div>
           </div>
         </div>
