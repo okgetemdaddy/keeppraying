@@ -61,6 +61,7 @@ export default function BoardV2() {
   const [focusedCardId, setFocusedCardId] = useState<string | null>(null);
   const [testimonyPrayerIds, setTestimonyPrayerIds] = useState<Set<string>>(new Set());
   const [layout, setLayout] = useState<LayoutMode>("cards");
+  const [frontCardId, setFrontCardId] = useState<string | null>(null);
   const boardCacheInit = useRef(false);
 
   // Theme (desktop)
@@ -252,14 +253,22 @@ export default function BoardV2() {
           <div className="px-[14px] pb-4">
             {displayedItems.map((item, i) => {
               const card = item.prayer_cards!;
+              const isFront = frontCardId === card.id;
               return (
-                <div key={item.id} style={{ zIndex: i + 1, position: "relative" }}>
+                <div key={item.id} style={{ zIndex: isFront ? 100 : i + 1, position: "relative", transition: "z-index 0s" }}>
                   <LayeredCard
                     prayer={card}
                     hasTestimony={testimonyPrayerIds.has(card.id)}
                     pinned={item.pinned}
                     isPublic={card.status === "approved"}
-                    onClick={() => setFocusedCardId(card.id)}
+                    isFront={isFront}
+                    onClick={() => {
+                      if (isFront) {
+                        setFocusedCardId(card.id);
+                      } else {
+                        setFrontCardId(card.id);
+                      }
+                    }}
                   />
                 </div>
               );

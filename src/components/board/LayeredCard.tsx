@@ -15,14 +15,15 @@ interface LayeredCardProps {
   hasTestimony?: boolean;
   pinned?: boolean;
   isPublic?: boolean;
+  isFront?: boolean;
   onClick?: () => void;
 }
 
-export function LayeredCard({ prayer, hasTestimony, pinned, isPublic, onClick }: LayeredCardProps) {
+export function LayeredCard({ prayer, hasTestimony, pinned, isPublic, isFront, onClick }: LayeredCardProps) {
   return (
     <div
       className="relative rounded-[var(--kp-radius)] overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.98]"
-      style={{ marginBottom: -42, zIndex: 1 }}
+      style={{ marginBottom: isFront ? 0 : -42, zIndex: 1 }}
       onClick={onClick}
     >
       <div
