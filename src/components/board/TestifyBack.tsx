@@ -425,9 +425,11 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
 
   const expandedTestimony = expandedId ? testimonies.find(t => t.id === expandedId) : null;
 
+  const isBoard = variant === "default" || variant === "compact";
+
   /* ═══ Render ═══════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col h-full w-full relative" style={{ background: bg, color: textPrimary }}>
+    <div className="flex flex-col h-full w-full relative overflow-hidden" style={{ background: bg, color: textPrimary }}>
       <style>{TESTIMONY_STYLES}</style>
 
       {/* ── Glow effects ────────────────────────────────────────────── */}
