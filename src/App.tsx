@@ -51,10 +51,6 @@ import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequest
 import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
 import { KeepReadingShell } from "@/components/keepreading/KeepReadingShell";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileTabBar } from "@/components/MobileTabBar";
-import { CommunityPrayerRequestModal } from "@/components/CommunityPrayerRequestModal";
-import { TeamPrayerRequestModal } from "@/components/TeamPrayerRequestModal";
-import { KeepReadingShell } from "@/components/keepreading/KeepReadingShell";
 
 import {
   LayoutGrid, Users, Heart, Home, Shield, BookOpen,
