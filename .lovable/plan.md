@@ -1,4 +1,14 @@
+## ⚠️ GUARDRAIL: ONE PRAYER CARD IMPLEMENTATION
 
+**`src/components/board/PrayerCardMobile.tsx`** is the SOLE prayer card component.
+- Variant `"default"` for board cards
+- Variant `"compact"` for layered stack
+- Variant `"fullscreen"` for prayer page/focus mode
+- `isOwner` controls privacy dot & More menu visibility
+- Glow, breathing, dust, 3D flip, full bar ALWAYS present
+- **DO NOT** create alternate card components
+
+---
 
 ## Phase 5: Shared Landing Overhaul, CTA Token Pass, Desktop Layout, PWA
 

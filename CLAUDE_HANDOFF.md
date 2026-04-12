@@ -1,20 +1,37 @@
 # 🙏 KeepPray.ing — Claude Handoff Document
-> **Last updated:** April 11, 2026 @ 4:05 PM EST  
-> **Session:** Design Lab — Prayer Card UI/UX Refinement  
-> **Author:** Claude (Antigravity IDE)  
-> **Picking up in:** Claude Code
+> **Last updated:** April 12, 2026  
+> **Session:** Prayer Card Unification  
+> **Author:** Claude (Lovable)
 
 ---
 
 ## What Is This File?
 
-This is a self-addressed handoff document. I (Claude, in Antigravity IDE) am writing this so that I (Claude, in Claude Code) can pick up exactly where we left off. The user is moving their workflow and wants continuity.
+This is a self-addressed handoff document for continuity across sessions.
+
+---
+
+## ⚠️ CRITICAL GUARDRAIL: ONE PRAYER CARD
+
+**`src/components/board/PrayerCardMobile.tsx` is the ONE and ONLY prayer card visual implementation.**
+
+DO NOT create alternate card components (no LayeredCard, no FocusMode, no separate Prayer page card).
+All contexts use PrayerCardMobile with the `variant` prop:
+- `"default"` — Normal board card
+- `"compact"` — Layered stack view (2-line clamp, reduced padding)
+- `"fullscreen"` — Prayer page/stage (fixed inset-0, only text scrolls, bar pinned)
+
+Owner vs public differences use the `isOwner` prop (hides privacy dot & More menu).
+The glow, breathing animation, 3D flip, dust particles, and full action bar are ALWAYS present.
+
+`PrayerCardAsset.tsx` remains as the original design reference but is NOT used in production.
+`DesignLab.tsx` now renders PrayerCardMobile with mock data as visual proof.
 
 ---
 
 ## Project Overview
 
-**KeepPray.ing** is a faith-based prayer application. The user is building a premium, mobile-first prayer experience. The current focus has been the **Design Lab** (`/design-lab` route) where we've been refining the `PrayerCardAsset` component — a self-contained, themeable, interactive prayer card that will be placed on user boards.
+**KeepPray.ing** is a faith-based prayer application. The user is building a premium, mobile-first prayer experience.
 
 The project uses:
 - **Vite + React + TypeScript**
@@ -22,7 +39,7 @@ The project uses:
 - **framer-motion** for animations
 - **vaul** for drawer components (mobile-first bottom sheets)
 - **lucide-react** for icons
-- **Supabase** (planned backend — not yet connected)
+- **Supabase** backend via Lovable Cloud
 
 ---
 
@@ -31,10 +48,10 @@ The project uses:
 ### Primary Components
 | File | Purpose |
 |------|---------|
-| `src/components/board/PrayerCardAsset.tsx` | **THE main file.** ~1260 lines. The prayer card front face with all drawers, bottom bar, scripture section, theme system. |
-| `src/components/board/TestimonyCanvasAsset.tsx` | The "back face" of the prayer card. Shows testimonies, compose modes (type/speak/write), expandable testimony cards. |
-| `src/components/board/PrayerStationHero.tsx` | The Design Lab page layout with app bar and navigation. |
-| `src/pages/DesignLab.tsx` | Route component that renders the PrayerStationHero. |
+| `src/components/board/PrayerCardMobile.tsx` | **THE canonical prayer card.** All views, all contexts, all variants. |
+| `src/components/board/PrayerCardAsset.tsx` | Original design reference (mock data, not used in production). |
+| `src/components/board/TestifyBack.tsx` | The "back face" of the prayer card (testimony side). |
+| `src/pages/DesignLab.tsx` | Visual proof page — renders PrayerCardMobile with mock data. |
 
 ### Styling
 | File | Purpose |
