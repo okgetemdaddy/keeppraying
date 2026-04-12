@@ -248,25 +248,32 @@ export default function BoardV2() {
           </div>
         ) : isMobile && layout === "layered" ? (
           /* ── Layered View ──────────────────────────────────────────── */
-          <div className="px-[14px] pb-4">
+          <div className="px-0 pb-4">
             {displayedItems.map((item, i) => {
               const card = item.prayer_cards!;
               const isFront = frontCardId === card.id;
               return (
-                <div key={item.id} style={{ zIndex: isFront ? 100 : i + 1, position: "relative", transition: "z-index 0s" }}>
-                  <LayeredCard
+                <div
+                  key={item.id}
+                  style={{ zIndex: isFront ? 100 : i + 1, position: "relative", transition: "z-index 0s", marginBottom: isFront ? 0 : -42 }}
+                  onClick={() => {
+                    if (isFront) {
+                      setFocusedCardId(card.id);
+                    } else {
+                      setFrontCardId(card.id);
+                    }
+                  }}
+                >
+                  <PrayerCardMobile
                     prayer={card}
-                    hasTestimony={testimonyPrayerIds.has(card.id)}
-                    pinned={item.pinned}
-                    isPublic={card.status === "approved"}
-                    isFront={isFront}
-                    onClick={() => {
-                      if (isFront) {
-                        setFocusedCardId(card.id);
-                      } else {
-                        setFrontCardId(card.id);
-                      }
-                    }}
+                    variant="compact"
+                    meta={{ id: item.id, pinned: item.pinned, favorite: item.favorite, notes: item.notes, position: item.position }}
+                    isOwner={!!(user && card.created_by === user.id)}
+                    userId={user?.id}
+                    onRefresh={fetchSaved}
+                    captionModeTts={prefs.caption_mode_tts}
+                    ttsVoiceId={prefs.tts_voice_id}
+                    initialFlipped={filterMode === "answered"}
                   />
                 </div>
               );
