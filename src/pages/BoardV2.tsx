@@ -173,56 +173,62 @@ export default function BoardV2() {
     <div
       className="min-h-screen"
       style={{
-        background: themeVars["--board-bg"] || "hsl(30 15% 8%)",
-        color: themeVars["--board-text"] || "hsl(38 35% 78%)",
+        background: isMobile ? "var(--kp-bg-deep)" : (themeVars["--board-bg"] || "hsl(30 15% 8%)"),
+        color: isMobile ? "var(--kp-text-body)" : (themeVars["--board-text"] || "hsl(38 35% 78%)"),
       }}
     >
       {/* Desktop nav */}
       {!isMobile && <SiteNav dark />}
 
       <div className="max-w-3xl mx-auto px-4 pb-8">
-        {/* ── Compact Header ─────────────────────────────────────────────── */}
-        <header className="pt-6 pb-4 flex items-center justify-between">
+        {/* ── Compact Header (mockup-aligned) ───────────────────────── */}
+        <header
+          className="flex items-center justify-between flex-shrink-0 sticky top-0 z-20"
+          style={{
+            padding: "14px 18px 10px",
+            background: isMobile
+              ? "linear-gradient(to bottom, var(--kp-bg-deep) 60%, transparent)"
+              : undefined,
+          }}
+        >
           <div className="flex items-center gap-3">
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600/80 to-amber-800/80 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+            <div
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[13px] font-bold"
+              style={{
+                background: "linear-gradient(135deg, var(--kp-gold) 0%, #8b7230 100%)",
+                color: "#1a1610",
+              }}
+            >
               {firstName[0]?.toUpperCase() || "U"}
             </div>
             <div>
-              <h1 className="font-display text-base font-semibold leading-tight" style={{ color: themeVars["--board-text"] || "hsl(38 60% 85%)" }}>
-                {greeting}, {firstName}
-              </h1>
-              {currentSaying && (
-                <p className="text-[11px] italic mt-0.5" style={{ color: themeVars["--board-accent"] || "hsl(42 85% 55%)", opacity: 0.7 }}>
-                  ✦ {currentSaying}
-                </p>
-              )}
+              <small
+                className="text-[10px] uppercase tracking-[0.12em] block"
+                style={{ color: "var(--kp-text-muted)" }}
+              >
+                {new Date().toLocaleDateString("en-US", { weekday: "long" })} {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"}
+              </small>
+              <h2
+                className="text-[16px] font-semibold leading-tight"
+                style={{ color: "var(--kp-text-primary)" }}
+              >
+                Peace be with you, {firstName}
+              </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Streak badge */}
-            {currentStreak > 0 && (
-              <div
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{
-                  backgroundColor: "rgba(180,140,50,0.12)",
-                  color: "hsl(42 85% 55%)",
-                  border: "1px solid rgba(180,140,50,0.2)",
-                }}
-              >
-                <Flame className="w-3.5 h-3.5" />
-                {currentStreak}
-              </div>
-            )}
-
             {/* Search toggle */}
             <button
               onClick={() => setSearchOpen((v) => !v)}
-              className="p-2 rounded-xl transition-all active:scale-90"
-              style={{ color: "hsl(38 30% 50%)" }}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: "rgba(180,140,50,0.06)",
+                border: "1px solid var(--kp-border)",
+              }}
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-[18px] h-[18px]" style={{ color: "var(--kp-gold-dim)" }} />
             </button>
 
             {/* Notifications */}
