@@ -210,5 +210,15 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>
+
+      <DrawCanvasFullscreen
+        open={drawOpen}
+        onClose={() => setDrawOpen(false)}
+        onPrayerCreated={() => {
+          onOpenChange(false);
+          onPrayerCreated?.();
+        }}
+      />
+    </>
   );
 }
