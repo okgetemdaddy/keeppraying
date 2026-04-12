@@ -606,7 +606,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col overflow-hidden px-4 pb-3 relative z-10"
+            className={`flex-1 flex flex-col overflow-hidden relative z-10 ${isBoard ? "px-3 pb-2" : "px-4 pb-3"}`}
           >
             {/* Already testified badge */}
             {alreadyTestified && (
@@ -616,7 +616,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "f
               </div>
             )}
 
-            <div className="flex-1 overflow-auto space-y-3">
+            <div className={`flex-1 overflow-auto ${isBoard ? "space-y-2" : "space-y-3"}`}>
               {loadingTestimonies ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-5 h-5 animate-spin" style={{ color: textMuted }} />
