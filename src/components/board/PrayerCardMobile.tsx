@@ -40,7 +40,7 @@ import {
   Image as ImageIcon, Palette, StickyNote, UserPlus, Users, Lock,
   ChevronRight, ChevronDown, ChevronUp, Pin, BookOpen, Sparkles,
   Plus, Upload, X, Camera, Mic, PenLine, Type, Check, Eye, HandHeart,
-  Bookmark, Heart,
+  Bookmark, Heart, ArrowLeft,
 } from "lucide-react";
 
 type PrayerCardRow = Database["public"]["Tables"]["prayer_cards"]["Row"];
