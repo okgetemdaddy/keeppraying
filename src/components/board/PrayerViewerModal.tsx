@@ -360,9 +360,6 @@ export function PrayerViewerModal({
                       prayerId={card.id}
                       prayerAuthorId={card.created_by}
                       onFlipBack={() => setTestifying(false)}
-                      accentColor={accentColor}
-                      textColor={hasImage ? "white" : undefined}
-                      cardBg={hasImage ? "rgba(255,255,255,0.08)" : undefined}
                     />
                   </div>
                 ) : (

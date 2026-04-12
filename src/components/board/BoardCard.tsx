@@ -1057,9 +1057,6 @@ export function BoardCard({
               prayerId={card.id}
               prayerAuthorId={card.created_by}
               onFlipBack={() => setFlipped(false)}
-              accentColor={theme.brandColor}
-              textColor={theme.textColor}
-              cardBg={theme.cardBg}
             />
           ) : null}
         </motion.div>
