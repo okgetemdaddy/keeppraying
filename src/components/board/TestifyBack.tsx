@@ -273,7 +273,7 @@ function relativeTime(dateStr: string) {
 
 /* ═══ Main Component ════════════════════════════════════════════════════ */
 
-export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBackProps) {
+export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "fullscreen" }: TestifyBackProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
