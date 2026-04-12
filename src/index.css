@@ -75,6 +75,53 @@
     --sidebar-accent-foreground: 25 35% 14%;
     --sidebar-border: 38 22% 88%;
     --sidebar-ring: 42 75% 46%;
+
+    /* ═══ Mockup Design Tokens (kp-* namespace) ═══ */
+    --kp-gold: #c9a84c;
+    --kp-gold-dim: #6b5f4d;
+    --kp-gold-glow: rgba(180,140,50,0.18);
+    --kp-bg-deep: #0a0908;
+    --kp-bg-card: linear-gradient(175deg, #2a2318 0%, #1a1610 40%, #15120d 100%);
+    --kp-bg-surface: #1a1610;
+    --kp-bg-elevated: #221e16;
+    --kp-bg-input: #2a2318;
+    --kp-border: rgba(180,140,50,0.12);
+    --kp-border-gold: rgba(180,140,50,0.25);
+    --kp-text-primary: #f0e8d8;
+    --kp-text-body: #c8b898;
+    --kp-text-muted: #6b5f4d;
+    --kp-green: #34d399;
+    --kp-green-dim: rgba(52,211,153,0.12);
+    --kp-red: #f87171;
+    --kp-red-dim: rgba(248,113,113,0.12);
+    --kp-radius: 20px;
+    --kp-radius-sm: 12px;
+    --kp-radius-xs: 8px;
+    --kp-nav-height: 68px;
+    --kp-header-height: 56px;
+    --kp-font-display: 'Playfair Display', 'Georgia', serif;
+    --kp-font-prayer: 'Cormorant Garamond', 'Georgia', serif;
+  }
+
+  /* ═══ Mockup Light Theme Tokens ═══ */
+  [data-theme="light"] {
+    --kp-gold: #8b6914;
+    --kp-gold-dim: #b8a070;
+    --kp-gold-glow: rgba(140,105,20,0.10);
+    --kp-bg-deep: #f5f0e8;
+    --kp-bg-card: linear-gradient(175deg, #ffffff 0%, #faf7f0 40%, #f5f0e8 100%);
+    --kp-bg-surface: #ffffff;
+    --kp-bg-elevated: #faf7f0;
+    --kp-bg-input: #ede8e0;
+    --kp-border: rgba(100,80,40,0.12);
+    --kp-border-gold: rgba(140,105,20,0.22);
+    --kp-text-primary: #1a1610;
+    --kp-text-body: #4a4030;
+    --kp-text-muted: #8b7f6b;
+    --kp-green: #059669;
+    --kp-green-dim: rgba(5,150,105,0.08);
+    --kp-red: #dc2626;
+    --kp-red-dim: rgba(220,38,38,0.08);
   }
 
   .dark {

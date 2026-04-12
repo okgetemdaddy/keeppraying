@@ -173,56 +173,62 @@ export default function BoardV2() {
     <div
       className="min-h-screen"
       style={{
-        background: themeVars["--board-bg"] || "hsl(30 15% 8%)",
-        color: themeVars["--board-text"] || "hsl(38 35% 78%)",
+        background: isMobile ? "var(--kp-bg-deep)" : (themeVars["--board-bg"] || "hsl(30 15% 8%)"),
+        color: isMobile ? "var(--kp-text-body)" : (themeVars["--board-text"] || "hsl(38 35% 78%)"),
       }}
     >
       {/* Desktop nav */}
       {!isMobile && <SiteNav dark />}
 
-      <div className="max-w-3xl mx-auto px-4 pb-8">
-        {/* ── Compact Header ─────────────────────────────────────────────── */}
-        <header className="pt-6 pb-4 flex items-center justify-between">
+      <div className={isMobile ? "pb-4" : "max-w-3xl mx-auto px-4 pb-8"}>
+        {/* ── Compact Header (mockup-aligned) ───────────────────────── */}
+        <header
+          className="flex items-center justify-between flex-shrink-0 sticky top-0 z-20"
+          style={{
+            padding: "14px 18px 10px",
+            background: isMobile
+              ? "linear-gradient(to bottom, var(--kp-bg-deep) 60%, transparent)"
+              : undefined,
+          }}
+        >
           <div className="flex items-center gap-3">
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600/80 to-amber-800/80 flex items-center justify-center text-white text-sm font-bold shadow-lg">
+            <div
+              className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[13px] font-bold"
+              style={{
+                background: "linear-gradient(135deg, var(--kp-gold) 0%, #8b7230 100%)",
+                color: "#1a1610",
+              }}
+            >
               {firstName[0]?.toUpperCase() || "U"}
             </div>
             <div>
-              <h1 className="font-display text-base font-semibold leading-tight" style={{ color: themeVars["--board-text"] || "hsl(38 60% 85%)" }}>
-                {greeting}, {firstName}
-              </h1>
-              {currentSaying && (
-                <p className="text-[11px] italic mt-0.5" style={{ color: themeVars["--board-accent"] || "hsl(42 85% 55%)", opacity: 0.7 }}>
-                  ✦ {currentSaying}
-                </p>
-              )}
+              <small
+                className="text-[10px] uppercase tracking-[0.12em] block"
+                style={{ color: "var(--kp-text-muted)" }}
+              >
+                {new Date().toLocaleDateString("en-US", { weekday: "long" })} {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"}
+              </small>
+              <h2
+                className="text-[16px] font-semibold leading-tight"
+                style={{ color: "var(--kp-text-primary)" }}
+              >
+                Peace be with you, {firstName}
+              </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Streak badge */}
-            {currentStreak > 0 && (
-              <div
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{
-                  backgroundColor: "rgba(180,140,50,0.12)",
-                  color: "hsl(42 85% 55%)",
-                  border: "1px solid rgba(180,140,50,0.2)",
-                }}
-              >
-                <Flame className="w-3.5 h-3.5" />
-                {currentStreak}
-              </div>
-            )}
-
             {/* Search toggle */}
             <button
               onClick={() => setSearchOpen((v) => !v)}
-              className="p-2 rounded-xl transition-all active:scale-90"
-              style={{ color: "hsl(38 30% 50%)" }}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: "rgba(180,140,50,0.06)",
+                border: "1px solid var(--kp-border)",
+              }}
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-[18px] h-[18px]" style={{ color: "var(--kp-gold-dim)" }} />
             </button>
 
             {/* Notifications */}
@@ -246,36 +252,64 @@ export default function BoardV2() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search prayers…"
                 autoFocus
-                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none transition-all"
+                className="w-full px-4 py-3 text-sm focus:outline-none transition-all"
                 style={{
-                  backgroundColor: "rgba(180,140,50,0.06)",
-                  border: "1px solid rgba(180,140,50,0.12)",
-                  color: "hsl(38 35% 78%)",
-                  caretColor: "hsl(42 85% 55%)",
+                  borderRadius: "var(--kp-radius-sm)",
+                  backgroundColor: "var(--kp-bg-input)",
+                  border: "1px solid var(--kp-border)",
+                  color: "var(--kp-text-body)",
+                  caretColor: "var(--kp-gold)",
                 }}
               />
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* ── Daily Verse ────────────────────────────────────────────── */}
+        {currentSaying && (
+          <div className="px-[18px] pb-3" style={{ fontFamily: "var(--kp-font-prayer)", fontSize: 13, fontStyle: "italic", color: "var(--kp-gold-dim)", lineHeight: 1.6 }}>
+            ✦ {currentSaying}
+          </div>
+        )}
+
         {/* ── Stats bar ──────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-4">
-          <span className="text-xs font-medium" style={{ color: "hsl(38 20% 50%)" }}>
-            {activeCount} prayer{activeCount !== 1 ? "s" : ""} on your board
-          </span>
+        <div className="flex items-center gap-3 px-[18px] pb-3.5">
+          {currentStreak > 0 && (
+            <div
+              className="flex items-center gap-[5px] px-3 py-[5px] rounded-[20px] text-xs font-semibold"
+              style={{
+                background: "rgba(180,140,50,0.06)",
+                border: "1px solid var(--kp-border)",
+                color: "var(--kp-text-body)",
+              }}
+            >
+              <Flame className="w-3.5 h-3.5" style={{ color: "var(--kp-gold)" }} />
+              {currentStreak} day streak
+            </div>
+          )}
+          <div
+            className="flex items-center gap-[5px] px-3 py-[5px] rounded-[20px] text-xs font-semibold"
+            style={{
+              background: "rgba(180,140,50,0.06)",
+              border: "1px solid var(--kp-border)",
+              color: "var(--kp-text-body)",
+            }}
+          >
+            🙏 {activeCount} active
+          </div>
         </div>
 
         {/* ── Filter chips ───────────────────────────────────────────────── */}
-        <div className="flex items-center gap-2 mb-5 overflow-x-auto pca-hide-scrollbar">
+        <div className="flex items-center gap-2 px-[18px] pb-4 overflow-x-auto">
           {FILTER_CHIPS.map((chip) => (
             <button
               key={chip.id}
               onClick={() => setFilterMode(chip.id)}
-              className="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all active:scale-95"
+              className="px-4 py-1.5 rounded-[20px] text-xs font-semibold whitespace-nowrap transition-all active:scale-95"
               style={{
-                backgroundColor: filterMode === chip.id ? "rgba(180,140,50,0.15)" : "rgba(255,255,255,0.04)",
-                color: filterMode === chip.id ? "hsl(42 85% 60%)" : "hsl(38 20% 50%)",
-                border: filterMode === chip.id ? "1px solid rgba(180,140,50,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                backgroundColor: filterMode === chip.id ? "rgba(180,140,50,0.15)" : "rgba(180,140,50,0.06)",
+                color: filterMode === chip.id ? "var(--kp-gold)" : "var(--kp-text-muted)",
+                border: filterMode === chip.id ? "1px solid var(--kp-border-gold)" : "1px solid var(--kp-border)",
               }}
             >
               {chip.label}
@@ -290,7 +324,7 @@ export default function BoardV2() {
                 onClick={() => setSortMode(s.id)}
                 className="px-2 py-1 rounded-lg text-[10px] font-medium transition-all"
                 style={{
-                  color: sortMode === s.id ? "hsl(42 85% 60%)" : "hsl(38 15% 40%)",
+                  color: sortMode === s.id ? "var(--kp-gold)" : "var(--kp-text-muted)",
                 }}
               >
                 {s.label}
@@ -408,31 +442,35 @@ export default function BoardV2() {
         )}
       </AnimatePresence>
 
-      {/* ── Floating + button ────────────────────────────────────────────── */}
-      <motion.button
-        onClick={() => setPrayNowOpen(true)}
-        className="fixed z-40 flex items-center justify-center rounded-full shadow-2xl"
-        style={{
-          bottom: "2rem",
-          right: "1.5rem",
-          width: 56,
-          height: 56,
-          backgroundColor: "hsl(42 85% 55%)",
-          color: "hsl(30 25% 10%)",
-          boxShadow: "0 8px 32px -4px rgba(180,140,50,0.4)",
-        }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.92 }}
-      >
-        <Plus className="w-6 h-6" strokeWidth={2.5} />
-      </motion.button>
+      {/* ── Floating + button (desktop only — mobile uses MobileNavV2) ── */}
+      {!isMobile && (
+        <motion.button
+          onClick={() => setPrayNowOpen(true)}
+          className="fixed z-40 flex items-center justify-center rounded-full shadow-2xl"
+          style={{
+            bottom: "2rem",
+            right: "1.5rem",
+            width: 56,
+            height: 56,
+            backgroundColor: "var(--kp-gold)",
+            color: "#1a1610",
+            boxShadow: "0 8px 32px -4px rgba(180,140,50,0.4)",
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.92 }}
+        >
+          <Plus className="w-6 h-6" strokeWidth={2.5} />
+        </motion.button>
+      )}
 
-      {/* ── PrayNow Sheet ────────────────────────────────────────────────── */}
-      <PrayNowSheet
-        open={prayNowOpen}
-        onOpenChange={setPrayNowOpen}
-        onPrayerCreated={fetchSaved}
-      />
+      {/* ── PrayNow Sheet (desktop only — mobile uses MobileNavV2) ────── */}
+      {!isMobile ? (
+        <PrayNowSheet
+          open={prayNowOpen}
+          onOpenChange={setPrayNowOpen}
+          onPrayerCreated={fetchSaved}
+        />
+      ) : null}
     </div>
   );
 }
