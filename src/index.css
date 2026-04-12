@@ -124,6 +124,16 @@
     --kp-red-dim: rgba(220,38,38,0.08);
   }
 
+  /* ═══ Card breathing + glow-pulse animations ═══ */
+  @keyframes kp-card-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.003); }
+  }
+  @keyframes kp-glow-pulse {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+  }
+
   .dark {
     --background: 220 38% 7%;
     --foreground: 38 28% 92%;
