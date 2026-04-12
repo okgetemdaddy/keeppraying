@@ -50,6 +50,7 @@ interface TestifyBackProps {
   prayerId: string;
   prayerAuthorId: string | null | undefined;
   onFlipBack: () => void;
+  variant?: "default" | "compact" | "fullscreen";
 }
 
 /* ═══ Palette (coffee & cream — canonical from TestimonyCanvasAsset) ══════ */
@@ -272,7 +273,7 @@ function relativeTime(dateStr: string) {
 
 /* ═══ Main Component ════════════════════════════════════════════════════ */
 
-export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBackProps) {
+export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack, variant = "fullscreen" }: TestifyBackProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -424,9 +425,11 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
 
   const expandedTestimony = expandedId ? testimonies.find(t => t.id === expandedId) : null;
 
+  const isBoard = variant === "default" || variant === "compact";
+
   /* ═══ Render ═══════════════════════════════════════════════════════════ */
   return (
-    <div className="flex flex-col h-full w-full relative" style={{ background: bg, color: textPrimary }}>
+    <div className="flex flex-col h-full w-full relative overflow-hidden" style={{ background: bg, color: textPrimary }}>
       <style>{TESTIMONY_STYLES}</style>
 
       {/* ── Glow effects ────────────────────────────────────────────── */}
@@ -443,15 +446,15 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
       <GloryParticles />
 
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2 relative z-10">
+      <div className={`flex items-center justify-between relative z-10 ${isBoard ? "px-3 pt-3 pb-1" : "px-5 pt-5 pb-2"}`}>
         <button onClick={onFlipBack} className="flex items-center gap-1.5 transition-colors active:scale-95" style={{ color: textMuted }}>
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-xs font-medium">Back</span>
+          <ArrowLeft className={isBoard ? "w-3.5 h-3.5" : "w-4 h-4"} />
+          <span className={`font-medium ${isBoard ? "text-[10px]" : "text-xs"}`}>Back</span>
         </button>
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: accent }}>
+        <h3 className={`font-semibold uppercase tracking-[0.2em] ${isBoard ? "text-[9px]" : "text-[11px]"}`} style={{ color: accent }}>
           Testimony
         </h3>
-        <div className="w-14" />
+        <div className={isBoard ? "w-10" : "w-14"} />
       </div>
 
       {/* ── Main area ──────────────────────────────────────────────── */}
@@ -603,7 +606,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col overflow-hidden px-4 pb-3 relative z-10"
+            className={`flex-1 flex flex-col overflow-hidden relative z-10 ${isBoard ? "px-3 pb-2" : "px-4 pb-3"}`}
           >
             {/* Already testified badge */}
             {alreadyTestified && (
@@ -613,7 +616,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
               </div>
             )}
 
-            <div className="flex-1 overflow-auto space-y-3">
+            <div className={`flex-1 overflow-auto ${isBoard ? "space-y-2" : "space-y-3"}`}>
               {loadingTestimonies ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="w-5 h-5 animate-spin" style={{ color: textMuted }} />
@@ -638,7 +641,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1 }}
-                      className="p-4 rounded-2xl relative cursor-pointer"
+                      className={`relative cursor-pointer ${isBoard ? "p-3 rounded-xl" : "p-4 rounded-2xl"}`}
                       onClick={() => setExpandedId(testimony.id)}
                       whileTap={{ scale: 0.98 }}
                       style={{
@@ -684,7 +687,7 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
                       </div>
 
                       {/* Testimony text */}
-                      <p className="text-[14px] leading-relaxed line-clamp-3"
+                      <p className={`leading-relaxed ${isBoard ? "text-[12px] line-clamp-2" : "text-[14px] line-clamp-3"}`}
                         style={{ fontFamily: '"Cormorant Garamond", "Georgia", serif', color: textPrimary }}>
                         {testimony.title || testimony.body}
                       </p>
@@ -696,13 +699,15 @@ export function TestifyBack({ prayerId, prayerAuthorId, onFlipBack }: TestifyBac
 
             {/* Bottom tagline + Testify button */}
             {!alreadyTestified && (
-              <div className="mt-3 space-y-2.5">
-                <span className="text-[10px] font-medium italic tracking-wide px-1" style={{ color: textMuted }}>
-                  Testify to His Goodness
-                </span>
+              <div className={isBoard ? "mt-2 space-y-1.5" : "mt-3 space-y-2.5"}>
+                {!isBoard && (
+                  <span className="text-[10px] font-medium italic tracking-wide px-1" style={{ color: textMuted }}>
+                    Testify to His Goodness
+                  </span>
+                )}
                 <button
                   onClick={() => setMode("typing")}
-                  className="w-full py-3.5 rounded-xl font-medium text-sm transition-all active:scale-[0.98]"
+                  className={`w-full rounded-xl font-medium transition-all active:scale-[0.98] ${isBoard ? "py-2.5 text-xs" : "py-3.5 text-sm"}`}
                   style={{
                     background: `linear-gradient(135deg, ${accent}, #d4b04e)`,
                     color: "#1a1610",
