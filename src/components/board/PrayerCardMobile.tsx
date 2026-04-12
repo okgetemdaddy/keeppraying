@@ -80,6 +80,7 @@ export function PrayerCardMobile({
   prayer, meta, isOwner, userId,
   onRefresh, captionModeTts, ttsVoiceId,
   initialFlipped, onFocusOpen, focused,
+  variant = "default", onClose,
 }: PrayerCardMobileProps) {
   const { toast } = useToast();
 
