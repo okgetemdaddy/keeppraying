@@ -252,36 +252,64 @@ export default function BoardV2() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search prayers…"
                 autoFocus
-                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none transition-all"
+                className="w-full px-4 py-3 text-sm focus:outline-none transition-all"
                 style={{
-                  backgroundColor: "rgba(180,140,50,0.06)",
-                  border: "1px solid rgba(180,140,50,0.12)",
-                  color: "hsl(38 35% 78%)",
-                  caretColor: "hsl(42 85% 55%)",
+                  borderRadius: "var(--kp-radius-sm)",
+                  backgroundColor: "var(--kp-bg-input)",
+                  border: "1px solid var(--kp-border)",
+                  color: "var(--kp-text-body)",
+                  caretColor: "var(--kp-gold)",
                 }}
               />
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* ── Daily Verse ────────────────────────────────────────────── */}
+        {currentSaying && (
+          <div className="px-[18px] pb-3" style={{ fontFamily: "var(--kp-font-prayer)", fontSize: 13, fontStyle: "italic", color: "var(--kp-gold-dim)", lineHeight: 1.6 }}>
+            ✦ {currentSaying}
+          </div>
+        )}
+
         {/* ── Stats bar ──────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4 mb-4">
-          <span className="text-xs font-medium" style={{ color: "hsl(38 20% 50%)" }}>
-            {activeCount} prayer{activeCount !== 1 ? "s" : ""} on your board
-          </span>
+        <div className="flex items-center gap-3 px-[18px] pb-3.5">
+          {currentStreak > 0 && (
+            <div
+              className="flex items-center gap-[5px] px-3 py-[5px] rounded-[20px] text-xs font-semibold"
+              style={{
+                background: "rgba(180,140,50,0.06)",
+                border: "1px solid var(--kp-border)",
+                color: "var(--kp-text-body)",
+              }}
+            >
+              <Flame className="w-3.5 h-3.5" style={{ color: "var(--kp-gold)" }} />
+              {currentStreak} day streak
+            </div>
+          )}
+          <div
+            className="flex items-center gap-[5px] px-3 py-[5px] rounded-[20px] text-xs font-semibold"
+            style={{
+              background: "rgba(180,140,50,0.06)",
+              border: "1px solid var(--kp-border)",
+              color: "var(--kp-text-body)",
+            }}
+          >
+            🙏 {activeCount} active
+          </div>
         </div>
 
         {/* ── Filter chips ───────────────────────────────────────────────── */}
-        <div className="flex items-center gap-2 mb-5 overflow-x-auto pca-hide-scrollbar">
+        <div className="flex items-center gap-2 px-[18px] pb-4 overflow-x-auto">
           {FILTER_CHIPS.map((chip) => (
             <button
               key={chip.id}
               onClick={() => setFilterMode(chip.id)}
-              className="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all active:scale-95"
+              className="px-4 py-1.5 rounded-[20px] text-xs font-semibold whitespace-nowrap transition-all active:scale-95"
               style={{
-                backgroundColor: filterMode === chip.id ? "rgba(180,140,50,0.15)" : "rgba(255,255,255,0.04)",
-                color: filterMode === chip.id ? "hsl(42 85% 60%)" : "hsl(38 20% 50%)",
-                border: filterMode === chip.id ? "1px solid rgba(180,140,50,0.25)" : "1px solid rgba(255,255,255,0.06)",
+                backgroundColor: filterMode === chip.id ? "rgba(180,140,50,0.15)" : "rgba(180,140,50,0.06)",
+                color: filterMode === chip.id ? "var(--kp-gold)" : "var(--kp-text-muted)",
+                border: filterMode === chip.id ? "1px solid var(--kp-border-gold)" : "1px solid var(--kp-border)",
               }}
             >
               {chip.label}
@@ -296,7 +324,7 @@ export default function BoardV2() {
                 onClick={() => setSortMode(s.id)}
                 className="px-2 py-1 rounded-lg text-[10px] font-medium transition-all"
                 style={{
-                  color: sortMode === s.id ? "hsl(42 85% 60%)" : "hsl(38 15% 40%)",
+                  color: sortMode === s.id ? "var(--kp-gold)" : "var(--kp-text-muted)",
                 }}
               >
                 {s.label}
