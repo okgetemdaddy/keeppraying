@@ -251,18 +251,19 @@ export function PrayerCardMobile({
       <motion.div
         animate={{ rotateY: flipped ? -180 : 0 }}
         transition={{ duration: 0.65, type: "spring", stiffness: 80, damping: 18 }}
-        className="relative w-full"
+        className={`relative w-full ${isFullscreen ? "flex-1 min-h-0 flex flex-col" : ""}`}
         style={{ transformStyle: "preserve-3d" }}
       >
         {/* ═══ FRONT FACE ═══════════════════════════════════════════════ */}
         <div
-          className="relative rounded-[var(--kp-radius)] overflow-hidden"
+          className={`relative overflow-hidden ${isFullscreen ? "flex-1 min-h-0 flex flex-col" : "rounded-[var(--kp-radius)]"}`}
           style={{
             backfaceVisibility: "hidden",
             background: "var(--kp-bg-card)",
-            border: "1px solid var(--kp-border-gold)",
-            boxShadow: `0 0 40px 4px var(--kp-gold-glow), 0 20px 60px -12px rgba(0,0,0,0.35)`,
-            animation: "kp-card-breathe 6s ease-in-out infinite",
+            border: isFullscreen ? "none" : "1px solid var(--kp-border-gold)",
+            boxShadow: isFullscreen ? "none" : `0 0 40px 4px var(--kp-gold-glow), 0 20px 60px -12px rgba(0,0,0,0.35)`,
+            animation: isFullscreen ? "none" : "kp-card-breathe 6s ease-in-out infinite",
+            borderRadius: isFullscreen ? 0 : undefined,
             pointerEvents: flipped ? "none" : "auto",
           }}
         >
