@@ -105,6 +105,7 @@ export function PrayNowSheet({ open, onOpenChange, onPrayerCreated }: PrayNowShe
   const canSave = prayerText.trim().length > 5;
 
   return (
+    <>
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" />
