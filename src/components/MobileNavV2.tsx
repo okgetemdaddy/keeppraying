@@ -51,7 +51,7 @@ export function MobileNavV2({ onPrayerCreated }: Props) {
     {
       id: "circles",
       label: "Circles",
-      path: "/circles",
+      path: "/circles-mobile",
       match: (p: string) => p.startsWith("/circles"),
       icon: (active: boolean) => (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeWidth="1.8"
