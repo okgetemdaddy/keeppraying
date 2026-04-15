@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BookOpen,
@@ -29,7 +29,6 @@ import {
   AlignCenter,
   AlignRight,
   Grid3X3,
-  ChevronDown,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -106,14 +105,6 @@ import { JournalPanel } from "@/components/bible/JournalPanel";
 import { InkOverlay, type InkStroke } from "@/components/bible/InkOverlay";
 import { ZoomWrapper, type TextAlign, type CanvasBackground } from "@/components/bible/ZoomWrapper";
 import { IPadStudyToolbar } from "@/components/bible/iPadStudyToolbar";
-import {
-  StudioToolbar,
-  GhostToolbar,
-  SqueezeRadialMenu,
-  InkFilterDefs,
-} from '@/components/bible/toolbar';
-import { usePencilTools } from '@/hooks/usePencilTools';
-import { useApplePencilSqueeze, useApplePencilDoubleTap } from '@/hooks/useApplePencilSqueeze';
 import { PaperCanvas } from "@/components/bible/PaperCanvas";
 import { CanvasCreationDrawer, type CanvasSessionConfig } from "@/components/bible/CanvasCreationDrawer";
 import { GestureEducationOverlay, shouldShowGestureOverlay } from "@/components/bible/GestureEducationOverlay";
@@ -134,17 +125,12 @@ import { ChapterThumbnailStrip } from "@/components/bible/ChapterThumbnailStrip"
 import { VoiceAnnotationOverlay } from "@/components/bible/VoiceAnnotationOverlay";
 import { useInkHistory } from "@/hooks/useInkHistory";
 import { useChapterAnnotations, useChapterInkAnnotations, useJournalAnnotations, useAnnotationMutations } from "@/hooks/useAnnotations";
-import { useBookAnnotations } from "@/hooks/useBookAnnotations";
 import { toast } from "sonner";
 import { IPadWaitlistDrawer } from "@/components/bible/iPadWaitlistDrawer";
 import { BibleSuggestionSheet } from "@/components/bible/BibleSuggestionSheet";
-import { BibleSightDrawer } from "@/components/bible/BibleSightDrawer";
-import { CommentaryDrawer } from "@/components/bible/CommentaryDrawer";
 import { BibleEdgeTabs } from "@/components/bible/BibleEdgeTabs";
 import { SessionLingerToast } from "@/components/bible/SessionLingerToast";
 import { MarginAnnotationLayer, type MarginInkStroke } from "@/components/bible/MarginAnnotationLayer";
-import { AutoEnrichLayer } from "@/components/bible/AutoEnrichLayer";
-import { useChapterEnrichment } from "@/hooks/useChapterEnrichment";
 import { layoutBibleText } from "@/lib/svgTextLayout";
 
 type ReadingMode = "verse" | "paragraph";
@@ -699,29 +685,8 @@ export function BibleReader() {
   // ── Cross-translation annotations ──
   const { enabled: crossTranslation, toggle: toggleCrossTranslation } = useCrossTranslationAnnotations();
 
-  // ── URL-persisted drawer state ──
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const setDrawerParam = useCallback((key: string, open: boolean) => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      if (open) next.set(key, "1");
-      else next.delete(key);
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  const sleeveOpen = searchParams.get("sleeve") === "1";
-  const setSleeveOpen = useCallback((v: boolean) => setDrawerParam("sleeve", v), [setDrawerParam]);
-
-  // ── Bible Sight conversational drawer ──
-  const bibleSightOpen = searchParams.get("sight") === "1";
-  const setBibleSightOpen = useCallback((v: boolean) => setDrawerParam("sight", v), [setDrawerParam]);
-  const [bibleSightContext, setBibleSightContext] = useState<{ author: string; excerpt: string } | null>(null);
-
-  // ── Commentary Library drawer ──
-  const commentaryOpen = searchParams.get("commentary") === "1";
-  const setCommentaryOpen = useCallback((v: boolean) => setDrawerParam("commentary", v), [setDrawerParam]);
+  // ── Bible Sleeve sheet ──
+  const [sleeveOpen, setSleeveOpen] = useState(false);
 
   // ── Canvas Export sheet ──
   const [exportSheetOpen, setExportSheetOpen] = useState(false);
@@ -839,27 +804,17 @@ export function BibleReader() {
   const [inkTextSpacing, setInkTextSpacing] = useState(() => {
     try { return parseFloat(localStorage.getItem("bible_ink_spacing") ?? "2.8"); } catch { return 2.8; }
   });
-  // ── Pencil Tools Zustand store (replaces inline ink state) ──
-  // iPadOS: Map to PKToolPicker state via UIPencilInteraction delegate
-  const pencilTools = usePencilTools();
-  const inkPenColor = pencilTools.color;
-  const inkPenSize = pencilTools.size;
-  const inkPenGlow: string | null = null; // Legacy — glow now handled by brush filters
-  const inkFingerDrawing = false; // Legacy — finger drawing disabled on iPad by default
-  const setInkPenColor = pencilTools.setColor;
-  const setInkPenSize = pencilTools.setSize;
-  const handleInkPenGlowChange = useCallback((_v: string | null) => {}, []);
-  const setInkFingerDrawing = useCallback((_v: boolean) => {}, []);
+  const [inkPenColor, setInkPenColor] = useState("#1a1a1a");
+  const [inkPenSize, setInkPenSize] = useState(8);
+  const [inkPenGlow, setInkPenGlow] = useState<string | null>(() => {
+    try { return localStorage.getItem("bible_pen_glow") || null; } catch { return null; }
+  });
+  const handleInkPenGlowChange = useCallback((v: string | null) => {
+    setInkPenGlow(v);
+    try { if (v) localStorage.setItem("bible_pen_glow", v); else localStorage.removeItem("bible_pen_glow"); } catch {}
+  }, []);
+  const [inkFingerDrawing, setInkFingerDrawing] = useState(false);
   const inkHistory = useInkHistory();
-
-  // ── Apple Pencil Pro hardware gesture hooks ──
-  // iPadOS: Replace with UIPencilInteraction delegate methods
-  useApplePencilSqueeze((x, y) => {
-    pencilTools.toggleSqueezeMenu(x, y);
-  });
-  useApplePencilDoubleTap(() => {
-    pencilTools.toggleLastTool();
-  });
 
   // ── Margin annotation layer state (Apple Pencil in default reading view) ──
   // iPadOS: Margin mode maps to PKCanvasView glass overlay with pencilOnly input policy
@@ -913,8 +868,7 @@ export function BibleReader() {
   // New iPad feature states
   const [inkTrashOpen, setInkTrashOpen] = useState(false);
   const [voiceOverlayActive, setVoiceOverlayActive] = useState(false);
-  const pocketOpen = searchParams.get("pocket") === "1";
-  const setPocketOpen = useCallback((v: boolean) => setDrawerParam("pocket", v), [setDrawerParam]);
+  const [pocketOpen, setPocketOpen] = useState(false);
   const [thumbnailStripOpen, setThumbnailStripOpen] = useState(false);
   const [eraserConfirmOpen, setEraserConfirmOpen] = useState(false);
   const [showLingerToast, setShowLingerToast] = useState(false);
@@ -1489,10 +1443,6 @@ export function BibleReader() {
   const { data: inkAnnotation } = useChapterInkAnnotations(bookUsfm, currentChapter?.id);
   const { saveAnnotation: saveAnnotationMut, deleteAnnotation: deleteAnnotationMut } = useAnnotationMutations();
 
-  // ── Book-wide annotations for thumbnail drawer ──
-  const { chapterAnnotations: bookAnnotations, invalidateChapter } = useBookAnnotations(bookUsfm);
-  const invalidateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   // ── Load saved SVG text layout from annotations (for session resume) ──
   useEffect(() => {
     if (!chapterAnnotations || !activeSessionId) return;
@@ -1536,14 +1486,9 @@ export function BibleReader() {
           strokes: strokesToSave as unknown as StrokeData[],
           existingId: inkAnnotationId,
         });
-        // Debounced thumbnail invalidation
-        if (invalidateTimerRef.current) clearTimeout(invalidateTimerRef.current);
-        invalidateTimerRef.current = setTimeout(() => {
-          if (currentChapter) invalidateChapter(parseInt(currentChapter.id, 10));
-        }, 1500);
       }, 500);
     },
-    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId, invalidateChapter],
+    [bookUsfm, currentChapter, saveAnnotationMut, inkAnnotationId],
   );
 
   const handleInkStrokeComplete = useCallback(
@@ -1857,15 +1802,6 @@ export function BibleReader() {
   );
 
   const mutations = useBibleMutations(scriptureRef);
-
-  // ── Deep Study (AutoEnrich) ──
-  const chapterNumberParsed = currentChapter ? parseInt(currentChapter.id, 10) : undefined;
-  const enrichment = useChapterEnrichment(
-    bookUsfm,
-    chapterNumberParsed,
-    versionId,
-    verses.length > 0 ? verses.map(v => ({ number: v.number, text: v.text })) : undefined
-  );
 
   // ── Bunch color map: bunch_id → index for stable coloring ──
   const bunchColorMap = useMemo(() => {
@@ -2715,7 +2651,7 @@ export function BibleReader() {
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Where is Easter found in the Bible?"
+                placeholder="What can I help you find?"
                 className="h-8 w-[240px] focus:w-80 transition-all duration-200 pl-7 text-xs rounded-md bg-muted/50 border-transparent focus:border-input"
                 onFocus={() => setSearchOpen(true)}
                 readOnly
@@ -3158,16 +3094,13 @@ export function BibleReader() {
             <p className="mt-1 text-sm text-muted-foreground">
               {versions?.find((v) => v.id === versionId)?.localized_title}
             </p>
-            {!isInPaperCanvas && (
-              <motion.button
+            {studyMode && (
+              <button
                 onClick={() => setThumbnailStripOpen(true)}
-                animate={{ y: [0, 4, 0] }}
-                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                className="mx-auto block mt-1 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Browse chapters"
+                className="pointer-events-auto mt-1.5 text-[0.6rem] text-primary/60 hover:text-primary transition-colors"
               >
-                <ChevronDown className="h-4 w-4" />
-              </motion.button>
+                ▼ Browse chapters
+              </button>
             )}
           </motion.header>
         )}
@@ -3481,107 +3414,56 @@ export function BibleReader() {
                     canvasBackground="none"
                     studyMode={false}
                   >
-                    {/* Dynamic layout: grid with study rail when Deep Study active on landscape */}
+                    {/* Dynamic layout shift for margin writing space */}
                     <div className={`transition-all duration-300 ease-out ${
-                      enrichment.active && !isMobile
-                        ? "grid grid-cols-[30%_1fr] gap-6"
+                      pencilDetected
+                        ? marginLayout === "left"
+                          ? "max-w-prose ml-6 md:ml-12 lg:ml-16 mr-auto px-4 pr-8"
+                          : marginLayout === "right"
+                            ? "max-w-prose mr-6 md:mr-12 lg:mr-16 ml-auto px-4 pl-8"
+                            : "max-w-prose mx-auto px-4"
                         : ""
                     }`}>
-                      {/* Text column */}
-                      <div className={`transition-all duration-300 ease-out ${
-                        pencilDetected && !enrichment.active
-                          ? marginLayout === "left"
-                            ? "max-w-prose ml-6 md:ml-12 lg:ml-16 mr-auto px-4 pr-8"
-                            : marginLayout === "right"
-                              ? "max-w-prose mr-6 md:mr-12 lg:mr-16 ml-auto px-4 pl-8"
-                              : "max-w-prose mx-auto px-4"
-                          : enrichment.active && !isMobile
-                            ? "max-w-none"
-                            : ""
-                      }`}>
-                        <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
-                          {verses.map((v) => {
-                            const vNotes = noteMap.get(v.number) ?? [];
-                            return (
-                              <React.Fragment key={v.number}>
-                                <EnrichedVerse
-                                  verse={v}
-                                  highlights={highlightMap.get(v.number) ?? []}
-                                  notes={vNotes}
-                                  bookmark={bookmarkMap.get(v.number)}
-                                  bunchItems={bunchMap.get(v.number) ?? []}
-                                  bunchColorMap={bunchColorMap}
-                                  bunchGroupPosition={bunchPositions.get(v.number) ?? null}
-                                  mode={mode}
-                                  isSelected={selectedVerses.has(v.number)}
-                                  hideBunches={hideBunchRefs}
-                                  onTapSelect={handleTapSelect}
-                                  studyMode={false}
-                                  verseAnnotation={annotationMap.get(v.number) ?? null}
-                                  onAnnotationSave={handleAnnotationSave}
-                                  verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
-                                  highlightStyle={highlightStyle}
-                                  previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
-                                  onLongPressVerseNumber={user ? handleCrossRef : undefined}
-                                />
-                                <AnimatePresence>
-                                  {noteInputVerse === v.number && (
-                                    <NoteInputPanel
-                                      verseNumber={v.number}
-                                      existingContent={vNotes[0]?.note_content}
-                                      existingId={vNotes[0]?.id}
-                                      onSave={handleSaveNote}
-                                      onCancel={() => setNoteInputVerse(null)}
-                                    />
-                                  )}
-                                </AnimatePresence>
-                              </React.Fragment>
-                            );
-                          })}
-                        </section>
-
-                        {/* Mobile: Deep Study cards inline below text */}
-                        {enrichment.active && isMobile && (
-                          <div className="mt-6">
-                            <AutoEnrichLayer
-                              data={enrichment.data}
-                              isLoading={enrichment.isLoading}
-                              isLoadingMore={enrichment.isLoadingMore}
-                              active={enrichment.active}
-                              verses={verses.map(v => ({ number: v.number, text: v.text }))}
-                              versionId={versionId!}
-                              bookUsfm={bookUsfm!}
-                              chapterNumber={chapterNumberParsed!}
-                              onAdoptHighlight={(vn, color) => mutations.addHighlight.mutate({ verseNumber: vn, color })}
-                              onAdoptNote={(vn, content) => mutations.saveNote.mutate({ verseNumber: vn, content })}
-                              onAdoptBunch={(name, items) => mutations.createBunch.mutate({ bunchName: name, items })}
-                              onClose={enrichment.close}
-                              isDark={premiumDark}
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Desktop: Study Rail */}
-                      {enrichment.active && !isMobile && (
-                        <div className="min-w-0">
-                          <AutoEnrichLayer
-                            data={enrichment.data}
-                            isLoading={enrichment.isLoading}
-                            isLoadingMore={enrichment.isLoadingMore}
-                            active={enrichment.active}
-                            verses={verses.map(v => ({ number: v.number, text: v.text }))}
-                            versionId={versionId!}
-                            bookUsfm={bookUsfm!}
-                            chapterNumber={chapterNumberParsed!}
-                            onAdoptHighlight={(vn, color) => mutations.addHighlight.mutate({ verseNumber: vn, color })}
-                            onAdoptNote={(vn, content) => mutations.saveNote.mutate({ verseNumber: vn, content })}
-                            onAdoptBunch={(name, items) => mutations.createBunch.mutate({ bunchName: name, items })}
-                            onClose={enrichment.close}
-                            isDark={premiumDark}
-                          />
-                        </div>
-                      )}
+                      <section className={mode === "paragraph" ? "leading-[1.9] text-foreground" : "space-y-3"}>
+                        {verses.map((v) => {
+                          const vNotes = noteMap.get(v.number) ?? [];
+                          return (
+                            <React.Fragment key={v.number}>
+                              <EnrichedVerse
+                                verse={v}
+                                highlights={highlightMap.get(v.number) ?? []}
+                                notes={vNotes}
+                                bookmark={bookmarkMap.get(v.number)}
+                                bunchItems={bunchMap.get(v.number) ?? []}
+                                bunchColorMap={bunchColorMap}
+                                bunchGroupPosition={bunchPositions.get(v.number) ?? null}
+                                mode={mode}
+                                isSelected={selectedVerses.has(v.number)}
+                                hideBunches={hideBunchRefs}
+                                onTapSelect={handleTapSelect}
+                                studyMode={false}
+                                verseAnnotation={annotationMap.get(v.number) ?? null}
+                                onAnnotationSave={handleAnnotationSave}
+                                verseIdString={bookUsfm && currentChapter ? `${bookUsfm}.${currentChapter.id}.${v.number}` : undefined}
+                                highlightStyle={highlightStyle}
+                                previewRange={partialSelection?.verseNumber === v.number ? { start: partialSelection.start, end: partialSelection.end } : undefined}
+                                onLongPressVerseNumber={user ? handleCrossRef : undefined}
+                              />
+                              <AnimatePresence>
+                                {noteInputVerse === v.number && (
+                                  <NoteInputPanel
+                                    verseNumber={v.number}
+                                    existingContent={vNotes[0]?.note_content}
+                                    existingId={vNotes[0]?.id}
+                                    onSave={handleSaveNote}
+                                    onCancel={() => setNoteInputVerse(null)}
+                                  />
+                                )}
+                              </AnimatePresence>
+                            </React.Fragment>
+                          );
+                        })}
+                      </section>
                     </div>
                   </ZoomWrapper>
                 </div>
@@ -3828,51 +3710,9 @@ export function BibleReader() {
           setBookUsfm(artifact.book_usfm);
           setChapterIdx(artifact.chapter_number - 1);
         }}
-        onTriggerDeepStudy={enrichment.trigger}
-        deepStudyActive={enrichment.active}
-        onOpenBibleSight={() => {
-          setSearchParams(prev => {
-            const next = new URLSearchParams(prev);
-            next.set("sight", "1");
-            next.delete("sleeve");
-            return next;
-          }, { replace: true });
-        }}
-        onOpenCommentary={() => {
-          setSearchParams(prev => {
-            const next = new URLSearchParams(prev);
-            next.set("commentary", "1");
-            next.delete("sleeve");
-            return next;
-          }, { replace: true });
-        }}
       />
 
-      {/* ── Bible Sight Conversational Drawer ── */}
-      <BibleSightDrawer
-        open={bibleSightOpen}
-        onOpenChange={(v) => {
-          setBibleSightOpen(v);
-          if (!v) setBibleSightContext(null);
-        }}
-        bookUsfm={bookUsfm ?? "GEN"}
-        chapterNumber={chapterIdx + 1}
-        onTriggerDeepStudy={enrichment.trigger}
-        initialContext={bibleSightContext}
-      />
-
-      {/* ── Commentary Library Drawer ── */}
-      <CommentaryDrawer
-        open={commentaryOpen}
-        onOpenChange={setCommentaryOpen}
-        bookUsfm={bookUsfm ?? "GEN"}
-        chapterNumber={chapterIdx + 1}
-        onGoDeeper={(ctx) => {
-          setCommentaryOpen(false);
-          setBibleSightContext(ctx);
-          setTimeout(() => setBibleSightOpen(true), 350);
-        }}
-      />
+      {/* ── Manuscript Canvas (Mode 2) ── */}
       {canvasOpen && studyMode && studyModeVariant === "canvas" && (
         <ManuscriptCanvas
           chapterTitle={currentBook && currentChapter ? `${currentBook.title} ${currentChapter.title}` : undefined}
@@ -3894,8 +3734,6 @@ export function BibleReader() {
         journalAnnotations={journalAnnotations ?? []}
         onSave={handleJournalSave}
         onDelete={(id) => deleteAnnotationMut.mutate(id)}
-        chapterVerses={verses.map(v => ({ number: v.number, text: v.text }))}
-        versionId={versionId}
       />
 
       {immersiveActive && <ImmersiveExitPill onExit={() => toggleImmersive(false)} />}
@@ -3930,20 +3768,36 @@ export function BibleReader() {
           onCanvasBackgroundChange={handleWsCanvasBackground}
         />
       )}
-      {/* ── Dual Toolbar System (iPad) ── */}
-      {/* iPadOS: Replace with native UIToolbar + UIPencilInteraction */}
-      <InkFilterDefs standalone />
-      <SqueezeRadialMenu />
-      {isInPaperCanvas && activeSessionConfig && isIPad && (
-        <StudioToolbar
+      {studyMode && studyModeVariant === "margin" && isIPad && (
+        <IPadStudyToolbar
+          penColor={inkPenColor}
+          onPenColorChange={setInkPenColor}
+          penSize={inkPenSize}
+          onPenSizeChange={setInkPenSize}
+          penGlow={inkPenGlow}
+          onPenGlowChange={handleInkPenGlowChange}
+          textSpacing={inkTextSpacing}
+          onTextSpacingChange={handleInkTextSpacingChange}
           onUndo={handleInkUndo}
           onRedo={handleInkRedo}
+          onClear={handleInkClearRequest}
           canUndo={inkHistory.canUndo}
           canRedo={inkHistory.canRedo}
+          fingerDrawing={inkFingerDrawing}
+          onFingerDrawingChange={setInkFingerDrawing}
+          isDark={premiumDark || document.documentElement.classList.contains("dark")}
+          onOpenTrash={() => setInkTrashOpen(true)}
+          onOpenVoice={() => setVoiceOverlayActive(true)}
+          hasTrashItems={inkHistory.trashBin.length > 0}
+          textAlign={wsTextAlign}
+          onTextAlignChange={handleWsTextAlign}
+          marginWidth={wsMarginWidth}
+          onMarginWidthChange={handleWsMarginWidth}
+          canvasBackground={wsCanvasBackground}
+          onCanvasBackgroundChange={handleWsCanvasBackground}
+          hideSpacing={studyModeVariant === "margin"}
+          onShowGestureHelp={() => setGestureOverlayOpen(true)}
         />
-      )}
-      {pencilDetected && !isInPaperCanvas && isIPad && (
-        <GhostToolbar />
       )}
 
       {/* ── Canvas Creation Drawer (replaces CanvasSetupSheet) ── */}
@@ -4114,11 +3968,6 @@ export function BibleReader() {
               break;
           }
         }}
-        chapterVerses={verses.map(v => ({ number: v.number, text: v.text }))}
-        versionId={versionId}
-        bookUsfm={bookUsfm}
-        chapterId={currentChapter?.id}
-        onJournalSave={handleJournalSave}
       />
 
       {/* ── Canvas Export Sheet ── */}
@@ -4142,7 +3991,6 @@ export function BibleReader() {
           bookTitle={currentBook?.title}
           chapterTitles={currentBook?.chapters?.map((ch) => ch.title) ?? []}
           onNavigate={(idx) => setChapterIdx(idx)}
-          chapterAnnotations={bookAnnotations}
         />
       )}
 

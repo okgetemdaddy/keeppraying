@@ -6,11 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { KeepReadingHead } from "./KeepReadingHead";
 import SacredSpinner from "@/components/SacredSpinner";
 import Bible from "@/pages/Bible";
-import Fruit from "@/pages/Fruit";
 import KeepReadingAuth from "./KeepReadingAuth";
 import ResetPassword from "@/pages/ResetPassword";
 import KeepReadingLanding from "@/pages/KeepReadingLanding";
-import Help from "@/pages/Help";
 
 /**
  * Minimal app shell for the keepread.ing domain.
@@ -38,8 +36,6 @@ export function KeepReadingShell() {
         <Route path="/welcome" element={<KeepReadingLanding />} />
         <Route path="/auth" element={<KeepReadingAuth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/Fruit" element={<Fruit />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

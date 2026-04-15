@@ -1,14 +1,16 @@
 // Deploy: npx supabase functions deploy summarize-session --no-verify-jwt
-// Set secrets: GROK_API_KEY + LOVABLE_API_KEY (auto-provisioned)
-// Architecture: 3-model parallel fan-out (Gemini Pro, GPT-5 Nano, GPT-5 Mini)
-//   → Grok 4 synthesis → final SessionSummary
-// TODO: Abstract AI provider into a pluggable interface — swap models without touching the client
+// Set secret: npx supabase secrets set GROK_API_KEY=your-key-here
+// Test: curl -X POST https://your-project.supabase.co/functions/v1/summarize-session \
+//   -H "Authorization: Bearer USER_JWT" \
+//   -H "Content-Type: application/json" \
+//   -d '{"session_id": "uuid-here"}'
+// TODO: Abstract AI provider into a pluggable interface — swap Grok for Claude or other models without touching the client
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface SessionSummary {
@@ -22,88 +24,7 @@ interface SessionSummary {
     cross_referencing_pct: number;
   };
   verse_focus: string[];
-  model_contributions?: {
-    theological: string;
-    statistical: string;
-    behavioral: string;
-  } | null;
-  _raw_analyses?: Record<string, unknown> | null;
 }
-
-/* ── Shared response format for fan-out models ── */
-const LENS_RESPONSE_FORMAT = `Respond ONLY with valid JSON (no markdown, no backticks):
-{
-  "analysis": "Your analytical perspective in 2-3 sentences",
-  "key_findings": ["finding 1", "finding 2", "finding 3"],
-  "suggested_tags": ["tag1", "tag2"],
-  "verse_focus": ["verse references that received most attention"],
-  "confidence": 0.0 to 1.0
-}`;
-
-/* ── Fan-out model callers ── */
-
-const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-async function callLovableModel(
-  apiKey: string,
-  model: string,
-  systemPrompt: string,
-  payload: string,
-): Promise<Record<string, unknown> | null> {
-  const res = await fetch(LOVABLE_GATEWAY, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: payload },
-      ],
-      temperature: 0.3,
-    }),
-  });
-
-  if (!res.ok) {
-    console.error(`${model} returned ${res.status}: ${await res.text()}`);
-    return null;
-  }
-
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content || "{}";
-  return JSON.parse(text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
-}
-
-async function callGeminiPro(apiKey: string, payload: string) {
-  return callLovableModel(
-    apiKey,
-    "google/gemini-2.5-pro",
-    `You are a biblical theology expert analyzing a Bible study session. Focus on theological themes, doctrinal connections, and how the user's annotations reveal their hermeneutical approach.\n\n${LENS_RESPONSE_FORMAT}`,
-    payload,
-  );
-}
-
-async function callGpt5Nano(apiKey: string, payload: string) {
-  return callLovableModel(
-    apiKey,
-    "openai/gpt-5-nano",
-    `You are a data analyst. Extract statistical patterns from Bible study telemetry. Focus on time distribution, interaction frequency, reading velocity, and annotation density. Be precise with numbers.\n\n${LENS_RESPONSE_FORMAT}`,
-    payload,
-  );
-}
-
-async function callGpt5Mini(apiKey: string, payload: string) {
-  return callLovableModel(
-    apiKey,
-    "openai/gpt-5-mini",
-    `You are a learning behavior analyst. Analyze this Bible study session to identify study patterns, engagement shifts, and learning progression. Notice when the user paused, when they intensified annotations, and what triggered cross-references.\n\n${LENS_RESPONSE_FORMAT}`,
-    payload,
-  );
-}
-
-/* ── Main handler ── */
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -186,139 +107,11 @@ Deno.serve(async (req) => {
       ? `${session.book_usfm} ${session.chapter_id}:${session.verse_start}–${session.verse_end}`
       : `${session.book_usfm} ${session.chapter_id}`;
 
-    // ── Multi-model fan-out ──
+    // Try AI summarization
     const grokKey = Deno.env.get("GROK_API_KEY");
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     let summary: SessionSummary;
 
-    if (lovableKey && grokKey && eventLog.length > 0) {
-      try {
-        const sessionPayload = JSON.stringify({
-          sessionContext: {
-            book: session.book_usfm,
-            chapter: session.chapter_id,
-            verse_start: session.verse_start,
-            verse_end: session.verse_end,
-            duration_seconds: session.elapsed_seconds,
-            session_type: session.session_type || "canvas",
-            passage: verseRange,
-          },
-          events: eventLog.map((e: any) => ({
-            type: e.event_type,
-            payload: e.payload,
-            time: e.created_at,
-          })),
-        });
-
-        // ── Fan-out: 3 models in parallel ──
-        const [geminiResult, nanoResult, miniResult] = await Promise.allSettled([
-          callGeminiPro(lovableKey, sessionPayload),
-          callGpt5Nano(lovableKey, sessionPayload),
-          callGpt5Mini(lovableKey, sessionPayload),
-        ]);
-
-        const analyses = {
-          theological: geminiResult.status === "fulfilled" ? geminiResult.value : null,
-          statistical: nanoResult.status === "fulfilled" ? nanoResult.value : null,
-          behavioral: miniResult.status === "fulfilled" ? miniResult.value : null,
-        };
-
-        console.log(
-          "Fan-out results:",
-          Object.entries(analyses)
-            .map(([k, v]) => `${k}: ${v ? "✓" : "✗"}`)
-            .join(", "),
-        );
-
-        // ── Synthesis: Grok 4 compiles all perspectives ──
-        const synthesisPrompt = `You are the chief analyst for KeepRead.ing, a premium Bible study application.
-
-Three specialist AI models have independently analyzed the same Bible study session. Synthesize their perspectives into one authoritative, enriched summary. Resolve contradictions by weighing each model's expertise area.
-
-THEOLOGICAL ANALYSIS (Gemini 2.5 Pro — doctrine and hermeneutics):
-${JSON.stringify(analyses.theological || "Model unavailable")}
-
-STATISTICAL ANALYSIS (GPT-5 Nano — metrics and time distribution):
-${JSON.stringify(analyses.statistical || "Model unavailable")}
-
-BEHAVIORAL ANALYSIS (GPT-5 Mini — study patterns and engagement):
-${JSON.stringify(analyses.behavioral || "Model unavailable")}
-
-RAW SESSION DATA (for fact-checking):
-Passage: ${verseRange}
-Duration: ${session.elapsed_seconds} seconds
-Events: ${eventLog.length}
-
-Produce the FINAL synthesized summary. Respond ONLY with valid JSON (no markdown, no backticks):
-{
-  "thematic_summary": "3-4 sentence narrative weaving theological depth, statistical precision, and behavioral insight",
-  "key_insights": ["insight 1", "insight 2", "insight 3", "insight 4"],
-  "study_arc": "One compelling sentence describing the trajectory of this study session",
-  "tags": ["tag1", "tag2", "tag3", "tag4"],
-  "time_breakdown": { "reading_pct": 0, "annotating_pct": 0, "cross_referencing_pct": 0 },
-  "verse_focus": ["the 2-3 verses with deepest engagement"],
-  "model_contributions": {
-    "theological": "1-sentence summary of what the theological lens revealed",
-    "statistical": "1-sentence summary of what the statistical lens revealed",
-    "behavioral": "1-sentence summary of what the behavioral lens revealed"
-  }
-}`;
-
-        let finalSummary: SessionSummary | null = null;
-
-        try {
-          const grokRes = await fetch("https://api.x.ai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${grokKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "grok-4-0709",
-              messages: [{ role: "user", content: synthesisPrompt }],
-              temperature: 0.3,
-            }),
-          });
-
-          if (grokRes.ok) {
-            const grokData = await grokRes.json();
-            const rawText = grokData.choices?.[0]?.message?.content ?? "";
-            const cleaned = rawText
-              .replace(/```json\n?/g, "")
-              .replace(/```\n?/g, "")
-              .trim();
-            finalSummary = JSON.parse(cleaned);
-          } else {
-            console.error(`Grok synthesis returned ${grokRes.status}`);
-          }
-        } catch (synthErr) {
-          console.error("Synthesis failed, using best available analysis:", synthErr);
-        }
-
-        if (finalSummary) {
-          // Attach raw analyses for the UI's expandable "compare perspectives" view
-          finalSummary._raw_analyses = analyses;
-          summary = finalSummary;
-        } else {
-          // Fallback: use the best individual analysis that succeeded
-          const best = analyses.theological || analyses.behavioral || analyses.statistical;
-          summary = {
-            thematic_summary: (best as any)?.analysis || `Study session on ${verseRange}. ${eventLog.length} events recorded.`,
-            key_insights: (best as any)?.key_findings || [],
-            study_arc: "Individual model analysis — synthesis pending",
-            tags: (best as any)?.suggested_tags || [],
-            time_breakdown: { reading_pct: 70, annotating_pct: 20, cross_referencing_pct: 10 },
-            verse_focus: (best as any)?.verse_focus || [],
-            model_contributions: null,
-            _raw_analyses: analyses,
-          };
-        }
-      } catch (fanOutErr) {
-        console.error("Multi-model fan-out failed entirely, using fallback:", fanOutErr);
-        summary = buildFallbackSummary(session, eventCounts, verseRange);
-      }
-    } else if (grokKey && eventLog.length > 0) {
-      // Legacy single-model path when LOVABLE_API_KEY is unavailable
+    if (grokKey && eventLog.length > 0) {
       try {
         const prompt = `You are an analytical Bible study advisor. Analyze this chronological study session event log and return a structured JSON summary.
 
@@ -369,6 +162,7 @@ Return ONLY valid JSON matching this exact structure (no markdown, no code fence
         if (aiRes.ok) {
           const aiData = await aiRes.json();
           const content = aiData.choices?.[0]?.message?.content ?? "";
+          // Strip potential markdown fences
           const cleaned = content
             .replace(/```json\n?/g, "")
             .replace(/```\n?/g, "")
@@ -402,8 +196,6 @@ Return ONLY valid JSON matching this exact structure (no markdown, no code fence
     });
   }
 });
-
-/* ── Fallback summary from raw stats ── */
 
 function buildFallbackSummary(
   session: any,

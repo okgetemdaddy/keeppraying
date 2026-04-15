@@ -6,8 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { StudySession } from "@/hooks/useStudySessions";
 import type { SessionEvent } from "@/hooks/useSessionTelemetry";
 import { PenTool, Layers, BookOpen, Image as ImageIcon, Eraser } from "lucide-react";
-import { BibleSightIcon } from "@/components/bible/BibleSightIcon";
-import { DeepStudyIcon } from "@/components/bible/DeepStudyIcon";
 import {
   ArrowLeft,
   Highlighter,
@@ -227,16 +225,6 @@ interface BibleSleeveSheetProps {
   /* study artifacts */
   studyArtifacts?: StudyArtifact[];
   onNavigateToArtifact?: (artifact: StudyArtifact) => void;
-
-  /* deep study */
-  onTriggerDeepStudy?: () => void;
-  deepStudyActive?: boolean;
-
-  /* bible sight */
-  onOpenBibleSight?: () => void;
-
-  /* commentary library */
-  onOpenCommentary?: () => void;
 }
 
 export function BibleSleeveSheet({
@@ -297,10 +285,6 @@ export function BibleSleeveSheet({
   onClearChapter,
   onClearToday,
   onClearAll,
-  onTriggerDeepStudy,
-  deepStudyActive = false,
-  onOpenBibleSight,
-  onOpenCommentary,
 }: BibleSleeveSheetProps) {
   const displayName = userName?.split(" ")[0] || userName?.split("@")[0] || "friend";
   const [contextBunchId, setContextBunchId] = useState<string | null>(null);
@@ -948,62 +932,6 @@ export function BibleSleeveSheet({
                 )}
               </CollapsibleContent>
             </Collapsible>
-
-            <div className="h-px bg-border" />
-
-            {/* ── Deep Study ── */}
-            {onTriggerDeepStudy && (
-              <section className="space-y-2">
-                <button
-                  onClick={() => {
-                    onTriggerDeepStudy();
-                    onOpenChange(false);
-                  }}
-                  className={`flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors ${deepStudyActive ? "bg-amber-500/10" : ""}`}
-                >
-                  <DeepStudyIcon size={16} className={deepStudyActive ? "text-amber-400" : "text-muted-foreground"} />
-                  <div className="min-w-0">
-                    <span className="text-sm font-medium text-foreground">Deep Study</span>
-                    <p className="text-[0.6rem] text-muted-foreground">Current chapter</p>
-                  </div>
-                  {deepStudyActive && (
-                    <span className="ml-auto text-[0.6rem] font-medium text-amber-400">Active</span>
-                  )}
-                </button>
-
-                {/* Bible Sight entry point */}
-                {onOpenBibleSight && (
-                  <button
-                    onClick={() => {
-                      onOpenBibleSight();
-                    }}
-                    className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
-                  >
-                    <BibleSightIcon size={16} className="text-amber-500" />
-                    <div className="min-w-0">
-                      <span className="text-sm font-medium text-foreground">Bible Sight</span>
-                      <p className="text-[0.6rem] text-muted-foreground">Go deeper with guidance</p>
-                    </div>
-                  </button>
-                )}
-
-                {/* Commentary Library entry point */}
-                {onOpenCommentary && (
-                  <button
-                    onClick={() => {
-                      onOpenCommentary();
-                    }}
-                    className="flex items-center gap-2 w-full text-left rounded-lg px-3 py-2.5 hover:bg-muted/50 transition-colors"
-                  >
-                    <Layers className="h-4 w-4 text-amber-500/80" />
-                    <div className="min-w-0">
-                      <span className="text-sm font-medium text-foreground">Commentary</span>
-                      <p className="text-[0.6rem] text-muted-foreground">6 classical commentaries</p>
-                    </div>
-                  </button>
-                )}
-              </section>
-            )}
 
             <div className="h-px bg-border" />
 

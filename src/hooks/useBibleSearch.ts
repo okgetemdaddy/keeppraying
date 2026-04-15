@@ -56,25 +56,12 @@ export interface SearchResultAI {
   confidence: number;
 }
 
-export interface SearchResultSession {
-  type: "session";
-  id: string;
-  title: string;
-  entryType: "journal" | "study_session";
-  bookUsfm: string;
-  chapterNumber: number;
-  summaryLine?: string;
-  tags?: string[];
-  createdAt: string;
-}
-
 export type SearchResult =
   | SearchResultReference
   | SearchResultNote
   | SearchResultBookmark
   | SearchResultBunch
-  | SearchResultAI
-  | SearchResultSession;
+  | SearchResultAI;
 
 /* ── Recent searches (localStorage) ── */
 
@@ -201,64 +188,7 @@ export function useBibleSearch(availableBooks?: string[]) {
           })(),
         );
 
-        // Bible Sight entries search — user's own journals
-        dbPromises.push(
-          (async () => {
-            const { data } = await supabase
-              .from("bible_sight_entries")
-              .select("id, title, book_usfm, chapter_number, summary_line, tags, created_at, entry_type, content")
-              .eq("user_id", user.id)
-              .eq("entry_type", "journal")
-              .ilike("content", `%${debouncedQuery}%`)
-              .order("created_at", { ascending: false })
-              .limit(5);
-            (data ?? []).forEach((s: any) => {
-              results.push({
-                type: "session",
-                id: s.id,
-                title: s.title || s.summary_line || `${s.book_usfm} ${s.chapter_number}`,
-                entryType: "journal",
-                bookUsfm: s.book_usfm,
-                chapterNumber: s.chapter_number,
-                summaryLine: s.summary_line,
-                tags: s.tags,
-                createdAt: s.created_at,
-              });
-            });
-          })(),
-        );
-
         await Promise.all(dbPromises);
-      }
-
-      // ── Public study sessions (visible to everyone) ──
-      try {
-        const { data: publicSessions } = await supabase
-          .from("bible_sight_entries")
-          .select("id, title, book_usfm, chapter_number, summary_line, tags, created_at, entry_type, user_id")
-          .eq("entry_type", "study_session")
-          .or(`title.ilike.%${debouncedQuery}%,content.ilike.%${debouncedQuery}%`)
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        (publicSessions ?? []).forEach((s: any) => {
-          // Avoid duplicates if already in user results
-          if (!results.find((r) => r.type === "session" && (r as any).id === s.id)) {
-            results.push({
-              type: "session",
-              id: s.id,
-              title: s.title || s.summary_line || `${s.book_usfm} ${s.chapter_number}`,
-              entryType: "study_session",
-              bookUsfm: s.book_usfm,
-              chapterNumber: s.chapter_number,
-              summaryLine: s.summary_line,
-              tags: s.tags,
-              createdAt: s.created_at,
-            });
-          }
-        });
-      } catch {
-        // Non-critical
       }
 
       // ── AI interpretation (skip if it's clearly a direct reference) ──

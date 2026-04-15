@@ -2,8 +2,6 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
 import { isClosedLoop, convexHull, pointInPolygon, findVersesInsideStroke } from "@/lib/convexHull";
-import { usePencilTools, getBrushStrokeOptions, getActiveFilterId } from "@/hooks/usePencilTools";
-import InkFilterDefs from "@/components/bible/toolbar/InkFilterDefs";
 
 // iPadOS: MarginAnnotationLayer maps to PKCanvasView overlay with PKToolPicker hidden, pencilOnly input policy
 
@@ -139,16 +137,11 @@ export function MarginAnnotationLayer({
   const lastPenDownRef = useRef<number>(0);
   const [scrollContentHeight, setScrollContentHeight] = useState(2000);
 
-  // ── Read from Zustand store (fallback to props for backward compat) ──
-  const store = usePencilTools();
-  const effectiveColor = store.color || penColor;
-  const effectiveSize = store.size || penSize;
-
-  // Stable refs for pen settings (reads from store)
-  const penColorRef = useRef(effectiveColor);
-  const penSizeRef = useRef(effectiveSize);
-  penColorRef.current = effectiveColor;
-  penSizeRef.current = effectiveSize;
+  // Stable refs for pen settings
+  const penColorRef = useRef(penColor);
+  const penSizeRef = useRef(penSize);
+  penColorRef.current = penColor;
+  penSizeRef.current = penSize;
 
   // ── ResizeObserver to track scroll content height ──
   // iPadOS: Height synced to PKCanvasView frame via bridge
@@ -490,10 +483,11 @@ export function MarginAnnotationLayer({
     return () => cancelAnimationFrame(rafIdRef.current);
   }, []);
 
-  /* ── Rendered committed strokes (brush-aware) ── */
+  /* ── Rendered committed strokes ── */
   const renderedStrokes = useMemo(() => {
     const currentWidth = scrollContainerRef.current?.clientWidth ?? 1;
     return strokes.map((s) => {
+      // Scale x-coordinates if container width changed since capture
       const scaleFactor = s.containerWidthAtCapture > 0
         ? currentWidth / s.containerWidthAtCapture
         : 1;
@@ -501,14 +495,12 @@ export function MarginAnnotationLayer({
         ? s.points.map((p) => ({ ...p, x: p.x * scaleFactor }))
         : s.points;
 
-      const brushOpts = getBrushStrokeOptions(store.brushStyle, s.size, 0.5);
       const outline = getStroke(
         scaledPoints.map((p) => [p.x, p.y, p.pressure]),
-        { ...brushOpts, size: s.size, start: STROKE_OPTIONS.start, end: STROKE_OPTIONS.end },
+        { ...STROKE_OPTIONS, size: s.size },
       );
       const pathData = getSvgPathFromStroke(outline);
       if (!pathData) return null;
-      const brushFilterId = getActiveFilterId(store.activeTool, store.brushStyle);
       return (
         <path
           key={s.id}
@@ -516,11 +508,11 @@ export function MarginAnnotationLayer({
           fill={s.color}
           stroke="none"
           opacity={0.98}
-          filter={brushFilterId ? `url(#${brushFilterId})` : "url(#margin-ink-bleed)"}
+          filter="url(#margin-ink-bleed)"
         />
       );
     });
-  }, [strokes, scrollContainerRef, store.brushStyle, store.activeTool]);
+  }, [strokes, scrollContainerRef]);
 
   if (!active) return null;
 
@@ -574,11 +566,10 @@ export function MarginAnnotationLayer({
             </feComponentTransfer>
           </filter>
         </defs>
-        <InkFilterDefs standalone={false} />
         {renderedStrokes}
         <path
           ref={livePathRef}
-          fill={effectiveColor}
+          fill={penColor}
           stroke="none"
           opacity={0.7}
           style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}

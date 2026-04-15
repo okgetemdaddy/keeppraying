@@ -121,9 +121,9 @@ export default function Auth() {
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="rounded-xl" />
                 </div>
-                 <Button type="submit" disabled={loading} className="w-full h-11 text-base rounded-xl font-semibold" style={{ background: "var(--kp-gold)", color: "var(--kp-bg-deep)" }}>
-                   {loading ? "Sending…" : "Send Reset Link"}
-                 </Button>
+                <Button type="submit" disabled={loading} className="w-full btn-gold h-11 text-base">
+                  {loading ? "Sending…" : "Send Reset Link"}
+                </Button>
                 <p className="text-center text-sm text-muted-foreground">
                   <button type="button" onClick={() => setMode("signin")} className="text-primary font-medium hover:underline">Back to Sign In</button>
                 </p>
@@ -153,9 +153,9 @@ export default function Auth() {
                   </div>
                   <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="rounded-xl" />
                 </div>
-                <Button type="submit" disabled={loading} className="w-full h-11 text-base rounded-xl font-semibold" style={{ background: "var(--kp-gold)", color: "var(--kp-bg-deep)" }}>
-                   {loading ? "Please wait…" : mode === "signin" ? "Sign In" : "Create Account"}
-                 </Button>
+                <Button type="submit" disabled={loading} className="w-full btn-gold h-11 text-base">
+                  {loading ? "Please wait…" : mode === "signin" ? "Sign In" : "Create Account"}
+                </Button>
               </form>
 
               <div className="relative my-2">

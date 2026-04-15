@@ -1,7 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { usePaperCamera } from "@/components/bible/PaperCanvasContext";
-import { usePencilTools, getActiveFilterId, getBrushStrokeOptions } from "@/hooks/usePencilTools";
-import InkFilterDefs from "@/components/bible/toolbar/InkFilterDefs";
 
 import { getStroke } from "perfect-freehand";
 import simplify from "simplify-js";
@@ -55,7 +53,6 @@ interface InkOverlayProps {
   onXGesture?: (bbox: { minX: number; minY: number; maxX: number; maxY: number }) => void;
 }
 
-// Default stroke options — used as fallback when store isn't providing brush-specific options
 const STROKE_OPTIONS = {
   thinning: 0.5,
   smoothing: 0.5,
@@ -155,12 +152,6 @@ export function InkOverlay({
   const [selectedStrokeId, setSelectedStrokeId] = useState<string | null>(null);
   const [xFlash, setXFlash] = useState<{ x: number; y: number } | null>(null);
 
-  // ── Read from Zustand store (fallback to props for backward compat) ──
-  const store = usePencilTools();
-  const effectiveColor = store.color || penColor || "#1a1a1a";
-  const effectiveSize = store.size || penSize || 8;
-  const effectiveOpacity = store.opacity ?? 1;
-
   // ── RAF point buffer (NOT React state) ──
   const pointsBufferRef = useRef<Point[]>([]);
   const isDrawingRef = useRef(false);
@@ -173,12 +164,12 @@ export function InkOverlay({
   const lastPenDownRef = useRef<number>(0);
   const firstContactFiredRef = useRef(false);
 
-  // Stable refs for current pen settings (reads from store)
-  const penColorRef = useRef(effectiveColor);
-  const penSizeRef = useRef(effectiveSize);
+  // Stable refs for current pen settings
+  const penColorRef = useRef(penColor);
+  const penSizeRef = useRef(penSize);
   const penGlowRef = useRef(penGlow);
-  penColorRef.current = effectiveColor;
-  penSizeRef.current = effectiveSize;
+  penColorRef.current = penColor;
+  penSizeRef.current = penSize;
   penGlowRef.current = penGlow ?? null;
 
   /* ── Coordinate normalization via pure-math inverse transform ──
@@ -615,34 +606,30 @@ export function InkOverlay({
     };
   }, []);
 
-  /* ── Rendered committed strokes (brush-aware filters from store) ── */
+  /* ── Rendered committed strokes ── */
   const renderedStrokes = useMemo(
     () =>
       strokes.map((s) => {
-        const brushOpts = getBrushStrokeOptions(store.brushStyle, s.size, 0.5);
         const outline = getStroke(
           s.points.map((p) => [p.x, p.y, p.pressure]),
-          { ...brushOpts, size: s.size, start: STROKE_OPTIONS.start, end: STROKE_OPTIONS.end },
+          { ...STROKE_OPTIONS, size: s.size },
         );
         const pathData = getSvgPathFromStroke(outline);
         if (!pathData) return null;
         const isSepia = s.color === SEPIA_COLOR;
         const isNeon = !!s.glow;
         const neonFilterId = isNeon ? `neon-${s.glow!.replace("#", "")}` : null;
-        const brushFilterId = getActiveFilterId(store.activeTool, store.brushStyle);
         const bleedFilter = isDark ? "url(#ink-bleed-dark)" : "url(#ink-bleed)";
         const appliedFilter = isNeon
           ? `url(#${neonFilterId})`
-          : brushFilterId
-            ? `url(#${brushFilterId})`
-            : bleedFilter;
+          : bleedFilter;
         return (
           <path
             key={s.id}
             d={pathData}
             fill={s.color}
             stroke="none"
-            opacity={isSepia ? 0.6 : effectiveOpacity}
+            opacity={isSepia ? 0.6 : 0.98}
             filter={appliedFilter}
             style={{
               mixBlendMode: isNeon ? "screen" : isSepia ? (isDark ? "screen" : "multiply") : undefined,
@@ -650,7 +637,7 @@ export function InkOverlay({
           />
         );
       }),
-    [strokes, isDark, store.brushStyle, store.activeTool, effectiveOpacity],
+    [strokes, isDark],
   );
 
   return (
@@ -696,12 +683,11 @@ export function InkOverlay({
             </filter>
           ))}
         </defs>
-        <InkFilterDefs standalone={false} />
         {renderedStrokes}
 
         <path
           ref={livePathRef}
-          fill={effectiveColor}
+          fill={penColor}
           stroke="none"
           opacity={0.7}
           style={{ display: "none", filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))" }}
@@ -711,8 +697,8 @@ export function InkOverlay({
           <circle
             cx={hoverPos.x}
             cy={hoverPos.y}
-            r={effectiveSize / 2}
-            fill={effectiveColor}
+            r={penSize / 2}
+            fill={penColor}
             opacity={0.25}
             style={{ pointerEvents: "none" }}
           />

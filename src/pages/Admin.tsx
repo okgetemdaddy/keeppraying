@@ -31,8 +31,6 @@ import WelcomeMessagesTab from "@/components/admin/WelcomeMessagesTab";
 import AudioCacheTab from "@/components/admin/AudioCacheTab";
 import SermonCacheTab from "@/components/admin/SermonCacheTab";
 import WaitlistTab from "@/components/admin/WaitlistTab";
-import BibleSightAdminTab from "@/components/admin/BibleSightAdminTab";
-import UploadLinksTab from "@/components/admin/UploadLinksTab";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -72,10 +70,10 @@ type PrayerCardFormValues = z.infer<typeof prayerCardSchema>;
 interface PrayerStat { id: string; title: string | null; prayer_text: string; likes_count: number; prayed_count: number; views: number; }
 interface ContactSubmission { id: string; name: string | null; email: string | null; message: string; created_at: string; ai_reply: string | null; replied_at: string | null; }
 interface AdminReport { id: string; title: string; content: string; generated_at: string; }
-interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; content?: string | null; cover_image_url?: string | null; }
+interface BlogPost { id: string; title: string; slug: string; excerpt: string | null; published: boolean | null; created_at: string; }
 interface VerseSummary { id: string; reference: string; verse_text: string | null; summary: string | null; exegesis: string | null; created_at: string; }
 
-type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache" | "waitlist" | "bible-sight" | "upload-links";
+type TabId = "overview" | "moderation" | "prayers" | "breath" | "classical" | "users" | "contacts" | "blog" | "faq" | "insights" | "verses" | "testimonies" | "prayer-requests" | "feedback" | "sayings" | "welcome" | "audio-cache" | "sermon-cache" | "waitlist";
 
 const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "overview",         label: "Overview",          icon: LayoutDashboard },
@@ -97,8 +95,6 @@ const NAV_ITEMS: { id: TabId; label: string; icon: React.ComponentType<{ classNa
   { id: "audio-cache",      label: "Audio Cache",        icon: Volume2 },
   { id: "sermon-cache",     label: "Sermon Cache",       icon: Youtube },
   { id: "waitlist",          label: "KeepRead.ing Waitlist", icon: Tablet },
-  { id: "bible-sight",       label: "Bible Sight",       icon: BookText },
-  { id: "upload-links",      label: "Upload Links",      icon: Shield },
 ];
 
 export default function Admin() {
@@ -116,7 +112,6 @@ export default function Admin() {
   const [verseSearching, setVerseSearching] = useState(false);
   const [genFaq, setGenFaq] = useState(false);
   const [showBlogForm, setShowBlogForm] = useState(false);
-  const [editingBlogId, setEditingBlogId] = useState<string | null>(null);
   const [showPrayerForm, setShowPrayerForm] = useState(false);
   const [savingPrayer, setSavingPrayer] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("overview");
@@ -141,60 +136,55 @@ export default function Admin() {
   });
 
   const load = useCallback(async () => {
-    try {
-      const [
-        { data: p },
-        { count: total },
-        { count: approved },
-        { count: pend },
-        { count: testimonyCount },
-        { count: userCount },
-        { data: liked },
-        { data: prayed },
-        { data: profiles },
-        { data: contactData },
-        { data: reportData },
-        { data: blogData },
-      ] = await Promise.all([
-        supabase.from("prayer_cards").select("id,title,prayer_text,created_at").eq("status", "pending").order("created_at", { ascending: false }),
-        supabase.from("prayer_cards").select("*", { count: "exact", head: true }),
-        supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "approved"),
-        supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "pending"),
-        supabase.from("testimonies").select("*", { count: "exact", head: true }),
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("likes_count", { ascending: false }).limit(5),
-        supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("prayed_count", { ascending: false }).limit(5),
-        supabase.from("profiles").select("created_at").order("created_at", { ascending: true }),
-        supabase.from("contact_submissions").select("*").order("created_at", { ascending: false }),
-        supabase.from("admin_reports").select("*").order("generated_at", { ascending: false }).limit(5),
-        supabase.from("blog_posts").select("id,title,slug,excerpt,published,created_at").order("created_at", { ascending: false }),
-      ]);
+    const [
+      { data: p },
+      { count: total },
+      { count: approved },
+      { count: pend },
+      { count: testimonyCount },
+      { count: userCount },
+      { data: liked },
+      { data: prayed },
+      { data: profiles },
+      { data: contactData },
+      { data: reportData },
+      { data: blogData },
+    ] = await Promise.all([
+      supabase.from("prayer_cards").select("id,title,prayer_text,created_at").eq("status", "pending").order("created_at", { ascending: false }),
+      supabase.from("prayer_cards").select("*", { count: "exact", head: true }),
+      supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "approved"),
+      supabase.from("prayer_cards").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("testimonies").select("*", { count: "exact", head: true }),
+      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("likes_count", { ascending: false }).limit(5),
+      supabase.from("prayer_cards").select("id,title,prayer_text,likes_count,prayed_count,views").order("prayed_count", { ascending: false }).limit(5),
+      supabase.from("profiles").select("created_at").order("created_at", { ascending: true }),
+      supabase.from("contact_submissions").select("*").order("created_at", { ascending: false }),
+      supabase.from("admin_reports").select("*").order("generated_at", { ascending: false }).limit(5),
+      supabase.from("blog_posts").select("id,title,slug,excerpt,published,created_at").order("created_at", { ascending: false }),
+    ]);
 
-      setPending(p || []);
-      setStats({ total: total || 0, approved: approved || 0, pending: pend || 0, testimonies: testimonyCount || 0, users: userCount || 0 });
-      setTopLiked((liked as PrayerStat[]) || []);
-      setTopPrayed((prayed as PrayerStat[]) || []);
-      setContacts((contactData as ContactSubmission[]) || []);
-      setReports((reportData as AdminReport[]) || []);
-      setBlogPosts((blogData as BlogPost[]) || []);
+    setPending(p || []);
+    setStats({ total: total || 0, approved: approved || 0, pending: pend || 0, testimonies: testimonyCount || 0, users: userCount || 0 });
+    setTopLiked((liked as PrayerStat[]) || []);
+    setTopPrayed((prayed as PrayerStat[]) || []);
+    setContacts((contactData as ContactSubmission[]) || []);
+    setReports((reportData as AdminReport[]) || []);
+    setBlogPosts((blogData as BlogPost[]) || []);
 
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const recent = (profiles || []).filter(p => new Date(p.created_at) >= thirtyDaysAgo);
-      const grouped: Record<string, number> = {};
-      for (let i = 0; i < 30; i++) {
-        const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
-        grouped[d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })] = 0;
-      }
-      recent.forEach(p => {
-        const key = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        if (grouped[key] !== undefined) grouped[key]++;
-      });
-      setSignupData(Object.entries(grouped).slice(-14).map(([date, count]) => ({ date, count })));
-    } catch (error) {
-      console.error("Failed to load admin data:", error);
-      toast({ title: "Failed to load admin data", description: "Please refresh or try again.", variant: "destructive" });
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const recent = (profiles || []).filter(p => new Date(p.created_at) >= thirtyDaysAgo);
+    const grouped: Record<string, number> = {};
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(thirtyDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
+      grouped[d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })] = 0;
     }
+    recent.forEach(p => {
+      const key = new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (grouped[key] !== undefined) grouped[key]++;
+    });
+    setSignupData(Object.entries(grouped).slice(-14).map(([date, count]) => ({ date, count })));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -242,42 +232,18 @@ export default function Admin() {
     }
   };
 
-  const startEditBlog = async (post: BlogPost) => {
-    // Fetch full content if not already loaded
-    const { data } = await supabase.from("blog_posts").select("content,cover_image_url").eq("id", post.id).single();
-    blogForm.reset({
-      title: post.title,
-      slug: post.slug,
-      excerpt: post.excerpt || "",
-      content: data?.content || "",
-      cover_image_url: data?.cover_image_url || "",
-      published: post.published || false,
-    });
-    setEditingBlogId(post.id);
-    setShowBlogForm(true);
-  };
-
-  const cancelBlogForm = () => {
-    blogForm.reset();
-    setEditingBlogId(null);
-    setShowBlogForm(false);
-  };
-
   const onBlogSubmit = async (values: BlogFormValues) => {
     setFormattingBlog(true);
     try {
       const formatted = values.content ? await formatBlogContent(values.content, values.title) : values.content;
-      const payload = {
+      const { error } = await supabase.from("blog_posts").insert({
         title: values.title, slug: values.slug, excerpt: values.excerpt || null,
         content: formatted, cover_image_url: values.cover_image_url || null,
-        published: values.published,
-      };
-      const { error } = editingBlogId
-        ? await supabase.from("blog_posts").update(payload).eq("id", editingBlogId)
-        : await supabase.from("blog_posts").insert({ ...payload, author_id: user?.id || null });
+        published: values.published, author_id: user?.id || null,
+      });
       if (error) { toast({ title: "Failed to save post", description: error.message, variant: "destructive" }); return; }
-      toast({ title: editingBlogId ? "Post updated! 📝✨" : "Blog post saved & formatted! 📝✨" });
-      cancelBlogForm(); load();
+      toast({ title: "Blog post saved & formatted! 📝✨" });
+      blogForm.reset(); setShowBlogForm(false); load();
     } finally {
       setFormattingBlog(false);
     }
@@ -864,11 +830,6 @@ export default function Admin() {
               {/* ── KEEPREAD.ING WAITLIST ── */}
               {activeTab === "waitlist" && <WaitlistTab />}
 
-              {/* ── BIBLE SIGHT ── */}
-              {activeTab === "bible-sight" && <BibleSightAdminTab />}
-
-              {activeTab === "upload-links" && <UploadLinksTab />}
-
               {/* ── PRAYERS ── */}
               {activeTab === "prayers" && <PrayersAdminTab onNewPrayer={() => setShowPrayerForm(true)} />}
 
@@ -885,14 +846,14 @@ export default function Admin() {
                       <h2 className="font-display text-2xl font-bold" style={{ color: "hsl(38 28% 92%)" }}>KeepGrow.ing Posts</h2>
                       <p className="text-xs mt-1" style={{ color: "hsl(38 14% 50%)" }}>Devotional content and faith encouragement</p>
                     </div>
-                    <GoldButton onClick={() => { if (showBlogForm) { cancelBlogForm(); } else { setEditingBlogId(null); blogForm.reset(); setShowBlogForm(true); } }}>
-                      <PlusCircle className="w-4 h-4" />{showBlogForm ? "Cancel" : "New Post"}
+                    <GoldButton onClick={() => setShowBlogForm(!showBlogForm)}>
+                      <PlusCircle className="w-4 h-4" />New Post
                     </GoldButton>
                   </div>
 
                   {showBlogForm && (
                     <GuardianCard>
-                      <h3 className="font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>{editingBlogId ? "Edit Post" : "Create Post"}</h3>
+                      <h3 className="font-semibold mb-4" style={{ color: "hsl(38 28% 88%)" }}>Create Post</h3>
                       <Form {...blogForm}>
                         <form onSubmit={blogForm.handleSubmit(onBlogSubmit)} className="space-y-3">
                           <div className="grid grid-cols-2 gap-3">
@@ -940,8 +901,8 @@ export default function Admin() {
                           )} />
                           <div className="flex gap-2">
                             <GoldButton type="submit" disabled={formattingBlog}>
-                              {formattingBlog ? <><Loader2 className="w-4 h-4 animate-spin" />Formatting with AI…</> : editingBlogId ? "Update Post" : "Save Post"}</GoldButton>
-                            <DarkOutlineButton type="button" onClick={cancelBlogForm}>Cancel</DarkOutlineButton>
+                              {formattingBlog ? <><Loader2 className="w-4 h-4 animate-spin" />Formatting with AI…</> : "Save Post"}</GoldButton>
+                            <DarkOutlineButton type="button" onClick={() => setShowBlogForm(false)}>Cancel</DarkOutlineButton>
                           </div>
                         </form>
                       </Form>
@@ -970,14 +931,6 @@ export default function Admin() {
                             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                             style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}>
                             {post.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                          <button
-                            onClick={() => startEditBlog(post)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity"
-                            style={{ background: "hsl(220 26% 16%)", color: "hsl(38 14% 55%)" }}
-                            title="Edit post"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => reformatPost(post)}

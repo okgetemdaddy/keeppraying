@@ -162,7 +162,7 @@ export default function InviteShareModal({ open, onOpenChange, type, targetId, t
             </div>
 
             {/* Primary action */}
-            <Button onClick={copyLink} className="rounded-xl gap-2 w-full h-11 font-semibold" style={{ background: "var(--kp-gold)", color: "var(--kp-bg-deep)" }}>
+            <Button onClick={copyLink} className="btn-gold rounded-xl gap-2 w-full h-11">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copied ? "Copied!" : "Copy Invite Link"}
             </Button>

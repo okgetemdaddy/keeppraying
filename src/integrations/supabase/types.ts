@@ -183,50 +183,6 @@ export type Database = {
         }
         Relationships: []
       }
-      admin_submissions: {
-        Row: {
-          created_at: string | null
-          encrypted: boolean | null
-          encryption_iv: string | null
-          encryption_salt: string | null
-          file_size_bytes: number | null
-          id: string
-          original_filename: string
-          stored_path: string
-          token_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          encrypted?: boolean | null
-          encryption_iv?: string | null
-          encryption_salt?: string | null
-          file_size_bytes?: number | null
-          id?: string
-          original_filename: string
-          stored_path: string
-          token_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          encrypted?: boolean | null
-          encryption_iv?: string | null
-          encryption_salt?: string | null
-          file_size_bytes?: number | null
-          id?: string
-          original_filename?: string
-          stored_path?: string
-          token_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_submissions_token_id_fkey"
-            columns: ["token_id"]
-            isOneToOne: false
-            referencedRelation: "upload_access_tokens"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ai_chat_logs: {
         Row: {
           ai_response: string | null
@@ -376,74 +332,6 @@ export type Database = {
           version_id?: number
         }
         Relationships: []
-      }
-      bible_sight_entries: {
-        Row: {
-          book_usfm: string
-          chapter_number: number
-          chat_log: Json | null
-          content: string
-          created_at: string
-          entry_type: string
-          id: string
-          is_refresh: boolean
-          lens_used: string
-          model_used: string
-          parent_entry_id: string | null
-          session_data: Json | null
-          summary_line: string | null
-          tags: string[] | null
-          title: string | null
-          user_id: string
-          version_id: number
-        }
-        Insert: {
-          book_usfm: string
-          chapter_number: number
-          chat_log?: Json | null
-          content: string
-          created_at?: string
-          entry_type?: string
-          id?: string
-          is_refresh?: boolean
-          lens_used: string
-          model_used: string
-          parent_entry_id?: string | null
-          session_data?: Json | null
-          summary_line?: string | null
-          tags?: string[] | null
-          title?: string | null
-          user_id: string
-          version_id?: number
-        }
-        Update: {
-          book_usfm?: string
-          chapter_number?: number
-          chat_log?: Json | null
-          content?: string
-          created_at?: string
-          entry_type?: string
-          id?: string
-          is_refresh?: boolean
-          lens_used?: string
-          model_used?: string
-          parent_entry_id?: string | null
-          session_data?: Json | null
-          summary_line?: string | null
-          tags?: string[] | null
-          title?: string | null
-          user_id?: string
-          version_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bible_sight_entries_parent_entry_id_fkey"
-            columns: ["parent_entry_id"]
-            isOneToOne: false
-            referencedRelation: "bible_sight_entries"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       bible_watch_logs: {
         Row: {
@@ -808,50 +696,6 @@ export type Database = {
         }
         Relationships: []
       }
-      commentary_bookmarks: {
-        Row: {
-          author: string
-          book_usfm: string
-          chapter_number: number
-          chunk_id: string | null
-          created_at: string
-          excerpt: string
-          id: string
-          title: string
-          user_id: string
-        }
-        Insert: {
-          author: string
-          book_usfm: string
-          chapter_number: number
-          chunk_id?: string | null
-          created_at?: string
-          excerpt: string
-          id?: string
-          title: string
-          user_id: string
-        }
-        Update: {
-          author?: string
-          book_usfm?: string
-          chapter_number?: number
-          chunk_id?: string | null
-          created_at?: string
-          excerpt?: string
-          id?: string
-          title?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commentary_bookmarks_chunk_id_fkey"
-            columns: ["chunk_id"]
-            isOneToOne: false
-            referencedRelation: "library_chunks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       comments: {
         Row: {
           created_at: string
@@ -1133,42 +977,6 @@ export type Database = {
         }
         Relationships: []
       }
-      enriched_chapters: {
-        Row: {
-          book_usfm: string
-          chapter_number: number
-          content_json: Json
-          created_at: string | null
-          id: string
-          model_version: string
-          secondary_json: Json | null
-          updated_at: string | null
-          version_id: number
-        }
-        Insert: {
-          book_usfm: string
-          chapter_number: number
-          content_json: Json
-          created_at?: string | null
-          id?: string
-          model_version: string
-          secondary_json?: Json | null
-          updated_at?: string | null
-          version_id: number
-        }
-        Update: {
-          book_usfm?: string
-          chapter_number?: number
-          content_json?: Json
-          created_at?: string | null
-          id?: string
-          model_version?: string
-          secondary_json?: Json | null
-          updated_at?: string | null
-          version_id?: number
-        }
-        Relationships: []
-      }
       family_homework: {
         Row: {
           created_at: string
@@ -1395,33 +1203,6 @@ export type Database = {
         }
         Relationships: []
       }
-      fruit_reports: {
-        Row: {
-          chat_log: Json | null
-          created_at: string
-          id: string
-          model_used: string
-          report_content: string
-          user_id: string
-        }
-        Insert: {
-          chat_log?: Json | null
-          created_at?: string
-          id?: string
-          model_used: string
-          report_content: string
-          user_id: string
-        }
-        Update: {
-          chat_log?: Json | null
-          created_at?: string
-          id?: string
-          model_used?: string
-          report_content?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       invite_tokens: {
         Row: {
           created_at: string
@@ -1488,75 +1269,27 @@ export type Database = {
       library_chunks: {
         Row: {
           author: string | null
-          bible_book_usfm: string | null
           book_title: string
-          chapter_number: number | null
           content: string
           embedding: string | null
           id: string
           page_reference: string | null
-          source_url: string | null
         }
         Insert: {
           author?: string | null
-          bible_book_usfm?: string | null
           book_title: string
-          chapter_number?: number | null
           content: string
           embedding?: string | null
           id?: string
           page_reference?: string | null
-          source_url?: string | null
         }
         Update: {
           author?: string | null
-          bible_book_usfm?: string | null
           book_title?: string
-          chapter_number?: number | null
           content?: string
           embedding?: string | null
           id?: string
           page_reference?: string | null
-          source_url?: string | null
-        }
-        Relationships: []
-      }
-      library_toc: {
-        Row: {
-          author: string | null
-          bible_book_usfm: string
-          book_title: string
-          chapter_end: number
-          chapter_start: number
-          content_summary: string | null
-          created_at: string
-          id: string
-          page_reference: string | null
-          section_title: string | null
-        }
-        Insert: {
-          author?: string | null
-          bible_book_usfm: string
-          book_title: string
-          chapter_end: number
-          chapter_start: number
-          content_summary?: string | null
-          created_at?: string
-          id?: string
-          page_reference?: string | null
-          section_title?: string | null
-        }
-        Update: {
-          author?: string | null
-          bible_book_usfm?: string
-          book_title?: string
-          chapter_end?: number
-          chapter_start?: number
-          content_summary?: string | null
-          created_at?: string
-          id?: string
-          page_reference?: string | null
-          section_title?: string | null
         }
         Relationships: []
       }
@@ -2058,7 +1791,6 @@ export type Database = {
           id: string
           is_donor: boolean
           is_founder: boolean
-          is_prayer_warrior: boolean
           is_public: boolean
           last_prayed_date: string | null
           longest_streak: number
@@ -2066,7 +1798,6 @@ export type Database = {
           role: string
           subscription_tier: string
           updated_at: string
-          warrior_status: string
         }
         Insert: {
           avatar_url?: string | null
@@ -2079,7 +1810,6 @@ export type Database = {
           id: string
           is_donor?: boolean
           is_founder?: boolean
-          is_prayer_warrior?: boolean
           is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
@@ -2087,7 +1817,6 @@ export type Database = {
           role?: string
           subscription_tier?: string
           updated_at?: string
-          warrior_status?: string
         }
         Update: {
           avatar_url?: string | null
@@ -2100,7 +1829,6 @@ export type Database = {
           id?: string
           is_donor?: boolean
           is_founder?: boolean
-          is_prayer_warrior?: boolean
           is_public?: boolean
           last_prayed_date?: string | null
           longest_streak?: number
@@ -2108,7 +1836,6 @@ export type Database = {
           role?: string
           subscription_tier?: string
           updated_at?: string
-          warrior_status?: string
         }
         Relationships: []
       }
@@ -2733,39 +2460,6 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
-        }
-        Relationships: []
-      }
-      upload_access_tokens: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          expires_at: string | null
-          id: string
-          label: string | null
-          token: string
-          used: boolean | null
-          used_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string
-          label?: string | null
-          token?: string
-          used?: boolean | null
-          used_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string
-          label?: string | null
-          token?: string
-          used?: boolean | null
-          used_at?: string | null
         }
         Relationships: []
       }
